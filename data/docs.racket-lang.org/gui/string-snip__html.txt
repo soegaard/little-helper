@@ -1,0 +1,111 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 5  Snip and Style Classes
+ 5.1  add-color<%>
+ 5.2  image-snip%
+ 5.3  mult-color<%>
+ 5.4  readable-snip<%>
+ 5.5  snip%
+ 5.6  snip-admin%
+ 5.7  snip-class%
+ 5.8  snip-class-list<%>
+ 5.9  string-snip%
+5.10  style<%>
+5.11  style-delta%
+5.12  style-list%
+5.13  tab-snip%
+On this page:
+insert
+read
+Inherited methods:
+from snip%
+adjust-cursor
+blink-caret
+can-do-edit-operation?
+copy
+do-edit-operation
+draw
+equal-hash-code-of
+equal-secondary-hash-code-of
+equal-to?
+find-scroll-step
+get-admin
+get-count
+get-extent
+get-flags
+get-num-scroll-steps
+get-scroll-step-offset
+get-snipclass
+get-style
+get-text
+get-text!
+is-owned?
+match?
+merge-with
+next
+on-char
+on-event
+other-equal-to?
+own-caret
+partial-offset
+previous
+release-from-owner
+resize
+set-admin
+set-count
+set-flags
+set-snipclass
+set-style
+set-unmodified
+size-cache-invalid
+split
+write
+[...search manuals...]
+  top← prev  up  next → 
+
+string-snip% : class?
+  superclass: snip%
+
+An instance of string-snip% is created automatically when text is inserted into
+a text editor. See also on-new-string-snip in text%.
+
+(make-object string-snip% [allocsize]) → (is-a?/c string-snip%)
+  allocsize : exact-nonnegative-integer? = 0
+(make-object string-snip% s) → (is-a?/c string-snip%)
+  s : string?
+Creates a string snip whose initial content is s, if supplied, empty otherwise.
+In the latter case, the optional allocsize argument is a hint about how much
+storage space for text should be initially allocated by the snip.
+
+(send a-string-snip insert s len [pos]) → void?
+  s : string?
+  len : exact-nonnegative-integer?
+  pos : exact-nonnegative-integer? = 0
+Inserts s (with length len) into the snip at relative position pos within the
+snip.
+
+(send a-string-snip read len f) → void?
+  len : exact-nonnegative-integer?
+  f : (is-a?/c editor-stream-in%)
+Reads the snip’s data from the given stream.
+
+The len argument specifies the maximum length of the text to be read. (When a
+text snip is written to a file, the very first field is the length of the text
+contained in the snip.) This method is usually invoked by the text snip class’s
+read method.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

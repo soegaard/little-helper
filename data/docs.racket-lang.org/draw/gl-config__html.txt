@@ -1,0 +1,114 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+get-accum-size
+get-depth-size
+get-double-buffered
+get-multisample-size
+get-stencil-size
+get-stereo
+set-accum-size
+set-depth-size
+set-double-buffered
+set-multisample-size
+set-stencil-size
+set-stereo
+[...search manuals...]
+  top← prev  up  next → 
+
+gl-config% : class?
+  superclass: object%
+
+A gl-config% object encapsulates configuration information for an OpenGL
+drawing context. Use a gl-config% object as an initialization argument for
+canvas% or provide it to make-gl-bitmap.
+
+(new gl-config%) → (is-a?/c gl-config%)
+Creates a GL configuration that indicates double buffering, a depth buffer of
+size one, no stencil buffer, no accumulation buffer, no multisampling, and not
+stereo.
+
+(send a-gl-config get-accum-size) → (integer-in 0 256)
+Reports the accumulation-buffer size (for each of red, green, blue, and alpha)
+that the configuration requests, where zero means no accumulation buffer is
+requested.
+
+(send a-gl-config get-depth-size) → (integer-in 0 256)
+Reports the depth-buffer size that the configuration requests, where zero means
+no depth buffer is requested.
+
+(send a-gl-config get-double-buffered) → boolean?
+Reports whether the configuration requests double buffering or not.
+
+(send a-gl-config get-multisample-size) → (integer-in 0 256)
+Reports the multisampling size that the configuration requests, where zero
+means no multisampling is requested.
+
+(send a-gl-config get-stencil-size) → (integer-in 0 256)
+Reports the stencil-buffer size that the configuration requests, where zero
+means no stencil buffer is requested.
+
+(send a-gl-config get-stereo) → boolean?
+Reports whether the configuration requests stereo or not.
+
+(send a-gl-config set-accum-size on?) → void?
+  on? : (integer-in 0 256)
+Adjusts the configuration to request a particular accumulation-buffer size for
+every channel (red, green, blue, and alpha), where zero means no accumulation
+buffer is requested.
+
+(send a-gl-config set-depth-size on?) → void?
+  on? : (integer-in 0 256)
+Adjusts the configuration to request a particular depth-buffer size, where zero
+means no depth buffer is requested.
+
+(send a-gl-config set-double-buffered on?) → void?
+  on? : any/c
+Adjusts the configuration to request double buffering or not.
+
+(send a-gl-config set-multisample-size on?) → void?
+  on? : (integer-in 0 256)
+Adjusts the configuration to request a particular multisample size, where zero
+means no multisampling is requested. If a multisampling context is not
+available, this request will be ignored.
+
+(send a-gl-config set-stencil-size on?) → void?
+  on? : (integer-in 0 256)
+Adjusts the configuration to request a particular stencil-buffer size, where
+zero means no stencil buffer is requested.
+
+(send a-gl-config set-stereo on?) → void?
+  on? : any/c
+Adjusts the configuration to request stereo or not.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,175 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+canvas: basic<%>
+canvas: basic-mixin
+canvas: color<%>
+canvas: color-mixin
+canvas: delegate<%>
+canvas: delegate-mixin
+on-superwindow-show
+canvas: info<%>
+canvas: info-mixin
+on-focus
+set-editor
+canvas: wide-snip<%>
+recalc-snips
+add-wide-snip
+add-tall-snip
+canvas: wide-snip-mixin
+on-size
+canvas: basic%
+canvas: color%
+canvas: info%
+canvas: delegate%
+canvas: wide-snip%
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Canvas
+
+canvas:basic<%> : interface?
+  implements:  editor-canvas%
+
+canvas:basic-mixin : (class? . -> . class?)
+  argument extends/implements:  editor-canvas%
+  result implements:  canvas:basic<%>
+
+canvas:color<%> : interface?
+  implements:  canvas:basic<%>
+Mixins that implement this interface initialize the background color of the
+canvas to the value of the 'framework:basic-canvas-background preference. Adds
+a callback so that when that preference is modified, the background color
+changes.
+
+canvas:color-mixin : (class? . -> . class?)
+  argument extends/implements:  canvas:basic<%>
+  result implements:  canvas:color<%>
+
+canvas:delegate<%> : interface?
+  implements:  canvas:basic<%>
+This class is part of the delegate window implementation.
+
+canvas:delegate-mixin : (class? . -> . class?)
+  argument extends/implements:  canvas:basic<%>
+  result implements:  canvas:delegate<%>
+Provides an implementation of canvas:delegate<%>.
+
+
+    (send a-canvas:delegate on-superwindow-show shown?) → void?
+      shown? : boolean?
+    Overrides on-superwindow-show in window<%>.
+    Notifies the delegate window when the original window is visible. When
+    invisible, the blue highlighting is erased.
+
+canvas:info<%> : interface?
+  implements:  canvas:basic<%>
+
+canvas:info-mixin : (class? . -> . class?)
+  argument extends/implements:  canvas:basic<%>
+  result implements:  canvas:info<%>
+
+
+    (send a-canvas:info on-focus) → void?
+    Overrides on-focus in editor-canvas%.
+    sets the canvas that the frame displays info about.
+    (send a-canvas:info set-editor) → void?
+    Overrides set-editor in editor-canvas%.
+    Calls update-info to update the frame’s info panel.
+
+canvas:wide-snip<%> : interface?
+  implements:  canvas:basic<%>
+Any canvas% that matches this interface will automatically resize selected
+snips when its size changes. Use add-tall-snip and add-wide-snip to specify
+which snips should be resized.
+
+
+    (send a-canvas:wide-snip recalc-snips) → void?
+    Recalculates the sizes of the wide snips.
+
+    (send a-canvas:wide-snip add-wide-snip snip) → void?
+      snip : (is-a?/c snip%)
+    Snips passed to this method will be resized when the canvas’s size changes.
+    Their width will be set so they take up all of the space from their lefts
+    to the right edge of the canvas.
+    (send a-canvas:wide-snip add-tall-snip snip) → void?
+      snip : (is-a?/c snip%)
+    Snips passed to this method will be resized when the canvas’s size changes.
+    Their height will be set so they take up all of the space from their tops
+    to the bottom of the canvas.
+
+canvas:wide-snip-mixin : (class? . -> . class?)
+  argument extends/implements:  canvas:basic<%>
+  result implements:  canvas:wide-snip<%>
+This canvas maintains a list of wide and tall snips and adjusts their heights
+and widths when the canvas’s size changes.
+The result of this mixin uses the same initialization arguments as the mixin’s
+argument.
+
+
+    (send a-canvas:wide-snip on-size   width          
+                                       height)   →   void?
+      width : (integer-in 0 10000)
+      height : (integer-in 0 10000)
+    Overrides on-size in editor-canvas%.
+    Adjusts the sizes of the marked snips.
+
+    See add-wide-snip and add-tall-snip.
+
+canvas:basic% : class?
+  superclass: (canvas:basic-mixin editor-canvas%)
+
+
+canvas:color% : class?
+  superclass: (canvas:color-mixin canvas:basic%)
+
+
+canvas:info% : class?
+  superclass: (canvas:info-mixin canvas:basic%)
+
+
+canvas:delegate% : class?
+  superclass: (canvas:delegate-mixin canvas:basic%)
+
+
+canvas:wide-snip% : class?
+  superclass: (canvas:wide-snip-mixin canvas:basic%)
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

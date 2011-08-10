@@ -1,0 +1,47 @@
+▼  The Typed Racket Reference
+ 1  Type Reference
+ 2  Special Form Reference
+ 3  Libraries Provided With Typed Racket
+ 4  Utilities
+ 5  Typed Racket Syntax Without Type Checking
+ 6  Typed Regions
+ 7  Optimization in Typed Racket
+ 8  Legacy Forms
+ 9  Compatibility Languages
+10  Experimental Features
+On this page:
+Class
+Instance
+: type
+declare-refinement
+Refinement
+define-typed-struct/ exec
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+10 Experimental Features
+
+These features are currently experimental and subject to change.
+
+(Class args ...)
+A type constructor for typing classes created using racket/class.
+(Instance c)
+A type constructor for typing objects created using racket/class.
+
+(:type t)
+Prints the type t.
+
+(declare-refinement id)
+Declares id to be usable in refinement types.
+
+(Refinement id)
+Includes values that have been tested with the predicate id, which must have
+been specified with declare-refinement.
+
+(define-typed-struct/exec forms ...)
+Defines an executable structure.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

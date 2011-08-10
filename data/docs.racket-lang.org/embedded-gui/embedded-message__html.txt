@@ -1,0 +1,47 @@
+►  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+▼ 2  Controls
+2.1  embedded-text-button%
+2.2  embedded-button%
+2.3  embedded-toggle-button%
+2.4  embedded-message%
+2.5  vline%
+2.6  hline%
+Inherited methods:
+from alignment<%>
+align
+get-min-height
+get-min-width
+get-parent
+set-min-sizes
+show
+show/ hide
+stretchable-height
+stretchable-width
+from dllist<%>
+for-each
+map-to-list
+next
+prev
+[...search manuals...]
+  top← prev  up  next → 
+
+embedded-message% : class?
+  superclass: snip-wrapper%
+
+A static text label.
+
+(new embedded-message%   [parent parent]  
+                         [label label])   
+ → (is-a?/c embedded-message%)
+  parent : (is-a?/c alignment-parent<%>)
+  label : string?
+Creates a static control that displays label.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

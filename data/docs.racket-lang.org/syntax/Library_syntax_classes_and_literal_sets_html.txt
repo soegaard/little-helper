@@ -1,0 +1,166 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+▼ 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+► 8.8  Library syntax classes and literal sets
+8.8.1  Syntax classes
+8.8.2  Literal sets
+On this page:
+8.8.1 Syntax classes
+expr
+identifier
+boolean
+str
+char
+keyword
+number
+integer
+exact-integer
+exact-nonnegative-integer
+exact-positive-integer
+id
+nat
+static
+expr/ c
+8.8.2 Literal sets
+kernel-literals
+[...search manuals...]
+  top← prev  up  next → 
+
+8.8 Library syntax classes and literal sets
+
+8.8.1 Syntax classes
+
+expr
+Matches anything except a keyword literal (to distinguish expressions from the
+start of a keyword argument sequence). The term is not otherwise inspected,
+since it is not feasible to check if it is actually a valid expression.
+
+identifier
+boolean
+str
+char
+keyword
+number
+integer
+exact-integer
+exact-nonnegative-integer
+exact-positive-integer
+Match syntax satisfying the corresponding predicates.
+
+id
+Alias for identifier.
+nat
+Alias for exact-nonnegative-integer.
+
+(static predicate description) → (attributes value)
+  predicate : (-> any/c any/c)
+  description : (or/c string? #f)
+The static syntax class matches an identifier that is bound in the syntactic
+environment to static information (see syntax-local-value) satisfying the given
+predicate. If the term does not match, the description argument is used to
+describe the expected syntax.
+
+When used outside of the dynamic extent of a macro transformer (see
+syntax-transforming?), matching fails.
+
+The attribute value contains the value the name is bound to.
+
+(expr/c    contract-expr               
+         [ #:positive pos-blame        
+           #:negative neg-blame        
+           #:name expr-name            
+           #:macro macro-name          
+           #:context ctx])        →   (attributes c)
+  contract-expr : syntax?
+   pos-blame   :   (or/c syntax? string? module-path-index?
+                    'from-macro 'use-site 'unknown)
+               =   'use-site
+   neg-blame   :   (or/c syntax? string? module-path-index?
+                    'from-macro 'use-site 'unknown)
+               =   'from-macro
+  expr-name : (or/c identifier? string? symbol?) = #f
+  macro-name : (or/c identifier? string? symbol?) = #f
+  ctx : (or/c syntax? #f) = determined automatically
+Accepts an expression (expr) and computes an attribute c that represents the
+expression wrapped with the contract represented by contract-expr.
+
+The contract’s positive blame represents the obligations of the expression
+being wrapped. The negative blame represents the obligations of the macro
+imposing the contract—the ultimate user of expr/c. By default, the positive
+blame is taken as the module currently being expanded, and the negative blame
+is inferred from the definition site of the macro (itself inferred from the
+context argument), but both blame locations can be overridden.
+
+The pos-blame and neg-blame arguments are turned into blame locations as
+follows:
+
+  • If the argument is a string, it is used directly as the blame label.
+
+  • If the argument is syntax, its source location is used to produce the blame
+    label.
+
+  • If the argument is a module path index, its resolved module path is used.
+
+  • If the argument is 'from-macro, the macro is inferred from either the
+    macro-name argument (if macro-name is an identifier) or the context
+    argument, and the module where it is defined is used as the blame location.
+    If neither an identifier macro-name nor a context argument is given, the
+    location is "unknown".
+
+  • If the argument is 'use-site, the module being expanded is used.
+
+  • If the argument is 'unknown, the blame label is "unknown".
+
+The macro-name argument is used to determine the macro’s binding, if it is an
+identifier. If expr-name is given, macro-name is also included in the contract
+error message. If macro-name is omitted or #f, but context is a syntax object,
+then macro-name is determined from context.
+
+If expr-name is not #f, it is used in the contract’s error message to describe
+the expression the contract is applied to.
+
+The context argument is used, when necessary, to infer the macro name for the
+negative blame party and the contract error message. The context should be
+either an identifier or a syntax pair with an identifer in operator position;
+in either case, that identifier is taken as the macro ultimately requesting the
+contract wrapping.
+
+See Contracts on macro sub-expressions for an example.
+
+Important: Make sure when using expr/c to use the c attribute. The expr/c
+syntax class does not change how pattern variables are bound; it only computes
+an attribute that represents the checked expression.
+
+8.8.2 Literal sets
+
+kernel-literals
+Literal set containing the identifiers for fully-expanded code (Fully Expanded
+Programs). The set contains all of the forms listed by
+kernel-form-identifier-list, plus module, #%plain-module-begin, #%require, and
+#%provide.
+
+Note that the literal-set uses the names #%plain-lambda and #%plain-app, not
+lambda and #%app.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

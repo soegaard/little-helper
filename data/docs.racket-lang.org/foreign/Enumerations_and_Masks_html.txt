@@ -1,0 +1,59 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 3  C Types
+3.1  Type Constructors
+3.2  Numeric Types
+3.3  Other Atomic Types
+3.4  String Types
+3.5  Pointer Types
+3.6  Function Types
+3.7  C Struct Types
+3.8  Enumerations and Masks
+On this page:
+_ enum
+_ bitmask
+[...search manuals...]
+  top← prev  up  next → 
+
+3.8 Enumerations and Masks
+
+Although the constructors below are describes as procedures, they are
+implemented as syntax, so that error messages can report a type name where the
+syntactic context implies one.
+
+(_enum symbols [basetype #:unknown unknown]) → ctype?
+  symbols : list?
+  basetype : ctype? = _ufixint
+  unknown : any/c = (lambda (x) (error ....))
+Takes a list of symbols and generates an enumeration type. The enumeration maps
+between a symbol in the given symbols list and corresponding integers, counting
+from 0.
+
+The list symbols can also set the values of symbols by putting '= and an exact
+integer after the symbol. For example, the list '(x y = 10 z) maps 'x to 0, 'y
+to 10, and 'z to 11.
+
+The basetype argument specifies the base type to use.
+
+The unknown argument specifies the result of converting an unknown integer from
+the foreign side: it can be a one-argument function to be applied on the
+integer, or a value to return instead. The default is to throw an exception.
+
+(_bitmask symbols [basetype]) → ctype?
+  symbols : (or symbol? list?)
+  basetype : ctype? = _uint
+Similar to _enum, but the resulting mapping translates a list of symbols to a
+number and back, using bitwise-ior. A single symbol is equivalent to a list
+containing just the symbol. The default basetype is _uint, since high bits are
+often used for flags.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

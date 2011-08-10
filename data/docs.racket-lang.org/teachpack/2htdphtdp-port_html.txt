@@ -1,0 +1,263 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 2  Ht DP/ 2e Teachpacks
+2.1  Batch Input/ Output: "batch-io.ss"
+2.2  Images: "image.ss"
+2.3  Worlds and the Universe: "universe.ss"
+2.4  Porting World Programs to Universe
+► 2.4  Porting World Programs to Universe
+2.4.1  The World is Not Enough
+2.4.2  Porting World Programs
+2.4.3  Porting Image Programs
+On this page:
+2.4.1 The World is Not Enough
+2.4.2 Porting World Programs
+2.4.3 Porting Image Programs
+[...search manuals...]
+  top← prev  up  next → 
+
+2.4 Porting World Programs to Universe
+
+Matthias Felleisen, Robby Findler
+
+2.4.1 The World is Not Enough
+
+With the June 2009 release, we started deprecating the world teachpack; instead
+we recommended the use of the universe teachpack. With the January 2010
+release, we are also introducing a new image teachpack and, in support of this
+second teachpack, we have separated out the image functionality from the
+functionality for world programs.
+
+In this document, we explain how to port programs that assume the old world
+teachpack into this new setting, one step at a time. Most importantly, programs
+must now import two teachpacks insteead of one:
+World Style              Universe Style
+
+    (require htdp/world)     (require 2htdp/universe)
+                             (require htdp/image)
+
+The table shows the old style on the left and the new style on the right. If
+your programs imported teachpacks via the drscheme teachpack menu, we recommend
+that you use the require form from now on; alternatively, you use the drscheme
+menu twice to import the functions from two teachpacks.
+
+In the next section, we first explain how to port world programs so that they
+use the universe teachpack and the old image teachpack. In the section after
+that, we list suggestions for changing programs so that they no longer rely on
+the old image functionality but the new one.
+
+In order to distinguish between the various pieces of functionality, we
+uniformly prefix old functionality with "htdp:" and new functionality with
+"2htdp:". There is no need to use these prefixes in your programs of course.
+
+2.4.2 Porting World Programs
+
+Here is the first program from the documentation for the world teachpack:
+
+    (require htdp/world)
+     
+    ; Number -> Scene
+    (define (create-UFO-scene height)
+      (htdp:place-image UFO
+                        50 height
+                        (htdp:empty-scene 100 100)))
+     
+    ; Scene
+    (define UFO
+      (htdp:overlay
+        (htdp:circle 10 'solid 'red)
+        (htdp:rectangle 40 4 'solid 'red)))
+     
+    ; — run program run
+    (htdp:big-bang 100 100 (/1 28) 0)
+    (htdp:on-tick-event add1)
+    (htdp:on-redraw create-UFO-scene)
+
+This program defines a function for placing a UFO into a 100 by 100 scene,
+where UFO is a defined image. The world program itself consists of three lines:
+
+  • the first one creates the 100 by 100 scene, specifies a rate of 28 images
+    per second, and 0 as the initial world description;
+
+  • the second one says that for each clock tick, the world (a number) is
+    increased by 1; and
+
+  • the last line tells drscheme to use create-UFO-scene as the function that
+    renders the current world as a scene.
+
+Let us now convert this program into the universe setting, step by step,
+staring with the require specification, which is converted as above:
+World Style              Universe Style
+
+    (require htdp/world)     (require 2htdp/universe)
+                             (require htdp/image)
+
+
+The function that renders the world as a scene remains the same:
+World Style                           Universe Style
+
+    ; Number -> Scene                     ; Number -> Scene
+    (define (create-UFO-scene height)     (define (create-UFO-scene height)
+      (htdp:place-image                     (htdp:place-image
+        UFO                                   UFO
+        50 height                             50 height
+        (htdp:empty-scene 100 100)))          (htdp:empty-scene 100 100)))
+
+
+For the image constant we switch from symbols to strings:
+World Style                  Universe Style
+
+    ; Scene                      ; Scene
+    (define UFO                  (define UFO
+      (htdp:overlay                (htdp:overlay
+        (htdp:circle                 (htdp:circle
+         10 'solid 'red)              10 "solid" "red")
+        (htdp:rectangle              (htdp:rectangle
+         40 4 'solid 'red)))          40 4 "solid" "red")))
+
+Strictly speaking, this isn’t necessary, but we intend to replace symbols with
+strings whenever possible because strings are more common than symbols.
+
+The most important change concerns the lines that launch the world program:
+World Style                           Universe Style
+
+    (htdp:big-bang 100 100 (/1 28) 0)     (2htdp:big-bang
+    (htdp:on-tick-event add1)               0
+    (htdp:on-redraw create-UFO-scene)       (on-tick add1)
+                                            (on-draw create-UFO-scene))
+
+They are turned into a single expression that comes with as many clauses as
+there are lines in the old program. As you can see, the big-bang expression
+from the universe teachpack no longer requires the specification of the size of
+the scene or the rate at which the clock ticks (though it is possible to supply
+the clock rate if the default is not satisfactory). Furthermore, the names of
+the clauses are similar to the old names but shorter.
+
+The other big change concerns key event handling and mouse event handling. The
+respective handlers no longer accept symbols and chars but strings only. Here
+is the first key event handler from the documentation of the world teachpack:
+
+World Style                          Universe Style
+
+    (define (change w a-key-event)       (define (change w a-key-event)
+       (cond                                (cond
+         [(key=? a-key-event 'left)           [(key=? a-key-event "left")
+          (world-go w -DELTA)]                 (world-go w -DELTA)]
+         [(key=? a-key-event 'right)          [(key=? a-key-event "right")
+          (world-go w +DELTA)]                 (world-go w +DELTA)]
+         [(char? a-key-event)                 [(= (string-length a-key-event)
+          w]                              1)
+         [(key=? a-key-event 'up)              w]
+          (world-go w -DELTA)]                [(key=? a-key-event "up")
+         [(key=? a-key-event 'down)            (world-go w -DELTA)]
+          (world-go w +DELTA)]                [(key=? a-key-event "down")
+         [else                                 (world-go w +DELTA)]
+          w]))                                [else
+                                               w]))
+
+Note how the char? clause changed. Since all chars are now represented as
+strings containing one “letter”, the program on the right just checks the
+length of the string. Otherwise, we simply change all symbols into strings.
+
+If you ever recorded your programs’ work via an animated gif, you can still do
+so. Instead of adding a fifth argument to big-bang, however, you will need to
+add a clause of the shape (record? x).
+
+Finally, the universe teachpack implements a richer functionality than the
+world teachpack.
+
+2.4.3 Porting Image Programs
+
+The universe library also comes with a new image library, 2htdp/image. Using
+the old image library still works fine with 2htdp/universe, but the new image
+library provides a number of improvements, including faster image comparison
+(especially useful in check-expect expressions), rotating images, scaling
+images, curves, a number of new polygon shapes, and more control over line
+drawing.
+
+To use the new image library in isloation:
+
+World Style              Universe Style
+
+    (require htdp/image)     (require 2htdp/image)
+
+
+and to use the new image library with the universe teachpack:
+
+World Style              Universe Style
+
+    (require htdp/world)     (require 2htdp/universe)
+                             (require 2htdp/image)
+
+
+Overlay vs Underlay
+
+The htdp:overlay function places its first argument under its second (and
+subsequent) arguments and so in 2htdp/image, we decided to call that function
+2htdp:underlay.
+
+World Style                  Universe Style
+
+    (htdp:overlay                (2htdp:underlay
+     (htdp:rectangle              (2htdp:rectangle
+      10 20 "solid" "red")         10 20 "solid" "red")
+     (htdp:rectangle              (2htdp:rectangle
+      20 10 "solid" "blue"))       20 10 "solid" "blue"))
+
+
+No more pinholes
+
+The concept of pinholes from htdp/image has no correspondance in 2htdp/image
+(we do expect to bring back pinholes in 2htdp/image eventually, but they will
+not be as pervasive as they are in htdp/image).
+
+Instead of a special position in the image that overlay operations are
+sensitive to, 2htdp/image has a family of overlay operations, that overlay
+images based on their centers or their edges.
+
+Since the default position of the pinhole is in the center for most images and
+the default for overlaying and underlaying images in 2htdp/image is based on
+the center, simple examples (like the one above) behave the same in both
+libraries.
+
+But, consider this expression that overlays two images on their upper-left
+corners, written using both libraries.
+
+World Style                                 Universe Style
+
+    (htdp:overlay                               (2htdp:underlay/align
+     (htdp:put-pinhole                           "left"
+      (htdp:rectangle 10 20 "solid" "red")       "top"
+      0 0)                                       (2htdp:rectangle
+     (htdp:put-pinhole                            10 20 "solid" "red")
+      (htdp:rectangle 20 10 "solid" "blue")      (2htdp:rectangle
+      0 0))                                       20 10 "solid" "blue"))
+
+
+In the 2htdp/image version, the programmer uses 2htdp:underlay/align to specify
+where the images should be lined up, instead of using the pinhole.
+
+Outlines in different places
+
+The outline style shapes are now shifted by one pixel for 2htdp/image images as
+compared to htdp/image. This means that these two rectangles draw the same sets
+of pixels.
+
+World Style                   Universe Style
+
+    (htdp:rectangle               (2htdp:rectangle
+     11 11 "outline" "black")      10 10 "outline" "black")
+
+
+See also The nitty gritty of pixels, pens, and lines.
+
+Star changed
+
+The 2htdp:star function is a completely different function from htdp:star. Both
+produce stars based, on polygons, but 2htdp:star always produces a five-pointed
+star. See also 2htdp:star-polygon for more general star shapes.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

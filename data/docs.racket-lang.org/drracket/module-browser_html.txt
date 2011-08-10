@@ -1,0 +1,52 @@
+►  Dr Racket: The Racket Programming Environment
+1  Interface Essentials
+2  Languages
+3  Interface Reference
+4  Extending Dr Racket
+   Index
+▼ 1  Interface Essentials
+ 1.1  Buttons
+ 1.2  Choosing a Language
+ 1.3  Editing with Parentheses
+ 1.4  Searching
+ 1.5  Tabbed Editing
+ 1.6  The Interactions Window
+ 1.7  Graphical Syntax
+ 1.8  Graphical Debugging Interface
+ 1.9  The Module Browser
+1.10  Creating Executables
+[...search manuals...]
+  top← prev  up  next → 
+
+1.9 The Module Browser
+
+The module browser shows you the structure of all of the files in your program.
+It can be opened via the Show menu, or via the Module Browser menu items in the
+Racket menu.
+
+A module browser window contains a square for each module. The squares are
+colored based on the number of lines of code in the module. If a module has
+more lines of code, it gets a darker color.
+
+In addition, for each normal import, a blue line drawn is from the module to
+the importing module. Similarly, purple lines are drawn for each for-syntax,
+for-template or for-meta import. In the initial module layout, modules to the
+left import modules to the right, but since modules can be moved around
+interactively, that property might not be preserved.
+
+To open the file corresponding to the module, double click on the box for that
+module.
+
+The module browser will also show you the phases that each module is loaded in;
+choose the “Long, with phases” menu item in the “Names” pop-up menu. The
+integers indicate the phases and if #f is present, it means the module is
+loaded for-label.
+
+The bar along the bottom helps you find your way in a module graph.
+Specifically, if you type something there, then all of the modules whose
+filenames match what you type will turn green in the module window. This bar is
+only visible in the stand alone module browser window (via the Racket menu)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

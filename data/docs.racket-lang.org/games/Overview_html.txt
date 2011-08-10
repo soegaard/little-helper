@@ -1,0 +1,91 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+On this page:
+<main>
+<tests>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18.1 Overview
+
+Chat Noir is implemented using HtDP’s universe library: 2htdp/universe
+(although it only uses the “world” portions of that library). The program is
+divided up into six parts: the world data definition, an implementation of
+breadth-first search, code that handles drawing of the world, code that handles
+user input, and some code that builds an initial world and starts the game.
+
+<main> ::=
+
+    (require scheme/list scheme/math
+             (for-syntax scheme/base))
+    (require 2htdp/universe htdp/image lang/posn scheme/contract)
+    <world>
+    <breadth-first-search>
+    <board->graph>
+    <cats-path>
+    <drawing-the-cat>
+    <drawing>
+    <input>
+    <initial-world>
+    <tests>
+    <go>
+
+Each section also comes with a series of test cases that are collected into the
+<tests> chunk at the end of the program.
+
+<tests> ::=
+
+    <test-infrastructure>
+    <world-tests>
+    <board->graph-tests>
+    <breadth-first-search-tests>
+    <cats-path-tests>
+    <drawing-tests>
+    <input-tests>
+
+Each test case uses either test, a simple form that accepts two arguments and
+compares them with equal?, or test/set which accepts two lists and compares
+them as if they were sets.
+
+In general, most of the test cases are left to the end of the document,
+organized in a series of chunks that match the functions being tested. Some of
+the test cases, however, provide nice illustrations of the behavior of the
+function and so are included in the function’s description.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

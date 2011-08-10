@@ -1,0 +1,94 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 16  Macros
+16.1  Pattern-Based Macros
+16.2  General Macro Transformers
+▼ 16.2  General Macro Transformers
+16.2.1  Syntax Objects
+16.2.2  Mixing Patterns and Expressions: syntax-case
+16.2.3  with-syntax and generate-temporaries
+16.2.4  Compile and Run-Time Phases
+16.2.5  Syntax Taints
+[...search manuals...]
+  top← prev  up  next → 
+
+16.2.3 with-syntax and generate-temporaries
+
+Since syntax-case lets us compute with arbitrary Racket expression, we can more
+simply solve a problem that we had in writing define-for-cbr (see Extended
+Example: Call-by-Reference Functions), where we needed to generate a set of
+names based on a sequence id ...:
+
+    (define-syntax (define-for-cbr stx)
+      (syntax-case stx ()
+        [(_ do-f (id ...) body)
+         ....
+           #'(define (do-f get ... put ...)
+               (define-get/put-id id get put) ...
+               body) ....]))
+
+            This example uses (define-syntax (id arg) body ...+), which is
+            equivalent to (define-syntax id (lambda (arg) body ...+)).
+
+In place of the ....s above, we need to bind get ... and put ... to lists of
+generated identifiers. We cannot use let to bind get and put, because we need
+bindings that count as pattern variables, instead of normal local variables.
+The with-syntax form lets us bind pattern variables:
+
+    (define-syntax (define-for-cbr stx)
+      (syntax-case stx ()
+        [(_ do-f (id ...) body)
+         (with-syntax ([(get ...) ....]
+                       [(put ...) ....])
+           #'(define (do-f get ... put ...)
+               (define-get/put-id id get put) ...
+               body))]))
+
+Now we need an expression in place of .... that generates as many identifiers
+as there are id matches in the original pattern. Since this is a common task,
+Racket provides a helper function, generate-temporaries, that takes a sequece
+of identifiers and returns a sequence of generated identifiers:
+
+    (define-syntax (define-for-cbr stx)
+      (syntax-case stx ()
+        [(_ do-f (id ...) body)
+         (with-syntax ([(get ...) (generate-temporaries #'(id ...))]
+                       [(put ...) (generate-temporaries #'(id ...))])
+           #'(define (do-f get ... put ...)
+               (define-get/put-id id get put) ...
+               body))]))
+
+This way of generating identifiers is normally easier to think about than
+tricking the macro expander into generating names with purely pattern-based
+macros.
+
+In general, the right-hand side of a with-syntax binding is a pattern, just
+like in syntax-case. In fact, a with-syntax form is just a syntax-case form
+turned partially inside-out.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

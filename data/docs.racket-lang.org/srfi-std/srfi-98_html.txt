@@ -1,0 +1,210 @@
+Title
+
+An interface to access environment variables.
+
+Author
+
+Taro Minowa(Higepon)
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. To provide input on this SRFI, please
+send email to <srfi minus 98 at srfi dot schemers dot org>. See instructions
+here to subscribe to the list. You can access the discusssion via the archive
+of the mailing list. You can access post-finalization messages via the archive
+of the mailing list.
+
+  • Received: 2008/07/06
+  • Draft: 2008/07/06 - 2008/09/06
+  • Revised: 2008/07/18
+  • Revised: 2008/07/18
+  • Revised: 2008/08/14
+  • Final: 2008/09/19
+  • R6RS library name: 2009/02/16
+
+Abstract
+
+This SRFI specifies the procedure get-environment-variable, which gets the
+value of the specified environment variable, and the procedure
+get-environment-variables, which gets an association list of all environment
+variables.
+
+Rationale
+
+Most operating systems provide a mechanism for passing auxiliary parameters
+implicitly to child processes. Usually, this mechanism is called "the
+environment", and is conceptually a map from string names to string values. The
+string names are called environment variables.
+
+Some applications rely on environment variables to modify their behavior
+according to local settings. Also, various established protocols rely on
+environment variables as a form of interprocess communication. For example,
+most implementations of the common gateway interface (CGI) use environment
+variables to pass Meta-Variables from the server to the script [1]. Environment
+variables are also required by SRFI 96: SLIB Prerequisites. Providing a means
+to access environment variables is therefore indispensable for writing
+practical programs in Scheme.
+
+Most widely-used Scheme implementations provide a function for getting the
+value of a specified environment variable. The name for this function is
+usually getenv, but varies (see below). Some implementations also provide a way
+to get all the environment variables, but others do not.
+
+This SRFI specifies a uniform interface for accessing environment variables.
+That should make it easier to write portable programs that need access to their
+environment. For example, a CGI program may portably obtain the values of the
+Meta-Variables "QUERY_STRING", "CONTENT_LENGTH" and "REQUEST_METHOD" as in the
+following examples:
+
+(get-environment-variable "QUERY_STRING") => "foo=bar&huga=hige"
+(get-environment-variable "CONTENT_LENGTH") => "512"
+(get-environment-variable "REQUEST_METHOD") => "post"
+
+[1] The Common Gateway Interface (CGI) Version 1.1, RFC3875, http://
+www.ietf.org/rfc/rfc3875.
+
+Specification
+
+R6RS library name
+
+The following two procedures belong to the R6RS library named (srfi :98
+os-environment-variables).
+
+Function: get-environment-variable name
+
+Returns the value of the named environment variable as a string, or #f if the
+named environment variable is not found. The name argument is expected to be a
+string. get-environment-variable may use locale-setting information to encode
+the name and decode the value of the environment variable. If
+get-environment-variable can't decode the value, get-environment-variable may
+raise an exception.
+
+(get-environment-variable "PATH") => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+
+Function: get-environment-variables
+
+Returns names and values of all the environment variables as an a-list. The
+same decoding considerations as for get-environment-variable apply.
+
+(get-environment-variables) => (("PATH" . "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin") ("USERNAME" . "taro"))
+
+Implementation
+
+Gauche
+
+(define get-environment-variable sys-getenv)
+(define get-environment-variables sys-environ->alist)
+
+Scheme48
+
+(define (get-environment-variable name)
+  (cond
+    ((lookup-environment-variable name) => os-string->string)
+    (else #f)))
+(define (get-environment-variables)
+  (map (lambda (p)
+        (cons (os-string->string (car p)) (os-string->string (cdr p))))
+       (environment-alist)))
+
+scsh
+
+(define get-environment-variable getenv)
+(define get-environment-variables env->alist)
+
+SCM
+
+(define get-environment-variable getenv)
+(define get-environment-variables getenv)
+
+Issues
+
+get-environment-variable is expected to return a "Scheme string".
+Unfortunately, many current platforms, including POSIX-like ones, do not
+require environment variables to be interpretable as sequences of characters.
+In particular, environment variables can be used to name files, and filenames
+on the system can amount to NULL-terminated byte vectors, which, if the Scheme
+program were to collect uninterpreted and pass to, say, the open call, would
+work just fine, but which might not represent a string in the particular
+encoding the program expects. While in principle it may be desirable to provide
+a mechanism for accessing environment variables raw, this SRFI specifies a
+"string" return type because that best represents the consensus of existing
+implementations, and captures the semantically desirable behavior in the common
+case that the byte sequence is interpretable as a string.
+
+Appendix: Existing implementations
+
+┌──────────────┬──────────────────────────────────────────┬───────────────────┐
+│              │                                          │    get all the    │
+│    Scheme    │         get environment variable         │    environment    │
+│implementation│                                          │  variables as an  │
+│              │                                          │      a-list       │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│Bigloo        │(getenv name) => (or string? false)       │                   │
+│              │name:string?                              │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│CHICKEN       │(getenv name) => (or string? false)       │                   │
+│              │name:string?                              │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│              │(getenv name . <default>) =>(or string?   │                   │
+│Gambit        │<default> <Unbound OS environment variable│                   │
+│              │error>) name:string?                      │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│Gauche        │(sys-getenv name) => (or string? false)   │(sys-environ)      │
+│              │name:string?                              │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│Guile         │(getenv name) => (or string? false)       │                   │
+│              │name:string?                              │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│PLT           │(getenv name) => (or string? false)       │                   │
+│              │name:string?                              │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│MIT/GNU Scheme│(get-environment-variable name) => (or    │                   │
+│              │string? false) name:string?               │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│Scheme48      │(lookup-environment-variable name) => (or │(environment-alist)│
+│              │string? false) name:string?               │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│SLIB          │(getenv name) => (or string? false)       │                   │
+│              │name:string?                              │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│STk           │(getenv name) => (or string? false)       │                   │
+│              │name:string?                              │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│STklos        │(getenv name) => (or string? false)       │(getenv)           │
+│              │name:string?                              │                   │
+├──────────────┼──────────────────────────────────────────┼───────────────────┤
+│SCM           │(getenv name) => (or string? false)       │(getenv)           │
+│              │name:string?                              │                   │
+└──────────────┴──────────────────────────────────────────┴───────────────────┘
+
+Acknowledgements
+
+Thanks to Shiro Kawai, Alexey Radul, jmuk, Kokosabu, leque and all the members
+of the #Lisp_Scheme IRC channel on Freenode.
+
+Copyright
+
+Copyright (C) Taro Minowa(Higepon) (2008). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Mike Sperber

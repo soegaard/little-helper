@@ -1,0 +1,153 @@
+▼  Dynext: Running a C Compiler/ Linker
+1  Compilation
+2  Linking
+3  Filenames
+► 2  Linking
+2.1  Linking Parameters
+2.2  Helper Functions
+2.3  Signature
+2.4  Unit
+On this page:
+link-extension
+2.1 Linking Parameters
+current-extension-linker
+current-extension-linker-flags
+current-make-link-input-strings
+current-make-link-output-strings
+current-standard-link-libraries
+current-use-mzdyn
+link-variant
+2.2 Helper Functions
+use-standard-linker
+expand-for-link-variant
+2.3 Signature
+dynext: link^
+2.4 Unit
+dynext: link@
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Linking
+
+ (require dynext/link)
+
+(link-extension   quiet?              
+                  input-files         
+                  output-file)   →   any
+  quiet? : any/c
+  input-files : (listof path-string?)
+  output-file : path-string?
+Links object files to create an extension (normally of a form that can be
+loaded with load-extension).
+
+The quiet? argument indicates whether command should be echoed to the current
+output port. The input-files argument is list of compiled object filenames, and
+output-file is the destination extension filename.
+
+2.1 Linking Parameters
+
+(current-extension-linker) → (or/c path-string? false/c)
+(current-extension-linker linker) → void?
+  linker : (or/c path-string? false/c)
+A parameter that determines the executable used as a linker.
+
+The default is set by searching for an executable using the PATH environment
+variable, or by using the LD or MZSCHEME_DYNEXT_LINKER environment variable if
+it is defined (and the latter takes precedence). On Windows, it looks for
+"cl.exe", then "ld.exe" (gcc), then "ilink32.exe" (Borland). On Cygwin,
+Solaris, FreeBSD 2.x, or HP/UX, it looks for "ld". On other Unix variants, it
+looks for "cc". #f indicates that no linker could be found.
+
+(current-extension-linker-flags)
+ → (listof (or/c path-string? (-> (listof string?))))
+(current-extension-linker-flags flags) → void?
+  flags : (listof (or/c path-string? (-> (listof string?))))
+A parameter that determines flags provided to the linker. See also
+expand-for-link-variant.
+
+On Windows, default is (list "/LD") for "cl.exe", (list "--dll") for "ld.exe",
+and (list "/Tpd" "/c") for "ilink32.exe". On Unix, the default varies greatly
+among platforms. If the LDFLAGS or MZSCHEME_DYNEXT_LINKER_FLAGS (the latter
+takes precedence) environment variable is defined, then its value is parsed as
+a list of strings that is appended before the defaults.
+
+(current-make-link-input-strings)
+ → (-> path-string? (listof string?))
+(current-make-link-input-strings proc) → void?
+  proc : (-> path-string? (listof string?))
+A parameter that processes linker input arguments; the parameter value takes an
+input file path and returns a list of strings for the command line. The default
+is list.
+
+(current-make-link-output-strings)
+ → (-> path-string? (listof string?))
+(current-make-link-output-strings proc) → void?
+  proc : (-> path-string? (listof string?))
+A parameter that processes linker output arguments; the parameter value takes
+an output file path and returns a list of strings for the command line.
+
+On Windows, the default converts "file" to (list "/Fefile") for "cl.exe",
+something like (list "-e" "_dll_entry@12" "-o" "file") for "ld.exe", and
+something complex for "ilink32.exe". On Unix, the default converts "file" to (
+list "-o" "file").
+
+(current-standard-link-libraries)
+ → (listof (or/c path-string? (-> (listof string?))))
+(current-standard-link-libraries libs) → void?
+  libs : (listof (or/c path-string? (-> (listof string?))))
+A parameter that determines libraries supplied to the linker, in addition to
+other inputs. See also expand-for-link-variant.
+
+For most platforms, the default is
+
+    (list (build-path (collection-path "mzscheme" "lib")
+                      (system-library-subpath)
+                      (mzdyn-thunk)))
+
+where mzdyn-thunk produces (list "mzdyn.o") for the 'cgc variant and (list
+"mzdyn3m.o") for the '3m variant. See also current-use-mzdyn).
+
+(current-use-mzdyn) → boolean?
+(current-use-mzdyn use-mzdyn?) → void?
+  use-mzdyn? : boolean?
+A parameter that determines whether the default standard link libraries include
+the "mzdyn" library which allows the resulting file to be loaded via
+load-extension. Defaults to #t.
+
+(link-variant) → (one-of/c 'normal 'cgc '3m)
+(link-variant variant-symbol) → void?
+  variant-symbol : (one-of/c 'normal 'cgc '3m)
+A parameter that indicates the target for linking, where 'normal is an alias
+for the result of (system-type 'gc).
+
+2.2 Helper Functions
+
+(use-standard-linker name) → void?
+  name : (one-of/c 'cc 'gcc 'msvc 'borland 'cw)
+Sets the parameters described in Linking Parameters for a particular known
+linker.
+
+(expand-for-link-variant l) → any
+           (listof (or/c path?
+   l   :                 string?
+                         (-> (listof string?))))
+The same as expand-for-compile-variant.
+
+2.3 Signature
+
+ (require dynext/link-sig)
+
+dynext:link^ : signature
+
+Includes everything exported by the dynext/link module.
+
+2.4 Unit
+
+ (require dynext/link-unit)
+
+dynext:link@ : unit?
+Imports nothing, exports dynext:link^.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

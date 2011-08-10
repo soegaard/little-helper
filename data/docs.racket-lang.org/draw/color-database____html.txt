@@ -1,0 +1,237 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+find-color
+[...search manuals...]
+  top← prev  up  next → 
+
+color-database<%> : interface?
+The global the-color-database object is an instance of color-database<%>. It
+maintains a database of standard RGB colors for a predefined set of named
+colors (such as “black” and “light grey”).
+
+The following colors are in the database:
+
+          Orange Red
+          OrangeRed
+          Tomato
+          DarkRed
+          Red
+          Firebrick
+          Crimson
+          DeepPink
+          Maroon
+          Indian Red
+          IndianRed
+          Medium Violet Red
+          MediumVioletRed
+          Violet Red
+          VioletRed
+          LightCoral
+          HotPink
+          PaleVioletRed
+          LightPink
+          RosyBrown
+          Pink
+          Orchid
+          LavenderBlush
+          Snow
+          Chocolate
+          SaddleBrown
+          Brown
+          DarkOrange
+          Coral
+          Sienna
+          Orange
+          Salmon
+          Peru
+          DarkGoldenrod
+          Goldenrod
+          SandyBrown
+          LightSalmon
+          DarkSalmon
+          Gold
+          Yellow
+          Olive
+          Burlywood
+          Tan
+          NavajoWhite
+          PeachPuff
+          Khaki
+          DarkKhaki
+          Moccasin
+          Wheat
+          Bisque
+          PaleGoldenrod
+          BlanchedAlmond
+          Medium Goldenrod
+          MediumGoldenrod
+          PapayaWhip
+          MistyRose
+          LemonChiffon
+          AntiqueWhite
+          Cornsilk
+          LightGoldenrodYellow
+          OldLace
+          Linen
+          LightYellow
+          SeaShell
+          Beige
+          FloralWhite
+          Ivory
+          Green
+          LawnGreen
+          Chartreuse
+          Green Yellow
+          GreenYellow
+          Yellow Green
+          YellowGreen
+          Medium Forest Green
+          OliveDrab
+          MediumForestGreen
+          Dark Olive Green
+          DarkOliveGreen
+          DarkSeaGreen
+          Lime
+          Dark Green
+          DarkGreen
+          Lime Green
+          LimeGreen
+          Forest Green
+          ForestGreen
+          Spring Green
+          SpringGreen
+          Medium Spring Green
+          MediumSpringGreen
+          Sea Green
+          SeaGreen
+          Medium Sea Green
+          MediumSeaGreen
+          Aquamarine
+          LightGreen
+          Pale Green
+          PaleGreen
+          Medium Aquamarine
+          MediumAquamarine
+          Turquoise
+          LightSeaGreen
+          Medium Turquoise
+          MediumTurquoise
+          Honeydew
+          MintCream
+          RoyalBlue
+          DodgerBlue
+          DeepSkyBlue
+          CornflowerBlue
+          Steel Blue
+          SteelBlue
+          LightSkyBlue
+          Dark Turquoise
+          DarkTurquoise
+          Cyan
+          Aqua
+          DarkCyan
+          Teal
+          Sky Blue
+          SkyBlue
+          Cadet Blue
+          CadetBlue
+          Dark Slate Gray
+          DarkSlateGray
+          LightSlateGray
+          SlateGray
+          Light Steel Blue
+          LightSteelBlue
+          Light Blue
+          LightBlue
+          PowderBlue
+          PaleTurquoise
+          LightCyan
+          AliceBlue
+          Azure
+          Medium Blue
+          MediumBlue
+          DarkBlue
+          Midnight Blue
+          MidnightBlue
+          Navy
+          Blue
+          Indigo
+          Blue Violet
+          BlueViolet
+          Medium Slate Blue
+          MediumSlateBlue
+          Slate Blue
+          SlateBlue
+          Purple
+          Dark Slate Blue
+          DarkSlateBlue
+          DarkViolet
+          Dark Orchid
+          DarkOrchid
+          MediumPurple
+          Cornflower Blue
+          Medium Orchid
+          MediumOrchid
+          Magenta
+          Fuchsia
+          DarkMagenta
+          Violet
+          Plum
+          Lavender
+          Thistle
+          GhostWhite
+          White
+          WhiteSmoke
+          Gainsboro
+          Light Gray
+          LightGray
+          Silver
+          Gray
+          Dark Gray
+          DarkGray
+          Dim Gray
+          DimGray
+          Black
+
+The names are not case-sensitive.
+
+See also color%.
+
+(send a-color-database find-color color-name)
+ → (or/c (is-a?/c color%) false/c)
+  color-name : string?
+Finds a color by name (character case is ignored). If no color is found for the
+name, #f is returned.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

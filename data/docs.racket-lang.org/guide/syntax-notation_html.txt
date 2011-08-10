@@ -1,0 +1,96 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 4  Expressions and Definitions
+ 4.1  Notation
+ 4.2  Identifiers and Binding
+ 4.3  Function Calls (Procedure Applications)
+ 4.4  Functions (Procedures): lambda
+ 4.5  Definitions: define
+ 4.6  Local Binding
+ 4.7  Conditionals
+ 4.8  Sequencing
+ 4.9  Assignment: set!
+4.10  Quoting: quote and ’
+4.11  Quasiquoting: quasiquote and `
+4.12  Simple Dispatch: case
+4.13  Dynamic Binding: parameterize
+[...search manuals...]
+  top← prev  up  next → 
+
+4.1 Notation
+
+This chapter (and the rest of the documentation) uses a slightly different
+notation than the character-based grammars of the Racket Essentials chapter.
+The grammar for a use of a syntactic form something is shown like this:
+
+    (something [id ...+] an-expr ...)
+
+The italicized meta-variables in this specification, such as id and an-expr,
+use the syntax of Racket identifiers, so an-expr is one meta-variable. A naming
+convention implicitly defines the meaning of many meta-variables:
+
+  • A meta-variable that ends in id stands for an identifier, such as x or
+    my-favorite-martian.
+
+  • A meta-identifier that ends in keyword stands for a keyword, such as #:tag.
+
+  • A meta-identifier that ends with expr stands for any sub-form, and it will
+    be parsed as an expression.
+
+  • A meta-identifier that ends with body stands for any sub-form; it will be
+    parsed as either a local definition or an expression. A body can parse as a
+    definition only if it is not preceded by any expression, and the last body
+    must be an expression; see also Internal Definitions.
+
+Square brackets in the grammar indicate a parenthesized sequence of forms,
+where square brackets are normally used (by convention). That is, square
+brackets do not mean optional parts of the syntactic form.
+
+A ... indicates zero or more repetitions of the preceding form, and ...+
+indicates one or more repetitions of the preceding datum. Otherwise,
+non-italicized identifiers stand for themselves.
+
+Based on the above grammar, then, here are a few conforming uses of something:
+
+    (something [x])
+    (something [x] (+ 1 2))
+    (something [x my-favorite-martian x] (+ 1 2) #f)
+
+Some syntactic-form specifications refer to meta-variables that are not
+implicitly defined and not previously defined. Such meta-variables are defined
+after the main form, using a BNF-like format for alternatives:
+
+    (something-else [thing ...+] an-expr ...)
+     
+    thing   =   thing-id
+            |   thing-keyword
+
+The above example says that, within a something-else form, a thing is either an
+identifier or a keyword.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

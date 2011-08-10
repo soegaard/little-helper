@@ -1,0 +1,30 @@
+▼  R6RS: Scheme
+1  Using R6RS with Dr Racket
+2  Running Top-Level Programs
+3  Installing Libraries
+4  R6RS Module Language
+5  Libraries and Collections
+6  Language Interoperability
+7  R6RS Conformance
+8  R6RS Libraries
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Language Interoperability
+
+Using the conversion rules in Libraries and Collections, and R6RS library can
+refer to modules that are implemented in other dialects supported by Racket,
+and other Racket modules can refer to libraries that are implemented in R6RS.
+
+Beware that a pair in R6RS corresponds to a mutable pair in racket/base.
+Otherwise, R6RS libraries and racket/base share the same datatype for numbers,
+characters, strings, bytevectors (a.k.a. byte strings), vectors, and so on.
+Hash tables are different. Input and output ports from racket/base can be used
+directly as binary ports with R6RS libraries, and all R6RS ports can be used as
+ports in racket/base programs, but only textual ports created via R6RS
+libraries can be used by other R6RS operations that expect textual ports.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

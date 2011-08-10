@@ -1,0 +1,104 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 6  Modules
+6.1  Module Basics
+6.2  Module Syntax
+6.3  Module Paths
+6.4  Imports: require
+6.5  Exports: provide
+6.6  Assignment and Redefinition
+[...search manuals...]
+  top← prev  up  next → 
+
+6.1 Module Basics
+
+The space of module names is distinct from the space of normal Racket
+definitions. Indeed, since modules typically reside in files, the space of
+module names is explicitly tied to the filesystem at run time. For example, if
+the file "/home/molly/cake.rkt" contains
+
+    #lang racket
+     
+    (provide print-cake)
+     
+    ; draws a cake with n candles
+    (define (print-cake n)
+      (printf "   ~a  \n" (make-string n #\.))
+      (printf " .-~a-.\n" (make-string n #\|))
+      (printf " | ~a |\n" (make-string n #\space))
+      (printf "---~a---\n" (make-string n #\-)))
+
+then it can be used as the source of a module whose full name is based on the
+path "/home/molly/cake.rkt". The provide line exports the definition print-cake
+so that it can be used outside the module.
+
+Instead of using its full path, a module is more likely to be referenced by a
+relative path. For example, a file "/home/molly/random-cake.rkt" could use the
+"cake.rkt" module like this:
+
+    #lang racket
+     
+    (require "cake.rkt")
+     
+    (print-cake (random 30))
+
+The relative reference "cake.rkt" in the import (require "cake.rkt") works
+because the "cake.rkt" module source is in the same directory as the
+"random-cake.rkt" file. (Unix-style relative paths are used for relative module
+references on all platforms, much like relative URLs.)
+
+Library modules that are distributed with Racket are usually referenced through
+an unquoted, suffixless path. The path is relative to the library installation
+directory, which contains directories for individual library collections. The
+module below refers to the "date.rkt" library that is part of the "racket"
+collection.
+
+    #lang racket
+     
+    (require racket/date)
+     
+    (printf "Today is ~s\n"
+            (date->string (seconds->date (current-seconds))))
+
+In addition to the main collection directory, which contains all collections
+that are part of the installation, collections can also be installed in a
+user-specific location. Finally, additional collection directories can be
+specified in configuration files or through the PLTCOLLECTS search path. Try
+running the following program to find out where your collections are:
+
+    #lang racket
+     
+    (require setup/dirs)
+     
+    (find-collects-dir) ; main collection directory
+    (find-user-collects-dir) ; user-specific collection directory
+    (get-collects-search-dirs) ; complete search path
+
+We discuss more forms of module reference later in Module Paths.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

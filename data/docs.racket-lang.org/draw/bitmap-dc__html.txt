@@ -1,0 +1,274 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+draw-bitmap-section-smooth
+get-argb-pixels
+get-bitmap
+get-pixel
+set-argb-pixels
+set-bitmap
+set-pixel
+Inherited methods:
+from dc<%>
+cache-font-metrics-key
+clear
+copy
+draw-arc
+draw-bitmap
+draw-bitmap-section
+draw-ellipse
+draw-line
+draw-lines
+draw-path
+draw-point
+draw-polygon
+draw-rectangle
+draw-rounded-rectangle
+draw-spline
+draw-text
+end-doc
+end-page
+erase
+flush
+get-alpha
+get-background
+get-brush
+get-char-height
+get-char-width
+get-clipping-region
+get-device-scale
+get-font
+get-gl-context
+get-initial-matrix
+get-origin
+get-pen
+get-rotation
+get-scale
+get-size
+get-smoothing
+get-text-background
+get-text-extent
+get-text-foreground
+get-text-mode
+get-transformation
+glyph-exists?
+ok?
+resume-flush
+rotate
+scale
+set-alpha
+set-background
+set-brush
+set-clipping-rect
+set-clipping-region
+set-font
+set-initial-matrix
+set-origin
+set-pen
+set-rotation
+set-scale
+set-smoothing
+set-text-background
+set-text-foreground
+set-text-mode
+set-transformation
+start-doc
+start-page
+suspend-flush
+transform
+translate
+try-color
+[...search manuals...]
+  top← prev  up  next → 
+
+bitmap-dc% : class?
+  superclass: object%
+
+  extends:  dc<%>
+A bitmap-dc% object allows drawing directly into a bitmap. A bitmap% object
+must be supplied at initialization or installed into a bitmap DC using
+set-bitmap before any other method of the DC is called, except get-text-extent,
+get-char-height, or get-char-width. If any other bitmap-dc% method is called
+before a bitmap is selected, the method call is ignored.
+
+Drawing to a bitmap-dc% with a color bitmap is guaranteed to produce the same
+result as drawing into a canvas% instance (with appropriate clipping and
+offsets). Thus, a bitmap-dc% can be used for offscreen staging of canvas
+content.
+
+(new bitmap-dc% [bitmap bitmap]) → (is-a?/c bitmap-dc%)
+  bitmap : (or/c (is-a?/c bitmap%) false/c)
+Creates a new memory DC. If bitmap is not #f, it is installed into the DC so
+that drawing commands on the DC draw to bitmap. Otherwise, no bitmap is
+installed into the DC and set-bitmap must be called before any other method of
+the DC is called.
+
+(send a-bitmap-dc draw-bitmap-section-smooth   source       
+                                               dest-x       
+                                               dest-y       
+                                               dest-width   
+                                               dest-height  
+                                               src-x        
+                                               src-y        
+                                               src-width    
+                                               src-height   
+                                               mask)        
+ → boolean?
+  source : (is-a?/c bitmap%)
+  dest-x : real?
+  dest-y : real?
+  dest-width : (and/c real? (not/c negative?))
+  dest-height : (and/c real? (not/c negative?))
+  src-x : real?
+  src-y : real?
+  src-width : (and/c real? (not/c negative?))
+  src-height : (and/c real? (not/c negative?))
+  mask : (or/c (is-a?/c bitmap%) false/c)
+The same as draw-bitmap-section, except that dest-width and dest-height cause
+the DC’s transformation to be adjusted while drawing the bitmap so that the
+bitmap is scaled; and, if the DC’s smoothing mode is 'unsmoothed, it is changed
+to 'aligned while drawing.
+
+(send a-bitmap-dc get-argb-pixels    x                        
+                                     y                        
+                                     width                    
+                                     height                   
+                                     pixels                   
+                                   [ just-alpha?              
+                                     pre-multiplied?])   →   void?
+  x : real?
+  y : real?
+  width : exact-nonnegative-integer?
+  height : exact-nonnegative-integer?
+  pixels : (and/c bytes? (not/c immutable?))
+  just-alpha? : any/c = #f
+  pre-multiplied? : any/c = #f
+Gets a rectangle of pixels in the bitmap, subject to the same rules and
+performance characteristics of get-pixel, except that the block get is likely
+to be faster than the sequence of individual gets. Also, the bitmap% class also
+provides the same method directly, so it is not necessary to select a bitmap
+into a DC to extracts its pixel values.
+
+The pixel RGB values are copied into pixels. The first byte represents an alpha
+value of the pixel at (x, y), the second byte represents a red value of the
+pixel at (x, y), the third byte is the blue value, etc. In this way, the first
+width * height * 4 bytes of pixels are set to reflect the current pixel values
+in the DC. The pixels are in row-major order, left to right then top to bottom.
+
+If just-alpha? is false, if the bitmap does not have an alpha channel, then the
+alpha value for each pixel is set to 255. If just-alpha? is true, then only the
+alpha value is set for each pixel; if the bitmap has no alpha channel, then the
+alpha value is based on each pixel’s inverted RGB average. Thus, when a bitmap
+has a separate mask bitmap, the same pixels byte string is in general filled
+from two bitmaps: one (the main image) for the pixel values and one (the mask)
+for the alpha values.
+
+If pre-multiplied? is true, just-alpha? is false, and the bitmap has an alpha
+channel, then RGB values in the result are scaled by the corresponding alpha
+value (i.e., multiplied by the alpha value and then divided by 255).
+
+(send a-bitmap-dc get-bitmap)
+ → (or/c (is-a?/c bitmap%) false/c)
+Gets the bitmap currently installed in the DC, or #f if no bitmap is installed.
+See set-bitmap for more information.
+
+(send a-bitmap-dc get-pixel x y color) → boolean?
+  x : real?
+  y : real?
+  color : (is-a?/c color%)
+Fills color with the color of the current pixel at position (x, y) in the
+drawing context. If the color is successfully obtained, the return value is #t,
+otherwise the result is #f.
+
+(send a-bitmap-dc set-argb-pixels    x                        
+                                     y                        
+                                     width                    
+                                     height                   
+                                     pixels                   
+                                   [ just-alpha?              
+                                     pre-multiplied?])   →   void?
+  x : real?
+  y : real?
+  width : exact-nonnegative-integer?
+  height : exact-nonnegative-integer?
+  pixels : bytes?
+  just-alpha? : any/c = #f
+  pre-multiplied? : any/c = #f
+
+Sets a rectangle of pixels in the bitmap, unless the DC’s current bitmap was
+produced by make-screen-bitmap or make-bitmap in canvas% (in which case an
+exn:fail:contract exception is raised).
+
+The pixel RGB values are taken from pixels. The first byte represents an alpha
+value, the second byte represents a red value to used for the pixel at (x, y),
+the third byte is a blue value, etc. In this way, the first width * height * 4
+bytes of pixels determine the new pixel values in the DC. The pixels are in
+row-major order, left to right then top to bottom.
+
+If just-alpha? is false, then the alpha value for each pixel is used only if
+the DC’s current bitmap has an alpha channel. If just-alpha? is true and the
+bitmap has no alpha channel, then each pixel is set based only on the alpha
+value, but inverted to serve as a mask. Thus, when working with bitmaps that
+have an associated mask bitmap instead of an alpha channel, the same pixels
+byte string is used with two bitmaps: one (the main image) for the pixel values
+and one (the mask) for the alpha values.
+
+If pre-multiplied? is true, just-alpha? is false, and the bitmap has an alpha
+channel, then RGB values in pixels are interpreted as scaled by the
+corresponding alpha value (i.e., multiplied by the alpha value and then divided
+by 255). If an R, G, or B value is greater than its corresponding alpha value
+(which is not possible if the value is properly scaled), then it is effectively
+reduced to the alpha value.
+
+(send a-bitmap-dc set-bitmap bitmap) → void?
+  bitmap : (or/c (is-a?/c bitmap%) false/c)
+Installs a bitmap into the DC, so that drawing operations on the bitmap DC draw
+to the bitmap. A bitmap is removed from a DC by setting the bitmap to #f.
+
+A bitmap can be selected into at most one bitmap DC, and only when it is not
+used by a control (as a label) or in a pen% or brush% (as a stipple). If the
+argument to set-bitmap is already in use by another DC, a control, a pen%, or a
+brush%, an exn:fail:contract exception is raised.
+
+(send a-bitmap-dc set-pixel x y color) → void?
+  x : real?
+  y : real?
+  color : (is-a?/c color%)
+Sets a pixel in the bitmap.
+
+The current clipping region might not affect the pixel change. Under X,
+interleaving drawing commands with set-pixel calls (for the same bitmap-dc%
+object) incurs a substantial performance penalty, except for interleaved calls
+to get-pixel, get-argb-pixels, and set-argb-pixels.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

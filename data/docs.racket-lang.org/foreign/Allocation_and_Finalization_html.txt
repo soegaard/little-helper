@@ -1,0 +1,86 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 5  Derived Utilities
+ 5.1  Safe Homogenous Vectors
+ 5.2  Safe C Vectors
+ 5.3  Tagged C Pointer Types
+ 5.4  Defining Bindings
+ 5.5  Allocation and Finalization
+ 5.6  Atomic Execution
+ 5.7  Speculatively Atomic Execution
+ 5.8  Objective-C FFI
+ 5.9  File Security-Guard Checks
+5.10  Windows API Helpers
+On this page:
+allocator
+deallocator
+releaser
+retainer
+[...search manuals...]
+  top← prev  up  next → 
+
+5.5 Allocation and Finalization
+
+ (require ffi/unsafe/alloc)
+The ffi/unsafe/alloc library provides utilities for ensuring that values
+allocated through foreign functions are reliably deallocated.
+
+((allocator dealloc) alloc) → procedure?
+  dealloc : (any/c . -> . any)
+  alloc : procedure?
+Produces a procedure that behaves like alloc, but the result of alloc is given
+a finalizer that calls dealloc on the result if it is not otherwise freed
+through a deallocator (as designated with deallocator). In addition, alloc is
+called in atomic mode (see start-atomic); its result is received and registered
+in atomic mode, so that the result is reliably freed.
+
+The dealloc procedure itself need not be specifically designated a deallocator
+(via deallocator). If a deallocator is called explicitly, it need not be the
+same as dealloc.
+
+((deallocator [get-arg]) dealloc) → procedure?
+  get-arg : (list? . -> . any/c) = car
+  dealloc : procedure?
+((releaser [get-arg]) dealloc) → procedure?
+  get-arg : (list? . -> . any/c) = car
+  dealloc : procedure?
+Produces a procedure that behaves like dealloc. The dealloc procedure is called
+in atomic mode (see start-atomic), and the reference count on one of its
+arguments is decremented; if the reference count reaches zero, no finalizer
+associated by an allocator- or referencer-wrapped procedure is invoked when the
+value becomes inaccessible.
+
+The optional get-arg procedure determines which of dealloc’s arguments
+correspond to the released object; get-arg receives a list of arguments passed
+to dealloc, so the default car selects the first one.
+
+The releaser procedure is a synonym for deallocator.
+
+((retainer release [get-arg]) retain) → procedure?
+  release : (any/c . -> . any)
+  get-arg : (list? . -> . any/c) = car
+  retain : procedure?
+Produces a procedure that behaves like retain. The procedure is called in
+atomic mode (see start-atomic), and the reference count on one of its arguments
+is incremented, with release recorded as the corresponding release procedure to
+be called by the finalizer on the retained object (unless some deallocator, as
+wrapped by deallocate, is explicitly called first).
+
+The optional get-arg procedure determines which of retain’s arguments
+correspond to the retained object; get-arg receives a list of arguments passed
+to retain, so the default car selects the first one.
+
+The release procedure itself need not be specifically designated a deallocator
+(via deallocator). If a deallocator is called explicitly, it need not be the
+same as release.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

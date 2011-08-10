@@ -1,0 +1,187 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+define-generics
+generics
+define-methods
+define/ generic
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+15 Generics
+
+Eli Barzilay
+and Jay McCarthy <jay@racket-lang.org>
+
+ (require unstable/generics)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(define-generics (name prop:name name?)
+  [method . kw-formals*]
+  ...)
+ 
+kw-formals*   =   (arg* ...)
+              |   (arg* ...+ . rest-id)
+              |   rest-id
+                   
+       arg*   =   id
+              |   [id]
+              |   keyword id
+              |   keyword [id]
+ 
+       name   :   identifier?
+       prop:name   :   identifier?
+       name?   :   identifier?
+       method   :   identifier?
+
+Defines name as a transformer binding for the static information about a new
+generic group.
+
+Defines prop:name as a structure type property. Structure types implementing
+this generic group should have this property where the value is a vector with
+one element per method where each value is either #f or a procedure with the
+same arity as specified by kw-formals*. (kw-formals* is similar to the
+kw-formals used by lambda, except no expression is given for optional
+arguments.) The arity of each method is checked by the guard on the structure
+type property.
+
+Defines name? as a predicate identifying instances of structure types that
+implement this generic group.
+
+Defines each method as a generic procedure that calls the corresponding method
+on values where name? is true. Each method must have a required by-position
+argument that is free-identifier=? to name. This argument is used in the
+generic definition to locate the specialization.
+
+(generics name
+          [method . kw-formals*]
+          ...)
+ 
+       name   :   identifier?
+       method   :   identifier?
+
+Expands to
+
+    (define-generics (name prop:name name?)
+      [method . kw-formals*]
+      ...)
+
+where prop:name and name? are created with the lexical context of name.
+
+(define-methods name definition ...)
+ 
+   name   :   identifier?
+name must be a transformer binding for the static information about a new
+generic group.
+
+Expands to a value usable as the property value for the structure type property
+of the name generic group.
+
+If the definitions define the methods of name, then they are used in the
+property value.
+
+If any method of name is not defined, then #f is used to signify that the
+structure type does not implement the particular method.
+
+Allows define/generic to appear in definition ....
+
+(define/generic local-name method-name)
+ 
+       local-name   :   identifier?
+       method-name   :   identifier?
+
+When used inside define-methods, binds local-name to the generic for
+method-name. This is useful for method specializations to use the generic
+methods on other values.
+
+Syntactically an error when used outside define-methods.
+
+Examples:
+
+    > (define-generics (printable prop:printable printable?)
+        (gen-print printable [port])
+        (gen-port-print port printable)
+        (gen-print* printable [port] #:width width #:height [height]))
+    > (define-struct num (v)
+        #:property prop:printable
+        (define-methods printable
+          (define/generic super-print gen-print)
+          (define (gen-print n [port (current-output-port)])
+            (fprintf port "Num: ~a" (num-v n)))
+          (define (gen-port-print port n)
+            (super-print n port))
+          (define (gen-print* n [port (current-output-port)]
+                              #:width w #:height [h 0])
+            (fprintf port "Num (~ax~a): ~a" w h (num-v n)))))
+    > (define-struct bool (v)
+        #:property prop:printable
+        (define-methods printable
+          (define/generic super-print gen-print)
+          (define (gen-print b [port (current-output-port)])
+            (fprintf port "Bool: ~a"
+                     (if (bool-v b) "Yes" "No")))
+          (define (gen-port-print port b)
+            (super-print b port))
+          (define (gen-print* b [port (current-output-port)]
+                              #:width w #:height [h 0])
+            (fprintf port "Bool (~ax~a): ~a" w h
+                     (if (bool-v b) "Yes" "No")))))
+    > (define x (make-num 10))
+    > (gen-print x)
+    Num: 10
+
+    > (gen-port-print (current-output-port) x)
+    Num: 10
+
+    > (gen-print* x #:width 100 #:height 90)
+    Num (100x90): 10
+
+    > (define y (make-bool #t))
+    > (gen-print y)
+    Bool: Yes
+
+    > (gen-port-print (current-output-port) y)
+    Bool: Yes
+
+    > (gen-print* y #:width 100 #:height 90)
+    Bool (100x90): Yes
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

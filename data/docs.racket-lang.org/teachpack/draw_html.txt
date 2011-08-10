@@ -1,0 +1,198 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 1  Ht DP Teachpacks
+ 1.1  Manipulating Images: "image.ss"
+ 1.2  Simulations and Animations: "world.ss"
+ 1.3  Converting Temperatures: "convert.ss"
+ 1.4  Guessing Numbers: "guess.ss"
+ 1.5  Master Minding: "master.ss"
+ 1.6  Playing Master Mind: "master-play.ss"
+ 1.7  Simple Drawing: "draw.ss"
+ 1.8  Hangman: "hangman.ss"
+ 1.9  Playing Hangman: "hangman-play.ss"
+1.10  Managing Control Arrows: "arrow.ss"
+1.11  Manipulating Simple HTML Documents: "docs.ss"
+1.12  Working with Files and Directories: "dir.ss"
+1.13  Graphing Functions: "graphing.ss"
+1.14  Simple Graphical User Interfaces: "gui.ss"
+1.15  An Arrow GUI: "arrow-gui.ss"
+1.16  Controlling an Elevator: "elevator.ss"
+1.17  Lookup GUI: "lkup-gui.ss"
+1.18  Guess GUI: "guess-gui.ss"
+1.19  Queens: "show-queen.ss"
+1.20  Matrix Functions: "matrix.ss"
+► 1.7  Simple Drawing: "draw.ss"
+1.7.1  Drawing on a Canvas
+1.7.2  Interactions with Canvas
+On this page:
+1.7.1 Drawing on a Canvas
+start
+start/ cartesian-plane
+stop
+draw-circle
+draw-solid-disk
+draw-solid-rect
+draw-solid-line
+draw-solid-string
+sleep-for-a-while
+clear-circle
+clear-solid-disk
+clear-solid-rect
+clear-solid-line
+clear-solid-string
+clear-all
+1.7.2 Interactions with Canvas
+wait-for-mouse-click
+get-key-event
+big-bang
+on-key-event
+on-tick-event
+end-of-time
+[...search manuals...]
+  top← prev  up  next → 
+
+1.7 Simple Drawing: "draw.ss"
+
+ (require htdp/draw)
+
+The teachpack provides two sets of functions: one for drawing into a canvas and
+one for reacting to canvas events.
+
+Warning: This teachpack is deprecated. Unless you’re solving exercises taken
+from How To Design Programs, we strongly encourage you to use the world
+teachpack instead; see Simulations and Animations: "world.ss".
+
+1.7.1 Drawing on a Canvas
+
+DrawColor: (and/c symbol? (one-of/c 'white 'yellow 'red 'blue 'green 'black))
+These six colors are definitely provided. If you want other colors, guess! For
+example, 'orange works, but 'mauve doesn’t. If you apply the function to a
+symbol that it doesn’t recognize as a color, it raises an error.
+
+(start width height) → true
+  width : number?
+  height : number?
+Opens a width x height canvas.
+
+(start/cartesian-plane width height) → true
+  width : number?
+  height : number?
+Opens a width x height canvas and draws a Cartesian plane.
+
+(stop) → true
+Closes the canvas.
+
+(draw-circle p r c) → true
+  p : posn?
+  r : number?
+  c : DrawColor
+Draws a c circle at p with radius r.
+
+(draw-solid-disk p r c) → true
+  p : posn?
+  r : number?
+  c : DrawColor
+Draws a c disk at p with radius r.
+
+(draw-solid-rect ul width height c) → true
+  ul : posn?
+  width : number?
+  height : number?
+  c : DrawColor
+Draws a width x height, c rectangle with the upper-left corner at ul.
+
+(draw-solid-line strt end c) → true
+  strt : posn?
+  end : posn?
+  c : DrawColor
+Draws a c line from strt to end.
+
+(draw-solid-string p s) → true
+  p : posn?
+  s : string?
+Draws s at p.
+
+(sleep-for-a-while s) → true
+  s : number?
+Suspends evaluation for s seconds.
+
+The teachpack also provides clear- functions for each draw- function:
+
+(clear-circle p r c) → true
+  p : posn?
+  r : number?
+  c : DrawColor
+clears a c circle at p with radius r.
+
+(clear-solid-disk p r c) → true
+  p : posn?
+  r : number?
+  c : DrawColor
+clears a c disk at p with radius r.
+
+(clear-solid-rect ul width height c) → true
+  ul : posn?
+  width : number?
+  height : number?
+  c : DrawColor
+clears a width x height, c rectangle with the upper-left corner at ul.
+
+(clear-solid-line strt end c) → true
+  strt : posn?
+  end : posn?
+  c : DrawColor
+clears a c line from strt to end.
+
+(clear-solid-string p s) → true
+  p : posn?
+  s : string?
+clears s at p.
+
+(clear-all) → true
+clears the entire screen.
+
+1.7.2 Interactions with Canvas
+
+(wait-for-mouse-click) → posn?
+Waits for the user to click on the mouse, within the canvas.
+
+DrawKeyEvent: (or/c char? symbol?) A DrawKeyEvent represents keyboard events:
+
+  • char?, if the user pressed an alphanumeric key;
+
+  • symbol?, if the user pressed, for example, an arror key: 'up 'down 'left
+    'right
+
+(get-key-event) → (or/c false DrawKeyEvent)
+Checks whether the user has pressed a key within the window; false if not.
+
+DrawWorld: For proper interactions, using the teachpack requires that you
+provide a data definition for DrawWorld . In principle, there are no
+constraints on this data definition. You can even keep it implicit, even if
+this violates the Design Recipe.
+
+The following functions allow programs to react to events from the canvas.
+
+(big-bang n w) → true
+  n : number?
+  w : DrawWorld
+Starts the clock, one tick every n (fractal) seconds; w becomes the first
+“current” world.
+
+(on-key-event change) → true
+  change : (-> DrawKeyEvent DrawWorld DrawWorld)
+Adds change to the world. The function reacts to keyboard events and creates a
+new DrawWorld.
+
+(on-tick-event tock) → true
+  tock : (-> DrawWorld DrawWorld)
+Adds tock to the world. The function reacts to clock tick events, creating a
+new current world.
+
+(end-of-time) → DrawWorld
+Stops the world; returns the current world.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

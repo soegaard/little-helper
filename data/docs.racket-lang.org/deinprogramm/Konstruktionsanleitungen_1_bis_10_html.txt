@@ -1,0 +1,370 @@
+▼  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+► 5  Konstruktionsanleitungen 1 bis 10
+ 5.1  Konstruktion von Prozeduren
+ 5.2  Fallunterscheidung
+ 5.3  zusammengesetzte Daten
+ 5.4  zusammengesetzte Daten als Argumente
+ 5.5  zusammengesetzte Daten als Ausgabe
+ 5.6  gemischte Daten
+ 5.7  Listen
+ 5.8  natu:rliche Zahlen
+ 5.9  Prozeduren mit Akkumulatoren
+5.10  gekapselter Zustand
+On this page:
+5.1 Konstruktion von Prozeduren
+5.2 Fallunterscheidung
+5.3 zusammengesetzte Daten
+5.4 zusammengesetzte Daten als Argumente
+5.5 zusammengesetzte Daten als Ausgabe
+5.6 gemischte Daten
+5.7 Listen
+5.8 natu:rliche Zahlen
+5.9 Prozeduren mit Akkumulatoren
+5.10 gekapselter Zustand
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Konstruktionsanleitungen 1 bis 10
+
+This documents the design recipes of the German textbook Die Macht der
+Abstraktion.
+
+    5.1 Konstruktion von Prozeduren
+
+    5.2 Fallunterscheidung
+
+    5.3 zusammengesetzte Daten
+
+    5.4 zusammengesetzte Daten als Argumente
+
+    5.5 zusammengesetzte Daten als Ausgabe
+
+    5.6 gemischte Daten
+
+    5.7 Listen
+
+    5.8 natu:rliche Zahlen
+
+    5.9 Prozeduren mit Akkumulatoren
+
+    5.10 gekapselter Zustand
+
+
+5.1 Konstruktion von Prozeduren
+
+Gehen Sie bei der Konstruktion einer Prozedur in folgender Reihenfolge vor:
+
+  • Kurzbeschreibung Schreiben Sie eine einzeilige Kurzbeschreibung.
+
+  • Datenanalyse Fu:hren Sie eine Analyse der beteiligten Daten durch. Stellen
+    Sie dabei fest, zu welcher Sorte die Daten geho:ren, ob Daten mit
+    Fallunterscheidung vorliegen und ob zusammengesetzte oder gemischte Daten
+    vorliegen.
+
+  • Signatur (im Buch “Vertrag”) Wa:hlen Sie einen Namen und schreiben Sie eine
+    Signatur fu:r die Prozedur.
+
+  • Testfa:lle Schreiben Sie einige Testfa:lle.
+
+  • Geru:st Leiten Sie direkt aus der Signatur das Geru:st der Prozedur her.
+
+  • Schablone Leiten Sie aus der Signatur und der Datenanalyse mit Hilfe der
+    Konstruktionsanleitungen eine Schablone her.
+
+  • Rumpf Vervollsta:ndigen Sie den Rumpf der Prozedur.
+
+  • Test Vergewissern Sie sich, dass die Tests erfolgreich laufen.
+
+5.2 Fallunterscheidung
+
+Wenn ein Argument einer Prozedur zu einer Fallunterscheidung geho:rt, die
+mo:glichen Werte also in feste Kategorien sortiert werden ko:nnen, steht im
+Rumpf eine Verzweigung. Die Anzahl der Zweige entspricht der Anzahl der
+Kategorien.
+
+Die Schablone fu:r eine Prozedur proc, deren Argument zu einer Sorte geho:rt,
+die n Kategorien hat, sieht folgendermassen aus:
+
+    (: proc (sig -> ...))
+    (define proc
+      (lambda (a)
+        (cond
+          (test1 ...)
+          ...
+          (testn ...))))
+
+Dabei ist sig die Signatur, den die Elemente der Sorte erfu:llen mu:ssen. Die
+testi mu:ssen Tests sein, welche die einzelnen Kategorien erkennen. Sie sollten
+alle Kategorien abdecken. Der letzte Zweig kann auch ein else-Zweig sein, falls
+klar ist, dass a zum letzten Fall geho:rt, wenn alle vorherigen testi #f
+ergeben haben. Anschliessend werden die Zweige vervollsta:ndigt.
+
+Bei Fallunterscheidungen mit zwei Kategorien kann auch if statt cond verwendet
+werden.
+
+5.3 zusammengesetzte Daten
+
+Wenn bei der Datenanalyse zusammengesetzte Daten vorkommen, stellen Sie
+zuna:chst fest, welche Komponenten zu welchen Sorten geho:ren. Schreiben Sie
+dann eine Datendefinition, die mit folgenden Worten anfa:ngt:
+
+    ; Ein x besteht aus / hat:
+    ; - Feld1 (sig1)
+    ; ...
+    ; - Feldn (sign)
+
+Dabei ist x ein umgangssprachlicher Name fu:r die Sorte (“Schokokeks”), die
+Feldi sind umgangssprachliche Namen und kurze Beschreibungen der Komponenten
+und die sigi die dazugeho:rigen Signaturen.
+
+U:bersetzen Sie die Datendefinition in eine Record-Definition, indem Sie auch
+Namen fu:r die Record-Signatur sig, Konstruktor constr, Pra:dikat pred? und die
+Selektoren selecti wa:hlen:
+
+    (define-record-procedures sig
+      constr pred?
+      (select1 ... selectn))
+
+Schreiben Sie ausserdem eine Signatur fu:r den Konstruktor der Form:
+
+    (: constr (sig1 ... sign -> sig))
+
+Ggf. schreiben Sie ausserdem Signaturen fu:r das Pra:dikat und die Selektoren:
+
+    (: pred? (any -> boolean))
+    (: select1 (sig -> sig1))
+    ...
+    (: selectn (sig -> sign))
+
+5.4 zusammengesetzte Daten als Argumente
+
+Wenn ein Argument einer Prozedur zusammengesetzt ist, stellen Sie zuna:chst
+fest, von welchen Komponenten des Records das Ergebnis der Prozeduren abha:ngt.
+
+Schreiben Sie dann fu:r jede Komponente (select a) in die Schablone, wobei
+select der Selektor der Komponente und a der Name des Parameters der Prozedur
+ist.
+
+Vervollsta:ndigen Sie die Schablone, indem Sie einen Ausdruck konstruieren, in
+dem die Selektor-Anwendungen vorkommen.
+
+5.5 zusammengesetzte Daten als Ausgabe
+
+Eine Prozedur, die einen neuen zusammengesetzten Wert zuru:ckgibt, entha:lt
+einen Aufruf des Konstruktors des zugeho:rigen Record-Typs.
+
+5.6 gemischte Daten
+
+Wenn bei der Datenanalyse gemischte Daten auftauchen, schreiben Sie eine
+Datendefinition der Form:
+
+    ; Ein x ist eins der Folgenden:
+    ; - Sorte1 (sig1)
+    ; ...
+    ; - Sorten (sign)
+    ; Name: sig
+
+Dabei sind die Sortei umgangssprachliche Namen fu:r die mo:glichen Sorten, die
+ein Wert aus diesen gemischten Daten annehmen kann. Die sigi sind die zu den
+Sorten geho:renden Signaturen. Der Name sig ist fu:r die Verwendung als
+Signatur.
+
+Aus der Datendefinition entsteht eine Signaturdefinition folgender Form:
+
+    (define sig
+      (signature
+        (mixed sig1
+               ...
+               sign)))
+
+Wenn die Pra:dikate fu:r die einzelnen Sorten pred?1 ... pred?n heissen, hat
+die Schablone fu:r eine Prozedur, die gemischte Daten konsumiert, die folgende
+Form:
+
+    (: proc (sig -> ...))
+     
+    (define proc
+      (lambda (a)
+        (cond
+          ((pred?1 a) ...)
+          ...
+          ((pred?n a) ...))))
+
+Die rechten Seiten der Zweige werden dann nach den Konstruktionsanleitungen der
+einzelnen Sorten ausgefu:llt.
+
+5.7 Listen
+
+Eine Prozedur, die eine Liste konsumiert, hat die folgende Schablone:
+
+    (: proc ((list-of elem) -> ...))
+     
+    (define proc
+      (lambda (lis)
+        (cond
+          ((empty? lis) ...)
+          ((pair? lis)
+           ... (first lis)
+           ... (proc (rest lis)) ...))))
+
+Dabei ist elem die Signatur fu:r die Elemente der Liste. Dies kann eine
+Signaturvariable (%a, %b, ...) sein, falls die Prozedur unabha:ngig von der
+Signatur der Listenelemente ist.
+
+Fu:llen Sie in der Schablone zuerst den empty?-Zweig aus. Vervollsta:ndigen Sie
+dann den anderen Zweig unter der Annahme, dass der rekursive Aufruf (proc (rest
+lis)) das gewu:nschte Ergebnis fu:r den Rest der Liste liefert.
+
+Beispiel:
+
+    (: list-sum ((list-of number) -> number))
+     
+    (define list-sum
+      (lambda (lis)
+        (cond
+          ((empty? lis) 0)
+          ((pair? lis)
+           (+ (first lis)
+              (list-sum (rest lis)))))))
+
+5.8 natu:rliche Zahlen
+
+Eine Prozedur, die natu:rliche Zahlen konsumiert, hat die folgende Schablone:
+
+    (: proc (natural -> ...))
+     
+    (define proc
+      (lambda (n)
+        (if (= n 0)
+            ...
+            ... (proc (- n 1)) ...)))
+
+Fu:llen Sie in der Schablone zuerst den 0-Zweig aus. Vervollsta:ndigen Sie dann
+den anderen Zweig unter der Annahme, dass der rekursive Aufruf (proc (- n 1))
+das gewu:nschte Ergebnis fu:r n-1 liefert.
+
+Beispiel:
+
+    (: factorial (natural -> natural))
+     
+    (define factorial
+      (lambda (n)
+        (if (= n 0)
+            1
+            (* n (factorial (- n 1))))))
+
+5.9 Prozeduren mit Akkumulatoren
+
+Eine Prozedur mit Akkumulator, die Listen konsumiert, hat die folgende
+Schablone:
+
+    (: proc ((list-of elem) -> ...))
+     
+    (define proc
+      (lambda (lis)
+        (proc-helper lis z)))
+     
+    (: proc ((list-of elem) sig -> ...))
+     
+    (define proc-helper
+      (lambda (lis acc)
+        (cond
+          ((empty? lis) acc)
+          ((pair? lis)
+           (proc-helper (rest lis)
+                        (... (first lis) ... acc ...))))))
+
+Hier ist proc der Name der zu definierenden Prozedur und proc-helper der Name
+der Hilfsprozedur mit Akkumulator. Der Anfangswert fu:r den Akkumulator ist der
+Wert von z. Die Signatur sig ist die Signatur fu:r den Akkumulator. Der
+Ausdruck (... (first lis) ... acc ...) macht aus dem alten Zwischenergebnis acc
+das neue Zwischenergebnis.
+
+Beispiel:
+
+    (: invert ((list-of %a) -> (list-of %a)))
+     
+    (define invert
+      (lambda (lis)
+        (invert-helper lis empty)))
+     
+    (: invert ((list-of %a) (list-of %a) -> (list-of %a)))
+     
+    (define invert-helper
+      (lambda (lis acc)
+        (cond
+          ((empty? lis) acc)
+          ((pair? lis)
+           (invert-helper (rest lis)
+                          (make-pair (first lis) acc))))))
+
+Eine Prozedur mit Akkumulator, die natu:rliche Zahlen konsumiert, hat die
+folgende Schablone:
+
+    (: proc (natural -> ...))
+     
+    (define proc
+      (lambda (n)
+        (proc-helper n z)))
+     
+    (define proc-helper
+      (lambda (n acc)
+        (if (= n 0)
+            acc
+            (proc-helper (- n 1) (... acc ...)))))
+
+Dabei ist z das gewu:nschte Ergebnis fu:r n = 0. Der Ausdruck (... acc ...)
+muss den neuen Wert fu:r den Akkumulator berechnen.
+
+Beispiel:
+
+    (: ! (natural -> natural))
+     
+    (define !
+      (lambda (n)
+        (!-helper n 1)))
+     
+    (define !-helper
+      (lambda (n acc)
+        (if (= n 0)
+            acc
+            (!-helper (- n 1) (* n acc)))))
+
+5.10 gekapselter Zustand
+
+Falls ein Wert Zustand enthalten soll, schreiben Sie eine Datendefinition wie
+bei zusammengesetzten Daten.
+
+Schreiben Sie dann eine Record-Definition mit define-record-procedures-2 und
+legen Sie dabei fest, welche Bestandteile vera:nderbar sein sollen. Geben Sie
+Mutatoren fu:r die betroffenen Felder an. Wenn der Selektor fu:r das Feld
+select heisst, sollte der Mutator i.d.R. set-select! heissen. Die Form sieht
+folgendermassen aus, wobei an der Stelle k ein vera:nderbares Feld steht:
+
+    (define-record-procedures-2 sig
+      constr pred?
+      (select1 ... (sk mutatek) ... sn))
+
+In der Schablone fu:r Prozeduren, die den Zustand eines Record-Arguments r
+a:ndern, benutzen Sie den dazugeho:rigen Mutator mutatek Wenn a der Ausdruck
+fu:r den neuen Wert der Komponente ist, sieht der Aufruf folgendermassen aus:
+(mutatek r a).
+
+Um mehrere Komponenten in einer Prozedur zu vera:ndern, oder um einen
+sinnvollen Ru:ckgabewert nach einer Mutation zu liefern, benutzen Sie begin.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

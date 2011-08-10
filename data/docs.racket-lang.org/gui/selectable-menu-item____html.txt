@@ -1,0 +1,177 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+command
+get-shortcut
+get-shortcut-prefix
+set-shortcut
+set-shortcut-prefix
+Inherited methods:
+from labelled-menu-item<%>
+enable
+get-help-string
+get-label
+get-plain-label
+is-enabled?
+on-demand
+set-help-string
+set-label
+from menu-item<%>
+delete
+get-parent
+is-deleted?
+restore
+[...search manuals...]
+  top← prev  up  next → 
+
+selectable-menu-item<%> : interface?
+  implements:  labelled-menu-item<%>
+A selectable-menu-item<%> object is a labelled-menu-item<%> that the user can
+select. It may also have a keyboard shortcut; the shortcut is displayed in the
+menu, and the default on-subwindow-char method in the menu’s frame dispatches
+to the menu item when the shortcut key combination is pressed.
+
+(send a-selectable-menu-item command event) → void?
+  event : (is-a?/c control-event%)
+Invokes the menu item’s callback procedure, which is supplied when an instance
+of menu-item% or checkable-menu-item% is created.
+
+(send a-selectable-menu-item get-shortcut)
+ → (or/c char? symbol? false/c)
+Gets the keyboard shortcut character or virtual key for the menu item. This
+character or key is combined with the shortcut prefix, which is reported by
+get-shortcut-prefix.
+
+If the menu item has no shortcut, #f is returned.
+
+The shortcut part of a menu item name is not included in the label returned by
+get-label.
+
+For a list of allowed key symbols, see get-key-code in key-event%, except that
+the following are disallowed: 'shift, 'control, 'numlock, 'scroll, 'wheel-up,
+'wheel-down, 'release, and 'press.
+
+(send a-selectable-menu-item get-shortcut-prefix)
+ → (listof (one-of/c 'alt 'cmd 'meta 'ctl 'shift 'option))
+Returns a list of symbols that indicates the keyboard prefix used for the menu
+item’s keyboard shortcut. The allowed symbols for the list are the following:
+
+  • 'alt — Meta (Windows and X only)
+
+  • 'cmd — Command (Mac OS X only)
+
+  • 'meta — Meta (Unix only)
+
+  • 'ctl — Control
+
+  • 'shift — Shift
+
+  • 'option — Option (Mac OS X only)
+
+On Unix, at most one of 'alt and 'meta can be supplied; the only difference
+between 'alt and 'meta is the key combination’s display in a menu.
+
+The default shortcut prefix is available from get-default-shortcut-prefix.
+
+The shortcut key, as determined by get-shortcut, matches a key event using
+either the normally reported key code or the other-Shift/AltGr key code (as
+produced by get-other-shift-key-code in key-event%, etc.). When the shortcut
+key is a key-code symbol or an ASCII letter or digit, then the shortcut matches
+only the exact combination of modifier keys listed in the prefix. For character
+shortcuts other than ASCII letters and digits, however, then the shortcut
+prefix merely determines a minimum set of modifier keys, because additional
+modifiers may be needed to access the character; an exception is that, on
+Windows or Unix, the Alt/Meta key press must match the prefix exactly (i.e.,
+included or not). In all cases, the most precise match takes precedence; see
+map-function in keymap% for more information on match ranking.
+
+An empty list can be used for a shortcut prefix. However, the default
+on-menu-char in frame% method checks for menu shortcuts only when the key event
+includes either a non-Shift modifier or a Function key. Thus, an empty shortcut
+prefix is normally useful only if the shortcut key is a Function key.
+
+(send a-selectable-menu-item set-shortcut shortcut) → void?
+  shortcut : (or/c char? symbol? false/c)
+Sets the keyboard shortcut character for the menu item. See get-shortcut for
+more information.
+
+If the shortcut character is set to #f, then menu item has no keyboard
+shortcut.
+
+(send a-selectable-menu-item set-shortcut-prefix prefix)
+ → void?
+  prefix : (listof (one-of/c 'alt 'cmd 'meta 'ctl 'shift 'option))
+Sets a list of symbols to indicates the keyboard prefix used for the menu
+item’s keyboard shortcut.
+
+See get-shortcut-prefix for more information.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

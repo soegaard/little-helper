@@ -1,0 +1,171 @@
+▼  Dynext: Running a C Compiler/ Linker
+1  Compilation
+2  Linking
+3  Filenames
+► 1  Compilation
+1.1  Compilation Parameters
+1.2  Helper functions
+1.3  Signature
+1.4  Unit
+On this page:
+compile-extension
+1.1 Compilation Parameters
+current-extension-compiler
+current-extension-compiler-flags
+current-make-compile-include-strings
+current-make-compile-input-strings
+current-make-compile-output-strings
+current-extension-preprocess-flags
+compile-variant
+1.2 Helper functions
+use-standard-compiler
+get-standard-compilers
+expand-for-compile-variant
+1.3 Signature
+dynext: compile^
+1.4 Unit
+dynext: compile@
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Compilation
+
+ (require dynext/compile)
+
+(compile-extension   quiet?               
+                     input-file           
+                     output-file          
+                     include-dirs)   →   any/c
+  quiet? : any/c
+  input-file : path-string?
+  output-file : path-string?
+  include-dirs : (listof path-string?)
+Compiles the given input file (C source) to the given output file (a
+compiled-object file). The quiet? argument indicates whether command should be
+echoed to the current output port. The include-dirs argument is a list of
+directories to search for include files; the Racket installation’s "include"
+directories are added automatically.
+
+1.1 Compilation Parameters
+
+(current-extension-compiler) → (or/c path-string? false/c)
+(current-extension-compiler compiler) → void?
+  compiler : (or/c path-string? false/c)
+A parameter that determines the executable for the compiler.
+
+The default is set by searching for an executable using the PATH environment
+variable, or using the CC or MZSCHEME_DYNEXT_COMPILER environment variable if
+either is defined (and the latter takes precedence). On Windows, the search
+looks for "cl.exe", then "gcc.exe", then "bcc32.exe" (Borland). On Unix, it
+looks for "gcc", then "cc". A #f value indicates that no compiler could be
+found.
+
+(current-extension-compiler-flags)
+  →   (listof (or/c path-string?
+                    (-> (or/c null? (listof string?)))))
+(current-extension-compiler-flags flags) → void?
+   flags   :   (listof (or/c path-string?
+                             (-> (or/c null? (listof string?)))))
+A parameter that determines strings passed to the compiler as flags. See also
+expand-for-compile-variant.
+
+On Windows, the default is (list "/c" "/O2" "/MT" 3m-flag-thunk) for "cl.exe",
+or (list "-c" "-O2" "-fPIC" 3m-flag-thunk) for "gcc.exe" and "bcc32.exe", where
+3m-flag-thunk returns (list "-DMZ_PRECISE_GC") for the 3m variant and null for
+the CGC variant. On Unix, the default is usually (list "-c" "-O2" "-fPIC"
+3m-flag-thunk). If the CFLAGS or MZSCHEME_DYNEXT_COMPILER_FLAGS environment
+variable is defined (the latter takes precedence), then its value is parsed as
+a list of strings that is appended before the defaults.
+
+(current-make-compile-include-strings)
+ → (-> path-string? (listof string?))
+(current-make-compile-include-strings proc) → void?
+  proc : (-> path-string? (listof string?))
+A parameter the processes include-path inputs to the compiler; the parameter
+values takes an include directory path and returns a list of strings for the
+command line.
+
+On Windows, the default converts "dir" to (list "/Idir") for "cl.exe", (list
+"-Idir") for "gcc.exe" and "bcc32.exe". On Unix, the default converts "dir" to
+(list "-Idir"). If the CFLAGS environment variable is defined, then its value
+is parsed as a list of flags that is appended before the defaults.
+
+(current-make-compile-input-strings)
+ → (-> (or/c string? path?) (listof string?))
+(current-make-compile-input-strings proc) → void?
+  proc : (-> (or/c string? path?) (listof string?))
+A parameter that processes inputs to the compiler; the parameter’s values takes
+an input file path and returns a list of strings for the command line. The
+default is list.
+
+(current-make-compile-output-strings)
+ → (-> (or/c string? path?) (listof string?))
+(current-make-compile-output-strings proc) → void?
+  proc : (-> (or/c string? path?) (listof string?))
+A parameter that processes outputs specified for the compiler; the parameter’s
+value takes an output file path and returns a list of strings for the command
+line.
+
+On Windows, the default converts "file" to (list "/Fofile") for "cl.exe", or to
+(list "-o" "file") for "gcc.exe" and "bcc32.exe". On Unix, the default converts
+"file" to (list "-o" "file").
+
+(current-extension-preprocess-flags)
+ → (listof (or/c string? path? (-> (or/c string? path?))))
+(current-extension-preprocess-flags flags) → void?
+  flags : (listof (or/c string? path? (-> (or/c string? path?))))
+A parameters that specifies flags to the compiler preprocessor, instead of to
+the compiler proper; use these flags for preprocessing instead of
+current-extension-compiler-flags.
+
+The defaults are similar to current-extension-compiler-flags, but with "/E"
+(Windows "cl.exe") or "-E" and without non-"-D" flags.
+
+(compile-variant) → (one-of/c 'normal 'cgc '3m)
+(compile-variant variant-symbol) → void?
+  variant-symbol : (one-of/c 'normal 'cgc '3m)
+A parameter that indicates the target for compilation, where 'normal is an
+alias for the result of (system-type 'gc)
+
+1.2 Helper functions
+
+(use-standard-compiler name) → any
+  name : (apply one-of/c (get-standard-compilers))
+Sets the parameters described in Compilation Parameters for a particular known
+compiler. The acceptable names are platforms-specific:
+
+  • Unix: 'cc or 'gcc
+
+  • Windows: 'gcc, 'msvc, or 'borland
+
+  • MacOS: 'cw
+
+(get-standard-compilers) → (listof symbol?)
+Returns a list of standard compiler names for the current platform. See
+use-standard-compiler.
+
+(expand-for-compile-variant l) → any
+  l : (listof (or/c path-string? (-> (listof string?))))
+Takes a list of paths and thunks and returns a list of strings. Each thunk in
+the input list is applied to get a list of strings that is inlined in the
+corresponding position in the output list. This expansion enables occasional
+parametrization of flag lists, etc., depending on the current compile variant.
+
+1.3 Signature
+
+ (require dynext/compile-sig)
+
+dynext:compile^ : signature
+
+Includes everything exported by the dynext/compile module.
+
+1.4 Unit
+
+ (require dynext/compile-unit)
+
+dynext:compile@ : unit?
+Imports nothing, exports dynext:compile^.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

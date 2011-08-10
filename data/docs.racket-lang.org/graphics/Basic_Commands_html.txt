@@ -1,0 +1,76 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+On this page:
+open-graphics
+close-graphics
+graphics-open?
+open-viewport
+open-pixmap
+close-viewport
+viewport?
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Basic Commands
+
+(open-graphics) → void?
+Initializes the library’s graphics routines. It must be called before any other
+graphics operations.
+
+(close-graphics) → void?
+Closes all of the windows. Until open-graphics is called again, no graphics
+routines will work.
+
+(graphics-open?) → boolean?
+Determines if the graphics have been opened (or not).
+
+(open-viewport name horiz vert) → viewport?
+  name : string?
+  horiz : exact-nonnegative-integer?
+  vert : exact-nonnegative-integer?
+(open-viewport name dimensions) → viewport?
+  name : string?
+  dimensions : posn?
+Creates a new window called name. The window is horiz pixels wide and vert
+pixels high. For backward compatibility, a single posn value can be submitted
+in the place of horiz and vert. The result is a viewport descriptor.
+
+(open-pixmap name horiz vert) → viewport?
+  name : string?
+  horiz : exact-nonnegative-integer?
+  vert : exact-nonnegative-integer?
+(open-pixmap name dimensions) → viewport?
+  name : string?
+  dimensions : posn?
+Like open-viewport, but the resulting viewport is not displayed on the screen.
+Offscreen pixmaps are useful for executing a sequence of drawing commands and
+displaying them all at once with copy-viewport.
+
+Offscreen pixmaps are also useful in conjunction with viewport->snip (see
+below). This allows functions to compute with graphical objects and view the
+graphics when results are returned to the interactions window.
+
+(close-viewport viewport) → void?
+  viewport : viewport?
+Removes the viewport from the screen and makes subsequent operations dealing
+with the viewport illegal.
+
+(viewport? v) → boolean?
+  v : any/c
+Returns #t if v is a viewport (i.e., a destination for drawing), #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

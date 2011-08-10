@@ -1,0 +1,176 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+shared
+[...search manuals...]
+  top← prev  up  next → 
+
+2.11 Constructing Graphs: shared
+
+ (require racket/shared)
+The bindings documented in this section are provided by the racket/shared and
+racket libraries, but not racket/base.
+
+(shared ([id expr] ...) body ...+)
+Binds ids with shared structure according to exprs and then evaluates the
+body-exprs, returning the result of the last expression.
+
+The shared form is similar to letrec, except that special forms of expr are
+recognized (after partial macro expansion) to construct graph-structured data,
+where the corresponding letrec would instead produce #<undefined>s.
+
+Each expr (after partial expansion) is matched against the following
+shared-expr grammar, where earlier variants in a production take precedence
+over later variants:
+
+        shared-expr   =   shell-expr
+                      |   plain-expr
+                           
+         shell-expr   =   (cons in-immutable-expr in-immutable-expr)
+                      |   (list in-immutable-expr ...)
+                      |   (list* in-immutable-expr ...)
+                      |   (append early-expr ... in-immutable-expr)
+                      |   (vector-immutable in-immutable-expr ...)
+                      |   (box-immutable in-immutable-expr)
+                      |   (mcons patchable-expr patchable-expr)
+                      |   (vector patchable-expr ...)
+                      |   (box patchable-expr ...)
+                      |   (prefix:make-id patchable-expr ...)
+                           
+  in-immutable-expr   =   shell-id
+                      |   shell-expr
+                      |   early-expr
+                           
+           shell-id   =   id
+                           
+     patchable-expr   =   expr
+                           
+         early-expr   =   expr
+                           
+         plain-expr   =   expr
+
+The prefix:make-id identifier above matches three kinds of references. The
+first kind is any binding whose name has make- in the middle, and where
+prefix:id has a transformer binding to structure information with a full set of
+mutator bindings; see Structure Type Transformer Binding. The second kind is an
+identifier that itself has a transformer binding to structure information. The
+third kind is an identifier that has a 'constructor-for syntax property whose
+value is an identifier with a transformer binding to structure information. A
+shell-id, meanwhile, must be one of the ids bound by the shared form to a
+shell-expr.
+
+When the exprs of the shared form are parsed as shared-expr (taking into
+account the order of the variants for parsing precedence), the sub-expressions
+that were parsed via early-expr will be evaluated first when the shared form is
+evaluated. Among such expressions, they are evaluated in the order as they
+appear within the shared form. However, any reference to an id bound by shared
+produces #<undefined>, even if the binding for the id appears before the
+corresponding early-expr within the shared form.
+
+The shell-ids and shell-exprs (not counting patchable-expr and early-expr
+sub-expressions) are effectively evaluated next. A shell-id reference produces
+the same value as the corresponding id will produce within the bodys, assuming
+that id is never mutated with set!. This special handling of a shell-id
+reference is one way in which shared supports the creation of cyclic data,
+including immutable cyclic data.
+
+Next, the plain-exprs are evaluated as for letrec, where a reference to an id
+produces #<undefined> if it is evaluated before the right-hand side of the id
+binding.
+
+Finally, the patchable-exprs are evaluated. At this point, all ids are bound,
+so patchable-exprs also creates data cycles (but only with cycles that can be
+created via mutation).
+
+Examples:
+
+    > (shared ([a (cons 1 a)])
+        a)
+    #0= '(1 . #0#)
+
+    > (shared ([a (cons 1 b)]
+               [b (cons 2 a)])
+        a)
+    #0= '(1 2 . #0#)
+
+    > (shared ([a (cons 1 b)]
+               [b 7])
+        a)
+    '(1 . 7)
+
+    > (shared ([a a]) ; no indirection...
+        a)
+    #<undefined>
+
+    > (shared ([a (cons 1 b)] ; b is early...
+               [b a])
+        a)
+    '(1 . #<undefined>)
+
+    > (shared ([a (mcons 1 b)] ; b is patchable...
+               [b a])
+        a)
+    #0=(mcons 1 #0#)
+
+    > (shared ([a (vector b b b)]
+               [b (box 1)])
+        (set-box! b 5)
+        a)
+    '#(#&5 #&5 #&5)
+
+    > (shared ([a (box b)]
+               [b (vector (unbox a)   ; unbox after a is patched
+                          (unbox c))] ; unbox before c is patched
+               [c (box b)])
+        b)
+    #0= '#(#0# #<undefined>)
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

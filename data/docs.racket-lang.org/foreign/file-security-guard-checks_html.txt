@@ -1,0 +1,60 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 5  Derived Utilities
+ 5.1  Safe Homogenous Vectors
+ 5.2  Safe C Vectors
+ 5.3  Tagged C Pointer Types
+ 5.4  Defining Bindings
+ 5.5  Allocation and Finalization
+ 5.6  Atomic Execution
+ 5.7  Speculatively Atomic Execution
+ 5.8  Objective-C FFI
+ 5.9  File Security-Guard Checks
+5.10  Windows API Helpers
+On this page:
+security-guard-check-file
+_ file/ guard
+_ file/ r
+_ file/ rw
+[...search manuals...]
+  top← prev  up  next → 
+
+5.9 File Security-Guard Checks
+
+ (require ffi/file)
+
+(security-guard-check-file who path perms) → void?
+  who : symbol?
+  path : path-string?
+  perms : (listof (or/c 'read 'write 'execute 'delete 'exists))
+Checks whether (current-security-guard) permits access to the file specified by
+path with the permissions perms. See make-security-guard for more information
+on perms.
+
+The symbol who should be the name of the function on whose behalf the security
+check is performed; it is passed to the security guard to use in access-denied
+errors.
+
+(_file/guard perms [who]) → ctype?
+  perms : (listof (or/c 'read 'write 'execute 'delete 'exists))
+  who : symbol? = '_file/guard
+Like _file and _path, but conversion from Racket to C first completes the path
+using path->complete-path then cleanses it using cleanse-path, then checks that
+the current security guard grants access on the resulting complete path with
+perms. As an output value, identical to _path.
+
+_file/r : ctype?
+_file/rw : ctype?
+Equivalent to (_file/guard '(read)) and (_file/guard '(read write)),
+respectively.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

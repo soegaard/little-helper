@@ -1,0 +1,203 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+► 3  Using Conventional Racket Expressions in Racklog
+3.1  Constructors
+3.2  %is
+3.3  Lexical Scoping
+3.4  Type Predicates
+On this page:
+3.1 Constructors
+3.2 %is
+3.3 Lexical Scoping
+3.4 Type Predicates
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Using Conventional Racket Expressions in Racklog
+
+The arguments of Racklog predicates can be any Racket objects. In particular,
+composite structures such as lists, vectors, strings, hash tables, etc can be
+used, as also Racket expressions using the full array of Racket’s construction
+and decomposition operators. For instance, consider the following goal:
+
+    (%member x '(1 2 3))
+
+Here, %member is a predicate, x is a logic variable, and '(1 2 3) is a
+structure. Given a suitably intuitive definition for %member, the above goal
+succeeds for x = 1, 2, and 3.
+
+Now to defining predicates like %member:
+
+    (define %member
+      (%rel (x y xs)
+        [(x (cons x xs))]
+        [(x (cons y xs))
+          (%member x xs)]))
+
+Ie, %member is defined with three local variables: x, y, xs. It has two
+clauses, identifying the two ways of determining membership.
+
+The first clause of %member states a fact: For any x, x is a member of a list
+whose head is also x.
+
+The second clause of %member is a rule: x is a member of a list if we can show
+that it is a member of the tail of that list. In other words, the original
+%member goal is translated into a subgoal, which is also a %member goal.
+
+Note that the variable y in the definition of %member occurs only once in the
+second clause. As such, it doesn’t need you to make the effort of naming it.
+(Names help only in matching a second occurrence to a first.) Racklog lets you
+use the expression (_) to denote an anonymous variable. (Ie, _ is a thunk that
+generates a fresh anonymous variable at each call.) The predicate %member can
+be rewritten as
+
+    (define %member
+      (%rel (x xs)
+        [(x (cons x (_)))]
+        [(x (cons (_) xs))
+          (%member x xs)]))
+
+3.1 Constructors
+
+We can use constructors — Racket procedures for creating structures — to
+simulate data types in Racklog. For instance, let’s define a natural-number
+data-type where 0 denotes zero, and (succ x) denotes the natural number whose
+immediate predecessor is x. The constructor succ can be defined in Racket as:
+
+    (define succ
+      (lambda (x)
+        (vector 'succ x)))
+
+Addition and multiplication can be defined as:
+
+    (define %add
+      (%rel (x y z)
+        [(0 y y)]
+        [((succ x) y (succ z))
+          (%add x y z)]))
+     
+    (define %times
+      (%rel (x y z z1)
+        [(0 y 0)]
+        [((succ x) y z)
+         (%times x y z1)
+         (%add y z1 z)]))
+
+We can do a lot of arithmetic with this in place. For instance, the factorial
+predicate looks like:
+
+    (define %factorial
+      (%rel (x y y1)
+        [(0 (succ 0))]
+        [((succ x) y)
+          (%factorial x y1)
+          (%times (succ x) y1 y)]))
+
+3.2 %is
+
+The above is a very inefficient way to do arithmetic, especially when the
+underlying language Racket offers excellent arithmetic facilities (including a
+comprehensive number “tower” and exact rational arithmetic). One problem with
+using Racket calculations directly in Racklog clauses is that the expressions
+used may contain logic variables that need to be dereferenced. Racklog provides
+the predicate %is that takes care of this. The goal
+
+    (%is X E)
+
+unifies X with the value of E considered as a Racket expression. E can have
+logic variables, but usually they should at least be bound, as unbound
+variables may not be palatable values to the Racket operators used in E.
+
+We can now directly use the numbers of Racket to write a more efficient
+%factorial predicate:
+
+    (define %factorial
+      (%rel (x y x1 y1)
+        [(0 1)]
+        [(x y) (%is x1 (- x 1))
+               (%factorial x1 y1)
+               (%is y (* y1 x))]))
+
+A price that this efficiency comes with is that we can use %factorial only with
+its first argument already instantiated. In many cases, this is not an
+unreasonable constraint. In fact, given this limitation, there is nothing to
+prevent us from using Racket’s factorial directly:
+
+    (define %factorial
+      (%rel (x y)
+        [(x y)
+         (%is y (racket-factorial
+                  x))]))
+
+or better yet, “in-line” any calls to %factorial with %is-expressions calling
+racket-factorial, where the latter is defined in the usual manner:
+
+    (define racket-factorial
+      (lambda (n)
+        (if (= n 0) 1
+            (* n (factorial
+                   (- n 1))))))
+
+3.3 Lexical Scoping
+
+One can use Racket’s lexical scoping to enhance predicate definition. Here is a
+list-reversal predicate defined using a hidden auxiliary predicate:
+
+    (define %reverse
+      (letrec
+        ([revaux
+           (%rel (x y z w)
+             [('() y y)]
+             [((cons x y) z w)
+               (revaux y
+                 (cons x z) w)])])
+        (%rel (x y)
+          [(x y) (revaux x '() y)])))
+
+(revaux X Y Z) uses Y as an accumulator for reversing X into Z. (Y starts out
+as (). Each head of X is consed on to Y. Finally, when X has wound down to (),
+Y contains the reversed list and can be returned as Z.)
+
+revaux is used purely as a helper predicate for %reverse, and so it can be
+concealed within a lexical contour. We use letrec instead of let because revaux
+is a recursive procedure.
+
+3.4 Type Predicates
+
+Racklog provides a couple of predicates that let the user probe the type of
+objects.
+
+The goal
+
+
+    (%constant X)
+
+succeeds if X is an atomic object.
+
+The predicate %compound, the negation of %constant, checks if its argument is
+not an atomic object.
+
+The above are merely the logic-programming equivalents of corresponding Racket
+predicates. Users can use the predicate %is and Racket predicates to write more
+type checks in Racklog. Thus, to test if X is a string, the following goal
+could be used:
+
+    (%is #t (string? X))
+
+User-defined Racket predicates, in addition to primitive Racket predicates, can
+be thus imported.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

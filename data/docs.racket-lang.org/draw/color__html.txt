@@ -1,0 +1,96 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+alpha
+blue
+copy-from
+green
+ok?
+red
+set
+[...search manuals...]
+  top← prev  up  next → 
+
+color% : class?
+  superclass: object%
+
+A color is an object representing a red-green-blue (RGB) combination of primary
+colors plus an “alpha” for opacity. Each red, green, or blue component of the
+color is an exact integer in the range 0 to 255, inclusive, and the alpha value
+is a real number between 0 and 1, inclusive. For example, (0, 0, 0, 1.0) is
+solid black, (255, 255, 255, 1.0) is solid white, (255, 0, 0, 1.0) is solid
+red, and (255, 0, 0, 0.5) is translucent red.
+
+See color-database<%> for information about obtaining a color object using a
+color name.
+
+(make-object color%) → (is-a?/c color%)
+(make-object color% red green blue [alpha]) → (is-a?/c color%)
+  red : (integer-in 0 255)
+  green : (integer-in 0 255)
+  blue : (integer-in 0 255)
+  alpha : (real-in 0 1) = 1.0
+(make-object color% color-name) → (is-a?/c color%)
+  color-name : string?
+Creates a new color with the given RGB values and alpha, or matching the given
+color name (using “black” if no color is given or if the name is not
+recognized). See color-database<%> for more information on color names.
+
+(send a-color alpha) → (real-in 0 1)
+Returns the alpha component (i.e., opacity) of the color.
+
+(send a-color blue) → (integer-in 0 255)
+Returns the blue component of the color.
+
+(send a-color copy-from src) → (is-a?/c color%)
+  src : (is-a?/c color%)
+Copies the RGB values of another color object to this one, returning this
+object as the result.
+
+(send a-color green) → (integer-in 0 255)
+Returns the green component of the color.
+
+(send a-color ok?) → boolean?
+Returns #t if the color object is valid.
+
+(send a-color red) → (integer-in 0 255)
+Returns the red component of the color.
+
+(send a-color set red green blue [alpha]) → void?
+  red : (integer-in 0 255)
+  green : (integer-in 0 255)
+  blue : (integer-in 0 255)
+  alpha : (real-in 0 1) = 1.0
+Sets the four (red, green, blue, and alpha) component values of the color.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,216 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+set-label
+Inherited methods:
+from control<%>
+command
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-focus
+on-move
+on-size
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+[...search manuals...]
+  top← prev  up  next → 
+
+button% : class?
+  superclass: object%
+
+  extends:  control<%>
+Whenever a button is clicked by the user, the button’s callback procedure is
+invoked. A callback procedure is provided as an initialization argument when
+each button is created.
+
+(new button%    [label label]                              
+                [parent parent]                            
+              [ [callback callback]                        
+                [style style]                              
+                [font font]                                
+                [enabled enabled]                          
+                [vert-margin vert-margin]                  
+                [horiz-margin horiz-margin]                
+                [min-width min-width]                      
+                [min-height min-height]                    
+                [stretchable-width stretchable-width]      
+                [stretchable-height stretchable-height]])  
+ → (is-a?/c button%)
+               (or/c label-string?
+                     (is-a?/c bitmap%)
+   label   :         (list/c (is-a?/c bitmap%)
+                             label-string?
+                             (one-of/c 'left 'top 'right 'bottom)))
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+   callback   :   ((is-a?/c button%) (is-a?/c control-event%) . -> . any)
+              =   (lambda (b e) (void))
+  style : (listof (one-of/c 'border 'deleted)) = null
+  font : (is-a?/c font%) = normal-control-font
+  enabled : any/c = #t
+  vert-margin : (integer-in 0 1000) = 2
+  horiz-margin : (integer-in 0 1000) = 2
+  min-width : (integer-in 0 10000) = graphical-minimum-width
+  min-height : (integer-in 0 10000) = graphical-minimum-height
+  stretchable-width : any/c = #f
+  stretchable-height : any/c = #f
+Creates a button with a string label, bitmap label, or both. If label is a
+bitmap, and if the bitmap has a mask (see get-loaded-mask in bitmap%) that is
+the same size as the bitmap, then the mask is used for the label. Modifying a
+bitmap while it is used as a label has an unspecified effect on the displayed
+label. If label is a list, then the button has both a bitmap and string label,
+and the symbol 'left, 'top, 'right, or 'bottom specifies the location of the
+image relative to the text on the button.
+
+If & occurs in label (when label includes a string), it is specially parsed; on
+Windows and Unix, the character following & is underlined in the displayed
+control to indicate a keyboard mnemonic. (On Mac OS X, mnemonic underlines are
+not shown.) The underlined mnemonic character must be a letter or a digit. The
+user can effectively click the button by typing the mnemonic when the control’s
+top-level-window contains the keyboard focus. The user must also hold down the
+Meta or Alt key if the keyboard focus is currently in a control that handles
+normal alphanumeric input. The & itself is removed from label before it is
+displayed for the control; a && in label is converted to & (with no mnemonic
+underlining). On Mac OS X, a parenthesized mnemonic character is removed (along
+with any surrounding space) before the label is displayed, since a
+parenthesized mnemonic is often used for non-Roman languages. Finally, any text
+after a tab character is removed on all platforms. Mnemonic keyboard events are
+handled by on-traverse-char (but not on Mac OS X).
+
+The callback procedure is called (with the event type 'button) whenever the
+user clicks the button.
+
+If style includes 'border, the button is drawn with a special border that
+indicates to the user that it is the default action button (see
+on-traverse-char). If style includes 'deleted, then the button is created as
+hidden, and it does not affect its parent’s geometry; the button can be made
+active later by calling parent’s add-child method.
+
+The font argument determines the font for the control. For information about
+the enabled argument, see window<%>. For information about the horiz-margin and
+vert-margin arguments, see subarea<%>. For information about the min-width,
+min-height, stretchable-width, and stretchable-height arguments, see area<%>.
+
+(send a-button set-label label) → void?
+   label   :   (or/c label-string?
+                     (is-a?/c bitmap%))
+Overrides set-label in window<%>.
+The same as set-label in window<%> when label is a string.
+
+Otherwise, sets the bitmap label for a bitmap button. Since label is a bitmap,
+if the bitmap has a mask (see get-loaded-mask in bitmap%) that is the same size
+as the bitmap, then the mask is used for the label. Modifying a bitmap while it
+is used as a label has an unspecified effect on the displayed label. The bitmap
+label is installed only if the control was originally created with a bitmap
+label.
+
+If the button has both a string and a bitmap label, then either can be set
+using set-label.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

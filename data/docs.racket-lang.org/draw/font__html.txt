@@ -1,0 +1,229 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+get-face
+get-family
+get-font-id
+get-point-size
+get-size-in-pixels
+get-smoothing
+get-style
+get-underlined
+get-weight
+screen-glyph-exists?
+[...search manuals...]
+  top← prev  up  next → 
+
+font% : class?
+  superclass: object%
+
+A font is an object which determines the appearance of text, primarily when
+drawing text to a device context. A font is determined by seven properties:
+
+  • size — The size of the text, either in points (the default) or logical
+    drawing units, depending on the “size-in-pixels?” property (see below).
+
+  • family — A platform- and device-independent font designation. The families
+    are:
+
+      □ 'default
+
+      □ 'decorative
+
+      □ 'roman
+
+      □ 'script
+
+      □ 'swiss
+
+      □ 'modern (fixed width)
+
+      □ 'symbol (Greek letters and more)
+
+      □ 'system (similar to the font to draw control labels, but see
+        normal-control-font)
+
+                The terminology “family” and “face” is mangled relative to its
+                usual meaning. A font% “face” is really a font family in the
+                usual terminology, while a font% “family” is a kind of abstract
+                font family that is mapped to a particular font family on a
+                given platform.
+
+  • face — A string face name, such as "Courier". The format and meaning of a
+    face name is platform- and device-specific. If a font’s face name is #f,
+    then the font’s appearance depends only on the family. If a face is
+    provided but no mapping is available for the face name (for a specific
+    platform or device), then the face name is ignored and the family is used.
+    See font-name-directory<%> for information about how face names are mapped
+    for drawing text.
+
+  • 
+    style — The slant style of the font, one of:
+      □ 'normal
+
+      □ 'slant (a.k.a “oblique”)
+
+      □ 'italic
+
+  • 
+    weight — The weight of the font, one of:
+      □ 'normal
+
+      □ 'light
+
+      □ 'bold
+
+  • underline? — #t for underlined, #f for plain.
+
+  • 
+    smoothing — Amount of anti-alias smoothing, one of:
+      □ 'default (platform-specific, sometimes user-configurable)
+
+      □ 'partly-smoothed (gray anti-aliasing)
+
+      □ 'smoothed (sub-pixel anti-aliasing)
+
+      □ 'unsmoothed
+
+  • size-in-pixels? — #t if the size of the font is in logical drawing units
+    (i.e., pixels for an unscaled screen or bitmap drawing context), #f if the
+    size of the font is in points (which can depend on screen resolution).
+
+To avoid creating multiple fonts with the same characteristics, use the global
+font-list% object the-font-list.
+
+See also font-name-directory<%>.
+
+(make-object font%) → (is-a?/c font%)
+(make-object font%    size                     
+                      family                   
+                    [ style                    
+                      weight                   
+                      underline?               
+                      smoothing                
+                      size-in-pixels?])   →   (is-a?/c font%)
+  size : (integer-in 1 255)
+   family   :   (one-of/c 'default 'decorative 'roman 'script
+                          'swiss 'modern 'symbol 'system)
+  style : (one-of/c 'normal 'italic 'slant) = 'normal
+  weight : (one-of/c 'normal 'bold 'light) = 'normal
+  underline? : any/c = #f
+   smoothing   :   (one-of/c 'default 'partly-smoothed   =   'default
+                             'smoothed 'unsmoothed)
+  size-in-pixels? : any/c = #f
+(make-object font%    size                     
+                      face                     
+                      family                   
+                    [ style                    
+                      weight                   
+                      underline?               
+                      smoothing                
+                      size-in-pixels?])   →   (is-a?/c font%)
+  size : (integer-in 1 255)
+  face : string?
+   family   :   (one-of/c 'default 'decorative 'roman 'script
+                          'swiss 'modern 'symbol 'system)
+  style : (one-of/c 'normal 'italic 'slant) = 'normal
+  weight : (one-of/c 'normal 'bold 'light) = 'normal
+  underline? : any/c = #f
+   smoothing   :   (one-of/c 'default 'partly-smoothed   =   'default
+                             'smoothed 'unsmoothed)
+  size-in-pixels? : any/c = #f
+When no arguments are provided, creates an instance of the default font. If no
+face name is provided, the font is created without a face name.
+
+See font% for information about family, style, and weight. font-name-directory
+<%>.
+
+See also make-font.
+
+(send a-font get-face) → (or/c string? false/c)
+Gets the font’s face name, or #f if none is specified.
+
+(send a-font get-family)
+  →   (one-of/c 'default 'decorative 'roman 'script
+                'swiss 'modern 'symbol 'system)
+Gets the font’s family. See font% for information about families.
+
+(send a-font get-font-id) → exact-integer?
+Gets the font’s ID, for use with a font-name-directory<%>. The ID is determined
+by the font’s face and family specifications, only.
+
+(send a-font get-point-size) → (integer-in 1 255)
+Gets the font’s size (roughly the height). Despite the method name, the size
+may be in logical units instead of points, depending on the result of
+get-size-in-pixels.
+
+Due to space included in a font by a font designer, a font tends to generate
+text that is slightly taller than the nominal size.
+
+(send a-font get-size-in-pixels) → boolean?
+Returns #t if the size reported by get-point-size is in logical drawing units,
+#f if it is in points.
+
+For a size in points and a screen or bitmap drawing context, the logical height
+depends on the resolution of the screen.
+
+(send a-font get-smoothing)
+ → (one-of/c 'default 'partly-smoothed 'smoothed 'unsmoothed)
+Gets the font’s anti-alias smoothing mode. See font% for information about
+smoothing.
+
+(send a-font get-style) → (one-of/c 'normal 'italic 'slant)
+Gets the font’s slant style. See font% for information about styles.
+
+(send a-font get-underlined) → boolean?
+Returns #t if the font is underlined or #f otherwise.
+
+(send a-font get-weight) → (one-of/c 'normal 'bold 'light)
+Gets the font’s weight. See font% for information about weights.
+
+(send a-font screen-glyph-exists?    c                   
+                                   [ for-label?])   →   boolean?
+  c : char
+  for-label? : any/c = #f
+Returns #t if the given character has a corresponding glyph when drawing to the
+screen or a bitmap, #f otherwise.
+
+If the second argument is true, the result indicates whether the glyph is
+available for control labels. Otherwise, it indicates whether the glyph is
+available for dc<%> drawing.
+
+For dc<%> drawing, due to automatic font substitution when drawing or measuring
+text, the result of this method does not depend on this font’s attributes
+(size, face, etc.). The font’s attributes merely provide a hint for the glyph
+search.
+
+See also glyph-exists? .
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

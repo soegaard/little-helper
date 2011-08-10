@@ -1,0 +1,848 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+On this page:
+dict?
+dict-mutable?
+dict-can-remove-keys?
+dict-can-functional-set?
+dict-set!
+dict-set*!
+dict-set
+dict-set*
+dict-has-key?
+dict-ref
+dict-ref!
+dict-update!
+dict-update
+dict-remove!
+dict-remove
+dict-map
+dict-for-each
+dict-count
+dict-iterate-first
+dict-iterate-next
+dict-iterate-key
+dict-iterate-value
+in-dict
+in-dict-keys
+in-dict-values
+in-dict-pairs
+dict-keys
+dict-values
+dict->list
+prop: dict
+prop: dict/ contract
+dict-key-contract
+dict-value-contract
+dict-iter-contract
+make-custom-hash
+make-immutable-custom-hash
+make-weak-custom-hash
+[...search manuals...]
+  top← prev  up  next → 
+
+3.15 Dictionaries
+
+A dictionary is an instance of a datatype that maps keys to values. The
+following datatypes are all dictionaries:
+
+  • hash tables;
+
+  • vectors (using only exact integers as keys);
+
+  • lists of pairs (an association list using equal? to compare keys); and
+
+  • structures whose types have the prop:dict property.
+
+A dictionary can be used as a two-valued sequence (see Sequences). The
+associations of the dictionary serve as elements of the sequence. See also
+in-dict, in-dict-keys, and in-dict-values.
+
+ (require racket/dict)
+The bindings documented in this section are provided by the racket/dict and
+racket libraries, but not racket/base.
+
+(dict? v) → boolean?
+  v : any/c
+Returns #t if v is a dictionary, #f otherwise.
+
+Beware that dict? is not a constant-time test on pairs, since checking that v
+is an association list may require traversing the list.
+
+Examples:
+
+    > (dict? #hash((a . "apple")))
+    #t
+
+    > (dict? '#("apple" "banana"))
+    #t
+
+    > (dict? '("apple" "banana"))
+    #f
+
+    > (dict? '((a . "apple") (b . "banana")))
+    #t
+
+
+
+(dict-mutable? d) → boolean?
+  d : dict?
+Returns #t if d is mutable via dict-set! and maybe dict-remove!, #f otherwise.
+
+Examples:
+
+    > (dict-mutable? #hash((a . "apple")))
+    #f
+
+    > (dict-mutable? (make-hash))
+    #t
+
+    > (dict-mutable? '#("apple" "banana"))
+    #f
+
+    > (dict-mutable? (vector "apple" "banana"))
+    #t
+
+    > (dict-mutable? '((a . "apple") (b . "banana")))
+    #f
+
+
+
+(dict-can-remove-keys? d) → boolean?
+  d : dict?
+Returns #t if d supports removing mappings via dict-remove! and/or dict-remove,
+#f otherwise.
+
+Examples:
+
+    > (dict-can-remove-keys? #hash((a . "apple")))
+    #t
+
+    > (dict-can-remove-keys? '#("apple" "banana"))
+    #f
+
+    > (dict-can-remove-keys? '((a . "apple") (b . "banana")))
+    #t
+
+
+
+(dict-can-functional-set? d) → boolean?
+  d : dict?
+Returns #t if d supports functional update via dict-set and maybe dict-remove,
+#f otherwise.
+
+Examples:
+
+    > (dict-can-functional-set? #hash((a . "apple")))
+    #t
+
+    > (dict-can-functional-set? (make-hash))
+    #f
+
+    > (dict-can-functional-set? '#("apple" "banana"))
+    #f
+
+    > (dict-can-functional-set? '((a . "apple") (b . "banana")))
+    #t
+
+
+
+(dict-set! dict key v) → void?
+  dict : (and/c dict? (not/c immutable?))
+  key : any/c
+  v : any/c
+Maps key to v in dict, overwriting any existing mapping for key. The update can
+fail with a exn:fail:contract exception if dict is not mutable or if key is not
+an allowed key for the dictionary (e.g., not an exact integer in the
+appropriate range when dict is a vector).
+
+Examples:
+
+    > (define h (make-hash))
+    > (dict-set! h 'a "apple")
+    > h
+    '#hash((a . "apple"))
+
+    > (define v (vector #f #f #f))
+    > (dict-set! v 0 "apple")
+    > v
+    '#("apple" #f #f)
+
+
+
+(dict-set*! dict key v ... ...) → void?
+  dict : (and/c dict? (not/c immutable?))
+  key : any/c
+  v : any/c
+Maps each key to each v in dict, overwriting any existing mapping for each key.
+The update can fail with a exn:fail:contract exception if dict is not mutable
+or if any key is not an allowed key for the dictionary (e.g., not an exact
+integer in the appropriate range when dict is a vector). The update takes place
+from the left, so later mappings overwrite earlier mappings.
+
+Examples:
+
+    > (define h (make-hash))
+    > (dict-set*! h 'a "apple" 'b "banana")
+    > h
+    '#hash((b . "banana") (a . "apple"))
+
+    > (define v1 (vector #f #f #f))
+    > (dict-set*! v1 0 "apple" 1 "banana")
+    > v1
+    '#("apple" "banana" #f)
+
+    > (define v2 (vector #f #f #f))
+    > (dict-set*! v2 0 "apple" 0 "banana")
+    > v2
+    '#("banana" #f #f)
+
+
+
+(dict-set dict key v) → (and/c dict? immutable?)
+  dict : (and/c dict? immutable?)
+  key : any/c
+  v : any/c
+Functionally extends dict by mapping key to v, overwriting any existing mapping
+for key, and returning an extended dictionary. The update can fail with a
+exn:fail:contract exception if dict does not support functional extension or if
+key is not an allowed key for the dictionary.
+
+Examples:
+
+    > (dict-set #hash() 'a "apple")
+    '#hash((a . "apple"))
+
+    > (dict-set #hash((a . "apple") (b . "beer")) 'b "banana")
+    '#hash((b . "banana") (a . "apple"))
+
+    > (dict-set '() 'a "apple")
+    '((a . "apple"))
+
+    > (dict-set '((a . "apple") (b . "beer")) 'b "banana")
+    '((a . "apple") (b . "banana"))
+
+
+
+(dict-set* dict key v ... ...) → (and/c dict? immutable?)
+  dict : (and/c dict? immutable?)
+  key : any/c
+  v : any/c
+Functionally extends dict by mapping each key to each v, overwriting any
+existing mapping for each key, and returning an extended dictionary. The update
+can fail with a exn:fail:contract exception if dict does not support functional
+extension or if any key is not an allowed key for the dictionary. The update
+takes place from the left, so later mappings overwrite earlier mappings.
+
+Examples:
+
+    > (dict-set* #hash() 'a "apple" 'b "beer")
+    '#hash((b . "beer") (a . "apple"))
+
+    > (dict-set* #hash((a . "apple") (b . "beer")) 'b "banana" 'a "anchor")
+    '#hash((b . "banana") (a . "anchor"))
+
+    > (dict-set* '() 'a "apple" 'b "beer")
+    '((a . "apple") (b . "beer"))
+
+    > (dict-set* '((a . "apple") (b . "beer")) 'b "banana" 'a "anchor")
+    '((a . "anchor") (b . "banana"))
+
+    > (dict-set* '((a . "apple") (b . "beer")) 'b "banana" 'b "balistic")
+    '((a . "apple") (b . "balistic"))
+
+
+
+(dict-has-key? dict key) → boolean?
+  dict : dict?
+  key : any/c
+Returns #t if dict contains a value for the given key, #f otherwise.
+
+Examples:
+
+    > (dict-has-key? #hash((a . "apple") (b . "beer")) 'a)
+    #t
+
+    > (dict-has-key? #hash((a . "apple") (b . "beer")) 'c)
+    #f
+
+    > (dict-has-key? '((a . "apple") (b . "banana")) 'b)
+    #t
+
+    > (dict-has-key? #("apple" "banana") 1)
+    #t
+
+    > (dict-has-key? #("apple" "banana") 3)
+    #f
+
+    > (dict-has-key? #("apple" "banana") -3)
+    #f
+
+
+
+(dict-ref dict key [failure-result]) → any
+  dict : dict?
+  key : any/c
+   failure-result   :   any/c
+                    =   (lambda () (raise (make-exn:fail ....)))
+Returns the value for key in dict. If no value is found for key, then
+failure-result determines the result:
+
+  • If failure-result is a procedure, it is called (through a tail call) with
+    no arguments to produce the result.
+
+  • Otherwise, failure-result is returned as the result.
+
+Examples:
+
+    > (dict-ref #hash((a . "apple") (b . "beer")) 'a)
+    "apple"
+
+    > (dict-ref #hash((a . "apple") (b . "beer")) 'c)
+    hash-ref: no value found for key: 'c
+
+    > (dict-ref #hash((a . "apple") (b . "beer")) 'c #f)
+    #f
+
+    > (dict-ref '((a . "apple") (b . "banana")) 'b)
+    "banana"
+
+    > (dict-ref #("apple" "banana") 1)
+    "banana"
+
+    > (dict-ref #("apple" "banana") 3 #f)
+    #f
+
+    > (dict-ref #("apple" "banana") -3 #f)
+    dict-ref: contract violation, expected
+
+    <exact-nonnegative-integer?>, given: -3
+
+      contract from <collects>/racket/dict.rkt, blaming
+
+    top-level
+
+      contract:
+
+        (->i
+
+        ((d dict?) (k (d) ...))
+
+        ((default any/c))
+
+        any)
+
+      at: <collects>/racket/dict.rkt:145.2
+
+
+
+(dict-ref! dict key to-set) → any
+  dict : dict?
+  key : any/c
+  to-set : any/c
+Returns the value for key in dict. If no value is found for key, then to-set
+determines the result as in dict-ref (i.e., it is either a thunk that computes
+a value or a plain value), and this result is stored in dict for the key. (Note
+that if to-set is a thunk, it is not invoked in tail position.)
+
+Examples:
+
+    > (dict-ref! (make-hasheq '((a . "apple") (b . "beer"))) 'a)
+    procedure dict-ref!: expects 3 arguments, given 2:
+
+    '#hasheq((b . "beer") (a . "apple")) 'a
+
+    > (dict-ref! (make-hasheq '((a . "apple") (b . "beer"))) 'c 'cabbage)
+    'cabbage
+
+    > (define h (make-hasheq '((a . "apple") (b . "beer"))))
+    > (dict-ref h 'c)
+    hash-ref: no value found for key: 'c
+
+    > (dict-ref! h 'c (λ () 'cabbage))
+    'cabbage
+
+    > (dict-ref h 'c)
+    'cabbage
+
+
+
+(dict-update!    dict                    
+                 key                     
+                 updater                 
+               [ failure-result])   →   void?
+  dict : (and/c dict? (not/c immutable?))
+  key : any/c
+  updater : (any/c . -> . any/c)
+   failure-result   :   any/c
+                    =   (lambda () (raise (make-exn:fail ....)))
+Composes dict-ref and dict-set! to update an existing mapping in dict, where
+the optional failure-result argument is used as in dict-ref when no mapping
+exists for key already.
+
+Examples:
+
+    > (define h (make-hash))
+    > (dict-update! h 'a add1)
+    hash-ref: no value found for key: 'a
+
+    > (dict-update! h 'a add1 0)
+    > h
+    '#hash((a . 1))
+
+    > (define v (vector #f #f #f))
+    > (dict-update! v 0 not)
+    > v
+    '#(#t #f #f)
+
+
+
+(dict-update dict key updater [failure-result])
+ → (and/c dict? immutable?)
+  dict : dict?
+  key : any/c
+  updater : (any/c . -> . any/c)
+   failure-result   :   any/c
+                    =   (lambda () (raise (make-exn:fail ....)))
+Composes dict-ref and dict-set to functionally update an existing mapping in
+dict, where the optional failure-result argument is used as in dict-ref when no
+mapping exists for key already.
+
+Examples:
+
+    > (dict-update #hash() 'a add1)
+    hash-ref: no value found for key: 'a
+
+    > (dict-update #hash() 'a add1 0)
+    '#hash((a . 1))
+
+    > (dict-update #hash((a . "apple") (b . "beer")) 'b string-length)
+    '#hash((b . 4) (a . "apple"))
+
+
+
+(dict-remove! dict key) → void?
+  dict : (and/c dict? (not/c immutable?))
+  key : any/c
+Removes any existing mapping for key in dict. The update can fail if dict is
+not mutable or does not support removing keys (as is the case for vectors, for
+example).
+
+Examples:
+
+    > (define h (make-hash))
+    > (dict-set! h 'a "apple")
+    > h
+    '#hash((a . "apple"))
+
+    > (dict-remove! h 'a)
+    > h
+    '#hash()
+
+
+
+(dict-remove dict key) → (and/c dict? immutable?)
+  dict : (and/c dict? immutable?)
+  key : any/c
+Functionally removes any existing mapping for key in dict, returning the fresh
+dictionary. The update can fail if dict does not support functional update or
+does not support removing keys.
+
+Examples:
+
+    > (define h #hash())
+    > (define h (dict-set h 'a "apple"))
+    > h
+    '#hash((a . "apple"))
+
+    > (dict-remove h 'a)
+    '#hash()
+
+    > h
+    '#hash((a . "apple"))
+
+    > (dict-remove h 'z)
+    '#hash((a . "apple"))
+
+    > (dict-remove '((a . "apple") (b . "banana")) 'a)
+    '((b . "banana"))
+
+
+
+(dict-map dict proc) → (listof any/c)
+  dict : dict?
+  proc : (any/c any/c . -> . any/c)
+Applies the procedure proc to each element in dict in an unspecified order,
+accumulating the results into a list. The procedure proc is called each time
+with a key and its value.
+
+Example:
+
+    > (dict-map #hash((a . "apple") (b . "banana")) vector)
+    '(#(b "banana") #(a "apple"))
+
+
+
+(dict-for-each dict proc) → void?
+  dict : dict?
+  proc : (any/c any/c . -> . any)
+Applies proc to each element in dict (for the side-effects of proc) in an
+unspecified order. The procedure proc is called each time with a key and its
+value.
+
+Example:
+
+    > (dict-for-each #hash((a . "apple") (b . "banana"))
+                     (lambda (k v)
+                       (printf "~a = ~s\n" k v)))
+    b = "banana"
+
+    a = "apple"
+
+
+
+(dict-count dict) → exact-nonnegative-integer?
+  dict : dict?
+Returns the number of keys mapped by dict, usually in constant time.
+
+Examples:
+
+    > (dict-count #hash((a . "apple") (b . "banana")))
+    2
+
+    > (dict-count #("apple" "banana"))
+    2
+
+
+
+(dict-iterate-first dict) → any/c
+  dict : dict?
+Returns #f if dict contains no elements, otherwise it returns a non-#f value
+that is an index to the first element in the dict table; “first” refers to an
+unspecified ordering of the dictionary elements. For a mutable dict, this index
+is guaranteed to refer to the first item only as long as no mappings are added
+to or removed from dict.
+
+Examples:
+
+    > (dict-iterate-first #hash((a . "apple") (b . "banana")))
+    0
+
+    > (dict-iterate-first #hash())
+    #f
+
+    > (dict-iterate-first #("apple" "banana"))
+    0
+
+    > (dict-iterate-first '((a . "apple") (b . "banana")))
+    #<assoc-iter>
+
+
+
+(dict-iterate-next dict pos) → any/c
+  dict : dict?
+  pos : any/c
+Returns either a non-#f that is an index to the element in dict after the
+element indexed by pos or #f if pos refers to the last element in dict. If pos
+is not a valid index, then the exn:fail:contract exception is raised. For a
+mutable dict, the result index is guaranteed to refer to its item only as long
+as no items are added to or removed from dict. The dict-iterate-next operation
+should take constant time.
+
+Examples:
+
+    > (define h #hash((a . "apple") (b . "banana")))
+    > (define i (dict-iterate-first h))
+    > i
+    0
+
+    > (dict-iterate-next h i)
+    1
+
+    > (dict-iterate-next h (dict-iterate-next h i))
+    #f
+
+
+
+(dict-iterate-key dict pos) → any
+  dict : dict?
+  pos : any/c
+Returns the key for the element in dict at index pos. If pos is not a valid
+index for dict, the exn:fail:contract exception is raised. The dict-iterate-key
+operation should take constant time.
+
+Examples:
+
+    > (define h '((a . "apple") (b . "banana")))
+    > (define i (dict-iterate-first h))
+    > (dict-iterate-key h i)
+    'a
+
+    > (dict-iterate-key h (dict-iterate-next h i))
+    'b
+
+
+
+(dict-iterate-value dict pos) → any
+  dict : dict?
+  pos : any/c
+Returns the value for the element in dict at index pos. If pos is not a valid
+index for dict, the exn:fail:contract exception is raised. The dict-iterate-key
+operation should take constant time.
+
+Examples:
+
+    > (define h '((a . "apple") (b . "banana")))
+    > (define i (dict-iterate-first h))
+    > (dict-iterate-value h i)
+    "apple"
+
+    > (dict-iterate-value h (dict-iterate-next h i))
+    "banana"
+
+
+
+(in-dict dict) → sequence?
+  dict : dict?
+Returns a sequence whose each element is two values: a key and corresponding
+value from dict.
+
+Examples:
+
+    > (define h #hash((a . "apple") (b . "banana")))
+    > (for/list ([(k v) (in-dict h)])
+        (format "~a = ~s" k v))
+    '("b = \"banana\"" "a = \"apple\"")
+
+
+
+(in-dict-keys dict) → sequence?
+  dict : dict?
+Returns a sequence whose elements are the keys of dict.
+
+Examples:
+
+    > (define h #hash((a . "apple") (b . "banana")))
+    > (for/list ([k (in-dict-keys h)])
+        k)
+    '(b a)
+
+
+
+(in-dict-values dict) → sequence?
+  dict : dict?
+Returns a sequence whose elements are the values of dict.
+
+Examples:
+
+    > (define h #hash((a . "apple") (b . "banana")))
+    > (for/list ([v (in-dict-values h)])
+        v)
+    '("banana" "apple")
+
+
+
+(in-dict-pairs dict) → sequence?
+  dict : dict?
+Returns a sequence whose elements are pairs, each containing a key and its
+value from dict (as opposed to using in-dict, which gets the key and value as
+separate values for each element).
+
+Examples:
+
+    > (define h #hash((a . "apple") (b . "banana")))
+    > (for/list ([p (in-dict-pairs h)])
+        p)
+    '((b . "banana") (a . "apple"))
+
+
+
+(dict-keys dict) → list?
+  dict : dict?
+Returns a list of the keys from dict in an unspecified order.
+
+Examples:
+
+    > (define h #hash((a . "apple") (b . "banana")))
+    > (dict-keys h)
+    '(b a)
+
+
+
+(dict-values dict) → list?
+  dict : dict?
+Returns a list of the values from dict in an unspecified order.
+
+Examples:
+
+    > (define h #hash((a . "apple") (b . "banana")))
+    > (dict-values h)
+    '("banana" "apple")
+
+
+
+(dict->list dict) → list?
+  dict : dict?
+Returns a list of the associations from dict in an unspecified order.
+
+Examples:
+
+    > (define h #hash((a . "apple") (b . "banana")))
+    > (dict->list h)
+    '((b . "banana") (a . "apple"))
+
+
+
+prop:dict : struct-type-property?
+A structure type property (see Structure Type Properties) that supplies
+dictionary-operation implementations for a structure type. The property value
+must be a vector of ten procedures (some optional) that are applied only to
+instances of the structure type that has the property:
+
+  • ref : a procedure like dict-ref that accepts either two or three arguments
+
+  • set! : a procedure like dict-set! that accepts three arguments, or #f if
+    mutation is not supported
+
+  • set : a procedure like dict-set that accepts three arguments and returns an
+    updated dictionary, or #f if functional update is not supported
+
+  • remove! : a procedure like dict-remove! that accepts two arguments, or #f
+    if mutation is not supported or if key removal is not supported
+
+  • remove : a procedure like dict-remove that accepts two arguments and
+    returns an updated dictionary, or #f if functional update or key removal is
+    not supported
+
+  • count : a procedure like dict-count that accepts one argument
+
+  • iterate-first : a procedure like dict-iterate-first that accepts one
+    argument
+
+  • iterate-next : a procedure like dict-iterate-next that accepts two
+    arguments; the procedure is responsible for checking that the second
+    argument is a valid position for the first argument
+
+  • iterate-key : a procedure like dict-iterate-key that accepts two arguments;
+    the procedure is responsible for checking that the second argument is a
+    valid position for the first argument
+
+  • iterate-value : a procedure like dict-iterate-value that accepts two
+    arguments; the procedure is responsible for checking that the second
+    argument is a valid position for the first argument
+
+prop:dict/contract : struct-type-property?
+A structure type property for defining dictionaries with contracts. The value
+associated with prop:dict/contract must be a list of two immutable vectors:
+
+    (list dict-vector
+          (vector type-key-contract
+                  type-value-contract
+                  type-iter-contract
+                  instance-key-contract
+                  instance-value-contract
+                  instance-iter-contract))
+
+The first vector must be suitable as a value for prop:dict (in addition, it
+must be an immutable vector). The second vector must contain six elements; each
+of the first three is a contract for the dictionary type’s keys, values, and
+positions, respectively. Each of the second three is either #f or a procedure
+used to extract the contract from a dictionary instance.
+
+(dict-key-contract d) → contract?
+  d : dict?
+(dict-value-contract d) → contract?
+  d : dict?
+(dict-iter-contract d) → contract?
+  d : dict?
+Returns the contract that d imposes on its keys, values, or iterators,
+respectively, if d implements the prop:dict/contract interface.
+
+(make-custom-hash eql? hash-proc [hash2-proc]) → dict?
+  eql? : (any/c any/c . -> . any/c)
+  hash-proc : (any/c . -> . exact-integer?)
+   hash2-proc   :   (any/c . -> . exact-integer?)
+                =   (lambda (v) 10001)
+(make-immutable-custom-hash    eql?                
+                               hash-proc           
+                             [ hash2-proc])   →   dict?
+  eql? : (any/c any/c . -> . any/c)
+  hash-proc : (any/c . -> . exact-integer?)
+   hash2-proc   :   (any/c . -> . exact-integer?)
+                =   (lambda (v) 10001)
+(make-weak-custom-hash    eql?                
+                          hash-proc           
+                        [ hash2-proc])   →   dict?
+  eql? : (any/c any/c . -> . any/c)
+  hash-proc : (any/c . -> . exact-integer?)
+   hash2-proc   :   (any/c . -> . exact-integer?)
+                =   (lambda (v) 10001)
+Creates a dictionary that is implemented in terms of a hash table where keys
+are compared with eql? and hashed with hash-proc and hash2-proc. See
+prop:equal+hash for information on suitable equality and hashing functions.
+
+The make-custom-hash and make-weak-custom-hash functions create a mutable
+dictionary that does not support functional update, while
+make-immutable-custom-hash creates an immutable dictionary that supports
+functional update. The dictionary created by make-weak-custom-hash retains its
+keys weakly, like the result of make-weak-hash.
+
+Dictionaries created by make-custom-hash and company are equal? when they have
+the same mutability and key strength, the associated procedures are equal?, and
+the key–value mappings are the same when keys and values are compared with
+equal?.
+
+Examples:
+
+    > (define h (make-custom-hash (lambda (a b)
+                                    (string=? (format "~a" a)
+                                              (format "~a" b)))
+                                  (lambda (a)
+                                    (equal-hash-code
+                                     (format "~a" a)))))
+    > (dict-set! h 1 'one)
+    > (dict-ref h "1")
+    'one
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

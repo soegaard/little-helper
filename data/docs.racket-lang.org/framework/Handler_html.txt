@@ -1,0 +1,178 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+handler: handler?
+handler: handler-name
+handler: handler-extension
+handler: handler-handler
+handler: insert-format-handler
+handler: find-named-format-handler
+handler: find-format-handler
+handler: edit-file
+handler: current-create-new-window
+handler: open-file
+handler: install-recent-items
+handler: set-recent-items-frame-superclass
+handler: add-to-recent
+handler: set-recent-position
+handler: size-recently-opened-files
+[...search manuals...]
+  top← prev  up  next → 
+
+17 Handler
+
+(handler:handler? obj) → boolean?
+  obj : any/c
+This predicate determines if its input is a handler.
+(handler:handler-name handler) → string?
+  handler : handler:handler?
+Extracts the name from a handler.
+(handler:handler-extension handler)
+ → (or/c (path? . -> . boolean?) (listof string?))
+  handler : handler:handler?
+Extracts the extension from a handler.
+(handler:handler-handler handler)
+ → (path? . -> . (is-a?/c frame:editor<%>))
+  handler : handler:handler?
+Extracts the handler’s handling function.
+(handler:insert-format-handler   name            
+                                 pred            
+                                 handler)   →   void?
+  name : string?
+  pred : (or/c string? (listof string?) (path? . -> . boolean?))
+  handler : (path? . -> . (or/c false/c (is-a?/c frame:editor<%>)))
+This function inserts a format handler.
+
+The string, name names the format handler for use with
+handler:find-named-format-handler. If pred is a string, it is matched with the
+extension of a filename by handler:find-format-handler. If pred is a list of
+strings, they are each matched with the extension of a filename by
+handler:find-format-handler. If it is a function, the filename is applied to
+the function and the functions result determines if this is the handler to use.
+
+The most recently added format handler takes precedence over all other format
+handlers.
+(handler:find-named-format-handler name)
+ → (path? . -> . (is-a?/c frame:editor<%>))
+  name : string?
+This function selects a format handler. See also handler:insert-format-handler.
+
+It finds a handler based on name.
+(handler:find-format-handler filename)
+ → (path? . -> . (is-a?/c frame:editor<%>))
+  filename : path?
+This function selects a format handler. See also handler:insert-format-handler.
+
+It finds a handler based on filename.
+(handler:edit-file filename [make-default])
+ → (or/c false/c (is-a?/c frame:editor<%>))
+  filename : (or/c path? false/c)
+   make-default   :   (-> (is-a?/c frame:editor<%>))
+                  =   (λ () ((handler:current-create-new-window) filename))
+This function creates a frame or re-uses an existing frame to edit a file.
+
+If the preference 'framework:open-here is set to #t, and (send (
+group:get-the-frame-group) get-open-here-frame) returns a frame, the open-here
+method of that frame is used to load the file in the existing frame.
+
+Otherwise, it invokes the appropriate format handler to open the file (see
+handler:insert-format-handler).
+
+  • 
+    If filename is a string, this function checks the result of
+    group:get-the-frame-group to see if the filename is already open by a frame
+    in the group.
+      □ If so, it returns the frame.
+
+      □ 
+        If not, this function calls handler:find-format-handler with filename.
+          ☆ If a handler is found, it is applied to filename and its result is
+            the final result.
+
+          ☆ If not, make-default is used.
+
+  • If filename is #f, make-default is used.
+
+(handler:current-create-new-window)
+ → (-> (or/c false/c path?) (is-a?/c frame%))
+(handler:current-create-new-window proc) → void?
+  proc : (-> (or/c false/c path?) (is-a?/c frame%))
+This is a parameter that controls how the framework creates new application
+windows.
+
+The default setting is this:
+
+    (λ (filename)
+      (let ([frame (make-object frame:text-info-file% filename)])
+        (send frame show #t)
+        frame))
+
+(handler:open-file [dir])
+ → (or/c false/c (is-a?/c frame:basic<%>))
+  dir : (or/c false/c path? string?) = #f
+This function queries the user for a filename and opens the file for editing.
+It uses handler:edit-file to open the file, once the user has chosen it.
+
+Calls finder:get-file and handler:edit-file, passing along dir.
+(handler:install-recent-items menu) → void?
+  menu : (is-a?/c menu%)
+This function deletes all of the items in the given menu and adds one menu item
+for each recently opened file. These menu items, when selected, call
+handler:edit-file with the filename of the recently opened file.
+
+The menu’s size is limited to 10.
+(handler:set-recent-items-frame-superclass frame) → void?
+  frame : (implementation?/c frame:standard-menus<%>)
+Sets the superclass for the recently opened files frame. It must be derived
+from frame:standard-menus.
+(handler:add-to-recent filename) → void?
+  filename : path?
+Adds a filename to the list of recently opened files.
+(handler:set-recent-position   filename        
+                               start           
+                               end)       →   void?
+  filename : path?
+  start : number?
+  end : number?
+Sets the selection of the recently opened file to start and end.
+(handler:size-recently-opened-files num) → void?
+  num : number?
+Sizes the 'framework:recently-opened-files/pos preference list length to num.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,189 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 7  Low-Level Scribble API
+ 7.1  Scribble Layers
+ 7.2  @ Reader Internals
+ 7.3  Structures And Processing
+ 7.4  Renderer
+ 7.5  Decoding Text
+ 7.6  Document Language
+ 7.7  Document Reader
+ 7.8  Cross-Reference Utilities
+ 7.9  Extending and Configuring Scribble Output
+7.10  Connecting to "racket"
+On this page:
+xref?
+load-xref
+xref-binding->definition-tag
+xref-tag->path+ anchor
+xref-tag->index-entry
+xref-render
+xref-transfer-info
+xref-index
+entry
+[...search manuals...]
+  top← prev  up  next → 
+
+7.8 Cross-Reference Utilities
+
+ (require scribble/xref)
+The scribble/xref library provides utilities for querying cross-reference
+information that was collected from a document build.
+
+(xref? v) → boolean?
+  v : any/c
+Returns #t if v is a cross-reference record created by load-xref, #f otherwise.
+
+(load-xref    sources                        
+            [ #:render% using-render%        
+              #:root root-path])        →   xref?
+  sources : (listof (-> any/c))
+  using-render% : (subclass?/c render%) = (render-mixin render%)
+  root-path : (or/c path-string? false/c) = #f
+Creates a cross-reference record given a list of functions that each produce a
+serialized information obtained from serialize-info in render%. If a sources
+element produces #f, its result is ignored.
+
+Since the format of serialized information is specific to a rendering class,
+the optional using-render% argument accepts the relevant class. It default to
+HTML rendering.
+
+If root-path is not #f, then file paths that are serialized as relative to an
+instantiation-supplied root-path are deserialized as relative instead to the
+given root-path.
+
+Use load-collections-xref from setup/xref to get all cross-reference
+information for installed documentation.
+
+(xref-binding->definition-tag   xref           
+                                binding        
+                                mode)     →   (or/c tag? false/c)
+  xref : xref?
+                 (or/c identifier?
+                       (list/c (or/c module-path?
+                                     module-path-index?)
+                               symbol?)
+                       (listof module-path-index?
+   binding   :                 symbol?
+                               module-path-index?
+                               symbol?
+                               (one-of/c 0 1)
+                               (or/c exact-integer? false/c)
+                               (or/c exact-integer? false/c)))
+  mode : (or/c exact-integer? false/c)
+Locates a tag in xref that documents a module export. The binding is specified
+in one of several ways, as described below; all possibilities encode an
+exporting module and a symbolic name. The name must be exported from the
+specified module. Documentation is found either for the specified module or, if
+the exported name is re-exported from other other module, for the other module
+(transitively).
+
+The mode argument specifies the relevant phase level for the binding. The
+binding is specified in one of four ways:
+
+  • If binding is an identifier, then identifier-binding is used with mode to
+    determine the binding.
+
+  • If binding is a two-element list, then the first element provides the
+    exporting module and the second the exported name. The mode argument is
+    effectively ignored.
+
+  • If binding is a seven-element list, then it corresponds to a result from
+    identifier-binding using mode.
+
+  • If binding is a five-element list, then the first element is as for the
+    two-element-list case, and the remain elements are as in the last four
+    elements of the seven-element case.
+
+If a documentation point exists in xref, a tag is returned, which might be used
+with xref-tag->path+anchor or embedded in a document rendered via xref-render.
+If no definition point is found in xref, the result is #f.
+
+(xref-tag->path+anchor    xref                          
+                          tag                           
+                        [ #:external-root-url root-url  
+                          #:render% using-render%])     
+  →   (or/c false/c path?)
+      (or/c false/c string?)
+  xref : xref?
+  tag : tag?
+  root-url : (or/c string? #f) = #f
+  using-render% : (subclass?/c render%) = (render-mixin render%)
+Returns a path and anchor string designated by the key tag according the
+cross-reference xref. The first result is #f if no mapping is found for the
+given tag. The second result is #f if the first result is #f, and it can also
+be #f if the tag refers to a page rather than a specific point in a page.
+
+If root-url is provided, then references to documentation in the main
+installation are redirected to the given URL.
+
+The optional using-render% argument is as for load-xref.
+
+(xref-tag->index-entry xref tag) → (or/c false/c entry?)
+  xref : xref?
+  tag : tag?
+Extract an entry structure that provides addition information about the
+definition (of any) referenced by tag. This function can be composed with
+xref-binding->definition-tag to obtain information about a binding, such as the
+library that exports the binding and its original name.
+
+(xref-render    xref                                        
+                doc                                         
+                dest                                        
+              [ #:render% using-render%                     
+                #:refer-to-existing-files? use-existing?])  
+ → (or/c void? any/c)
+  xref : xref?
+  doc : part?
+  dest : (or/c path-string? false/c)
+  using-render% : (subclass?/c render%) = (render-mixin render%)
+  use-existing? : any/c = (not dest)
+Renders doc using the cross-reference info in xref to the destination dest. For
+example, doc might be a generated document of search results using link tags
+described in xref.
+
+If dest is #f, no file is written, and the result is an X-expression for the
+rendered page. Otherwise, the file dest is written and the result is #<void>.
+
+The optional using-render% argument is as for load-xref. It determines the kind
+of output that is generated.
+
+If use-existing? is true, then files referenced during rendering (such as image
+files) are referenced from their existing locations, instead of copying to the
+directory of dest.
+
+(xref-transfer-info renderer ci xref) → void?
+  renderer : (is-a?/c render%)
+  ci : collect-info?
+  xref : xref?
+Transfers cross-reference information to ci, which is the initially collected
+information from renderer.
+
+(xref-index xref) → (listof entry?)
+  xref : xref?
+Converts indexing information xref into a list of entry structures.
+
+(struct   entry (words content tag desc)
+          #:extra-constructor-name make-entry)
+  words : (and/c (listof string?) cons?)
+  content : list?
+  tag : tag?
+  desc : any/c
+Represents a single entry in a Scribble document index.
+
+The words list corresponds to index-element-plain-seq. The content list
+corresponds to index-element-entry-seq. The desc value corresponds to
+index-element-desc. The tag is the destination for the index link into the main
+document.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

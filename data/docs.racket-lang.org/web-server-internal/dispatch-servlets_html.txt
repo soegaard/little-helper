@@ -1,0 +1,194 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 2  Dispatchers
+ 2.1  General
+ 2.2  Mapping URLs to Paths
+ 2.3  Sequencing
+ 2.4  Timeouts
+ 2.5  Lifting Procedures
+ 2.6  Filtering Requests
+ 2.7  Procedure Invocation upon Request
+ 2.8  Logging
+ 2.9  Password Protection
+2.10  Virtual Hosts
+2.11  Serving Files
+2.12  Serving Servlets
+2.13  Statistics
+2.14  Limiting Requests
+► 2.12  Serving Servlets
+2.12.1  Setting Up Servlets
+2.12.2  Servlet Namespaces
+2.12.3  Internal Servlet Representation
+On this page:
+url->servlet/ c
+make-cached-url->servlet
+make
+2.12.1 Setting Up Servlets
+make-v1.servlet
+make-v2.servlet
+make-stateless.servlet
+default-module-specs
+path->servlet/ c
+make-default-path->servlet
+2.12.2 Servlet Namespaces
+make-servlet-namespace/ c
+make-make-servlet-namespace
+2.12.2.1 Why this is useful
+2.12.3 Internal Servlet Representation
+servlet
+[...search manuals...]
+  top← prev  up  next → 
+
+2.12 Serving Servlets
+
+ (require web-server/dispatchers/dispatch-servlets)
+The web-server/dispatchers/dispatch-servlets module defines a dispatcher
+constructor that runs servlets.
+url->servlet/c : contract?
+Equivalent to (-> url? servlet?)
+
+(make-cached-url->servlet   url->path       
+                            path->serlvet)  
+  →   (-> void)   url->servlet/c
+  url->path : url->path/c
+  path->serlvet : path->servlet/c
+The first return value flushes the cache. The second is a procedure that uses
+url->path to resolve the URL to a path, then uses path->servlet to resolve that
+path to a servlet, caching the results in an internal table.
+
+(make    url->servlet                                             
+       [ #:responders-servlet-loading responders-servlet-loading  
+         #:responders-servlet responders-servlet])                
+ → dispatcher/c
+  url->servlet : url->servlet/c
+   responders-servlet-loading   :   (url? exn? . -> . can-be-response?)
+                                =   servlet-loading-responder
+   responders-servlet   :   (url? exn? . -> . can-be-response?)
+                        =   servlet-error-responder
+This dispatcher runs racket servlets, using url->servlet to resolve URLs to the
+underlying servlets. If servlets have errors loading, then
+responders-servlet-loading is used. Other errors are handled with
+responders-servlet. If a servlet raises calls next-dispatcher, then the signal
+is propagated by this dispatcher.
+
+2.12.1 Setting Up Servlets
+
+ (require web-server/servlet/setup)
+This module is used internally to build and load servlets. It may be useful to
+those who are trying to extend the server.
+
+(make-v1.servlet directory timeout start) → servlet?
+  directory : path-string?
+  timeout : integer?
+  start : (request? . -> . can-be-response?)
+Creates a version 1 servlet that uses directory as its current directory, a
+timeout manager with a timeout timeout, and start as the request handler.
+
+(make-v2.servlet directory manager start) → servlet?
+  directory : path-string?
+  manager : manager?
+  start : (request? . -> . can-be-response?)
+Creates a version 2 servlet that uses directory as its current directory, a
+manager as the continuation manager, and start as the request handler.
+
+(make-stateless.servlet   directory        
+                          stuffer          
+                          manager          
+                          start)      →   servlet?
+  directory : path-string?
+  stuffer : (stuffer/c serializable? bytes?)
+  manager : manager?
+  start : (request? . -> . can-be-response?)
+Creates a stateless web-server servlet that uses directory as its current
+directory, stuffer as its stuffer, and manager as the continuation manager, and
+start as the request handler.
+
+default-module-specs : (listof module-path?)
+The modules that the Web Server needs to share with all servlets.
+
+path->servlet/c : contract?
+Equivalent to (-> path? servlet?).
+
+(make-default-path->servlet                                 
+   [ #:make-servlet-namespace make-servlet-namespace        
+     #:timeouts-default-servlet timeouts-default-servlet])  
+ → path->servlet/c
+   make-servlet-namespace   :   make-servlet-namespace/c
+                            =   (make-make-servlet-namespace)
+  timeouts-default-servlet : integer? = 30
+Constructs a procedure that loads a servlet from the path in a namespace
+created with make-servlet-namespace, using a timeout manager with
+timeouts-default-servlet as the default timeout (if no manager is given.)
+
+2.12.2 Servlet Namespaces
+
+ (require web-server/configuration/namespace)
+This module provides a function to help create the make-servlet-namespace
+procedure needed by the make function of web-server/dispatchers/
+dispatch-servlets.
+
+make-servlet-namespace/c : contract?
+Equivalent to
+
+    (->* ()
+         (#:additional-specs (listof module-path?))
+         namespace?)
+
+(make-make-servlet-namespace 
+#:to-be-copied-module-specs to-be-copied-module-specs)
+ → make-servlet-namespace/c
+  to-be-copied-module-specs : (listof module-path?)
+This function creates a function that when called will construct a new
+namespace that has all the modules from to-be-copied-module-specs and
+additional-specs, as well as racket and mred, provided they are already
+attached to the (current-namespace) of the call-site.
+
+Example:
+
+    (make-make-servlet-namespace
+     #:to-be-copied-module-specs `((lib "database.rkt" "my-module")))
+
+2.12.2.1 Why this is useful
+
+A different namespace is needed for each servlet, so that if servlet A and
+servlet B both use a stateful module C, they will be isolated from one another.
+We see the Web Server as an operating system for servlets, so we inherit the
+isolation requirement on operating systems.
+
+However, there are some modules which must be shared. If they were not, then
+structures cannot be passed from the Web Server to the servlets, because
+Racket’s structures are generative.
+
+Since, on occasion, a user will actually wanted servlets A and B to interact
+through module C. A custom make-servlet-namespace can be created, through this
+procedure, that attaches module C to all servlet namespaces. Through other
+means (see Dispatchers) different sets of servlets can share different sets of
+modules.
+
+2.12.3 Internal Servlet Representation
+
+ (require web-server/private/servlet)
+
+(struct   servlet (custodian namespace manager directory handler)
+          #:constructor-name make-servlet
+          #:mutable)
+  custodian : custodian?
+  namespace : namespace?
+  manager : manager?
+  directory : path-string?
+  handler : (request? . -> . can-be-response?)
+Instances of this structure hold the necessary parts of a servlet: the
+custodian responsible for the servlet’s resources, the namespace the servlet is
+executed within, the manager responsible for the servlet’s continuations, the
+current directory of the servlet, and the handler for all requests to the
+servlet.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

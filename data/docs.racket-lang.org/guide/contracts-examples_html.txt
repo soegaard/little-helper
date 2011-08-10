@@ -1,0 +1,497 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Contracts and Boundaries
+7.2  Simple Contracts on Functions
+7.3  Contracts on Functions in General
+7.4  Contracts: A Thorough Example
+7.5  Contracts on Structures
+7.6  Abstract Contracts using #: exists and #: ∃
+7.7  Additional Examples
+7.8  Gotchas
+► 7.7  Additional Examples
+7.7.1  A Customer-Manager Component
+7.7.2  A Parameteric (Simple) Stack
+7.7.3  A Dictionary
+7.7.4  A Queue
+On this page:
+7.7.1 A Customer-Manager Component
+7.7.2 A Parameteric (Simple) Stack
+7.7.3 A Dictionary
+7.7.4 A Queue
+[...search manuals...]
+  top← prev  up  next → 
+
+7.7 Additional Examples
+
+This section illustrates the current state of Racket’s contract implementation
+with a series of examples from Design by Contract, by Example [Mitchell02].
+
+Mitchell and McKim’s principles for design by contract DbC are derived from the
+1970s style algebraic specifications. The overall goal of DbC is to specify the
+constructors of an algebra in terms of its observers. While we reformulate
+Mitchell and McKim’s terminology and we use a mostly applicative approach, we
+retain their terminology of “classes” and “objects”:
+
+  • Separate queries from commands.
+
+    A query returns a result but does not change the observable properties of
+    an object. A command changes the visible properties of an object, but does
+    not return a result. In applicative implementation a command typically
+    returns an new object of the same class.
+
+  • Separate basic queries from derived queries.
+
+    A derived query returns a result that is computable in terms of basic
+    queries.
+
+  • For each derived query, write a post-condition contract that specifies the
+    result in terms of the basic queries.
+
+  • For each command, write a post-condition contract that specifies the
+    changes to the observable properties in terms of the basic queries.
+
+  • For each query and command, decide on a suitable pre-condition contract.
+
+Each of the following sections corresponds to a chapter in Mitchell and McKim’s
+book (but not all chapters show up here). We recommend that you read the
+contracts first (near the end of the first modules), then the implementation
+(in the first modules), and then the test module (at the end of each section).
+
+Mitchell and McKim use Eiffel as the underlying programming language and employ
+a conventional imperative programming style. Our long-term goal is to
+transliterate their examples into applicative Racket, structure-oriented
+imperative Racket, and Racket’s class system.
+
+Note: To mimic Mitchell and McKim’s informal notion of parametericity
+(parametric polymorphism), we use first-class contracts. At several places,
+this use of first-class contracts improves on Mitchell and McKim’s design (see
+comments in interfaces).
+
+7.7.1 A Customer-Manager Component
+
+This first module contains some struct definitions in a separate module in
+order to better track bugs.
+
+    #lang racket
+    ; data definitions
+     
+    (define id? symbol?)
+    (define id-equal? eq?)
+    (define-struct basic-customer (id name address) #:mutable)
+     
+    ; interface
+    (provide/contract
+     [id?                   (-> any/c boolean?)]
+     [id-equal?             (-> id? id? boolean?)]
+     [struct basic-customer ((id id?)
+                             (name string?)
+                             (address string?))])
+    ; end of interface
+
+This module contains the program that uses the above.
+
+    #lang racket
+     
+    (require "1.rkt") ; the module just above
+     
+    ; implementation
+    ; [listof (list basic-customer? secret-info)]
+    (define all '())
+     
+    (define (find c)
+      (define (has-c-as-key p)
+        (id-equal? (basic-customer-id (car p)) c))
+      (define x (filter has-c-as-key all))
+      (if (pair? x) (car x) x))
+     
+    (define (active? c)
+      (define f (find c))
+      (pair? (find c)))
+     
+    (define not-active? (compose not active? basic-customer-id))
+     
+    (define count 0)
+     
+    (define (add c)
+      (set! all (cons (list c 'secret) all))
+      (set! count (+ count 1)))
+     
+    (define (name id)
+      (define bc-with-id (find id))
+      (basic-customer-name (car bc-with-id)))
+     
+    (define (set-name id name)
+      (define bc-with-id (find id))
+      (set-basic-customer-name! (car bc-with-id) name))
+     
+    (define c0 0)
+    ; end of implementation
+     
+    (provide/contract
+     ; how many customers are in the db?
+     [count    natural-number/c]
+     ; is the customer with this id active?
+     [active?  (-> id? boolean?)]
+     ; what is the name of the customer with this id?
+     [name     (-> (and/c id? active?) string?)]
+     ; change the name of the customer with this id
+     [set-name (->d ([id id?] [nn string?])
+                    ()
+                    [result any/c] ; result contract
+                    #:post-cond
+                    (string=? (name id) nn))]
+     
+     [add      (->d ([bc (and/c basic-customer? not-active?)])
+                    ()
+                    ; A pre-post condition contract must use
+                    ; a side-effect to express this contract
+                    ; via post-conditions
+                    #:pre-cond (set! c0 count)
+                    [result any/c] ; result contract
+                    #:post-cond (> count c0))])
+
+The tests:
+
+    #lang racket
+    (require rackunit rackunit/text-ui "1.rkt" "1b.rkt")
+     
+    (add (make-basic-customer 'mf "matthias" "brookstone"))
+    (add (make-basic-customer 'rf "robby" "beverly hills park"))
+    (add (make-basic-customer 'fl "matthew" "pepper clouds town"))
+    (add (make-basic-customer 'sk "shriram" "i city"))
+     
+    (run-tests
+     (test-suite
+      "manager"
+      (test-equal? "id lookup" "matthias" (name 'mf))
+      (test-equal? "count" 4 count)
+      (test-true "active?" (active? 'mf))
+      (test-false "active? 2" (active? 'kk))
+      (test-true "set name" (void? (set-name 'mf "matt")))))
+
+7.7.2 A Parameteric (Simple) Stack
+
+    #lang racket
+     
+    ; a contract utility
+    (define (eq/c x) (lambda (y) (eq? x y)))
+     
+    (define-struct stack (list p? eq))
+     
+    (define (initialize p? eq) (make-stack '() p? eq))
+    (define (push s x)
+      (make-stack (cons x (stack-list s)) (stack-p? s) (stack-eq s)))
+    (define (item-at s i) (list-ref (reverse (stack-list s)) (- i 1)))
+    (define (count s) (length  (stack-list s)))
+    (define (is-empty? s) (null? (stack-list s)))
+    (define not-empty? (compose not is-empty?))
+    (define (pop s) (make-stack (cdr (stack-list s))
+                                (stack-p? s)
+                                (stack-eq s)))
+    (define (top s) (car (stack-list s)))
+     
+    (provide/contract
+     ; predicate
+     [stack?     (-> any/c boolean?)]
+     
+     ; primitive queries
+     ; how many items are on the stack?
+     [count      (-> stack? natural-number/c)]
+     
+     ; which item is at the given position?
+     [item-at
+      (->d ([s stack?] [i (and/c positive? (<=/c (count s)))])
+           ()
+           [result (stack-p? s)])]
+     
+     ; derived queries
+     ; is the stack empty?
+     [is-empty?
+      (->d ([s stack?])
+           ()
+           [result (eq/c (= (count s) 0))])]
+     
+     ; which item is at the top of the stack
+     [top
+      (->d ([s (and/c stack? not-empty?)])
+           ()
+           [t (stack-p? s)] ; a stack item, t is its name
+           #:post-cond
+           ([stack-eq s] t (item-at s (count s))))]
+     
+     ; creation
+     [initialize
+      (->d ([p contract?] [s (p p . -> . boolean?)])
+           ()
+           ; Mitchell and McKim use (= (count s) 0) here to express
+           ; the post-condition in terms of a primitive query
+           [result (and/c stack? is-empty?)])]
+     
+     ; commands
+     ; add an item to the top of the stack
+     [push
+      (->d ([s stack?] [x (stack-p? s)])
+           ()
+           [sn stack?] ; result kind
+           #:post-cond
+           (and (= (+ (count s) 1) (count sn))
+                ([stack-eq s] x (top sn))))]
+     
+     ; remove the item at the top of the stack
+     [pop
+      (->d ([s (and/c stack? not-empty?)])
+           ()
+           [sn stack?] ; result kind
+           #:post-cond
+           (= (- (count s) 1) (count sn)))])
+
+The tests:
+
+    #lang racket
+    (require rackunit rackunit/text-ui "2.rkt")
+     
+    (define s0 (initialize (flat-contract integer?) =))
+    (define s2 (push (push s0 2) 1))
+     
+    (run-tests
+     (test-suite
+      "stack"
+      (test-true
+       "empty"
+       (is-empty? (initialize (flat-contract integer?) =)))
+      (test-true "push" (stack? s2))
+      (test-true
+       "push exn"
+       (with-handlers ([exn:fail:contract? (lambda _ #t)])
+         (push (initialize (flat-contract integer?)) 'a)
+         #f))
+      (test-true "pop" (stack? (pop s2)))
+      (test-equal? "top" (top s2) 1)
+      (test-equal? "toppop" (top (pop s2)) 2)))
+
+7.7.3 A Dictionary
+
+    #lang racket
+     
+    ; a shorthand for use below
+    (define-syntax ⇒
+      (syntax-rules ()
+        [(⇒ antecedent consequent) (if antecedent consequent #t)]))
+     
+    ; implementation
+    (define-struct dictionary (l value? eq?))
+    ; the keys should probably be another parameter (exercise)
+     
+    (define (initialize p eq) (make-dictionary '() p eq))
+    (define (put d k v)
+      (make-dictionary (cons (cons k v) (dictionary-l d))
+                       (dictionary-value? d)
+                       (dictionary-eq? d)))
+    (define (rem d k)
+      (make-dictionary
+       (let loop ([l (dictionary-l d)])
+         (cond
+           [(null? l) l]
+           [(eq? (caar l) k) (loop (cdr l))]
+           [else (cons (car l) (loop (cdr l)))]))
+       (dictionary-value? d)
+       (dictionary-eq? d)))
+    (define (count d) (length (dictionary-l d)))
+    (define (value-for d k) (cdr (assq k (dictionary-l d))))
+    (define (has? d k) (pair? (assq k (dictionary-l d))))
+    (define (not-has? d) (lambda (k) (not (has? d k))))
+    ; end of implementation
+     
+    ; interface
+    (provide/contract
+     ; predicates
+     [dictionary? (-> any/c boolean?)]
+     ; basic queries
+     ; how many items are in the dictionary?
+     [count       (-> dictionary? natural-number/c)]
+     ; does the dictionary define key k?
+     [has?        (->d ([d dictionary?] [k symbol?])
+                       ()
+                       [result boolean?]
+                       #:post-cond
+                       ((zero? (count d)) . ⇒ . (not result)))]
+     ; what is the value of key k in this dictionary?
+     [value-for   (->d ([d dictionary?]
+                        [k (and/c symbol? (lambda (k) (has? d k)))])
+                       ()
+                       [result (dictionary-value? d)])]
+     ; initialization
+     ; post condition: for all k in symbol, (has? d k) is false.
+     [initialize  (->d ([p contract?] [eq (p p . -> . boolean?)])
+                       ()
+                       [result (and/c dictionary? (compose zero? count))])]
+     ; commands
+     ; Mitchell and McKim say that put shouldn't consume Void (null ptr)
+     ; for v. We allow the client to specify a contract for all values
+     ; via initialize. We could do the same via a key? parameter
+     ; (exercise). add key k with value v to this dictionary
+     [put         (->d ([d dictionary?]
+                        [k (and symbol? (not-has? d))]
+                        [v (dictionary-value? d)])
+                       ()
+                       [result dictionary?]
+                       #:post-cond
+                       (and (has? result k)
+                            (= (count d) (- (count result) 1))
+                            ([dictionary-eq? d] (value-for result k) v)))]
+     ; remove key k from this dictionary
+     [rem         (->d ([d dictionary?]
+                        [k (and/c symbol? (lambda (k) (has? d k)))])
+                       ()
+                       [result (and/c dictionary? not-has?)]
+                       #:post-cond
+                       (= (count d) (+ (count result) 1)))])
+    ; end of interface
+
+The tests:
+
+    #lang racket
+    (require rackunit rackunit/text-ui "3.rkt")
+     
+    (define d0 (initialize (flat-contract integer?) =))
+    (define d (put (put (put d0 'a 2) 'b 2) 'c 1))
+     
+    (run-tests
+     (test-suite
+      "dictionaries"
+      (test-equal? "value for" 2 (value-for d 'b))
+      (test-false "has?" (has? (rem d 'b) 'b))
+      (test-equal? "count" 3 (count d))))
+
+7.7.4 A Queue
+
+    #lang racket
+     
+    ; Note: this queue doesn't implement the capacity restriction
+    ; of Mitchell and McKim's queue but this is easy to add.
+     
+    ; a contract utility
+    (define (all-but-last l) (reverse (cdr (reverse l))))
+    (define (eq/c x) (lambda (y) (eq? x y)))
+     
+    ; implementation
+    (define-struct queue (list p? eq))
+     
+    (define (initialize p? eq) (make-queue '() p? eq))
+    (define items queue-list)
+    (define (put q x)
+      (make-queue (append (queue-list q) (list x))
+                  (queue-p? q)
+                  (queue-eq q)))
+    (define (count s) (length  (queue-list s)))
+    (define (is-empty? s) (null? (queue-list s)))
+    (define not-empty? (compose not is-empty?))
+    (define (rem s)
+      (make-queue (cdr (queue-list s))
+                  (queue-p? s)
+                  (queue-eq s)))
+    (define (head s) (car (queue-list s)))
+     
+    ; interface
+    (provide/contract
+     ; predicate
+     [queue?     (-> any/c boolean?)]
+     
+     ; primitive queries
+     ; Imagine providing this 'query' for the interface of the module
+     ; only. Then in Racket there is no reason to have count or is-empty?
+     ; around (other than providing it to clients). After all items is
+     ; exactly as cheap as count.
+     [items      (->d ([q queue?]) () [result (listof (queue-p? q))])]
+     
+     ; derived queries
+     [count      (->d ([q queue?])
+                      ; We could express this second part of the post
+                      ; condition even if count were a module "attribute"
+                      ; in the language of Eiffel; indeed it would use the
+                      ; exact same syntax (minus the arrow and domain).
+                      ()
+                      [result (and/c natural-number/c
+                                     (=/c (length (items q))))])]
+     
+     [is-empty?  (->d ([q queue?])
+                      ()
+                      [result (and/c boolean?
+                                     (eq/c (null? (items q))))])]
+     
+     [head       (->d ([q (and/c queue? (compose not is-empty?))])
+                      ()
+                      [result (and/c (queue-p? q)
+                                     (eq/c (car (items q))))])]
+     ; creation
+     [initialize (-> contract?
+                     (contract? contract? . -> . boolean?)
+                     (and/c queue? (compose null? items)))]
+     
+     ; commands
+     [put        (->d ([oldq queue?] [i (queue-p? oldq)])
+                      ()
+                      [result
+                       (and/c
+                        queue?
+                        (lambda (q)
+                          (define old-items (items oldq))
+                          (equal? (items q) (append old-items (list i)))))])]
+     
+     [rem        (->d ([oldq (and/c queue? (compose not is-empty?))])
+                      ()
+                      [result
+                       (and/c queue?
+                              (lambda (q)
+                                (equal? (cdr (items oldq)) (items q))))])])
+    ; end of interface
+
+The tests:
+
+    #lang racket
+    (require rackunit rackunit/text-ui "5.rkt")
+     
+    (define s (put (put (initialize (flat-contract integer?) =) 2) 1))
+     
+    (run-tests
+     (test-suite
+      "queue"
+      (test-true
+       "empty"
+       (is-empty? (initialize (flat-contract integer?) =)))
+      (test-true "put" (queue? s))
+      (test-equal? "count" 2 (count s))
+      (test-true "put exn"
+                 (with-handlers ([exn:fail:contract? (lambda _ #t)])
+                   (put (initialize (flat-contract integer?)) 'a)
+                   #f))
+      (test-true "remove" (queue? (rem s)))
+      (test-equal? "head" 2 (head s))))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

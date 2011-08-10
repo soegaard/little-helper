@@ -1,0 +1,73 @@
+▼  R5RS: Legacy Scheme
+1  Running R5RS Programs
+2  plt-r5rs
+3  R5RS Module Language
+4  R5RS Initialization Library
+► 3  R5RS Module Language
+3.1  Non-R5RS Bindings from r5rs
+3.2  Notes on R5RS Functions
+On this page:
+3.1 Non-R5RS Bindings from r5rs
+3.2 Notes on R5RS Functions
+[...search manuals...]
+  top← prev  up  next → 
+
+3 R5RS Module Language
+
+ #lang r5rs
+
+As a library, r5rs provides the syntactic forms and procedures defined by R5RS.
+When used as a language via #lang, the program is read with the following
+parameterizations:
+
+    (read-case-sensitive #f)
+    (read-accept-infix-dot #f)
+    (read-curly-brace-as-paren #f)
+    (read-square-bracket-as-paren #f)
+
+The r5rs bindings can be imported into a top-level environment, and then
+evaluation in that top-level environment corresponds to R5RS. Use (
+namespace-require/copy 'r5rs) with an empty namespace to maximize conformance
+with R5RS; Using (namespace-require 'r5rs), in contrast, creates primitive
+bindings as imports, which is the same as using plt-r5rs without the --no-prim
+flag. More simply, use (scheme-report-environment 5). See also r5rs/init, which
+sets reader and printer parameters to increase conformance.
+
+Using r5rs via #lang creates a module whose body is implemented with an
+R5RS-like language. The main difference from R5RS is that, as a module
+language, r5rs does not allow redefinition of top-level bindings, and
+expressions evaluated through load and eval cannot automatically access
+bindings defined within the module.
+
+3.1 Non-R5RS Bindings from r5rs
+
+In addition to the bindings defined by R5RS, the r5rs library provides the
+following bindings from racket/base (which are not legal identifiers in R5RS
+syntax, so there is no danger of collisions in R5RS programs):
+
+    #%app #%datum #%top #%top-interaction #%require #%provide
+
+It also provides racket’s #%plain-module-begin as #%module-begin. Note that #
+%require can be used to import Racket libraries into an otherwise R5RS program,
+and #%provide can be used to export from a module that is implemented in an
+R5RS-like language.
+
+3.2 Notes on R5RS Functions
+
+The cons of r5rs corresponds to racket/base’s mcons. Similarly, cdr is mcdr,
+and map is racket/mpair’s mmap, and so on.
+
+An R5RS environment is implemented as a racket/base namespace. Also, relative
+to racket/base, the expr passed to eval is constructed using mutable pairs.
+
+The scheme-report-environment function returns a namespace containing the
+bindings of r5rs. Procedure values are installed into the namespace using
+namespace-require/copy, so that they can be redefined.
+
+The null-environment function returns a namespace containing the syntactic
+forms of r5rs, not including #%module-begin (which is not useful outside of a
+module).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,84 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+► 7  Manipulating Racklog Variables
+7.1  Checking for Variables
+7.2  Preserving Variables
+On this page:
+7.1 Checking for Variables
+7.2 Preserving Variables
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Manipulating Racklog Variables
+
+Racklog provides special predicates for probing logic variables, without
+risking their getting bound.
+
+7.1 Checking for Variables
+
+The goal
+
+    (%== X Y)
+
+succeeds if X and Y are identical objects. This is not quite the unification
+predicate %=, for %== doesn’t touch unbound objects the way %= does. Eg, %==
+will not equate an unbound logic variable with a bound one, nor will it equate
+two unbound logic variables unless they are the same variable.
+
+The predicate %/== is the negation of %==.
+
+The goal
+
+    (%var X)
+
+succeeds if X isn’t completely bound — ie, it has at least one unbound logic
+variable in its innards.
+
+The predicate %nonvar is the negation of %var.
+
+7.2 Preserving Variables
+
+Racklog lets the user protect a term with variables from unification by
+allowing that term to be treated as a (completely) bound object. The predicates
+provided for this purpose are %freeze, %melt, %melt-new, and %copy.
+
+The goal
+
+    (%freeze S F)
+
+unifies F to the frozen version of S. Any lack of bindings in S are preserved
+no matter how much you toss F about.
+
+The goal
+
+    (%melt F S)
+
+retrieves the object frozen in F into S.
+
+The goal
+
+    (%melt-new F S)
+
+is similar to %melt, except that when S is made, the unbound variables in F are
+replaced by brand-new unbound variables.
+
+The goal
+
+    (%copy S C)
+
+is an abbreviation for (%freeze S F) followed by (%melt-new F C).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

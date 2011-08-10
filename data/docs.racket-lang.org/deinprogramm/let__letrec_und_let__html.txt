@@ -1,0 +1,62 @@
+►  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+▼ 2  Die Macht der Abstraktion
+2.1  Signaturen
+2.2  let, letrec und let*
+2.3  Primitive Operationen
+On this page:
+let
+letrec
+let*
+[...search manuals...]
+  top← prev  up  next → 
+
+2.2 let, letrec und let*
+
+(let ((id expr) ...) expr)
+Bei einem let-Ausdruck werden zuna:chst die exprs aus den (id expr)-Paaren
+ausgewertet. Ihre Werte werden dann im Rumpf-expr fu:r die Namen id eingesetzt.
+Dabei ko:nnen sich die Ausdru:cke nicht auf die Namen beziehen.
+
+    (define a 3)
+    (let ((a 16)
+          (b a))
+      (+ b a))
+    => 19
+
+Das Vorkommen von a in der Bindung von b bezieht sich also auf das a aus der
+Definition, nicht das a aus dem let-Ausdruck.
+
+(letrec ((id expr) ...) expr)
+Ein letrec-Ausdruck ist a:hnlich zum entsprechenden let-Ausdruck, mit dem
+Unterschied, dass sich die exprs aus den Bindungen auf die gebundenen Namen
+beziehen du:rfen.
+
+(let* ((id expr) ...) expr)
+Ein let*-Ausdruck ist a:hnlich zum entsprechenden let-Ausdruck, mit dem
+Unterschied, dass sich die exprs aus den Bindungen auf die Namen beziehen
+du:rfen, die jeweils vor dem expr gebunden wurden. Beispiel:
+
+    (define a 3)
+    (let* ((a 16)
+           (b a))
+      (+ b a))
+    => 32
+
+Das Vorkommen von a in der Bindung von b bezieht sich also auf das a aus dem
+let*-Ausdruck, nicht das a aus der globalen Definition.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,76 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+explode-path*
+path-without-base
+directory-part
+build-path-unless-absolute
+strip-prefix-ups
+[...search manuals...]
+  top← prev  up  next → 
+
+23 Path
+
+ (require unstable/path)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(explode-path* p) → (listof path-element?)
+  p : path-string?
+Like normalize-path, but does not resolve symlinks.
+
+(path-without-base base p) → (listof path-element?)
+  base : path-string?
+  p : path-string?
+Returns, as a list, the portion of p after base, assuming base is a prefix of
+p.
+
+(directory-part p) → path?
+  p : path-string?
+Returns the directory part of p, returning (current-directory) if it is
+relative.
+
+(build-path-unless-absolute base p) → path?
+  base : path-string?
+  p : path-string?
+Prepends base to p, unless p is absolute.
+
+(strip-prefix-ups p) → (listof path-element?)
+  p : (listof path-element?)
+Removes all the prefix ".."s from p.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

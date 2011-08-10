@@ -1,0 +1,144 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Classes and Objects
+
+            +Classes and Objects in The Racket Guide introduces classes and
+            objects.
+
+ (require racket/class)
+The bindings documented in this section are provided by the racket/class and
+racket libraries, but not racket/base.
+
+A class specifies
+
+  • a collection of fields;
+
+  • a collection of methods;
+
+  • initial value expressions for the fields; and
+
+  • initialization variables that are bound to initialization arguments.
+
+In the context of the class system, an object is a collection of bindings for
+fields that are instantiated according to a class description.
+
+The class system allows a program to define a new class (a derived class) in
+terms of an existing class (the superclass) using inheritance, overriding, and
+augmenting:
+
+  • inheritance: An object of a derived class supports methods and instantiates
+    fields declared by the derived class’s superclass, as well as methods and
+    fields declared in the derived class expression.
+
+  • overriding: Some methods declared in a superclass can be replaced in the
+    derived class. References to the overridden method in the superclass use
+    the implementation in the derived class.
+
+  • augmenting: Some methods declared in a superclass can be merely extended in
+    the derived class. The superclass method specifically delegates to the
+    augmenting method in the derived class.
+
+An interface is a collection of method names to be implemented by a class,
+combined with a derivation requirement. A class implements an interface when it
+
+  • declares (or inherits) a public method for each variable in the interface;
+
+  • is derived from the class required by the interface, if any; and
+
+  • specifically declares its intention to implement the interface.
+
+A class can implement any number of interfaces. A derived class automatically
+implements any interface that its superclass implements. Each class also
+implements an implicitly-defined interface that is associated with the class.
+The implicitly-defined interface contains all of the class’s public method
+names, and it requires that all other implementations of the interface are
+derived from the class.
+
+A new interface can extend one or more interfaces with additional method names;
+each class that implements the extended interface also implements the original
+interfaces. The derivation requirements of the original interface must be
+consistent, and the extended interface inherits the most specific derivation
+requirement from the original interfaces.
+
+Classes, objects, and interfaces are all values. However, a class or interface
+is not an object (i.e., there are no “meta-classes” or “meta-interfaces”).
+
+    5.1 Creating Interfaces
+
+    5.2 Creating Classes
+
+      5.2.1 Initialization Variables
+
+      5.2.2 Fields
+
+      5.2.3 Methods
+
+        5.2.3.1 Method Definitions
+
+        5.2.3.2 Inherited and Superclass Methods
+
+        5.2.3.3 Internal and External Names
+
+    5.3 Creating Objects
+
+    5.4 Field and Method Access
+
+      5.4.1 Methods
+
+      5.4.2 Fields
+
+      5.4.3 Generics
+
+    5.5 Mixins
+
+    5.6 Traits
+
+    5.7 Object and Class Contracts
+
+    5.8 Object Equality and Hashing
+
+    5.9 Object Serialization
+
+    5.10 Object Printing
+
+    5.11 Object, Class, and Interface Utilities
+
+    5.12 Surrogates
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

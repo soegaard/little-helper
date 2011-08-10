@@ -1,0 +1,190 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+► 2  Adding Languages to Dr Racket
+2.1  Adding Module-based Languages to Dr Racket
+2.2  Adding Arbitrary Languages to Dr Racket
+2.3  Language Extensions
+On this page:
+2.1 Adding Module-based Languages to Dr Racket
+2.2 Adding Arbitrary Languages to Dr Racket
+2.3 Language Extensions
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Adding Languages to DrRacket
+
+2.1 Adding Module-based Languages to DrRacket
+
+If a language can be implemented as a module (see module for details), then the
+simplest and best way to use the language is via the “Use the language declared
+the in source” checkbox in the Language dialog.
+
+For backwards compatibility, DrRacket also supports and info.rkt file-based
+method for specifying such languages. Include these definitions:
+
+  • drscheme-language-modules: This must be bound to a list of collection path
+    specifications or strings, one for each language in the collection. Each
+    collection path specification is the quoted form of what might appear as an
+    argument to require, using the lib argument (but without the lib). The
+    strings represent relative paths starting at the directory containing the
+    info.rkt file. They are interpreted like string arguments to require.
+
+  • drscheme-language-positions: This must be bound to a list of language
+    positions. Each language position corresponds to the position of the
+    language in language dialog. Each language position is a list of strings
+    whose length must be at least two.
+
+  • drscheme-language-numbers: This is optional. If present, it must be a list
+    of a list of numbers. Each list corresponds to a single language from this
+    collection. Each number indicates a sorting order in the language dialog
+    for the corresponding string in drscheme-language-positions. If absent, it
+    defaults to a list of zeros that has the same length as
+    drscheme-language-positions. This will rarely be correct.
+
+  • drscheme-language-one-line-summaries: This is optional. If present, it must
+    be a list of strings. Each string is displayed at the bottom of the
+    language dialog when the corresponding language is selected.
+
+  • drscheme-language-urls: This is optional. If present, it must be a list
+    whose elements are either strings or #f. Clicking the corresponding
+    language’s name in the interactions window opens a web browser to the url.
+
+  • drscheme-language-readers: This is optional. If present, it must be bound
+    to a quoted list of module specifications (that is, a quoted version of the
+    argument to require). Each specification must be a module that exports a
+    function named read-syntax. Each of these read-syntax functions must match
+    Racket’s read-syntax primitive’s contract, but may read different concrete
+    syntax.
+
+    If the module specification is a plain string, it represents a relative
+    path starting at the directory containing the info.rkt file. It is
+    interpreted like the string arguments to require.
+
+The lists must have the same length.
+
+As an example, the Essentials of Programming Languages language specification’s
+info.rkt used to look like this:
+
+    #lang setup/infotab
+    (require string-constants)
+    (define name "EoPL Support")
+    (define drscheme-language-modules
+      (list "eopl-lang.rkt"))
+    (define drscheme-language-positions
+      (list (list (string-constant teaching-languages)
+                  "Essentials of Programming Languages")))
+
+This info.rkt file indicates that there is a single language in this
+collection. The module that implements the language is the eopl-lang.rkt file
+in the same directory as the info.rkt file. Additionally, the language dialog
+will contain Essentials of Programming Languages as a potential language. The
+use of the string constant teaching-languages ensures that EoPL’s language is
+placed properly in foreign language versions of DrRacket.
+
+For collections that define multiple (related) languages, if the
+language-positions contain multiple strings, the languages whose leading
+strings match are grouped together. That is, if two languages have strings:
+
+
+    '("My Text" "First Language")
+
+and
+
+
+    '("My Text" "Second Language")
+
+the two languages will be grouped together in the language dialog.
+
+2.2 Adding Arbitrary Languages to DrRacket
+
+With some additional work, any language that can be compiled to Racket is
+supported by the tools interface, not just those that use standard
+configurations and module.
+
+Each language is a class that implement the drracket:language:language<%>
+interface. DrRacket also provides two simpler interfaces:
+drracket:language:module-based-language<%> and
+drracket:language:simple-module-based-language<%>, and mixins
+drracket:language:simple-module-based-language->module-based-language-mixin and
+drracket:language:module-based-language->language-mixin that build
+implementations of drracket:language:language<%>s from these simpler
+interfaces.
+
+Once you have an implementation of the drracket:language:language<%> interface,
+call drracket:language-configuration:add-language to add the language to
+DrRacket.
+
+Each language comes with its own type, called settings. This can be any type
+the language designer chooses, but to aid documentation, we call it settings
+here. The settings type is expected to contain parameters of the language, such
+as case sensitivity, etc. The implementor of the language provides a GUI so the
+user can configure the settings and all of the language’s operations accept a
+setting. DrRacket maintains the current settings for each language.
+
+2.3 Language Extensions
+
+Some tools may require additional functionality from the
+drracket:language:language<%> interface. The
+drracket:language:extend-language-interface function and the
+drracket:language:get-default-mixin mixin make this possible.
+
+For example, the MrFlow tool expands a program, analyzes it and then displays
+sets of values for each program point. These sets of values should be rendered
+in the syntax of the language that MrFlow analyzes. Since MrFlow doesn’t know
+which languages are available, it can call
+drracket:language:extend-language-interface to extend the
+drracket:language:language<%> interface with a method for rendering sets of
+values and provide a default implementation of that method. Tools that know
+about MrFlow can then override the value rendering method to provide a
+language-specific implementation of value rendering. Additionally, since the
+drracket:language:get-default-mixin adds the default implementation for the
+value-set rendering method, all languages at least have some form of value-set
+rendering.
+
+In some cases, it is important for one tool to avoid depending on another in
+the manner above. For example, if a tool that provides a new language provides
+an implementation for the MrFlow-specific method, that tool may fail to load if
+MrFlow is not present (Indeed, with the tool manager, this can happen to any
+tool that depends on another in this manner.)
+
+To avoid this problem, consider writing your tool to first check to see if the
+base method is available before extending it. For example, if the MrFlow tool
+provides the render-value<%> interface, then a tool that overrides that method
+can first test to see if the superclass implements that method before
+overriding it:
+
+    (define (my-language-mixin %)
+      (if (implementation? % mrflow:render-value<%>)
+          (class %
+            (define/override ...)
+            (super-new))
+          %))
+
+To help test your tool, use the PLTONLYTOOL environment variable to load it in
+isolation.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

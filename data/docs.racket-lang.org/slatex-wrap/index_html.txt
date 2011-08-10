@@ -1,0 +1,64 @@
+•  SLa Te X Wrapper
+slatex
+pdf-slatex
+slatex/ no-latex
+latex
+pdf-latex
+filename->latex-filename
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+SLaTeX Wrapper
+
+ (require slatex/slatex-wrapper)
+
+To use SLaTeX as a standalone program, either drag your ".tex" file onto SLaTeX
+(on Windows or MacOS X), or type slatex file in a command shell.
+
+NOTE: If you compile your ".tex" file without using slatex (i.e., by using
+slatex -n and then using latex directly), then your TEXINPUTS environment
+variable must contain a reference to the directory in which the most recent
+version of "slatex.sty" lives. That file resides by default in the "slatex"
+collection of the main installation.
+
+In addition to the SLaTeX tools, this collection contains a parallel set of
+PDF-SLaTeX tools, which are identical except that they call pdf-latex rather
+than latex. In particular, there is now a launcher called (PDF-SLaTeX/
+pdf-slatex).
+
+(slatex filename) → boolean?
+  filename : string?
+(pdf-slatex filename) → boolean?
+  filename : string?
+Accepts a string naming a file and runs slatex and latex on the file. It calls
+filename->latex-filename on filename.
+
+pdf-slatex is like slatex except that it calls pdf-latex rather than latex, and
+produces PDF output instead of PS output.
+
+(slatex/no-latex filename) → void?
+  filename : string?
+Runs slatex on the file named by filename, without calling latex. That is, it
+only processes the ".tex" file to produce the ".Z" files. It calls filename->
+latex-filename on filename.
+
+(latex filename) → boolean?
+  filename : string?
+(pdf-latex filename) → boolean?
+  filename : string?
+Runs latex on the file named by filename. It calls filename->latex-filename on
+filename.
+
+pdf-latex is like latex except that it calls pdf-latex rather than latex, and
+produces PDF output instead of PS output.
+
+(filename->latex-filename filename) → string?
+  filename : string?
+Accepts a filename and, if that file exists, it returns it. If the filename
+appended with the suffix ".tex" exists, that filename is returned. Otherwise,
+an exception is raised.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

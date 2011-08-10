@@ -1,0 +1,157 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+▼ 4.3  Manual Forms
+ 4.3.1  Typesetting Code
+ 4.3.2  Documenting Modules
+ 4.3.3  Documenting Forms, Functions, Structure Types, and Values
+ 4.3.4  Documenting Classes and Interfaces
+ 4.3.5  Documenting Signatures
+ 4.3.6  Various String Forms
+ 4.3.7  Links
+ 4.3.8  Indexing
+ 4.3.9  Images
+4.3.10  Bibliography
+4.3.11  Miscellaneous
+4.3.12  Index-Entry Descriptions
+On this page:
+defclass
+defclass/ title
+definterface
+definterface/ title
+defmixin
+defmixin/ title
+defconstructor
+defconstructor/ make
+defconstructor*/ make
+defconstructor/ auto-super
+defmethod
+defmethod*
+method
+xmethod
+this-obj
+[...search manuals...]
+  top← prev  up  next → 
+
+4.3.4 Documenting Classes and Interfaces
+
+(defclass id super (intf-id ...) pre-flow ...)
+ 
+super   =   super-id
+        |   (mixin-id super)
+Creates documentation for a class id that is a subclass of super and implements
+each interface intf-id. Each identifier in super (except object%) and intf-id
+must be documented somewhere via defclass or definterface.
+
+The decoding of the pre-flow sequence should start with general documentation
+about the class, followed by constructor definition (see defconstructor), and
+then field and method definitions (see defmethod). In rendered form, the
+constructor and method specification are indented to visually group them under
+the class definition.
+
+(defclass/title id super (intf-id ...) pre-flow ...)
+Like defclass, also includes a title declaration with the style 'hidden. In
+addition, the constructor and methods are not left-indented.
+
+This form is normally used to create a section to be rendered on its own HTML.
+The 'hidden style is used because the definition box serves as a title.
+
+(definterface id (intf-id ...) pre-flow ...)
+Like defclass, but for an interfaces. Naturally, pre-flow should not generate a
+constructor declaration.
+
+(definterface/title id (intf-id ...) pre-flow ...)
+Like definterface, but for single-page rendering as in defclass/title.
+
+(defmixin id (domain-id ...) (range-id ...) pre-flow ...)
+Like defclass, but for a mixin. Any number of domain-id classes and interfaces
+are specified for the mixin’s input requires, and any number of result classes
+and (more likely) interfaces are specified for the range-id. The domain-ids
+supply inherited methods.
+
+(defmixin/title id (domain-id ...) (range-id ...) pre-flow ...)
+Like defmixin, but for single-page rendering as in defclass/title.
+
+(defconstructor (arg-spec ...) pre-flow ...)
+ 
+arg-spec   =   (arg-id contract-expr-datum)
+           |   (arg-id contract-expr-datum default-expr)
+Like defproc, but for a constructor declaration in the body of defclass, so no
+return contract is specified. Also, the new-style keyword for each arg-spec is
+implicit from the arg-id.
+
+(defconstructor/make (arg-spec ...) pre-flow ...)
+Like defconstructor, but specifying by-position initialization arguments (for
+use with make-object) instead of by-name arguments (for use with new).
+
+(defconstructor*/make [(arg-spec ...) ...] pre-flow ...)
+Like defconstructor/make, but with multiple constructor patterns analogous
+defproc*.
+
+(defconstructor/auto-super [(arg-spec ...) ...] pre-flow ...)
+Like defconstructor, but the constructor is annotated to indicate that
+additional initialization arguments are accepted and propagated to the
+superclass.
+
+(defmethod maybe-mode (id arg-spec ...)
+           result-contract-expr-datum
+           pre-flow ...)
+ 
+maybe-mode   =  
+             |   #:mode override
+             |   #:mode override-final
+             |   #:mode public-final
+             |   #:mode augment
+             |   #:mode augment-final
+             |   #:mode pubment
+             |   #:mode extend
+             |   #:mode extend-final
+Like defproc, but for a method within a defclass or definterface body.
+
+The maybe-mode specifies whether the method overrides a method from a
+superclass, and so on. (For these purposes, use #:mode override when refining a
+method of an implemented interface.) The extend mode is like override, but the
+description of the method should describe only extensions to the superclass
+implementation.
+
+(defmethod* maybe-mode
+            ([(id arg-spec ...)
+              result-contract-expr-datum] ...)
+            pre-flow ...)
+Like defproc*, but for a method within a defclass or definterface body. The
+maybe-mode specification is as in defmethod.
+
+(method class/intf-id method-id)
+Creates a hyperlink to the method named by method-id in the class or interface
+named by class/intf-id. The hyperlink names the method, only; see also xmethod.
+
+For-label binding information is used with class/intf-id, but not method-id.
+
+(xmethod class/intf-id method-id)
+Like method, but the hyperlink shows both the method name and the containing
+class/interface.
+
+(this-obj)
+Within a defmethod or similar form, typesets as a meta-variable that stands for
+the target of the method call. Use (this-obj) to be more precise than prose
+such as “this method’s object.”
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

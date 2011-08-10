@@ -1,0 +1,321 @@
+▼  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+Index
+
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+ 
+
+adjust-connection-timeout!
+apache-default-format
+authorized?/c
+Cache Table
+cache-table-clear!
+cache-table-lookup!
+cache-table?
+Can the server create a PID file?
+cancel-timer!
+compress-serial
+Configuration Table
+Configuration Table Structure
+Configuration Units
+configuration-table
+configuration-table->sexpr
+configuration-table->web-config@
+configuration-table-default-host
+configuration-table-initial-connection-timeout
+configuration-table-max-waiting
+configuration-table-port
+configuration-table-sexpr->web-config@
+configuration-table-sexpr?
+configuration-table-virtual-hosts
+configuration-table?
+connection
+Connection Manager
+connection-close?
+connection-custodian
+connection-i-port
+connection-o-port
+connection-timer
+connection?
+decompress-serial
+default-configuration-table-path
+default-module-specs
+define-closure
+denied?/c
+dispatch
+dispatch-server-config^
+dispatch-server@
+dispatch-server^
+dispatch/servlet
+dispatcher-interface-version/c
+dispatcher/c
+Dispatchers
+Dispatching Server
+Dispatching Server Signatures
+Dispatching Server Unit
+do-not-return
+exn:dispatcher
+exn:dispatcher?
+extended-format
+extract-param
+file-response
+filter-url->path
+Filtering Requests
+format-req/c
+gen-authentication-responder
+gen-collect-garbage-responder
+gen-file-not-found-responder
+gen-passwords-refreshed
+gen-protocol-responder
+gen-servlet-not-found
+gen-servlet-responder
+gen-servlets-refreshed
+General
+gunzip/bytes
+GZip
+gzip/bytes
+host
+host-indices
+host-log-format
+host-log-path
+host-passwords
+host-paths
+host-responders
+host-table
+host-table-indices
+host-table-log-format
+host-table-messages
+host-table-paths
+host-table-timeouts
+host-table?
+host-timeouts
+host?
+How do I limit the number of requests serviced at once by the Web Server?
+How do I set up the server to use HTTPS?
+How do I use Apache with the Racket Web Server?
+increment-timer!
+initial-connection-timeout
+initial-connection-timeout
+insert-param
+Internal APIs
+Internal Servlet Representation
+kill-connection!
+Launching Servers
+Lifting Procedures
+Limiting Requests
+listen-ip
+listen-ip
+log-format->format
+log-format/c
+Logging
+make
+make
+make
+make
+make
+make
+make
+make
+make
+make
+make
+make
+make-basic-denied?/path
+make-cache-table
+make-cached-url->servlet
+make-configuration-table
+make-connection
+make-default-path->servlet
+make-exn:dispatcher
+make-gc-thread
+make-host
+make-host-table
+make-make-servlet-namespace
+make-messages
+make-path->mime-type
+make-paths
+make-responders
+make-servlet
+make-servlet-namespace
+make-servlet-namespace/c
+make-stateless.servlet
+make-timeouts
+make-timer
+make-url->path
+make-url->valid-path
+make-v1.servlet
+make-v2.servlet
+Mapping URLs to Paths
+max-waiting
+max-waiting
+messages
+messages-authentication
+messages-collect-garbage
+messages-file-not-found
+messages-passwords-refreshed
+messages-protocol
+messages-servlet
+messages-servlets-refreshed
+messages?
+MIME Types
+new-connection
+next-dispatcher
+paren-format
+Password Protection
+path->servlet/c
+paths
+paths-conf
+paths-host-base
+paths-htdocs
+paths-log
+paths-mime-types
+paths-passwords
+paths-servlet
+paths?
+port
+port
+Procedure Invocation upon Request
+read-configuration-table
+read-mime-types
+read-request
+reset-timer!
+responders
+responders-authentication
+responders-collect-garbage
+responders-file-not-found
+responders-passwords-refreshed
+responders-protocol
+responders-servlet
+responders-servlet-loading
+responders-servlets-refreshed
+responders?
+Sequencing
+serial-case-lambda
+serial-lambda
+Serializable Closures
+Serialization Utilities
+serve
+serve
+serve
+serve-ports
+serve-ports
+serve/ips+ports
+serve/launch/wait
+serve/ports
+serve/web-config@
+Server Units
+Serving Files
+Serving Servlets
+servlet
+Servlet Namespaces
+servlet-custodian
+servlet-directory
+servlet-error-responder
+servlet-handler
+servlet-loading-responder
+servlet-manager
+servlet-namespace
+servlet?
+set-servlet-custodian!
+set-servlet-directory!
+set-servlet-handler!
+set-servlet-manager!
+set-servlet-namespace!
+Setting Up Servlets
+sexpr->configuration-table
+Simple Single Servlet Servers
+Standard Responders
+start-connection-manager
+start-timer
+start-timer-manager
+Statistics
+struct:configuration-table
+struct:connection
+struct:exn:dispatcher
+struct:host
+struct:host-table
+struct:messages
+struct:paths
+struct:responders
+struct:servlet
+struct:timeouts
+struct:timer
+Threads and Custodians
+Timeouts
+timeouts
+timeouts-default-servlet
+timeouts-file-base
+timeouts-file-per-byte
+timeouts-password
+timeouts-servlet-connection
+timeouts?
+timer
+timer-action
+timer-evt
+timer-expire-seconds
+timer?
+Timers
+Troubleshooting and Tips
+URL Param
+url->path/c
+url->servlet/c
+Virtual Hosts
+virtual-hosts
+Web Server: HTTP Server
+Web Servers
+web-config^
+web-server/configuration/configuration-table
+web-server/configuration/configuration-table-structs
+web-server/configuration/namespace
+web-server/configuration/responders
+web-server/dispatchers/dispatch
+web-server/dispatchers/dispatch-files
+web-server/dispatchers/dispatch-filter
+web-server/dispatchers/dispatch-host
+web-server/dispatchers/dispatch-lift
+web-server/dispatchers/dispatch-log
+web-server/dispatchers/dispatch-passwords
+web-server/dispatchers/dispatch-pathprocedure
+web-server/dispatchers/dispatch-sequencer
+web-server/dispatchers/dispatch-servlets
+web-server/dispatchers/dispatch-stat
+web-server/dispatchers/dispatch-timeout
+web-server/dispatchers/filesystem-map
+web-server/dispatchers/limit
+web-server/lang/serial-lambda
+web-server/private/cache-table
+web-server/private/connection-manager
+web-server/private/define-closure
+web-server/private/dispatch-server-sig
+web-server/private/dispatch-server-unit
+web-server/private/gzip
+web-server/private/mime-types
+web-server/private/mod-map
+web-server/private/servlet
+web-server/private/timer
+web-server/private/url-param
+web-server/servlet-dispatch
+web-server/servlet/setup
+web-server/web-config-sig
+web-server/web-config-unit
+web-server/web-server
+web-server/web-server-sig
+web-server/web-server-unit
+web-server@
+web-server^
+Why this is useful
+write-configuration-table
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

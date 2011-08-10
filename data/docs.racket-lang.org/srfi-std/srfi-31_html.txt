@@ -1,0 +1,244 @@
+Title
+
+SRFI 31: A special form rec for recursive evaluation
+
+Author
+
+Mirko Luedde <Mirko.Luedde@SAP.com>
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access the discussion via the
+archive of the mailing list.
+
+  • Draft: 2002/05/24-2002/08/24
+  • Revised: 2002/08/12
+  • Final: 2002/12/02
+
+Abstract
+
+We propose the implementation of a special form called rec. This form is a
+generalization and combination of the forms rec and named-lambda of
+[Clinger1985]. It allows the simple and non-imperative construction of
+self-referential expressions. As an important special case, it extends the A.
+Church form lambda such that it allows the direct definition of recursive
+procedures without using further special forms like let or letrec, without
+using advanced constructions like the H. B. Curry combinator and, unlike
+define, without introducing variable bindings into the external environment.
+
+Rationale
+
+General
+
+Among the prominent features of the Scheme programming language as defined in
+[KCR1998] are the following.
+
+ 1. It has simple syntax.
+ 2. It encourages recursive definitions, e.g. by ensuring memory efficient tail
+    recursion.
+ 3. It supports non-imperative programming.
+
+Nevertheless Scheme does not provide a syntax for recursive evaluations with
+the properties of
+
+ 1. being as simple, intuitive and close to the mathematical standard notation
+    as possible,
+ 2. allowing general recursion,
+ 3. being non-imperative.
+
+Example
+
+Problem 1
+
+Let us look at the factorial function. In mathematical notation this function
+is expressed as
+
+
+  (F : N |--> 1,            if N = 0;
+              N * F(N - 1), otherwise).
+
+This expression is a term and not a definition or proposition.
+
+We investigate some approaches to express the factorial function in Scheme.
+
+  • The simplest way perhaps is as
+
+    (define (F N)
+      (if (zero? N) 1
+        (* N (F (- N 1)))))
+
+    But this expression is not a term. It binds the factorial function to the
+    variable F. The expression itself may not occur in a syntactical context
+    where a name of the factorial is required.
+  • We list several ways to express the factorial as a function term.
+     1. (let ()
+          (define (F N)
+            (if (zero? N) 1
+                (* N (F (- N 1)))))
+            F)
+
+     2. (lambda (N)
+          (let F ( (N N) )
+               (if (zero? N) 1
+                 (* N (F (- N 1))))))
+
+     3. (letrec ( (F (lambda (N)
+                       (if (zero? N) 1
+                         (* N (F (- N 1)))))) ) F)
+
+     4. ((lambda (F)
+           (F F))
+         (lambda (G)
+           (lambda (N)
+             (if (zero? N) 1
+               (* N ((G G) (- N 1)))))))
+
+    All these expressions define the factorial anonymously, not binding it to a
+    variable. However, all these expressions are more verbose than it seems
+    necessary and they are less intuitive than it seems desirable.
+
+Solution 1
+
+A solution to our problem was already provided in [Clinger1985] by the form
+named-lambda. An even earlier solution with a slightly different syntax was
+implemented in Kent Dybvig's Chez Scheme system. Using this special form, we
+can denote the factorial simply by
+
+(named-lambda (F N)
+              (if (zero? N) 1
+                (* N (F (- N 1)))))
+
+This expression is a function term that denotes the factorial in the
+appropriate brevity.
+
+However, the form named-lambda has been dropped from later versions of the
+Scheme Report. Also it is missing in state-of-the-art implementations such as
+Chez Scheme (6.0a) and MIT Scheme (7.7.0). (The latter actually knows a form
+named-lambda with different semantics).
+
+Problem 2
+
+The constant stream of ones can be defined via
+
+(define S (cons 1 (delay S)))
+
+As in the case of the factorial, we are able to define the recursive object at
+the price of spending an externally bound name. Remedying this with let or
+letrec leads to similar objections as above.
+
+Solution 2
+
+This particular case of the self-referential problem was solved by the rec form
+in [Clinger1985]. This form allows writing
+
+(rec S (cons 1 (delay S)))
+
+This expression is non-imperative and does not introduce an external variable
+binding.
+
+Also this form has been dropped from later versions of the Scheme Report.
+Moreover, from our point of view this form alone is not capable of solving
+Problem 1. The respective definition would look like
+
+(rec F
+     (lambda (N)
+       (if (zero? N) 1
+         (* N (F (- N 1))))))
+
+This again does not seem quite as simple and intuitive as the mathematical
+notation.
+
+Proposal
+
+We therefore propose to implement the rec special form in a generalized way
+that combines the advantages of the named-lambda and rec forms. The factorial
+function could be written
+
+(rec (F N)
+     (if (zero? N) 1
+       (* N (F (- N 1)))))
+
+Specification
+
+Syntax
+
+The following production rules are to be added to those of [KCR1998] (we reuse
+names of non-terminals).
+
+ 1. <derived expression> --> <rec expression>
+ 2. <rec expression> --> (rec <variable> <expression>)
+ 3. <rec expression> --> (rec (<variable>+) <body>)
+
+Semantics
+
+Scheme versions such as [KCR1998] providing define-syntax, syntax-rules, letrec
+and lambda might implement rec as follows.
+
+(define-syntax rec
+  (syntax-rules ()
+    ((rec (NAME . VARIABLES) . BODY)
+     (letrec ( (NAME (lambda VARIABLES . BODY)) ) NAME))
+    ((rec NAME EXPRESSION)
+     (letrec ( (NAME EXPRESSION) ) NAME))))
+
+Test
+
+The following session shows in which way rec allows a tail-recursive
+implementation of the factorial function.
+
+> (define F (rec (F N)
+                ((rec (G K L)
+                   (if (zero? K) L
+                     (G (- K 1) (* K L)))) N 1)))
+> F
+#<procedure>
+> (F 0)
+1
+> (F 10)
+3628800
+
+Acknowledgements
+
+The author thanks Al Petrofsky for the final solution and Hal Abelson, Chris
+Hanson and others for their input. The work of the maintainers of the SRFI
+forum is highly appreciated.
+
+Bibliography
+
+  • [Clinger1985] EDITOR = {Clinger, W.}, TITLE = {Draft of Report of the
+    October 1984 Workshop on Scheme}, JOURNAL = {Proceedings Brandeis Workshop
+    Oct.~22--23, 1984}, MONTH = {Mar}, YEAR = {1985}, URL = {http://
+    www.swiss.ai.mit.edu/ftpdir/scheme-mail/HTML/rrrs-1985}
+  • [KCR1998] AUTHOR = {Kelsey, R. and Clinger, W. and Rees, J.}, TITLE =
+    {Revised (5) Report on the Algorithmic Language Scheme}, JOURNAL =
+    {Higher-Order and Symbolic Computation}, VOLUME = {11}, NUMBER = {1}, MONTH
+    = {Sep}, YEAR = {1998}
+
+Copyright
+
+Copyright (C) Dr. Mirko Luedde (2002). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Author: Mirko Luedde
+
+Editor: Francisco Solsona

@@ -1,0 +1,79 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 6  Units
+ 6.1  Creating Units
+ 6.2  Invoking Units
+ 6.3  Linking Units and Creating Compound Units
+ 6.4  Inferred Linking
+ 6.5  Generating A Unit from Context
+ 6.6  Structural Matching
+ 6.7  Extending the Syntax of Signatures
+ 6.8  Unit Utilities
+ 6.9  Unit Contracts
+6.10  Single-Unit Modules
+6.11  Single-Signature Modules
+6.12  Transformer Helpers
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Units
+
+            +Units (Components) in The Racket Guide introduces units.
+
+Units organize a program into separately compilable and reusable components.
+The imports and exports of a unit are grouped into a signature, which can
+include “static” information (such as macros) in addition to placeholders for
+run-time values. Units with suitably matching signatures can be linked together
+to form a larger unit, and a unit with no imports can be invoked to execute its
+body.
+
+ (require racket/unit)
+The bindings documented in this section are provided by the racket/unit and
+racket libraries, but not racket/base. The racket/unit module name can be used
+as a language name with #lang; see Single-Unit Modules.
+
+    6.1 Creating Units
+
+    6.2 Invoking Units
+
+    6.3 Linking Units and Creating Compound Units
+
+    6.4 Inferred Linking
+
+    6.5 Generating A Unit from Context
+
+    6.6 Structural Matching
+
+    6.7 Extending the Syntax of Signatures
+
+    6.8 Unit Utilities
+
+    6.9 Unit Contracts
+
+    6.10 Single-Unit Modules
+
+    6.11 Single-Signature Modules
+
+    6.12 Transformer Helpers
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

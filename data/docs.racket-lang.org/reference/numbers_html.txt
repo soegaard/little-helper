@@ -1,0 +1,150 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+▼ 3.2  Numbers
+3.2.1  Number Types
+3.2.2  Generic Numerics
+3.2.3  Flonums
+3.2.4  Fixnums
+[...search manuals...]
+  top← prev  up  next → 
+
+3.2 Numbers
+
+            +Numbers in The Racket Guide introduces numbers.
+
+All numbers are complex numbers. Some of them are real numbers, and all of the
+real numbers that can be represented are also rational numbers, except for 
++inf.0 (positive infinity), +inf.f (single-precision variant), -inf.0 (negative
+infinity), -inf.f (single-precision variant), +nan.0 (not-a-number), and +nan.f
+(single-precision variant). Among the rational numbers, some are integers,
+because round applied to the number produces the same number.
+
+            +See Reading Numbers for information on the syntax of number
+            literals.
+
+Orthogonal to those categories, each number is also either an exact number or
+an inexact number. Unless otherwise specified, computations that involve an
+inexact number produce inexact results. Certain operations on inexact numbers,
+however, produce an exact number, such as multiplying an inexact number with an
+exact 0. Some operations, which can produce an irrational number for rational
+arguments (e.g., sqrt), may produce inexact results even for exact arguments.
+
+In the case of complex numbers, either the real and imaginary parts are both
+exact or inexact, or the number has an exact zero real part and an inexact
+imaginary part; a complex number with an exact zero imaginary part is a real
+number.
+
+Inexact real numbers are implemented as either single- or double-precision IEEE
+floating-point numbers—the latter by default, and the former only when a
+computation starts with numerical constants specified as single-precision
+numbers. Inexact real numbers that are represented as double-precision
+floating-point numbers are flonums.
+
+The precision and size of exact numbers is limited only by available memory
+(and the precision of operations that can produce irrational numbers). In
+particular, adding, multiplying, subtracting, and dividing exact numbers always
+produces an exact result.
+
+Inexact numbers can be coerced to exact form, except for the inexact numbers
++inf.0, +inf.f, -inf.0, -inf.f, +nan.0, and +nan.f, which have no exact form. 
+Dividing a number by exact zero raises an exception; dividing a non-zero number
+other than +nan.0 or +nan.f by an inexact zero returns +inf.0, +inf.f, -inf.0
+or -inf.f, depending on the sign and precision of the dividend. The +nan.0
+value is not = to itself, but +nan.0 is eqv? to itself, and +nan.f is similarly
+eqv? but not = to itself. Conversely, (= 0.0 -0.0) is #t, but (eqv? 0.0 -0.0)
+is #f, and the same for 0.0f0 and -0.0f0 (which are single-precision variants).
+The datum -nan.0 refers to the same constant as +nan.0, and -nan.f is the same
+as +nan.f.
+
+Calculations with infinites produce results consistent with IEEE double- or
+single-precision floating point where IEEE specifies the result; in cases where
+IEEE provides no specification, such as (angle +inf.0+inf.0i), the result
+corresponds to the limit approaching infinity, or +nan.0 or +nan.f if no such
+limit exists.
+
+A fixnum is an exact integer whose two’s complement representation fit into 31
+bits on a 32-bit platform or 63 bits on a 64-bit platform; furthermore, no
+allocation is required when computing with fixnums. See also the racket/fixnum
+module, below.
+
+Two fixnums that are = are also the same according to eq?. Otherwise, the
+result of eq? applied to two numbers is undefined.
+
+Two numbers are eqv? when they are both inexact with the same precision or both
+exact, and when they are = (except for +nan.0, +nan.f, 0.0, 0.0f0, -0.0, and
+-0.0f0, as noted above). Two numbers are equal? when they are eqv?.
+
+    3.2.1 Number Types
+
+    3.2.2 Generic Numerics
+
+      3.2.2.1 Arithmetic
+
+      3.2.2.2 Number Comparison
+
+      3.2.2.3 Powers and Roots
+
+      3.2.2.4 Trignometric Functions
+
+      3.2.2.5 Complex Numbers
+
+      3.2.2.6 Bitwise Operations
+
+      3.2.2.7 Random Numbers
+
+      3.2.2.8 Number–String Conversions
+
+      3.2.2.9 Extra Constants and Functions
+
+    3.2.3 Flonums
+
+      3.2.3.1 Flonum Arithmetic
+
+      3.2.3.2 Flonum Vectors
+
+    3.2.4 Fixnums
+
+      3.2.4.1 Fixnum Arithmetic
+
+      3.2.4.2 Fixnum Vectors
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

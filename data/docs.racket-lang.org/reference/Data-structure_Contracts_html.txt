@@ -1,0 +1,406 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Data-structure Contracts
+7.2  Function Contracts
+7.3  Parametric Contracts
+7.4  Lazy Data-structure Contracts
+7.5  Attaching Contracts to Values
+7.6  Building New Contract Combinators
+7.7  Contract Utilities
+7.8  Legacy Contracts
+On this page:
+flat-contract
+flat-named-contract
+any/ c
+none/ c
+or/ c
+and/ c
+not/ c
+=/ c
+</ c
+>/ c
+<=/ c
+>=/ c
+between/ c
+real-in
+integer-in
+natural-number/ c
+string-len/ c
+false/ c
+printable/ c
+one-of/ c
+symbols
+vectorof
+vector-immutableof
+vector/ c
+vector-immutable/ c
+box/ c
+box-immutable/ c
+listof
+non-empty-listof
+cons/ c
+list/ c
+syntax/ c
+struct/ c
+parameter/ c
+hash/ c
+flat-rec-contract
+flat-murec-contract
+any
+promise/ c
+[...search manuals...]
+  top← prev  up  next → 
+
+7.1 Data-structure Contracts
+
+A flat contract can be fully checked immediately for a given value.
+
+(flat-contract predicate) → flat-contract?
+  predicate : (any/c . -> . any/c)
+Constructs a flat contract from predicate. A value satisfies the contract if
+the predicate returns a true value.
+
+(flat-named-contract type-name predicate) → flat-contract?
+  type-name : any/c
+  predicate : (or/c flat-contract? (any/c . -> . any))
+On predicates like flat-contract, but the first argument must be the (quoted)
+name of a contract used for error reporting. For example,
+
+    (flat-named-contract
+     'odd-integer
+     (lambda (x) (and (integer? x) (odd? x))))
+
+turns the predicate into a contract with the name odd-integer.
+
+On flat contracts, the new flat contract is the same as the old except for the
+name.
+
+any/c : flat-contract?
+A flat contract that accepts any value.
+
+When using this contract as the result portion of a function contract, consider
+using any instead; using any leads to better memory performance, but it also
+allows multiple results.
+
+none/c : flat-contract?
+A flat contract that accepts no values.
+
+(or/c contract ...) → contract?
+  contract : contract?
+Takes any number of contracts and returns a contract that accepts any value
+that any one of the contracts accepts individually.
+
+The or/c result tests any value by applying the contracts in order, from left
+to right, with the exception that it always moves the non-flat contracts (if
+any) to the end, checking them last. Thus, a contract such as (or/c (not/c
+real?) positive?) is guaranteed to only invoke the positive? predicate on real
+numbers.
+
+If all of the arguments are procedures or flat contracts, the result is a flat
+contract. If only one of the arguments is a higher-order contract, the result
+is a contract that just checks the flat contracts and, if they don’t pass,
+applies the higher-order contract.
+
+If there are multiple higher-order contracts, or/c uses
+contract-first-order-passes? to distinguish between them. More precisely, when
+an or/c is checked, it first checks all of the flat contracts. If none of them
+pass, it calls contract-first-order-passes? with each of the higher-order
+contracts. If only one returns true, or/c uses that contract. If none of them
+return true, it signals a contract violation. If more than one returns true, it
+also signals a contract violation. For example, this contract
+
+    (or/c (-> number? number?)
+          (-> string? string? string?))
+
+does not accept a function like this one: (lambda args ...) since it cannot
+tell which of the two arrow contracts should be used with the function.
+
+(and/c contract ...) → contract?
+  contract : (or/c contract? (any/c . -> . any/c))
+Takes any number of contracts and returns a contract that accepts any value
+that satisfies all of the contracts simultaneously.
+
+If all of the arguments are procedures or flat contracts, the result is a flat
+contract.
+
+The contract produced by and/c tests any value by applying the contracts in
+order, from left to right.
+
+(not/c flat-contract) → flat-contract?
+  flat-contract : (or/c flat-contract? (any/c . -> . any/c))
+Accepts a flat contracts or a predicate and returns a flat contract that checks
+the inverse of the argument.
+
+(=/c z) → flat-contract?
+  z : real?
+Returns a flat contract that requires the input to be a number and = to z.
+
+(</c n) → flat-contract?
+  n : real?
+Returns a flat contract that requires the input to be a number and < than n.
+
+(>/c n) → flat-contract?
+  n : real?
+Like </c, but for >.
+
+(<=/c n) → flat-contract?
+  n : real?
+Like </c, but for <=.
+
+(>=/c n) → flat-contract?
+  n : real?
+Like </c, but for >=.
+
+(between/c n m) → flat-contract?
+  n : real?
+  m : real?
+Returns a flat contract that requires the input to be a real number between n
+and m or equal to one of them.
+
+(real-in n m) → flat-contract?
+  n : real?
+  m : real?
+An alias for between/c.
+
+(integer-in j k) → flat-contract?
+  j : exact-integer?
+  k : exact-integer?
+Returns a flat contract that requires the input to be an exact integer between
+j and k, inclusive.
+
+natural-number/c : flat-contract?
+A flat contract that requires the input to be an exact non-negative integer.
+
+(string-len/c len) → flat-contract?
+  len : exact-nonnegative-integer?
+Returns a flat contract that recognizes strings that have fewer than len
+characters.
+
+false/c : flat-contract?
+An alias #f for backwards compatibility.
+
+printable/c : flat-contract?
+A flat contract that recognizes values that can be written out and read back in
+with write and read.
+
+(one-of/c v ...+) → flat-contract?
+  v : any/c
+Accepts any number of atomic values and returns a flat contract that recognizes
+those values, using eqv? as the comparison predicate. For the purposes of
+one-of/c, atomic values are defined to be: characters, symbols, booleans, null,
+keywords, numbers, #<void>, and #<undefined>.
+
+(symbols sym ...+) → flat-contract?
+  sym : symbol?
+Accepts any number of symbols and returns a flat contract that recognizes those
+symbols.
+
+(vectorof    c                            
+           [ #:immutable immutable        
+             #:flat? flat?])         →   contract?
+  c : contract?
+  immutable : (or/c #t #f 'dont-care) = 'dont-care
+  flat? : boolean? = #f
+Returns a contract that recognizes vectors. The elements of the vector must
+match c.
+
+If the flat? argument is #t, then the resulting contract is a flat contract,
+and the c argument must also be a flat contract. Such flat contracts will be
+unsound if applied to mutable vectors, as they will not check future operations
+on the vector.
+
+If the immutable argument is #t and the c argument is a flat contract, the
+result will be a flat contract. If the c argument is a chaperone contract, then
+the result will be a chaperone contract.
+
+When a higher-order vectorof contract is applied to a vector, the result is not
+eq? to the input. The result will be a copy for immutable vectors and a
+chaperone or impersonator of the input for mutable vectors.
+
+(vector-immutableof c) → contract?
+  c : contract?
+Returns the same contract as (vectorof c #:immutable #t). This form exists for
+backwards compatibility.
+
+(vector/c    c                            
+             ...                          
+           [ #:immutable immutable        
+             #:flat? flat?])         →   contract?
+  c : contract?
+  immutable : (or/c #t #f 'dont-care) = 'dont-care
+  flat? : boolean? = #f
+Returns a contract that recognizes vectors whose lengths match the number of
+contracts given. Each element of the vector must match its corresponding
+contract.
+
+If the flat? argument is #t, then the resulting contract is a flat contract,
+and the c arguments must also be flat contracts. Such flat contracts will be
+unsound if applied to mutable vectors, as they will not check future operations
+on the vector.
+
+If the immutable argument is #t and the c arguments are flat contracts, the
+result will be a flat contract. If the c arguments are chaperone contracts,
+then the result will be a chaperone contract.
+
+When a higher-order vector/c contract is applied to a vector, the result is not
+eq? to the input. The result will be a copy for immutable vectors and a
+chaperone or impersonator of the input for mutable vectors.
+
+(vector-immutable/c c ...) → contract?
+  c : contract?
+Returns the same contract as (vector/c c ... #:immutable #t). This form exists
+for reasons of backwards compatibility.
+
+(box/c    c                            
+        [ #:immutable immutable        
+          #:flat? flat?])         →   contract?
+  c : contract?
+  immutable : (or/c #t #f 'dont-care) = 'dont-care
+  flat? : boolean? = #f
+Returns a contract that recognizes boxes. The content of the box must match c.
+
+If the flat? argument is #t, then the resulting contract is a flat contract,
+and the c argument must also be a flat contract. Such flat contracts will be
+unsound if applied to mutable boxes, as they will not check future operations
+on the box.
+
+If the immutable argument is #t and the c argument is a flat contract, the
+result will be a flat contract. If the c argument is a chaperone contract, then
+the result will be a chaperone contract.
+
+When a higher-order box/c contract is applied to a box, the result is not eq?
+to the input. The result will be a copy for immutable boxes and either a
+chaperone or impersonator of the input for mutable boxes.
+
+(box-immutable/c c) → contract?
+  c : contract?
+Returns the same contract as (box/c c #:immutable #t). This form exists for
+reasons of backwards compatibility.
+
+(listof c) → contract?
+  c : (or/c contract? (any/c . -> . any/c))
+Returns a contract that recognizes a list whose every element matches the
+contract c. Beware that when this contract is applied to a value, the result is
+not necessarily eq? to the input.
+
+(non-empty-listof c) → contract?
+  c : (or/c contract? (any/c . -> . any/c))
+Returns a contract that recognizes non-empty lists whose elements match the
+contract c. Beware that when this contract is applied to a value, the result is
+not necessarily eq? to the input.
+
+(cons/c car-c cdr-c) → contract?
+  car-c : contract?
+  cdr-c : contract?
+Produces a contract that recognizes pairs whose first and second elements match
+car-c and cdr-c, respectively. Beware that when this contract is applied to a
+value, the result is not necessarily eq? to the input.
+
+(list/c c ...) → contract?
+  c : (or/c contract? (any/c . -> . any/c))
+Produces a contract for a list. The number of elements in the list must match
+the number of arguments supplied to list/c, and each element of the list must
+match the corresponding contract. Beware that when this contract is applied to
+a value, the result is not necessarily eq? to the input.
+
+(syntax/c c) → flat-contract?
+  c : flat-contract?
+Produces a flat contract that recognizes syntax objects whose syntax-e content
+matches c.
+
+(struct/c struct-id contract-expr ...)
+Produces a contract that recognizes instances of the structure type named by
+struct-id, and whose field values match the contracts produced by the
+contract-exprs.
+
+Contracts for immutable fields must be either flat or chaperone contracts.
+Contracts for mutable fields may be impersonator contracts. If all fields are
+immutable and the contract-exprs evaluate to flat contracts, a flat contract is
+produced. If all the contract-exprs are chaperone contracts, a chaperone
+contract is produced. Otherwise, an impersonator contract is produced.
+
+(parameter/c c) → contract?
+  c : contract?
+Produces a contract on parameters whose values must match contract.
+
+(hash/c    key                          
+           val                          
+         [ #:immutable immutable        
+           #:flat? flat?])         →   contract?
+  key : chaperone-contract?
+  val : contract?
+  immutable : (or/c #t #f 'dont-care) = 'dont-care
+  flat? : boolean? = #f
+Produces a contract that recognizes hash tables with keys and values as
+specified by the key and val arguments.
+
+If the flat? argument is #t, then the resulting contract is a flat contract,
+and the key and val arguments must also be flat contracts. Such flat contracts
+will be unsound if applied to mutable hash tables, as they will not check
+future operations on the hash table.
+
+If the immutable argument is #t and the key and val arguments are flat
+contracts, the result will be a flat contract. If either the domain or the
+range is a chaperone contract, then the result will be a chaperone contract.
+
+If the key argument is a chaperone contract, then the resulting contract can
+only be applied to equal?-based hash tables. When a higher-order hash/c
+contract is applied to a hash table, the result is not eq? to the input. The
+result will be a copy for immutable hash tables, and either a chaperone or
+impersonator of the input for mutable hash tables.
+
+(flat-rec-contract id flat-contract-expr ...)
+Constructs a recursive flat contract. A flat-contract-expr can refer to id to
+refer recursively to the generated contract.
+
+For example, the contract
+
+    (flat-rec-contract sexp
+      (cons/c sexp sexp)
+      number?
+      symbol?)
+
+is a flat contract that checks for (a limited form of) S-expressions. It says
+that a sexp is either two sexps combined with cons, or a number, or a symbol.
+
+Note that if the contract is applied to a circular value, contract checking
+will not terminate.
+
+(flat-murec-contract ([id flat-contract-expr ...] ...) body ...+)
+A generalization of flat-rec-contract for defining several mutually recursive
+flat contracts simultaneously. Each id is visible in the entire
+flat-murec-contract form, and the result of the final body is the result of the
+entire form.
+
+any
+Represents a contract that is always satisfied. In particular, it can accept
+multiple values. It can only be used in a result position of contracts like ->.
+Using any elsewhere is a syntax error.
+
+(promise/c expr)
+Constructs a contract on a promise. The contract does not force the promise,
+but when the promise is forced, the contract checks that the result value meets
+the contract produced by expr.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

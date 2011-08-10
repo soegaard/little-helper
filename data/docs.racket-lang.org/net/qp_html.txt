@@ -1,0 +1,114 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 13  Quoted-Printable: Encoding and Decoding
+13.1  Functions
+13.2  Exceptions
+13.3  Quoted-Printable Unit
+13.4  -Printable Signature
+On this page:
+13.1 Functions
+qp-encode
+qp-decode
+qp-encode-stream
+qp-decode-stream
+13.2 Exceptions
+qp-error
+qp-wrong-input
+qp-wrong-line-size
+13.3 Quoted-Printable Unit
+qp@
+13.4 -Printable Signature
+qp^
+[...search manuals...]
+  top← prev  up  next → 
+
+13 Quoted-Printable: Encoding and Decoding
+
+ (require net/qp)
+The net/qp library provides utilities for quoted-printable (mime-standard)
+encoding and decoding from RFC 2045 section 6.7.
+The library was written by Francisco Solsona.
+
+13.1 Functions
+
+(qp-encode bstr) → bytes?
+  bstr : bytes?
+Consumes a byte string and returns its quoted printable representation as a new
+string. The encoded string uses #"\r\n" where necessary to create shorter
+lines.
+
+(qp-decode bstr) → bytes?
+  bstr : bytes?
+Consumes a byte string and returns its un-quoted printable representation as a
+new string. Non-soft line breaks are preserved in whatever form they exist (CR,
+LR, or CRLF) in the input string.
+
+(qp-encode-stream in out [newline-bstr]) → void?
+  in : input-port?
+  out : output-port?
+  newline-bstr : bytes? = #"\n"
+Reads characters from in and writes the quoted printable encoded result to out.
+
+The newline-bstr argument is used for soft line-breaks (after =). Note that the
+default newline-bstr is just #"\n", not #"\r\n".
+
+Other line breaks are preserved in whatever form they exist (CR, LR, or CRLF)
+in the input stream.
+
+(qp-decode-stream in out) → void?
+  in : input-port?
+  out : output-port?
+Reads characters from in and writes de-quoted-printable result to out. Non-soft
+line breaks are preserved in whatever form they exist (CR, LR, or CRLF) in the
+input stream.
+
+13.2 Exceptions
+
+(struct   qp-error ()
+          #:extra-constructor-name make-qp-error)
+(struct   qp-wrong-input qp-error ()
+          #:extra-constructor-name make-qp-wrong-input)
+(struct   qp-wrong-line-size qp-error ()
+          #:extra-constructor-name make-qp-wrong-line-size)
+None of these are used anymore, but the bindings are preserved for backward
+compatibility.
+
+13.3 Quoted-Printable Unit
+
+ (require net/qp-unit)
+
+qp@ : unit?
+Imports nothing, exports qp^.
+
+13.4 -Printable Signature
+
+ (require net/qp-sig)
+
+qp^ : signature
+
+Includes everything exported by the net/qp module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

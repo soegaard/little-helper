@@ -1,0 +1,352 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 6  raco setup: Installation Management
+6.1  Running raco setup
+6.2  "info.rkt" File Format
+6.3  API for Installation
+6.4  API for Installing ".plt" Archives
+6.5  API for Finding Installation Directories
+6.6  API for Reading "info.rkt" Files
+6.7  API for Relative Paths
+6.8  API for Cross-References for Installed Manuals
+► 6.4  API for Installing ".plt" Archives
+6.4.1  Installing a Single ".plt" File
+6.4.2  Unpacking ".plt" Archives
+6.4.3  Format of ".plt" Archives
+On this page:
+6.4.1 Installing a Single ".plt" File
+6.4.1.1 Non-GUI Installer
+run-single-installer
+install-planet-package
+reindex-user-documentation
+clean-planet-package
+6.4.1.2 GUI Installer
+run-installer
+on-installer-run
+with-installer-window
+run-single-installer
+6.4.1.3 GUI Unpacking Signature
+setup: plt-installer^
+6.4.1.4 GUI Unpacking Unit
+6.4.2 Unpacking ".plt" Archives
+unpack
+fold-plt-archive
+6.4.3 Format of ".plt" Archives
+[...search manuals...]
+  top← prev  up  next → 
+
+6.4 API for Installing ".plt" Archives
+
+6.4.1 Installing a Single ".plt" File
+
+The setup/plt-single-installer module provides a function for installing a
+single ".plt" file, and setup/plt-installer wraps it with a GUI interface.
+
+6.4.1.1 Non-GUI Installer
+
+ (require setup/plt-single-installer)
+
+(run-single-installer file get-dir-proc) → void?
+  file : path-string?
+  get-dir-proc : (-> (or/c path-string? false/c))
+Creates a separate thread and namespace, runs the installer in that thread with
+the new namespace, and returns when the thread completes or dies. It also
+creates a custodian (see Custodians) to manage the created thread, sets the
+exit handler for the thread to shut down the custodian, and explicitly shuts
+down the custodian when the created thread terminates or dies.
+
+The get-dir-proc procedure is called if the installer needs a target directory
+for installation, and a #f result means that the user canceled the
+installation. Typically, get-dir-proc is current-directory. v
+(install-planet-package file directory spec) → void?
+  file : path-string?
+  directory : path-string?
+              (list/c string? string?
+   spec   :           (listof string?)
+                      exact-nonnegative-integer?
+                      exact-nonnegative-integer?)
+Similar to run-single-installer, but runs the setup process to install the
+archive file into directory as the PLaneT package described by spec. The
+user-specific documentation index is not rebuilt, so reindex-user-documentation
+should be run after a set of PLaneT packages are installed.
+
+(reindex-user-documentation) → void?
+Similar to run-single-installer, but runs only the part of the setup process
+that rebuilds the user-specific documentation start page, search page, and
+master index.
+
+(clean-planet-package directory spec) → void?
+  directory : path-string?
+              (list/c string? string?
+   spec   :           (listof string?)
+                      exact-nonnegative-integer?
+                      exact-nonnegative-integer?)
+Undoes the work of install-planet-package. The user-specific documentation
+index is not rebuilt, so reindex-user-documentation should be run after a set
+of PLaneT packages are removed.
+
+6.4.1.2 GUI Installer
+
+ (require setup/plt-installer)
+The setup/plt-installer library in the setup collection defines procedures for
+installing a ".plt" archive with a GUI (using the facilities of racket/gui/base
+).
+
+(run-installer filename) → void?
+  filename : path-string?
+Run the installer on the ".plt" file in filename and show the output in a
+window. This is a composition of with-installer-window and run-single-installer
+with a get-dir-proc that prompts the user for a directory (turning off the busy
+cursor while the dialog is active).
+
+(on-installer-run) → (-> any)
+(on-installer-run thunk) → void?
+  thunk : (-> any)
+A thunk that is run after a ".plt" file is installed.
+
+(with-installer-window   do-install            
+                         cleanup-thunk)   →   void?
+   do-install   :   ((or/c (is-a?/c dialog%) (is-a?/c frame%))
+                     . -> . void?)
+  cleanup-thunk : (-> any)
+Creates a frame, sets up the current error and output ports, and turns on the
+busy cursor before calling do-install in a separate thread.
+
+Returns before the installation process is complete; cleanup-thunk is called on
+a queued callback to the eventspace active when with-installer-window is
+invoked.
+
+(run-single-installer file get-dir-proc) → void?
+  file : path-string?
+  get-dir-proc : (-> (or/c path-string? false/c))
+The same as the export from setup/plt-single-installer, but with a GUI.
+
+6.4.1.3 GUI Unpacking Signature
+
+ (require setup/plt-installer-sig)
+
+setup:plt-installer^ : signature
+
+
+    Provides two names: run-installer and on-installer-run.
+
+6.4.1.4 GUI Unpacking Unit
+
+ (require setup/plt-installer-unit)
+Imports mred^ and exports setup:plt-installer^.
+
+6.4.2 Unpacking ".plt" Archives
+
+ (require setup/unpack)
+The setup/unpack library provides raw support for unpacking a ".plt" file.
+
+(unpack    archive                           
+         [ main-collects-parent-dir          
+           print-status                      
+           get-target-directory              
+           force?                            
+           get-target-plt-directory])   →   void?
+  archive : path-string?
+  main-collects-parent-dir : path-string? = (current-directory)
+   print-status   :   (string? . -> . any)
+                  =   (lambda (x) (printf "~a\n" x))
+   get-target-directory   :   (-> path-string?)
+                          =   (lambda () (current-directory))
+  force? : any/c = #f
+                                  (path-string?
+   get-target-plt-directory   :    path-string?
+                                   (listof path-string?)
+                                   . -> . path-string?)
+                              =   (lambda (preferred-dir main-dir options)
+                                    preferred-dir)
+Unpacks archive.
+
+The main-collects-parent-dir argument is passed along to
+get-target-plt-directory.
+
+The print-status argument is used to report unpacking progress.
+
+The get-target-directory argument is used to get the destination directory for
+unpacking an archive whose content is relative to an arbitrary directory.
+
+If force? is true, then version and required-collection mismatches (comparing
+information in the archive to the current installation) are ignored.
+
+The get-target-plt-directory function is called to select a target for
+installation for an archive whose is relative to the installation. The function
+should normally return one if its first two arguments; the third argument
+merely contains the first two, but has only one element if the first two are
+the same. If the archive does not request installation for all uses, then the
+first two arguments will be different, and the former will be a user-specific
+location, while the second will refer to the main installation.
+
+(fold-plt-archive   archive               
+                    on-config-fn          
+                    on-setup-unit         
+                    on-directory          
+                    on-file               
+                    initial-value)   →   any/c
+  archive : path-string?
+  on-config-fn : (any/c any/c . -> . any/c)
+  on-setup-unit : (any/c input-port? any/c . -> . any/c)
+  on-directory : (path-string? any/c . -> . any/c)
+  on-file : (path-string? input-port? any/c . -> . any/c)
+  initial-value : any/c
+Traverses the content of archive, which must be a ".plt" archive that is
+created with the default unpacking unit and configuration expression. The
+configuration expression is not evaluated, the unpacking unit is not invoked,
+and not files are unpacked to the filesystem. Instead, the information in the
+archive is reported back through on-config, on-setup-unit, on-directory, and
+on-file, each of which can build on an accumulated value that starts with
+initial-value and whose final value is returned.
+
+The on-config-fn function is called once with an S-expression that represents a
+function to implement configuration information. The second argument to
+on-config is initial-value, and the function’s result is passes on as the last
+argument to on-setup-unit.
+
+The on-setup-unit function is called with the S-expression representation of
+the installation unit, an input port that points to the rest of the file, and
+the accumulated value. This input port is the same port that will be used in
+the rest of processing, so if on-setup-unit consumes any data from the port,
+then that data will not be consumed by the remaining functions. (This means
+that on-setup-unit can leave processing in an inconsistent state, which is not
+checked by anything, and therefore could cause an error.) The result of
+on-setup-unit becomes the new accumulated value.
+
+For each directory that would be created by the archive when unpacking
+normally, on-directory is called with the directory path and the accumulated
+value up to that point, and its result is the new accumulated value.
+
+For each file that would be created by the archive when unpacking normally,
+on-file is called with the file path, an input port containing the contents of
+the file, and the accumulated value up to that point; its result is the new
+accumulated value. The input port can be used or ignored, and parsing of the
+rest of the file continues the same either way. After on-file returns control,
+however, the input port is drained of its content.
+
+6.4.3 Format of ".plt" Archives
+
+The extension ".plt" is not required for a distribution archive, but the
+".plt"-extension convention helps users identify the purpose of a distribution
+file.
+
+The raw format of a distribution file is described below. This format is
+uncompressed and sensitive to communication modes (text vs. binary), so the
+distribution format is derived from the raw format by first compressing the
+file using gzip, then encoding the gzipped file with the MIME base64 standard
+(which relies only the characters A-Z, a-z, 0-9, +, /, and =; all other
+characters are ignored when a base64-encoded file is decoded).
+
+The raw format is
+
+  • PLT are the first three characters.
+
+  • A procedure that takes a symbol and a failure thunk and returns information
+    about archive for recognized symbols and calls the failure thunk for
+    unrecognized symbols. The information symbols are:
+
+      □ 'name — a human-readable string describing the archive’s contents. This
+        name is used only for printing messages to the user during unpacking.
+
+      □ 'unpacker — a symbol indicating the expected unpacking environment.
+        Currently, the only allowed value is 'mzscheme.
+
+      □ 'requires — collections required to be installed before unpacking the
+        archive, which associated versions; see the documentation of pack for
+        details.
+
+      □ 'conflicts — collections required not to be installed before unpacking
+        the archive.
+
+      □ 'plt-relative? — a boolean; if true, then the archive’s content should
+        be unpacked relative to the plt add-ons directory.
+
+      □ 'plt-home-relative? — a boolean; if true and if 'plt-relative? is true,
+        then the archive’s content should be unpacked relative to the Racket
+        installation.
+
+      □ 'test-plt-dirs — #f or a list of path strings; in the latter case, a
+        true value of 'plt-home-relative? is cancelled if any of the
+        directories in the list (relative to the Racket installation) is
+        unwritable by the user.
+
+    The procedure is extracted from the archive using the read and eval
+    procedures in a fresh namespace.
+
+  • An old-style, unsigned unit using (lib mzlib/unit200) that drives the
+    unpacking process. The unit accepts two imports: a path string for the
+    parent of the main "collects" directory and an unmztar procedure. The
+    remainder of the unpacking process consists of invoking this unit. It is
+    expected that the unit will call unmztar procedure to unpack directories
+    and files that are defined in the input archive after this unit. The result
+    of invoking the unit must be a list of collection paths (where each
+    collection path is a list of strings); once the archive is unpacked, raco
+    setup will compile and setup the specified collections.
+
+    The unmztar procedure takes one argument: a filter procedure. The filter
+    procedure is called for each directory and file to be unpacked. It is
+    called with three arguments:
+
+      □ 'dir, 'file, 'file-replace — indicates whether the item to be unpacked
+        is a directory, a file, or a file to be replaced,
+
+      □ a relative path string — the pathname of the directory or file to be
+        unpacked, relative to the unpack directory, and
+
+      □ a path string for the unpack directory (which can vary for a
+        Racket-relative install when elements of the archive start with
+        "collects", "lib", etc.).
+
+    If the filter procedure returns #f for a directory or file, the directory
+    or file is not unpacked. If the filter procedure returns #t and the
+    directory or file for 'dir or 'file already exists, it is not created. (The
+    file for file-replace need not exist already.)
+
+    When a directory is unpacked, intermediate directories are created as
+    necessary to create the specified directory. When a file is unpacked, the
+    directory must already exist.
+
+    The unit is extracted from the archive using read and eval.
+
+Assuming that the unpacking unit calls the unmztar procedure, the archive
+should continue with unpackables. Unpackables are extracted until the
+end-of-file is found (as indicated by an = in the base64-encoded input
+archive).
+
+An unpackable is one of the following:
+
+  • The symbol 'dir followed by a list. The build-path procedure will be
+    applied to the list to obtain a relative path for the directory (and the
+    relative path is combined with the target directory path to get a complete
+    path).
+
+    The 'dir symbol and list are extracted from the archive using read (and the
+    result is not evaluated).
+
+  • The symbol 'file, a list, a number, an asterisk, and the file data. The
+    list specifies the file’s relative path, just as for directories. The
+    number indicates the size of the file to be unpacked in bytes. The asterisk
+    indicates the start of the file data; the next n bytes are written to the
+    file, where n is the specified size of the file.
+
+    The symbol, list, and number are all extracted from the archive using read
+    (and the result is not evaluated). After the number is read, input
+    characters are discarded until an asterisk is found. The file data must
+    follow this asterisk immediately.
+
+  • The symbol 'file-replace is treated like 'file, but if the file exists on
+    disk already, the file in the archive replaces the file on disk.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

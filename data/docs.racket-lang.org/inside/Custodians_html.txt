@@ -1,0 +1,135 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+[...search manuals...]
+  top← prev  up  next → 
+
+16 Custodians
+
+When an extension allocates resources that must be explicitly freed (in the
+same way that a port must be explicitly closed), a Racket object associated
+with the resource should be placed into the management of the current custodian
+with scheme_add_managed.
+
+Before allocating the resource, call scheme_custodian_check_available to ensure
+that the relevant custodian is not already shut down. If it is,
+scheme_custodian_check_available will raise an exception. If the custodian is
+shut down when scheme_add_managed is called, the close function provided to
+scheme_add_managed will be called immediately, and no exception will be
+reported.
+
+Scheme_Custodian*   scheme_make_custodian ( Scheme_Custodian* m)
+
+Creates a new custodian as a subordinate of m. If m is NULL, then the main
+custodian is used as the new custodian’s supervisor. Do not use NULL for m
+unless you intend to create an especially privileged custodian.
+
+Scheme_Custodian_Reference*
+
+scheme_add_managed ( Scheme_Custodian* m,
+
+                     Scheme_Object* o,
+
+                     Scheme_Close_Custodian_Client* f,
+
+                     void* data,
+
+                     int strong)
+
+Places the value o into the management of the custodian m. If m is NULL, the
+current custodian is used.
+
+The f function is called by the custodian if it is ever asked to “shutdown” its
+values; o and data are passed on to f, which has the type
+
+typedef void (*Scheme_Close_Custodian_Client)(Scheme_Object *o,
+
+                                              void *data);
+
+
+If strong is non-zero, then the newly managed value will be remembered until
+either the custodian shuts it down or scheme_remove_managed is called. If
+strong is zero, the value is allowed to be garbage collected (and automatically
+removed from the custodian).
+
+Independent of whether strong is zero, the value o is initially weakly held. A
+value associated with a custodian can therefore be finalized via will
+executors.
+
+The return value from scheme_add_managed can be used to refer to the value’s
+custodian later in a call to scheme_remove_managed. A value can be registered
+with at most one custodian.
+
+If m (or the current custodian if m is NULL)is shut down, then f is called
+immediately, and the result is NULL.
+
+void   scheme_custodian_check_available ( Scheme_Custodian* m,
+
+                                          const char* name,
+
+                                          const char* resname)
+
+Checks whether m is already shut down, and raises an error if so. If m is NULL,
+the current custodian is used. The name argument is used for error reporting.
+The resname argument will likely be used for checking pre-set limits in the
+future; pre-set limits will have symbolic names, and the resname string will be
+compared to the symbols.
+
+void   scheme_remove_managed ( Scheme_Custodian_Reference* mref,
+
+                               Scheme_Object* o)
+
+Removes o from the management of its custodian. The mref argument must be a
+value returned by scheme_add_managed or NULL.
+
+void   scheme_close_managed ( Scheme_Custodian* m)
+
+Instructs the custodian m to shutdown all of its managed values.
+
+void   scheme_add_atexit_closer ( Scheme_Exit_Closer_Func f)
+
+Installs a function to be called on each custodian-registered item and its
+closer when Racket is about to exit. The registered function has the type
+
+  typedef
+
+  void (*Scheme_Exit_Closer_Func)(Scheme_Object *o,
+
+                                  Scheme_Close_Custodian_Client *f,
+
+                                  void *d);
+
+
+where d is the second argument for f.
+
+At-exit functions are run in reverse of the order that they are added. An
+at-exit function is initially registered (and therefore runs last) that flushes
+each file-stream output port.
+
+An at-exit function should not necessarily apply the closer function for every
+object that it is given. In particular, shutting down a file-stream output port
+would disable the flushing action of the final at-exit function. Typically, an
+at-exit function ignores most objects while handling a specific type of object
+that requires a specific clean-up action before the OS-level process
+terminates.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

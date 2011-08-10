@@ -1,0 +1,1408 @@
+►  Myster X: Using Windows COM Objects in Racket
+1  Overview
+2  COM
+3  Active X and DHTML
+4  Version
+   Index
+► 3  Active X and DHTML
+3.1  Browsers
+3.2  Documents
+3.3  HTML Events
+3.4  HTML and Dynamic HTML
+▼ 3.4  HTML and Dynamic HTML
+3.4.1  HTML Elements
+3.4.2  Generating Active X HTML
+3.4.3  CSS
+3.4.4  Colors
+On this page:
+mx-element%
+get-html
+get-text
+insert-html
+append-html
+replace-html
+insert-text
+append-text
+insert-object-from-coclass
+insert-object-from-progid
+append-object-from-coclass
+append-object-from-progid
+focus
+selection
+set-selection!
+attribute
+set-attribute!
+click
+tag
+font-family
+font-family-native
+set-font-family!
+set-font-family-native!
+font-style
+font-style-native
+set-font-style!
+set-font-style-native!
+font-variant
+font-variant-native
+set-font-variant!
+set-font-variant-native!
+font-weight
+font-weight-native
+set-font-weight!
+set-font-weight-native!
+font-native
+set-size-native!
+font-size
+font-size-native
+set-font-size!
+set-font-size-native!
+background-native
+set-background-native!
+background-image
+background-image-native
+set-background-image!
+set-background-image-native!
+background-repeat
+background-repeat-native
+set-background-repeat!
+set-background-repeat-native!
+background-position
+background-position-native
+set-background-position!
+set-background-position-native!
+text-decoration
+text-decoration-native
+set-text-decoration!
+set-text-decoration-native!
+text-transform
+text-transform-native
+set-text-transform!
+set-text-transform-native!
+text-align
+text-align-native
+set-text-align!
+set-text-align-native!
+margin
+margin-native
+set-margin!
+set-margin-native!
+padding
+padding-native
+set-padding!
+set-padding-native!
+border
+border-native
+set-border!
+set-border-native!
+border-top
+border-top-native
+set-border-top!
+set-border-top-native!
+border-bottom
+border-bottom-native
+set-border-bottom!
+set-border-bottom-native!
+border-left
+border-left-native
+set-border-left!
+set-border-left-native!
+border-right
+border-right-native
+set-border-right!
+set-border-right-native!
+border-color
+border-color-native
+set-border-color!
+set-border-color-native!
+border-width
+border-width-native
+set-border-width!
+set-border-width-native!
+border-style
+border-style-native
+set-border-style!
+set-border-style-native!
+border-top-style
+border-top-style-native
+set-border-top-style!
+set-border-top-style-native!
+border-bottom-style
+border-bottom-style-native
+set-border-bottom-style!
+set-border-bottom-style-native!
+border-left-style
+border-left-style-native
+set-border-left-style!
+set-border-left-style-native!
+border-right-style
+border-right-style-native
+set-border-right-style!
+set-border-right-style-native!
+style-float
+style-float-native
+set-style-float!
+set-style-float-native!
+clear
+clear-native
+set-clear!
+set-clear-native!
+display
+display-native
+set-display!
+set-display-native!
+visibility
+visibility-native
+set-visibility!
+set-visibility-native!
+list-style-type
+list-style-type-native
+set-list-style-type!
+set-list-style-type-native!
+list-style-position
+list-style-position-native
+set-list-style-position!
+set-list-style-position-native!
+list-style-image
+list-style-image-native
+set-list-style-image!
+set-list-style-image-native!
+list-style
+list-style-native
+set-list-style!
+set-list-style-native!
+position
+position-native
+set-position!
+set-position-native!
+overflow
+overflow-native
+set-overflow!
+set-overflow-native!
+pagebreak-before
+pagebreak-before-native
+set-pagebreak-before!
+set-pagebreak-before-native!
+pagebreak-after
+pagebreak-after-native
+set-pagebreak-after!
+set-pagebreak-after-native!
+css-text-native
+set-css-text-native!
+cursor
+cursor-native
+set-cursor!
+set-cursor-native!
+clip
+clip-native
+set-clip!
+set-clip-native!
+filter
+filter-native
+set-filter!
+set-filter-native!
+style-string
+text-decoration-none
+set-text-decoration-none!
+text-decoration-underline
+set-text-decoration-underline!
+text-decoration-overline
+set-text-decoration-overline!
+text-decoration-linethrough
+set-text-decoration-linethrough!
+text-decoration-blink
+set-text-decoration-blink!
+pixel-top
+set-pixel-top!
+pixel-left
+set-pixel-left!
+pixel-width
+set-pixel-width!
+pixel-height
+set-pixel-height!
+pos-top
+set-pos-top!
+pos-left
+set-pos-left!
+pos-width
+set-pos-width!
+pos-height
+set-pos-height!
+color
+color-native
+set-color!
+set-color-native!
+background-color
+background-color-native
+set-background-color!
+set-background-color-native!
+background-position-x
+background-position-x-native
+set-background-position-x!
+set-background-position-x-native!
+background-position-y
+background-position-y-native
+set-background-position-y!
+set-background-position-y-native!
+letter-spacing
+letter-spacing-native
+set-letter-spacing!
+set-letter-spacing-native!
+vertical-align
+vertical-align-native
+set-vertical-align!
+set-vertical-align-native!
+text-indent
+text-indent-native
+set-text-indent!
+set-text-indent-native!
+line-height
+line-height-native
+set-line-height!
+set-line-height-native!
+margin-top
+margin-top-native
+set-margin-top!
+set-margin-top-native!
+margin-bottom
+margin-bottom-native
+set-margin-bottom!
+set-margin-bottom-native!
+margin-left
+margin-left-native
+set-margin-left!
+set-margin-left-native!
+margin-right
+margin-right-native
+set-margin-right!
+set-margin-right-native!
+padding-top
+padding-top-native
+set-padding-top!
+set-padding-top-native!
+padding-bottom
+padding-bottom-native
+set-padding-bottom!
+set-padding-bottom-native!
+padding-left
+padding-left-native
+set-padding-left!
+set-padding-left-native!
+padding-right
+padding-right-native
+set-padding-right!
+set-padding-right-native!
+border-top-color
+border-top-color-native
+set-border-top-color!
+set-border-top-color-native!
+border-bottom-color
+border-bottom-color-native
+set-border-bottom-color!
+set-border-bottom-color-native!
+border-left-color
+border-left-color-native
+set-border-left-color!
+set-border-left-color-native!
+border-right-color
+border-right-color-native
+set-border-right-color!
+set-border-right-color-native!
+border-top-width
+border-top-width-native
+set-border-top-width!
+set-border-top-width-native!
+border-bottom-width
+border-bottom-width-native
+set-border-bottom-width!
+set-border-bottom-width-native!
+border-left-width
+border-left-width-native
+set-border-left-width!
+set-border-left-width-native!
+border-right-width
+border-right-width-native
+set-border-right-width!
+set-border-right-width-native!
+width
+width-native
+set-width!
+set-width-native!
+height
+height-native
+set-height!
+set-height-native!
+top
+top-native
+set-top!
+set-top-native!
+left
+left-native
+set-left!
+set-left-native!
+z-index
+z-index-native
+set-z-index!
+set-z-index-native!
+[...search manuals...]
+  top← prev  up  next → 
+
+3.4.1 HTML Elements
+
+mx-element% : class?
+  superclass: object%
+
+
+
+    (send a-mx-element get-html) → string?
+    Returns a string containing all the HTML between the pair of tags
+    represented by the element.
+
+    (send a-mx-element get-text) → string?
+    Returns a string containing just the text between the pair of tags
+    represented by the element. Any nested HTML tags are not contained in the
+    returned string.
+
+    (send a-mx-element insert-html html) → void?
+      html : string?
+    Places the HTML given by the string html before the element.
+
+    (send a-mx-element append-html html) → void?
+      html : string?
+    Places the HTML given by the string html after the element.
+
+    (send a-mx-element replace-html html) → void?
+      html : string?
+    Replaces the HTML in the element with the string html. You must use the
+    find-element or find-element-by-id-or-name methods of mx-document<%> to
+    retrieve the updated element.
+
+    (send a-mx-element insert-text txt) → void?
+      txt : string?
+    Places the text given by the string txt before the HTML element.
+
+    (send a-mx-element append-text txt) → void?
+      txt : string?
+    Places the text given by the string txt after the HTML element.
+
+    (send a-mx-element insert-object-from-coclass    coclass        
+                                                     width          
+                                                     height         
+                                                   [ size])    →   void?
+      coclass : string?
+      width : exact-integer?
+      height : exact-integer?
+      size : (one-of/c 'pixels 'percent) = 'pixels
+    Composes coclass->html with insert-html.
+
+    (send a-mx-element insert-object-from-progid    coclass        
+                                                    width          
+                                                    height         
+                                                  [ size])    →   void?
+      coclass : string?
+      width : exact-integer?
+      height : exact-integer?
+      size : (one-of/c 'pixels 'percent) = 'pixels
+    Composes progid->html with insert-html.
+
+    (send a-mx-element append-object-from-coclass    coclass        
+                                                     width          
+                                                     height         
+                                                   [ size])    →   void?
+      coclass : string?
+      width : exact-integer?
+      height : exact-integer?
+      size : (one-of/c 'pixels 'percent) = 'pixels
+    Composes coclass->html with append-html.
+
+    (send a-mx-element append-object-from-progid    coclass        
+                                                    width          
+                                                    height         
+                                                  [ size])    →   void?
+      coclass : string?
+      width : exact-integer?
+      height : exact-integer?
+      size : (one-of/c 'pixels 'percent) = 'pixels
+    Composes progid->html with append-html.
+
+    (send a-mx-element focus) → void?
+    Sets the focus to the element. This method works only with Internet
+    Explorer 5 and later.
+
+    (send a-mx-element selection) → string?
+    If the element has the "select" tag, returns a string indicating the value
+    of the current selection. Otherwise, an exception s raised. The value of
+    the selection may be different from the string visible in the dropdown
+    list.
+
+    (send a-mx-element set-selection! val) → void?
+      val : string?
+    If the element has the "select" tag, sets the selection to the entry with
+    the value val, a string. Otherwise, an exception is raised. The value of
+    the selection may be different from the string visible in the dropdown
+    list.
+
+    (send a-mx-element attribute attr)
+     → (or/c string? real? boolean?)
+      attr : string?
+    Retrieves the attribute named by the string attr. The return value has a
+    type that depends on the attribute.
+
+    (send a-mx-element set-attribute! attr val) → void?
+      attr : string?
+      val : (or/c string? real? boolean?)
+    Sets the attribute named by the string attr. The new value val has a type
+    that depends on the attribute.
+
+    (send a-mx-element click) → void?
+    Simulates a mouse click on the element.
+
+    (send a-mx-element tag) → string?
+    Retrieves the element’s HTML tag.
+
+    (send a-mx-element font-family) → (listof string?)
+    (send a-mx-element font-family-native) → string?
+    (send a-mx-element set-font-family! v) → void?
+      v : (listof string?)
+    (send a-mx-element set-font-family-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS font-family for the element.
+
+    (send a-mx-element font-style)
+     → (one-of/c 'normal 'italic 'oblique)
+    (send a-mx-element font-style-native) → string?
+    (send a-mx-element set-font-style! v) → void?
+      v : (one-of/c 'normal 'italic 'oblique)
+    (send a-mx-element set-font-style-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS font-style for the element.
+
+    (send a-mx-element font-variant)
+     → (one-of/c 'normal 'small-caps)
+    (send a-mx-element font-variant-native) → string?
+    (send a-mx-element set-font-variant! v) → void?
+      v : (one-of/c 'normal 'small-caps)
+    (send a-mx-element set-font-variant-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS font-variant for the element.
+
+    (send a-mx-element font-weight)
+      →   (one-of/c 'normal 'bold 'bolder 'lighter
+                    100 200 300 400 500 600 700 800 900)
+    (send a-mx-element font-weight-native) → string?
+    (send a-mx-element set-font-weight! v) → void?
+       v   :   (one-of/c 'normal 'bold 'bolder 'lighter
+                         100 200 300 400 500 600 700 800 900)
+    (send a-mx-element set-font-weight-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS font-weight for the element.
+
+    (send a-mx-element font-native) → string?
+    (send a-mx-element set-size-native! fs) → void?
+      fs : string?
+    Retrieves or sets a string that encodes the CSS font-style, font-variant,
+    font-weight, font-size, line-height, and font-family using the format
+
+    [‹font-style› | ‹font-variant› | ‹font-weight›] ‹font-size› [‹line-height›]
+     ‹font-family›
+
+    (send a-mx-element font-size)
+          (or/c
+           (one-of/c
+      →     'xx-small 'x-small 'small 'medium 'large 'x-large 'xx-large
+            'larger 'smaller)
+           css-length?
+           css-percentage?)
+    (send a-mx-element font-size-native) → string?
+    (send a-mx-element set-font-size! v) → void?
+               (or/c
+                (one-of/c
+       v   :     'xx-small 'x-small 'small 'medium 'large 'x-large 'xx-large
+                 'larger 'smaller)
+                css-length?
+                css-percentage?)
+    (send a-mx-element set-font-size-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS font-size for the element.
+
+    (send a-mx-element background-native) → string?
+    (send a-mx-element set-background-native! b) → void?
+      b : string
+    Gets or sets the element’s CSS background-color, background-image,
+    background-repeat, background-attachment, and background-position using the
+    string b.
+
+    (send a-mx-element background-image)
+     → (or/c (one-of/c 'none) string?)
+    (send a-mx-element background-image-native) → string?
+    (send a-mx-element set-background-image! v) → void?
+      v : (or/c (one-of/c 'none) string?)
+    (send a-mx-element set-background-image-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS background-image for the
+    element.
+
+    (send a-mx-element background-repeat)
+     → (one-of/c 'no-repeat 'repeat 'repeat-x 'repeat-y)
+    (send a-mx-element background-repeat-native) → string?
+    (send a-mx-element set-background-repeat! v) → void?
+      v : (one-of/c 'no-repeat 'repeat 'repeat-x 'repeat-y)
+    (send a-mx-element set-background-repeat-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS background-repeat for the
+    element.
+
+    (send a-mx-element background-position)
+          (or/c
+           css-length?
+           css-percentage?
+           (one-of/c 'left 'center 'right)
+      →    (list/c
+            (or/c css-length? css-percentage?
+                  (one-of/c 'left 'center 'right))
+            (or/c css-length? css-percentage?
+                  (one-of/c 'left 'center 'right))))
+    (send a-mx-element background-position-native) → string?
+    (send a-mx-element set-background-position! v) → void?
+               (or/c
+                css-length?
+                css-percentage?
+                (one-of/c 'left 'center 'right)
+       v   :    (list/c
+                 (or/c css-length? css-percentage?
+                       (one-of/c 'left 'center 'right))
+                 (or/c css-length? css-percentage?
+                       (one-of/c 'left 'center 'right))))
+    (send a-mx-element set-background-position-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS background-position for the
+    element.
+
+    (send a-mx-element text-decoration)
+     → (listof (one-of/c 'none 'underline 'overline 'line-through 'blink))
+    (send a-mx-element text-decoration-native) → string?
+    (send a-mx-element set-text-decoration! v) → void?
+      v : (listof (one-of/c 'none 'underline 'overline 'line-through 'blink))
+    (send a-mx-element set-text-decoration-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS text-decoration for the
+    element.
+
+    (send a-mx-element text-transform)
+     → (one-of/c 'none 'capitalize 'uppercase 'lowercase)
+    (send a-mx-element text-transform-native) → string?
+    (send a-mx-element set-text-transform! v) → void?
+      v : (one-of/c 'none 'capitalize 'uppercase 'lowercase)
+    (send a-mx-element set-text-transform-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS text-transform for the
+    element.
+
+    (send a-mx-element text-align)
+     → (one-of/c 'left 'right 'center 'justify)
+    (send a-mx-element text-align-native) → string?
+    (send a-mx-element set-text-align! v) → void?
+      v : (one-of/c 'left 'right 'center 'justify)
+    (send a-mx-element set-text-align-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS text-align for the element.
+
+                                     (listof (or/c (one-of 'auto)
+    (send a-mx-element margin)   →                 css-length?
+                                                   css-percentage?))
+    (send a-mx-element margin-native) → string?
+    (send a-mx-element set-margin! v) → void?
+               (listof (or/c (one-of 'auto)
+       v   :                 css-length?
+                             css-percentage?))
+    (send a-mx-element set-margin-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS margin for the element.
+
+    A list representation contains one to four elements. A single element
+    applies to all sides; two elements are top–bottom and left–right,
+    respectively; four elements are top, left, bottom, and right, respectively.
+
+    (send a-mx-element padding)
+     → (listof (or/c css-length? css-percentage?))
+    (send a-mx-element padding-native) → string?
+    (send a-mx-element set-padding! v) → void?
+      v : (listof (or/c css-length? css-percentage?))
+    (send a-mx-element set-padding-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS padding for the element.
+
+    The list contains one to four elements, which apply to sides as for margin.
+
+    (send a-mx-element border)
+          (listof (or/c (or/c (one-of/c 'medium 'thin 'thick) css-length?)
+      →                 (one-of/c 'none 'dotted 'dashed 'solid 'double
+                                  'groove 'ridge 'inset 'outset)
+                        (or/c symbol? string?)))
+    (send a-mx-element border-native) → string?
+    (send a-mx-element set-border! v) → void?
+               (listof (or/c (or/c (one-of/c 'medium 'thin 'thick) css-length?)
+       v   :                 (one-of/c 'none 'dotted 'dashed 'solid 'double
+                                       'groove 'ridge 'inset 'outset)
+                             (or/c symbol? string?)))
+    (send a-mx-element set-border-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border for the element.
+
+    Each element of the list describes a width, style, or color. A color is a
+    symbol indicating a color or an RGB string.
+
+    (send a-mx-element border-top) → ....
+    (send a-mx-element border-top-native) → string?
+    (send a-mx-element set-border-top! v) → void?
+      v : ....
+    (send a-mx-element set-border-top-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-top for the element.
+
+    The non-string repersentation is the same as for border.
+    (send a-mx-element border-bottom) → ....
+    (send a-mx-element border-bottom-native) → string?
+    (send a-mx-element set-border-bottom! v) → void?
+      v : ....
+    (send a-mx-element set-border-bottom-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-bottom for the element.
+
+    The non-string repersentation is the same as for border.
+    (send a-mx-element border-left) → ....
+    (send a-mx-element border-left-native) → string?
+    (send a-mx-element set-border-left! v) → void?
+      v : ....
+    (send a-mx-element set-border-left-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-left for the element.
+
+    The non-string repersentation is the same as for border.
+    (send a-mx-element border-right) → ....
+    (send a-mx-element border-right-native) → string?
+    (send a-mx-element set-border-right! v) → void?
+      v : ....
+    (send a-mx-element set-border-right-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-right for the element.
+
+    The non-string repersentation is the same as for border.
+
+    (send a-mx-element border-color)
+     → (listof (or/c symbol? string?))
+    (send a-mx-element border-color-native) → string?
+    (send a-mx-element set-border-color! v) → void?
+      v : (listof (or/c symbol? string?))
+    (send a-mx-element set-border-color-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-color for the element.
+
+    The list contains one to four elements, with side assignments as for margin
+    .
+
+    (send a-mx-element border-width)
+      →   (listof (or/c css-length?
+                        (one-of/c 'medium 'thin 'thick)))
+    (send a-mx-element border-width-native) → string?
+    (send a-mx-element set-border-width! v) → void?
+       v   :   (listof (or/c css-length?
+                             (one-of/c 'medium 'thin 'thick)))
+    (send a-mx-element set-border-width-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-width for the element.
+
+    The list contains one to four elements, with side assignments as for margin
+    .
+
+    (send a-mx-element border-style)
+      →   (one-of/c 'none 'dotted 'dashed 'solid 'double
+                    'groove 'ridge 'inset 'outset)
+    (send a-mx-element border-style-native) → string?
+    (send a-mx-element set-border-style! v) → void?
+       v   :   (one-of/c 'none 'dotted 'dashed 'solid 'double
+                         'groove 'ridge 'inset 'outset)
+    (send a-mx-element set-border-style-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-style for the element.
+
+    (send a-mx-element border-top-style) → ....
+    (send a-mx-element border-top-style-native) → string?
+    (send a-mx-element set-border-top-style! v) → void?
+      v : ....
+    (send a-mx-element set-border-top-style-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-top-style for the
+    element.
+
+    The non-string repersentation is the same as for border-style.
+    (send a-mx-element border-bottom-style) → ....
+    (send a-mx-element border-bottom-style-native) → string?
+    (send a-mx-element set-border-bottom-style! v) → void?
+      v : ....
+    (send a-mx-element set-border-bottom-style-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-bottom-style for the
+    element.
+
+    The non-string repersentation is the same as for border-style.
+    (send a-mx-element border-left-style) → ....
+    (send a-mx-element border-left-style-native) → string?
+    (send a-mx-element set-border-left-style! v) → void?
+      v : ....
+    (send a-mx-element set-border-left-style-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-left-style for the
+    element.
+
+    The non-string repersentation is the same as for border-style.
+    (send a-mx-element border-right-style) → ....
+    (send a-mx-element border-right-style-native) → string?
+    (send a-mx-element set-border-right-style! v) → void?
+      v : ....
+    (send a-mx-element set-border-right-style-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-right-style for the
+    element.
+
+    The non-string repersentation is the same as for border-style.
+
+    (send a-mx-element style-float)
+     → (one-of/c 'none 'left 'right)
+    (send a-mx-element style-float-native) → string?
+    (send a-mx-element set-style-float! v) → void?
+      v : (one-of/c 'none 'left 'right)
+    (send a-mx-element set-style-float-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS style-float for the element.
+
+    (send a-mx-element clear)
+     → (one-of/c 'none 'left 'right 'both)
+    (send a-mx-element clear-native) → string?
+    (send a-mx-element set-clear! v) → void?
+      v : (one-of/c 'none 'left 'right 'both)
+    (send a-mx-element set-clear-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS clear for the element.
+
+    (send a-mx-element display)
+      →   (one-of/c 'block 'none 'inline 'list-item
+                    'table-header-group 'table-footer-group)
+    (send a-mx-element display-native) → string?
+    (send a-mx-element set-display! v) → void?
+       v   :   (one-of/c 'block 'none 'inline 'list-item
+                         'table-header-group 'table-footer-group)
+    (send a-mx-element set-display-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS display for the element.
+
+    (send a-mx-element visibility)
+     → (one-of/c 'inherit 'visible 'hidden)
+    (send a-mx-element visibility-native) → string?
+    (send a-mx-element set-visibility! v) → void?
+      v : (one-of/c 'inherit 'visible 'hidden)
+    (send a-mx-element set-visibility-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS visibility for the element.
+
+    (send a-mx-element list-style-type)
+          (one-of/c 'disc 'circle 'square 'decimal
+      →             'lower-roman 'upper-roman
+                     'lower-alpha 'upper-alpha 'none)
+    (send a-mx-element list-style-type-native) → string?
+    (send a-mx-element set-list-style-type! v) → void?
+               (one-of/c 'disc 'circle 'square 'decimal
+       v   :             'lower-roman 'upper-roman
+                          'lower-alpha 'upper-alpha 'none)
+    (send a-mx-element set-list-style-type-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS list-style-type for the
+    element.
+
+    (send a-mx-element list-style-position)
+     → (one-of/c 'outside 'inside)
+    (send a-mx-element list-style-position-native) → string?
+    (send a-mx-element set-list-style-position! v) → void?
+      v : (one-of/c 'outside 'inside)
+    (send a-mx-element set-list-style-position-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS list-style-position for the
+    element.
+
+    (send a-mx-element list-style-image)
+          (lambda (s)
+      →     (and string?
+                 (regexp-match? #rx"^(none|url[(].*[)])$" s)))
+    (send a-mx-element list-style-image-native) → string?
+    (send a-mx-element set-list-style-image! v) → void?
+               (lambda (s)
+       v   :     (and string?
+                      (regexp-match? #rx"^(none|url[(].*[)])$" s)))
+    (send a-mx-element set-list-style-image-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS list-style-image for the
+    element.
+
+    (send a-mx-element list-style) → list?
+    (send a-mx-element list-style-native) → string?
+    (send a-mx-element set-list-style! v) → void?
+      v : list?
+    (send a-mx-element set-list-style-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS list-style for the element.
+
+    A list representation contains one to three elements, which have the same
+    representations as for list-style-type, list-style-position, and
+    list-style-image. The values may appear in any order.
+
+    (send a-mx-element position)
+     → (one-of/c 'absolute 'relative 'static)
+    (send a-mx-element position-native) → string?
+    (send a-mx-element set-position! v) → void?
+      v : (one-of/c 'absolute 'relative 'static)
+    (send a-mx-element set-position-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS position for the element.
+
+    (send a-mx-element overflow)
+     → (one-of/c 'visible 'scroll 'hidden 'auto)
+    (send a-mx-element overflow-native) → string?
+    (send a-mx-element set-overflow! v) → void?
+      v : (one-of/c 'visible 'scroll 'hidden 'auto)
+    (send a-mx-element set-overflow-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS overflow for the element.
+
+    (send a-mx-element pagebreak-before)
+     → (one-of/c 'always 'auto 'none)
+    (send a-mx-element pagebreak-before-native) → string?
+    (send a-mx-element set-pagebreak-before! v) → void?
+      v : (one-of/c 'always 'auto 'none)
+    (send a-mx-element set-pagebreak-before-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS pagebreak-before for the
+    element.
+
+    (send a-mx-element pagebreak-after)
+     → (one-of/c 'always 'auto 'none)
+    (send a-mx-element pagebreak-after-native) → string?
+    (send a-mx-element set-pagebreak-after! v) → void?
+      v : (one-of/c 'always 'auto 'none)
+    (send a-mx-element set-pagebreak-after-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS pagebreak-after for the
+    element.
+
+    (send a-mx-element css-text-native) → string?
+    (send a-mx-element set-css-text-native! txt) → void?
+      txt : string?
+    Retrieves or sets a string describing the CSS text for the element.
+
+    (send a-mx-element cursor)
+          (one-of/c 'auto 'crosshair 'default
+      →             'hand 'move 'n-resize 'ne-resize 'nw-resize 's-resize
+                    'se-resize 'sw-resize 'e-resize 'w-resize 'text 'wait
+                    'help)
+    (send a-mx-element cursor-native) → string?
+    (send a-mx-element set-cursor! v) → void?
+               (one-of/c 'auto 'crosshair 'default
+       v   :             'hand 'move 'n-resize 'ne-resize 'nw-resize 's-resize
+                         'se-resize 'sw-resize 'e-resize 'w-resize 'text 'wait
+                         'help)
+    (send a-mx-element set-cursor-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS cursor for the element.
+
+    (send a-mx-element clip)
+          (or/c (one-of/c 'auto)
+                (list/c (or/c (one-of/c 'auto)
+                              css-length?)
+                        (or/c (one-of/c 'auto)
+      →                       css-length?)
+                        (or/c (one-of/c 'auto)
+                              css-length?)
+                        (or/c (one-of/c 'auto)
+                              css-length?)))
+    (send a-mx-element clip-native) → string?
+    (send a-mx-element set-clip! v) → void?
+               (or/c (one-of/c 'auto)
+                     (list/c (or/c (one-of/c 'auto)
+                                   css-length?)
+                             (or/c (one-of/c 'auto)
+       v   :                       css-length?)
+                             (or/c (one-of/c 'auto)
+                                   css-length?)
+                             (or/c (one-of/c 'auto)
+                                   css-length?)))
+    (send a-mx-element set-clip-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS clip for the element.
+
+    (send a-mx-element filter)
+     → (cons/c symbol? (listof (list/c symbol? any/c)))
+    (send a-mx-element filter-native) → string?
+    (send a-mx-element set-filter! v) → void?
+      v : (cons/c symbol? (listof (list/c symbol? any/c)))
+    (send a-mx-element set-filter-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS filter for the element.
+
+    For a filter value that combines a symbol with a list, the symbol is a
+    filter name, and the list maps symbol option names to values. The table
+    below shows the possible options and value types for each possible filter
+    name.
+
+      filter             option            value
+
+      'alpha             'enabled          boolean?
+
+                         'finish-opacity   (integer-in 0 100)
+
+                         'opacity          (integer-in 0 100)
+
+                         'start-x          exact-integer?
+
+                         'start-y          exact-integer?
+
+                         'finish-x         exact-integer?
+
+                         'finish-y         exact-integer?
+
+                                           (one-of/c 'uniform
+                         'style                      'linear
+                                                     'radial
+                                                     'rectangular)
+      'blend-trans       'enable           boolean?
+
+                         'duration         real?
+
+                         'status           (one-of/c 'stopped
+                                                     'applied
+                                                     'playing)
+      'blur              'add              boolean?
+
+                         'enabled          boolean?
+
+                                           (one-of/c 0 45 90
+                         'direction                  135 180
+                                                     225 270
+                                                     315)
+                         'strength         (integer-in 1 100)
+
+      'chroma            'enabled          boolean?
+
+                         'color            string?
+
+      'drop-shadow       'enabled          boolean?
+
+                         'off-x            exact-integer?
+
+                         'off-y            exact-integer?
+
+      'flip-horizontal   'enabled          boolean?
+
+      'flip-vertical     'enabled          boolean?
+
+      'glow              'enabled          boolean?
+
+                         'color            string?
+
+                         'strength         (integer-in 1 100)
+
+      'gray              'enabled          boolean?
+
+      'invert            'enabled          boolean?
+
+      'light             'enabled          boolean?
+
+      'mask              'enabled          boolean?
+
+                         'color            string?
+
+      'redirect          'enabled          boolean?
+
+      'reveal-trans      'enabled          boolean?
+
+                         'duration         real?
+
+                         'status           (one-of/c 'stopped
+                                                     'applied
+                                                     'playing)
+      'shadow            'enabled          boolean?
+
+                         'color            string?
+
+                                           (one-of/c 0 45 90
+                         'direction                  135 180
+                                                     225 270
+                                                     315)
+      'wave              'enabled          boolean?
+
+                         'freq             (and/c real?
+                                                  (not/c negative?))
+                         'light-strength   (integer-in 1 100)
+
+      'x-ray             'enabled          boolean?
+
+
+    (send a-mx-element style-string) → string?
+    Retrieves a string describing the complete CSS description for the element.
+
+    (send a-mx-element text-decoration-none) → boolean?
+    (send a-mx-element set-text-decoration-none! v) → void?
+      v : any/c
+    Retrieves or sets the CSS text-decoration-none for the element.
+    (send a-mx-element text-decoration-underline) → boolean?
+    (send a-mx-element set-text-decoration-underline! v) → void?
+      v : any/c
+    Retrieves or sets the CSS text-decoration-underline for the element.
+    (send a-mx-element text-decoration-overline) → boolean?
+    (send a-mx-element set-text-decoration-overline! v) → void?
+      v : any/c
+    Retrieves or sets the CSS text-decoration-overline for the element.
+    (send a-mx-element text-decoration-linethrough) → boolean?
+    (send a-mx-element set-text-decoration-linethrough! v) → void?
+      v : any/c
+    Retrieves or sets the CSS text-decoration-linethrough for the element.
+    (send a-mx-element text-decoration-blink) → boolean?
+    (send a-mx-element set-text-decoration-blink! v) → void?
+      v : any/c
+    Retrieves or sets the CSS text-decoration-blink for the element.
+
+    (send a-mx-element pixel-top) → exact-integer?
+    (send a-mx-element set-pixel-top! v) → void?
+      v : exact-integer?
+    Retrieves or sets the CSS pixel-top for the element.
+    (send a-mx-element pixel-left) → exact-integer?
+    (send a-mx-element set-pixel-left! v) → void?
+      v : exact-integer?
+    Retrieves or sets the CSS pixel-left for the element.
+    (send a-mx-element pixel-width) → exact-integer?
+    (send a-mx-element set-pixel-width! v) → void?
+      v : exact-integer?
+    Retrieves or sets the CSS pixel-width for the element.
+    (send a-mx-element pixel-height) → exact-integer?
+    (send a-mx-element set-pixel-height! v) → void?
+      v : exact-integer?
+    Retrieves or sets the CSS pixel-height for the element.
+
+    (send a-mx-element pos-top) → real?
+    (send a-mx-element set-pos-top! v) → void?
+      v : real?
+    Retrieves or sets the CSS pos-top for the element.
+    (send a-mx-element pos-left) → real?
+    (send a-mx-element set-pos-left! v) → void?
+      v : real?
+    Retrieves or sets the CSS pos-left for the element.
+    (send a-mx-element pos-width) → real?
+    (send a-mx-element set-pos-width! v) → void?
+      v : real?
+    Retrieves or sets the CSS pos-width for the element.
+    (send a-mx-element pos-height) → real?
+    (send a-mx-element set-pos-height! v) → void?
+      v : real?
+    Retrieves or sets the CSS pos-height for the element.
+
+    (send a-mx-element color) → (or/c symbol? string?)
+    (send a-mx-element color-native) → string?
+    (send a-mx-element set-color! v) → void?
+      v : (or/c symbol? string?)
+    (send a-mx-element set-color-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS color for the element.
+
+    (send a-mx-element background-color) → (or/c symbol? string?)
+    (send a-mx-element background-color-native) → string?
+    (send a-mx-element set-background-color! v) → void?
+      v : (or/c symbol? string?)
+    (send a-mx-element set-background-color-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS background-color for the
+    element.
+
+    (send a-mx-element background-position-x)
+      →   (or/c css-length? css-percentage?
+                (one-of/c 'left 'center 'right))
+    (send a-mx-element background-position-x-native) → string?
+    (send a-mx-element set-background-position-x! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                     (one-of/c 'left 'center 'right))
+    (send a-mx-element set-background-position-x-native! str)
+     → void?
+      str : string?
+    Retrieves or sets a value describing the CSS background-position-x for the
+    element.
+
+    (send a-mx-element background-position-y)
+      →   (or/c css-length? css-percentage?
+                (one-of/c 'left 'center 'right))
+    (send a-mx-element background-position-y-native) → string?
+    (send a-mx-element set-background-position-y! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                     (one-of/c 'left 'center 'right))
+    (send a-mx-element set-background-position-y-native! str)
+     → void?
+      str : string?
+    Retrieves or sets a value describing the CSS background-position-y for the
+    element.
+
+    (send a-mx-element letter-spacing)
+     → (or/c css-length? (one-of/c 'normal))
+    (send a-mx-element letter-spacing-native) → string?
+    (send a-mx-element set-letter-spacing! v) → void?
+      v : (or/c css-length? (one-of/c 'normal))
+    (send a-mx-element set-letter-spacing-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS letter-spacing for the
+    element.
+
+    (send a-mx-element vertical-align)
+      →   (one-of/c 'baseline 'sub 'super 'top 'middle
+                    'bottom 'text-top 'text-bottom)
+    (send a-mx-element vertical-align-native) → string?
+    (send a-mx-element set-vertical-align! v) → void?
+       v   :   (one-of/c 'baseline 'sub 'super 'top 'middle
+                         'bottom 'text-top 'text-bottom)
+    (send a-mx-element set-vertical-align-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS vertical-align for the
+    element.
+
+    (send a-mx-element text-indent)
+     → (or/c css-length? css-percentage?)
+    (send a-mx-element text-indent-native) → string?
+    (send a-mx-element set-text-indent! v) → void?
+      v : (or/c css-length? css-percentage?)
+    (send a-mx-element set-text-indent-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS text-indent for the element.
+
+    (send a-mx-element line-height)
+      →   (or/c css-length? css-percentage?
+                (one-of/c 'normal))
+    (send a-mx-element line-height-native) → string?
+    (send a-mx-element set-line-height! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                     (one-of/c 'normal))
+    (send a-mx-element set-line-height-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS line-height for the element.
+
+    (send a-mx-element margin-top)
+      →   (or/c css-length? css-percentage?
+               (one-of/c 'auto))
+    (send a-mx-element margin-top-native) → string?
+    (send a-mx-element set-margin-top! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                    (one-of/c 'auto))
+    (send a-mx-element set-margin-top-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS margin-top for the element.
+
+    (send a-mx-element margin-bottom)
+      →   (or/c css-length? css-percentage?
+               (one-of/c 'auto))
+    (send a-mx-element margin-bottom-native) → string?
+    (send a-mx-element set-margin-bottom! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                    (one-of/c 'auto))
+    (send a-mx-element set-margin-bottom-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS margin-bottom for the element.
+
+    (send a-mx-element margin-left)
+      →   (or/c css-length? css-percentage?
+               (one-of/c 'auto))
+    (send a-mx-element margin-left-native) → string?
+    (send a-mx-element set-margin-left! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                    (one-of/c 'auto))
+    (send a-mx-element set-margin-left-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS margin-left for the element.
+
+    (send a-mx-element margin-right)
+      →   (or/c css-length? css-percentage?
+               (one-of/c 'auto))
+    (send a-mx-element margin-right-native) → string?
+    (send a-mx-element set-margin-right! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                    (one-of/c 'auto))
+    (send a-mx-element set-margin-right-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS margin-right for the element.
+
+    (send a-mx-element padding-top)
+     → (or/c css-length? css-percentage?)
+    (send a-mx-element padding-top-native) → string?
+    (send a-mx-element set-padding-top! v) → void?
+      v : (or/c css-length? css-percentage?)
+    (send a-mx-element set-padding-top-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS padding-top for the element.
+
+    (send a-mx-element padding-bottom)
+     → (or/c css-length? css-percentage?)
+    (send a-mx-element padding-bottom-native) → string?
+    (send a-mx-element set-padding-bottom! v) → void?
+      v : (or/c css-length? css-percentage?)
+    (send a-mx-element set-padding-bottom-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS padding-bottom for the
+    element.
+
+    (send a-mx-element padding-left)
+     → (or/c css-length? css-percentage?)
+    (send a-mx-element padding-left-native) → string?
+    (send a-mx-element set-padding-left! v) → void?
+      v : (or/c css-length? css-percentage?)
+    (send a-mx-element set-padding-left-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS padding-left for the element.
+
+    (send a-mx-element padding-right)
+     → (or/c css-length? css-percentage?)
+    (send a-mx-element padding-right-native) → string?
+    (send a-mx-element set-padding-right! v) → void?
+      v : (or/c css-length? css-percentage?)
+    (send a-mx-element set-padding-right-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS padding-right for the element.
+
+    (send a-mx-element border-top-color) → (or/c symbol? string?)
+    (send a-mx-element border-top-color-native) → string?
+    (send a-mx-element set-border-top-color! v) → void?
+      v : (or/c symbol? string?)
+    (send a-mx-element set-border-top-color-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-top-color for the
+    element.
+
+    (send a-mx-element border-bottom-color)
+     → (or/c symbol? string?)
+    (send a-mx-element border-bottom-color-native) → string?
+    (send a-mx-element set-border-bottom-color! v) → void?
+      v : (or/c symbol? string?)
+    (send a-mx-element set-border-bottom-color-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-bottom-color for the
+    element.
+
+    (send a-mx-element border-left-color) → (or/c symbol? string?)
+    (send a-mx-element border-left-color-native) → string?
+    (send a-mx-element set-border-left-color! v) → void?
+      v : (or/c symbol? string?)
+    (send a-mx-element set-border-left-color-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-left-color for the
+    element.
+
+    (send a-mx-element border-right-color)
+     → (or/c symbol? string?)
+    (send a-mx-element border-right-color-native) → string?
+    (send a-mx-element set-border-right-color! v) → void?
+      v : (or/c symbol? string?)
+    (send a-mx-element set-border-right-color-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-right-color for the
+    element.
+
+    (send a-mx-element border-top-width)
+      →   (or/c css-length?
+                (one-of/c 'medium 'thin 'thick))
+    (send a-mx-element border-top-width-native) → string?
+    (send a-mx-element set-border-top-width! v) → void?
+       v   :   (or/c css-length?
+                     (one-of/c 'medium 'thin 'thick))
+    (send a-mx-element set-border-top-width-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-top-width for the
+    element.
+
+    (send a-mx-element border-bottom-width)
+      →   (or/c css-length?
+                (one-of/c 'medium 'thin 'thick))
+    (send a-mx-element border-bottom-width-native) → string?
+    (send a-mx-element set-border-bottom-width! v) → void?
+       v   :   (or/c css-length?
+                     (one-of/c 'medium 'thin 'thick))
+    (send a-mx-element set-border-bottom-width-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-bottom-width for the
+    element.
+
+    (send a-mx-element border-left-width)
+      →   (or/c css-length?
+                (one-of/c 'medium 'thin 'thick))
+    (send a-mx-element border-left-width-native) → string?
+    (send a-mx-element set-border-left-width! v) → void?
+       v   :   (or/c css-length?
+                     (one-of/c 'medium 'thin 'thick))
+    (send a-mx-element set-border-left-width-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-left-width for the
+    element.
+
+    (send a-mx-element border-right-width)
+      →   (or/c css-length?
+                (one-of/c 'medium 'thin 'thick))
+    (send a-mx-element border-right-width-native) → string?
+    (send a-mx-element set-border-right-width! v) → void?
+       v   :   (or/c css-length?
+                     (one-of/c 'medium 'thin 'thick))
+    (send a-mx-element set-border-right-width-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS border-right-width for the
+    element.
+
+    (send a-mx-element width)   →   (or/c css-length? css-percentage?
+                                          (one-of/c 'auto))
+    (send a-mx-element width-native) → string?
+    (send a-mx-element set-width! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                     (one-of/c 'auto))
+    (send a-mx-element set-width-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS width for the element.
+
+    (send a-mx-element height)   →   (or/c css-length? css-percentage?
+                                           (one-of/c 'auto))
+    (send a-mx-element height-native) → string?
+    (send a-mx-element set-height! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                     (one-of/c 'auto))
+    (send a-mx-element set-height-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS height for the element.
+
+    (send a-mx-element top)   →   (or/c css-length? css-percentage?
+                                        (one-of/c 'auto))
+    (send a-mx-element top-native) → string?
+    (send a-mx-element set-top! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                     (one-of/c 'auto))
+    (send a-mx-element set-top-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS top for the element.
+
+    (send a-mx-element left)   →   (or/c css-length? css-percentage?
+                                         (one-of/c 'auto))
+    (send a-mx-element left-native) → string?
+    (send a-mx-element set-left! v) → void?
+       v   :   (or/c css-length? css-percentage?
+                     (one-of/c 'auto))
+    (send a-mx-element set-left-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS left for the element.
+
+    (send a-mx-element z-index)
+     → (or/c exact-integer? (one-of/c 'auto))
+    (send a-mx-element z-index-native) → string?
+    (send a-mx-element set-z-index! v) → void?
+      v : (or/c exact-integer? (one-of/c 'auto))
+    (send a-mx-element set-z-index-native! str) → void?
+      str : string?
+    Retrieves or sets a value describing the CSS z-index for the element.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

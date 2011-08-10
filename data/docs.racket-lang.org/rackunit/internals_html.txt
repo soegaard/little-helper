@@ -1,0 +1,279 @@
+▼  Rack Unit: Unit Testing
+1  Quick Start Guide for Rack Unit
+2  The Philosophy of Rack Unit
+3  Rack Unit API
+4  Testing Utilities
+5  Rack Unit Internals and Extension API
+6  Release Notes
+7  Acknowlegements
+   Index
+► 5  Rack Unit Internals and Extension API
+5.1  Customizing Check Evaluation
+5.2  Customizing Test Evaluation
+5.3  Programmatically Running Tests and Inspecting Results
+On this page:
+5.1 Customizing Check Evaluation
+current-check-handler
+current-check-around
+5.2 Customizing Test Evaluation
+current-test-name
+current-test-case-around
+test-suite-test-case-around
+test-suite-check-around
+5.3 Programmatically Running Tests and Inspecting Results
+5.3.1 Result Types
+exn: test
+exn: test: check
+test-result
+test-failure
+test-error
+test-success
+5.3.2 Functions to Run Tests
+run-test-case
+run-test
+fold-test-results
+foldts-test-suite
+[...search manuals...]
+  top← prev  up  next → 
+
+5 RackUnit Internals and Extension API
+
+This section describes RackUnit’s facilities for customizing the behavior of
+checks and tests and for creating new kinds of test runners.
+
+5.1 Customizing Check Evaluation
+
+The semantics of checks are determined by the parameters current-check-around
+and current-check-handler. Other testing form such as test-begin and test-suite
+change the value of these parameters.
+
+(current-check-handler) → (-> any/c any)
+(current-check-handler handler) → void?
+  handler : (-> any/c any)
+Parameter containing the function that handles exceptions raised by check
+failures. The default value is raise.
+
+(current-check-around) → (-> (-> any) any)
+(current-check-around check) → void?
+  check : (-> (-> any) any)
+Parameter containing the function that handles the execution of checks. The
+default value wraps the evaluation of thunk in a with-handlers call that calls
+current-check-handler if an exception is raised and then (when an exception is
+not raised) discards the result, returning (void).
+
+5.2 Customizing Test Evaluation
+
+Just like with checks, there are several parameters that control the semantics
+of compound testing forms.
+
+(current-test-name) → (or/c string? false/c)
+(current-test-name name) → void?
+  name : (or/c string? false/c)
+This parameter stores the name of the current test case. A value of #f
+indicates a test case with no name, such as one constructed by test-begin.
+
+(current-test-case-around) → (-> (-> any) any)
+(current-test-case-around handler) → void?
+  handler : (-> (-> any) any)
+This parameter handles evaluation of test cases. The value of the parameter is
+a function that is passed a thunk (a function of no arguments). The function,
+when applied, evaluates the expressions within a test case. The default value
+of the current-test-case-around parameters evaluates the thunk in a context
+that catches exceptions and prints an appropriate message indicating test case
+failure.
+
+(test-suite-test-case-around thunk) → any
+  thunk : (-> any)
+The current-test-case-around parameter is parameterized to this value within
+the scope of a test-suite. This function creates a test case structure instead
+of immediately evaluating the thunk.
+
+(test-suite-check-around thunk) → any/c
+  thunk : (-> any/c)
+The current-check-around parameter is parameterized to this value within the
+scope of a test-suite. This function creates a test case structure instead of
+immediately evaluating a check.
+
+5.3 Programmatically Running Tests and Inspecting Results
+
+RackUnit provides an API for running tests, from which custom UIs can be
+created.
+
+5.3.1 Result Types
+
+(struct   exn:test exn ()
+          #:extra-constructor-name make-exn:test)
+The base structure for RackUnit exceptions. You should never catch instances of
+this type, only the subtypes documented below.
+
+(struct   exn:test:check exn:test (stack)
+          #:extra-constructor-name make-exn:test:check)
+  stack : (listof check-info)
+A exn:test:check is raised when an check fails, and contains the contents of
+the check-info stack at the time of failure.
+
+(struct   test-result (test-case-name)
+          #:extra-constructor-name make-test-result)
+  test-case-name : (or/c string #f)
+A test-result is the result of running the test with the given name (with #f
+indicating no name is available).
+
+(struct   test-failure test-result (result)
+          #:extra-constructor-name make-test-failure)
+  result : any
+Subtype of test-result representing a test failure.
+
+(struct   test-error test-result (result)
+          #:extra-constructor-name make-test-error)
+  result : exn
+Subtype of test-result representing a test error.
+
+(struct   test-success test-result (result)
+          #:extra-constructor-name make-test-success)
+  result : any
+Subtype of test-result representing a test success.
+
+5.3.2 Functions to Run Tests
+
+(run-test-case name action) → test-result
+  name : (or/c string #f)
+  action : (-> any)
+Runs the given test case, returning a result representing success, failure, or
+error.
+
+(run-test test)
+ → (flat-murec-contract ([R (listof (or/c test-result? R))]) R)
+  test : (or/c test-case? test-suite?)
+Runs the given test (test case or test suite) returning a tree (list of lists)
+of results
+
+Example:
+
+    (run-test
+       (test-suite
+        "Dummy"
+        (test-case "Dummy" (check-equal? 1 2))))
+
+(fold-test-results   result-fn            
+                     seed                 
+                     test                 
+                     #:run run            
+                     #:fdown fdown        
+                     #:fup fup)      →   'a
+  result-fn : ('b 'c ... 'a . -> . 'a)
+  seed : 'a
+  test : (or/c test-case? test-suite?)
+  run : (string (() -> any) . -> . 'b 'c ...)
+  fdown : (string 'a . -> . 'a)
+  fup : (string 'a . -> . 'a)
+Fold result-fn pre-order left-to-right depth-first over the results of run. By
+default run is run-test-case and fdown and fup just return the seed, so
+result-fn is folded over the test results.
+
+This function is useful for writing custom folds (and hence UIs) over test
+results without you having to take care of all the expected setup and teardown.
+For example, fold-test-results will run test suite before and after actions for
+you. However it is still flexible enough, via its keyword arguments, to do
+almost anything that foldts-test-suite can. Hence it should be used in
+preference to foldts-test-suite.
+
+The result-fn argument is a function from the results of run (defaults to a
+test-result) and the seed to a new seed.
+
+The seed argument is any value.
+
+The test argument is a test case or test suite.
+
+The run argument is a function from a test case name (string) and action
+(thunk) to any values. The values produced by run are fed into the result-fn.
+
+The fdown argument is a function from a test suite name (string) and the seed,
+to a new seed.
+
+The fup argument is a function from a test suite name (string) and the seed, to
+a new seed.
+
+Examples:
+
+The following code counts the number of successes:
+
+    (define (count-successes test)
+      (fold-test-results
+       (lambda (result seed)
+         (if (test-success? result)
+             (add1 seed)
+             seed))
+       0
+       test))
+
+The following code returns the symbol 'burp instead of running test cases. Note
+how the result-fn receives the value of run.
+
+    (define (burp test)
+      (fold-test-results
+       (lambda (result seed) (cons result seed))
+       null
+       test
+       #:run (lambda (name action) 'burp)))
+
+(foldts-test-suite fdown fup fhere seed test) → 'a
+  fdown : (test-suite string thunk thunk 'a -> 'a)
+  fup : (test-suite string thunk thunk 'a 'a -> 'a)
+  fhere : (test-case string thunk 'a -> 'a)
+  seed : 'a
+  test : (or/c test-case? test-suite?)
+The foldts-test-suite function is a nifty tree fold (created by Oleg Kiselyov)
+that folds over a test in a useful way (fold-test-results isn’t that useful as
+you can’t specify actions around test cases).
+
+The fdown argument is a function of test suite, test suite name, before action,
+after action, and the seed. It is run when a test suite is encountered on the
+way down the tree (pre-order).
+
+The fup argument is a function of test suite, test suite name, before action,
+after action, the seed at the current level, and the seed returned by the
+children. It is run on the way up the tree (post-order).
+
+The fhere argument is a function of the test case, test case name, the test
+case action, and the seed. (Note that this might change in the near future to
+just the test case. This change would be to allow fhere to discriminate
+subtypes of test-case, which in turn would allow test cases that are, for
+example, ignored).
+
+Example:
+
+Here’s the implementation of fold-test-results in terms of foldts-test-suite:
+
+    (define (fold-test-results suite-fn case-fn seed test)
+      (foldts-test-suite
+       (lambda (suite name before after seed)
+         (before)
+         (suite-fn name seed))
+       (lambda (suite name before after seed kid-seed)
+         (after)
+         kid-seed)
+       (lambda (case name action seed)
+         (case-fn
+          (run-test-case name action)
+          seed))
+       seed
+       test))
+
+If you’re used to folds you’ll probably be a bit surprised that the functions
+you pass to foldts-test-suite receive both the structure they operate on, and
+the contents of that structure. This is indeed unusual. It is done to allow
+subtypes of test-case and test-suite to be run in customised ways. For example,
+you might define subtypes of test case that are ignored (not run), or have
+their execution time recorded, and so on. To do so the functions that run the
+test cases need to know what type the test case has, and hence is is necessary
+to provide this information.
+
+If you’ve made it this far you truly are a master RackUnit hacker. As a bonus
+prize we’ll just mention that the code in hash-monad.rkt and monad.rkt might be
+of interest for constructing user interfaces. The API is still in flux, so
+isn’t documented here. However, do look at the implementation of run-tests for
+examples of use.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

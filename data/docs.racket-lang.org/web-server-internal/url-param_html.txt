@@ -1,0 +1,47 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 5  Internal APIs
+5.1  Timers
+5.2  Connection Manager
+5.3  Serializable Closures
+5.4  Cache Table
+5.5  MIME Types
+5.6  Serialization Utilities
+5.7  URL Param
+5.8  GZip
+On this page:
+insert-param
+extract-param
+[...search manuals...]
+  top← prev  up  next → 
+
+5.7 URL Param
+
+ (require web-server/private/url-param)
+The Web Server needs to encode information in URLs. If this data is stored in
+the query string, than it will be overridden by browsers that make GET requests
+to those URLs with more query data. So, it must be encoded in URL params. This
+module provides functions for helping with this process.
+
+(insert-param u k v) → url?
+  u : url?
+  k : string?
+  v : string?
+Associates k with v in the final URL param of u, overwritting any current
+binding for k.
+
+(extract-param u k) → (or/c string? false/c)
+  u : url?
+  k : string?
+Extracts the string associated with k in the final URL param of u, if there is
+one, returning #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

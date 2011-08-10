@@ -1,0 +1,172 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+On this page:
+interaction
+interaction0
+interaction-eval
+interaction-eval-show
+racketblock+ eval
+racketblock0+ eval
+racketmod+ eval
+def+ int
+defs+ int
+examples
+defexamples
+make-base-eval
+make-base-eval-factory
+make-eval-factory
+close-eval
+scribble-eval-handler
+[...search manuals...]
+  top← prev  up  next → 
+
+4.5 Evaluation and Examples
+
+ (require scribble/eval)
+The scribble/eval library provides utilities for evaluating code at
+document-build time and incorporating the results in the document, especially
+to show example uses of defined procedures and syntax.
+
+(interaction datum ...)
+(interaction #:eval eval-expr datum ...)
+Like racketinput, except that the result for each input datum is shown on the
+next line. The result is determined by evaluating the quoted form of the datum
+using the evaluator produced by eval-expr, if provided.
+
+The eval-expr must produce a sandbox evaluator via make-evaluator or
+make-module-evaluator with the sandbox-output and sandbox-error-output
+parameters set to 'string. If eval is not provided, an evaluator is created
+using make-base-eval. See also make-eval-factory.
+
+As an example,
+
+    #lang scribble/manual
+    @(require racket/sandbox
+              scribble/eval)
+    @(define my-evaluator
+       (parameterize ([sandbox-output 'string]
+                      [sandbox-error-output 'string])
+         (make-evaluator 'typed/racket/base)))
+    @interaction[#:eval my-evaluator
+     
+                        (: my-sqr (Real -> Real))
+                        (define (my-sqr x)
+                          (* x x))
+                        (my-sqr 42)]
+
+uses an evaluator whose language is typed/racket/base.
+
+If the value of current-print in the sandbox is changed from its default value,
+or if print-as-expression in the sandbox is set to #f, then each evaluation
+result is formatted to a port by applying (current-print) to the value; the
+output port is set to a pipe that supports specials in the sense of
+write-special, and non-character values written to the port are used as content
+. Otherwise, when the default current-print is in place, result values are
+typeset using to-element/no-color.
+
+Uses of code:comment and code:blank are stipped from each datum before
+evaluation.
+
+If a datum has the form (eval:alts show-datum eval-datum), then show-datum is
+typeset, while eval-datum is evaluated.
+
+If a datum has the form (eval:check eval-datum expect-datum), then both
+eval-datum and check-datum are evaluated, and an error is raised if they are
+not equal?.
+
+(interaction0 datum ...)
+(interaction0 #:eval eval-expr datum ...)
+Like interaction, but without insetting the code via nested.
+
+(interaction-eval datum)
+(interaction-eval #:eval eval-expr datum)
+Like interaction, evaluates the quoted form of datum, but returns the empty
+string.
+
+(interaction-eval-show datum)
+(interaction-eval-show #:eval eval-expr datum)
+Like interaction-eval, but produces an element representing the printed form of
+the evaluation result.
+
+(racketblock+eval datum ...)
+(racketblock+eval #:eval eval-expr datum ...)
+Combines racketblock and interaction-eval.
+
+(racketblock0+eval datum ...)
+(racketblock0+eval #:eval eval-expr datum ...)
+Combines racketblock0 and interaction-eval.
+
+(racketmod+eval name datum ...)
+(racketmod+eval #:eval eval-expr name datum ...)
+Combines racketmod and interaction-eval.
+
+(def+int defn-datum expr-datum ...)
+(def+int #:eval eval-expr defn-datum expr-datum ...)
+Like interaction, except the defn-datum is typeset as for racketblock (i.e., no
+prompt) and a line of space is inserted before the expr-datums.
+
+(defs+int (defn-datum ...) expr-datum ...)
+(defs+int #:eval eval-expr (defn-datum ...) expr-datum ...)
+Like def+int, but for multiple leading definitions.
+
+(examples datum ...)
+(examples #:eval eval-expr datum ...)
+Like interaction, but with an “Examples:” label prefixed.
+
+(defexamples datum ...)
+(defexamples #:eval eval-expr datum ...)
+Like examples, but each definition using define or define-struct among the
+datums is typeset without a prompt, and with line of space after it.
+
+(make-base-eval) → (any/c . -> . any)
+Creates an evaluator using (make-evaluator 'racket/base), setting sandbox
+parameters to disable limits, setting the outputs to 'string, and not adding
+extra security guards.
+
+(make-base-eval-factory mod-paths) → (-> (any/c . -> . any))
+  mod-paths : (listof module-path?)
+Produces a function that is like make-base-eval, except that each module in
+mod-paths is attached to the evaluator’s namespace. The modules are loaded and
+instantiated once (when the returned make-base-eval-like function is called the
+first time) and then attached to each evaluator that is created.
+
+(make-eval-factory mod-paths) → (-> (any/c . -> . any))
+  mod-paths : (listof module-path?)
+Like make-base-eval-factory, but each module in mod-paths is also required into
+the top-level environment for each generated evaluator.
+
+(close-eval eval) → (one-of/c "")
+  eval : (any/c . -> . any)
+Shuts down an evaluator produced by make-base-eval. Use close-eval when garbage
+collection cannot otherwise reclaim an evaluator (e.g., because it is defined
+in a module body).
+
+(scribble-eval-handler)
+ → ((any/c . -> . any) any/c boolean? . -> . any)
+(scribble-eval-handler handler) → void?
+  handler : ((any/c . -> . any) any/c boolean? . -> . any)
+A parameter that serves as a hook for evaluation. The evaluator to use is
+supplied as the first argument to the parameter’s value, and the second
+argument is the form to evaluate. The last argument is #t if exceptions are
+being captured (to display exception results), #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,492 @@
+►  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+▼ 32  GUI libraries
+32.1  Dr Racket Language Levels
+32.2  Notify-boxes
+32.3  Preferences
+32.4  Slideshow Presentations
+32.5  Progressive Picts and Slides
+► 32.5  Progressive Picts and Slides
+32.5.1  Progressive Picts
+32.5.2  Progressive Slides
+On this page:
+32.5.1 Progressive Picts
+ppict-do
+ppict-do*
+ppict-do-state
+ppict?
+ppict-go
+ppict-add
+placer?
+refpoint-placer?
+coord
+grid
+cascade
+tile
+at-find-pict
+merge-refpoints
+32.5.1.1 Tagging picts
+tag-pict
+find-tag
+tag-path?
+32.5.2 Progressive Slides
+pslide
+pslide-base-pict
+pslide-default-placer
+[...search manuals...]
+  top← prev  up  next → 
+
+32.5 Progressive Picts and Slides
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+32.5.1 Progressive Picts
+
+ (require unstable/gui/ppict)
+
+A progressive pict or “ppict” is a kind of pict that has an associated “pict
+placer,” which generally represents a position and alignment. New picts can be
+placed on the progressive pict by calling ppict-add, and the placer can be
+updated by calling ppict-go. The ppict-do form provides a compact notation for
+sequences of those two operations.
+
+(ppict-do base-expr ppict-do-fragment ...)
+(ppict-do* base-expr ppic-do-fragment ...)
+ 
+ppict-do-fragment   =   #:go placer-expr
+                    |   #:set pict-expr
+                    |   #:next
+                    |   #:alt (ppict-do-fragment ...)
+                    |   elem-expr
+ 
+       base-expr    :   pict?
+       placer-expr    :   placer?
+       pict-expr    :   pict?
+       elem-expr   :   (or/c pict? real? #f)
+
+Builds a pict (and optionally a list of intermediate picts) progressively. The
+ppict-do form returns only the final pict; any uses of #:next are ignored. The
+ppict-do* form returns two values: the final pict and a list of all partial
+picts emitted due to #:next (the final pict is not included).
+
+A #:go fragment changes the current placer. A #:set fragment replaces the
+current pict state altogether with a new computed pict. A #:next fragment saves
+a pict including only the contents emitted so far (but whose alignment takes
+into account picts yet to come). A #:alt fragment saves the current pict state,
+executes the sub-sequence that follows, saves the result (as if the
+sub-sequence ended with #:next), then restores the saved pict state before
+continuing.
+
+The elem-exprs are interpreted by the current placer. A numeric elem-expr
+usually represents a spacing change, but some placers do not support them. A
+spacing change only affects added picts up until the next placer is installed;
+when a new placer is installed, the spacing is reset, usually to 0.
+
+The ppict-do-state form tracks the current state of the pict. It is updated
+before a #:go or #:set fragment or before a sequence of elem-exprs. It is not
+updated in the middle of a chain of elem-exprs, however.
+
+Examples:
+
+    > (define base
+        (ppict-do (colorize (rectangle 200 200) "gray")
+                  #:go (coord 1/2 1/2 'cc)
+                  (colorize (hline 200 1) "gray")
+                  #:go (coord 1/2 1/2 'cc)
+                  (colorize (vline 1 200) "gray")))
+    > base
+    image
+
+
+The use of ppict-do in the defnition of base above is equivalent to
+
+    (let* ([pp (colorize (rectangle 200 200) "gray")]
+           [pp (ppict-go pp (coord 1/2 1/2 'cc))]
+           [pp (ppict-add pp (colorize (hline 200 1) "gray"))]
+           [pp (ppict-go pp (coord 1/2 1/2 'cc))]
+           [pp (ppict-add pp (colorize (vline 1 200) "gray"))])
+      pp)
+
+Examples:
+
+    > (define circles-down-1
+        (ppict-do base
+                  #:go (grid 2 2 2 1 'ct)
+                  10
+                  (circle 20)
+                  (circle 20)
+                  30
+                  (circle 20)))
+    > circles-down-1
+    image
+
+    > (define circles-down-2
+        (ppict-do circles-down-1
+                  (colorize (circle 20) "red")
+                  40
+                  (colorize (circle 20) "red")))
+    > (inset circles-down-2 20) ; draws outside its bounding box
+    image
+
+    > (inset (clip circles-down-2) 20)
+    image
+
+    > (ppict-do base
+                #:go (coord 0 0 'lt)
+                (tag-pict (circle 20) 'circA)
+                #:go (coord 1 1 'rb)
+                (tag-pict (circle 20) 'circB)
+                #:set (let ([p ppict-do-state])
+                        (pin-arrow-line 10 p
+                                        (find-tag p 'circA) rb-find
+                                        (find-tag p 'circB) lt-find)))
+    image
+
+    > (let-values ([(final intermediates)
+                    (ppict-do* base
+                               #:go (coord 1/4 1/2 'cb)
+                               (text "shapes:")
+                               #:go (coord 1/2 1/2 'lb)
+                               #:alt [(circle 20)]
+                               #:alt [(rectangle 20 20)]
+                               (text "and more!"))])
+        (append intermediates (list final)))
+    '(image image image)
+
+
+
+More examples of ppict-do are scattered throughout this section.
+
+ppict-do-state
+Tracks the current state of a ppict-do or ppict-do* form.
+
+(ppict? x) → boolean?
+  x : any/c
+Returns #t if x is a progressive pict, #f otherwise.
+
+(ppict-go p pl) → ppict?
+  p : pict?
+  pl : placer?
+Creates a progressive pict with the given base pict p and the placer pl.
+
+(ppict-add pp elem ...) → pict?
+  pp : ppict?
+  elem : (or/c pict? real? #f)
+Creates a new pict by adding each elem pict on top of pp according to pp’s
+placer. The result pict may or may not be a progressive pict, depending on the
+placer used.
+
+An elem that is a real number changes the spacing for subsequent additions. A
+elem that is #f is discarded; it is permitted as a convenience for
+conditionally including sub-picts. Note that #f is not equivalent to (blank 0),
+since the latter will cause spacing to be added around it.
+
+(placer? x) → boolean?
+  x : any/c
+Returns #t if x is a placer, #f otherwise.
+
+(refpoint-placer? x) → boolean?
+  x : any/c
+Returns #t if x is a placer based on a reference point, #f otherwise.
+
+(coord    rel-x                       
+          rel-y                       
+        [ align                       
+          #:abs-x abs-x               
+          #:abs-y abs-y               
+          #:compose composer])   →   refpoint-placer?
+  rel-x : real?
+  rel-y : real?
+  align : (or/c 'lt 'ct 'rt 'lc 'cc 'rc 'lb 'cb 'rb) = 'cc
+  abs-x : real? = 0
+  abs-y : real? = 0
+  composer : procedure? = computed from align
+Returns a placer that places picts according to rel-x and rel-y, which are
+interpeted as fractions of the width and height of the base progressive pict.
+That is, 0, 0 is the top left corner of the base’s bounding box, and 1, 1 is
+the bottom right. Then abs-x and abs-y offsets are added to get the final
+reference point.
+
+Additions are aligned according to align, a symbol whose name consists of a
+horizontal alignment character followed by a vertical alignment character. For
+example, if align is 'lt, the pict is placed so that its left-top corner is at
+the reference point; if align is 'rc, the pict is placed so that the center of
+its bounding box’s right edge coincides with the reference point.
+
+By default, if there are multiple picts to be placed, they are vertically
+appended, aligned according to the horizontal component of align. For example,
+if align is 'cc, the default composer is vc-append; for 'lt, the default
+composer is vl-append. The spacing is initially 0.
+
+Examples:
+
+    > (ppict-do base
+                #:go (coord 1/2 1/2 'rb)
+                (colorize (circle 20) "red")
+                #:go (coord 1/2 1/2 'lt)
+                (colorize (circle 20) "darkgreen"))
+    image
+
+    > (ppict-do base
+                #:go (coord 1 0 'rt #:abs-x -5 #:abs-y 10)
+                50 ; change spacing
+                (text "abc")
+                (text "12345")
+                0  ; and again
+                (text "ok done"))
+    image
+
+    > (ppict-do base
+                #:go (coord 0 0 'lt #:compose ht-append)
+                (circle 10)
+                (circle 20)
+                (circle 30))
+    image
+
+
+
+(grid    cols                        
+         rows                        
+         col                         
+         row                         
+       [ align                       
+         #:abs-x abs-x               
+         #:abs-y abs-y               
+         #:compose composer])   →   refpoint-placer?
+  cols : exact-positive-integer?
+  rows : exact-positive-integer?
+  col : exact-integer?
+  row : exact-integer?
+  align : (or/c 'lt 'ct 'rt 'lc 'cc 'rc 'lb 'cb 'rb) = 'cc
+  abs-x : real? = 0
+  abs-y : real? = 0
+  composer : procedure? = computed from align
+Returns a placer that places picts according to a position in a virtual grid.
+The row and col indexes are numbered starting at 1.
+
+Uses of grid can be translated into uses of coord, but the translation depends
+on the alignment. For example, (grid 2 2 1 1 'lt) is equivalent to (coord 0 0
+'lt), but (grid 2 2 1 1 'rt) is equivalent to (coord 1/2 0 'rt).
+
+Examples:
+
+    > (define none-for-me-thanks
+        (ppict-do base
+                  #:go (grid 2 2 1 1 'lt)
+                  (text "You do not like")
+                  (colorize (text "green eggs and ham?") "darkgreen")))
+    > none-for-me-thanks
+    image
+
+    > (ppict-do none-for-me-thanks
+                #:go (grid 2 2 2 1 'rb)
+                (colorize (text "I do not like them,") "red")
+                (text "Sam-I-am."))
+    image
+
+
+
+(cascade [step-x step-y]) → placer?
+  step-x : (or/c real? 'auto) = 'auto
+  step-y : (or/c real? 'auto) = 'auto
+Returns a placer that places picts by evenly spreading them diagonally across
+the base pict in “cascade” style. This placer does not support changing the
+spacing by including a real number within the pict sequence.
+
+When a list picts is to be placed, their bounding boxes are normalized to the
+maximum width and height of all picts in the list; each pict is centered in its
+new bounding box. The picts are then cascaded so there is step-x space between
+each of the picts’ left edges; there is also step-x space between the base
+pict’s left edge and the first pict’s left edge. Similarly for step-y and the
+vertical spacing.
+
+If step-x or step-y is 'auto, the spacing between the centers of the picts to
+be placed is determined automatically so that the inter-pict spacing is the
+same as the spacing between the last pict and the base.
+
+Examples:
+
+    > (ppict-do base
+                #:go (cascade)
+                (colorize (filled-rectangle 100 100) "red")
+                (colorize (filled-rectangle 100 100) "blue"))
+    image
+
+    > (ppict-do base
+                #:go (cascade 40 20)
+                (colorize (filled-rectangle 100 100) "red")
+                (colorize (filled-rectangle 100 100) "blue"))
+    image
+
+
+
+(tile cols rows) → placer?
+  cols : exact-positive-integer?
+  rows : exact-positive-integer?
+Returns a placer that places picts by tiling them in a grid cols columns wide
+and rows rows high.
+
+Example:
+
+    > (ppict-do base
+                #:go (tile 2 2)
+                (circle 50)
+                (rectangle 50 50)
+                (jack-o-lantern 50)
+                (standard-fish 50 30 #:color "red"))
+    image
+
+
+
+(at-find-pict    find-path                   
+               [ finder                      
+                 align                       
+                 #:abs-x abs-x               
+                 #:abs-y abs-y               
+                 #:compose composer])   →   refpoint-placer?
+  find-path : (or/c tag-path? pict-path?)
+  finder : procedure? = cc-find
+  align : (or/c 'lt 'ct 'rt 'lc 'cc 'rc 'lb 'cb 'rb) = 'cc
+  abs-x : real? = 0
+  abs-y : real? = 0
+  composer : procedure? = computed from align
+Returns a placer that places picts according to a reference point based on an
+existing pict within the base.
+
+Example:
+
+    > (ppict-do base
+                #:go (cascade)
+                (tag-pict (standard-fish 40 20 #:direction 'right 
+    #:color "red") 'red-fish)
+                (tag-pict (standard-fish 50 30 #:direction 'left 
+    #:color "blue") 'blue-fish)
+                #:go (at-find-pict 'red-fish rc-find 'lc #:abs-x 10)
+                (text "red fish"))
+    image
+
+
+
+(merge-refpoints x-placer y-placer) → refpoint-placer?
+  x-placer : refpoint-placer?
+  y-placer : refpoint-placer?
+Returns a placer like x-placer except that the y-coordinate of its reference
+point is computed by y-placer.
+
+Example:
+
+    > (ppict-do base
+                #:go (cascade)
+                (tag-pict (standard-fish 40 20 #:direction 'right 
+    #:color "red") 'red-fish)
+                (tag-pict (standard-fish 50 30 #:direction 'left 
+    #:color "blue") 'blue-fish)
+                #:go (merge-refpoints (coord 1 0 'rc)
+                                      (at-find-pict 'red-fish))
+                (text "red fish"))
+    image
+
+
+
+32.5.1.1 Tagging picts
+
+(tag-pict p tag) → pict?
+  p : pict?
+  tag : symbol?
+Returns a pict like p that carries a symbolic tag. The tag can be used with
+find-tag to locate the pict.
+
+(find-tag p find) → (or/c pict-path? #f)
+  p : pict?
+  find : tag-path?
+Locates a sub-pict of p. Returns a pict-path that can be used with functions
+like lt-find, etc.
+
+(tag-path? x) → boolean?
+  x : any/c
+Returns #t if x is a symbol or a non-empty list of symbols, #f otherwise.
+
+32.5.2 Progressive Slides
+
+ (require unstable/gui/pslide)
+
+(pslide ppict-do-fragment ...)
+Produce slide(s) using progressive picts. See ppict-do for an explanation of
+ppict-do-fragments.
+
+Note that like slide but unlike ppict-do*, the number of slides produced is one
+greater than the number of #:next uses; that is, a slide is created for the
+final pict.
+
+Remember to include gap-size after updating the current placer if you want
+slide-like spacing.
+
+Example:
+
+    > (pslide #:go (coord 0 0 'lt)
+              (t "You do not like")
+              (colorize (t "green eggs and ham?") "darkgreen")
+              #:next
+              #:go (coord 1 1 'rb)
+              (colorize (t "I do not like them,") "red")
+              (t "Sam-I-am."))
+    image
+
+
+
+Note that the text is not flush against the sides of the slide, because pslide
+uses a base pict the size of the client area, excluding the margins.
+
+(pslide-base-pict) → (-> pict)
+(pslide-base-pict make-base-pict) → void?
+  make-base-pict : (-> pict)
+Controls the initial pict used by pslide. The default value is
+
+
+    (lambda () (blank client-w client-h))
+
+(pslide-default-placer) → placer?
+(pslide-default-placer placer) → void?
+  placer : placer?
+Controls the initial placer used by pslide. The default value is
+
+
+    (coord 1/2 1/2 'cc)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

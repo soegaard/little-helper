@@ -1,0 +1,801 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+► 5.2  Creating Classes
+5.2.1  Initialization Variables
+5.2.2  Fields
+5.2.3  Methods
+On this page:
+object%
+class*
+class
+this
+this%
+inspect
+init
+init-field
+field
+inherit-field
+init-rest
+public
+pubment
+public-final
+override
+overment
+override-final
+augment
+augride
+augment-final
+private
+inherit
+inherit/ super
+inherit/ inner
+rename-super
+rename-inner
+public*
+pubment*
+public-final*
+override*
+overment*
+override-final*
+augment*
+augride*
+augment-final*
+private*
+define/ public
+define/ pubment
+define/ public-final
+define/ override
+define/ overment
+define/ override-final
+define/ augment
+define/ augride
+define/ augment-final
+define/ private
+class/ derived
+5.2.1 Initialization Variables
+5.2.2 Fields
+5.2.3 Methods
+5.2.3.1 Method Definitions
+super
+inner
+5.2.3.2 Inherited and Superclass Methods
+5.2.3.3 Internal and External Names
+define-local-member-name
+define-member-name
+member-name-key
+generate-member-key
+member-name-key?
+member-name-key=?
+member-name-key-hash-code
+[...search manuals...]
+  top← prev  up  next → 
+
+5.2 Creating Classes
+
+            +Classes and Objects in The Racket Guide introduces classes and
+            objects.
+
+object% : class?
+A built-in class that has no methods fields, implements only its own interface
+(class->interface object%), and is transparent (i.e,. its inspector is #f, so
+all immediate instances are equal?). All other classes are derived from object%
+.
+
+(class* superclass-expr (interface-expr ...)
+  class-clause
+  ...)
+ 
+     class-clause   =   (inspect inspector-expr)
+                    |   (init init-decl ...)
+                    |   (init-field init-decl ...)
+                    |   (field field-decl ...)
+                    |   (inherit-field maybe-renamed ...)
+                    |   (init-rest id)
+                    |   (init-rest)
+                    |   (public maybe-renamed ...)
+                    |   (pubment maybe-renamed ...)
+                    |   (public-final maybe-renamed ...)
+                    |   (override maybe-renamed ...)
+                    |   (overment maybe-renamed ...)
+                    |   (override-final maybe-renamed ...)
+                    |   (augment maybe-renamed ...)
+                    |   (augride maybe-renamed ...)
+                    |   (augment-final maybe-renamed ...)
+                    |   (private id ...)
+                    |   (inherit maybe-renamed ...)
+                    |   (inherit/super maybe-renamed ...)
+                    |   (inherit/inner maybe-renamed ...)
+                    |   (rename-super renamed ...)
+                    |   (rename-inner renamed ...)
+                    |   method-definition
+                    |   definition
+                    |   expr
+                    |   (begin class-clause ...)
+                         
+        init-decl   =   id
+                    |   (maybe-renamed)
+                    |   (maybe-renamed default-value-expr)
+                         
+       field-decl   =   (maybe-renamed default-value-expr)
+                         
+    maybe-renamed   =   id
+                    |   renamed
+                         
+          renamed   =   (internal-id external-id)
+                         
+method-definition   =   (define-values (id) method-procedure)
+                         
+ method-procedure   =   (lambda kw-formals expr ...+)
+                    |   (case-lambda (formals expr ...+) ...)
+                    |   (#%plain-lambda formals expr ...+)
+                    |   (let-values (((id) method-procedure) ...)
+                          method-procedure)
+                    |   (letrec-values (((id) method-procedure) ...)
+                          method-procedure)
+                    |   (let-values (((id) method-procedure) ...+)
+                          id)
+                    |   (letrec-values (((id) method-procedure) ...+)
+                          id)
+Produces a class value.
+
+The superclass-expr expression is evaluated when the class* expression is
+evaluated. The result must be a class value (possibly object%), otherwise the
+exn:fail:object exception is raised. The result of the superclass-expr
+expression is the new class’s superclass.
+
+The interface-expr expressions are also evaluated when the class* expression is
+evaluated, after superclass-expr is evaluated. The result of each
+interface-expr must be an interface value, otherwise the exn:fail:object
+exception is raised. The interfaces returned by the interface-exprs are all
+implemented by the class. For each identifier in each interface, the class (or
+one of its ancestors) must declare a public method with the same name,
+otherwise the exn:fail:object exception is raised. The class’s superclass must
+satisfy the implementation requirement of each interface, otherwise the
+exn:fail:object exception is raised.
+
+An inspect class-clause selects an inspector (see Structure Inspectors) for the
+class extension. The inspector-expr must evaluate to an inspector or #f when
+the class* form is evaluated. Just as for structure types, an inspector
+controls access to the class’s fields, including private fields, and also
+affects comparisons using equal?. If no inspect clause is provided, access to
+the class is controlled by the parent of the current inspector (see Structure
+Inspectors). A syntax error is reported if more than one inspect clause is
+specified.
+
+The other class-clauses define initialization arguments, public and private
+fields, and public and private methods. For each id or maybe-renamed in a
+public, override, augment, pubment, overment, augride, public-final,
+override-final, augment-final, or private clause, there must be one
+method-definition. All other definition class-clauses create private fields.
+All remaining exprs are initialization expressions to be evaluated when the
+class is instantiated (see Creating Objects).
+
+The result of a class* expression is a new class, derived from the specified
+superclass and implementing the specified interfaces. Instances of the class
+are created with the instantiate form or make-object procedure, as described in
+Creating Objects.
+
+Each class-clause is (partially) macro-expanded to reveal its shapes. If a
+class-clause is a begin expression, its sub-expressions are lifted out of the
+begin and treated as class-clauses, in the same way that begin is flattened for
+top-level and embedded definitions.
+
+Within a class* form for instances of the new class, this is bound to the
+object itself; this% is bound to the class of the object; super-instantiate,
+super-make-object, and super-new are bound to forms to initialize fields in the
+superclass (see Creating Objects); super is available for calling superclass
+methods (see Method Definitions); and inner is available for calling subclass
+augmentations of methods (see Method Definitions).
+
+(class superclass-expr class-clause ...)
+Like class*, but omits the interface-exprs, for the case that none are needed.
+
+Example:
+
+    (define book-class
+      (class object%
+        (field (pages 5))
+        (define/public (letters)
+          (* pages 500))
+        (super-new)))
+
+
+this
+Within a class* form, this refers to the current object (i.e., the object being
+initialized or whose method was called). Use outside the body of a class* form
+is a syntax error.
+
+Examples:
+
+    (define (describe obj)
+      (printf "Hello ~a\n" obj))
+    (define table
+      (class object%
+        (define/public (describe-self)
+          (describe this))
+        (super-new)))
+    > (send (new table) describe-self)
+    Hello #(struct:object:table ...)
+
+
+
+this%
+Within a class* form, this% refers to the class of the current object (i.e.,
+the object being initialized or whose method was called). Use outside the body
+of a class* form is a syntax error.
+
+Examples:
+
+    (define account%
+      (class object%
+        (super-new)
+        (init-field balance)
+        (define/public (add n)
+          (new this% [balance (+ n balance)]))))
+    (define savings%
+      (class account%
+        (super-new)
+        (inherit-field balance)
+        (define interest 0.04)
+        (define/public (add-interest)
+          (send this add (* interest balance)))))
+    > (let* ([acct (new savings% [balance 500])]
+             [acct (send acct add 500)]
+             [acct (send acct add-interest)])
+        (printf "Current balance: ~a\n" (get-field balance acct)))
+    Current balance: 1040.0
+
+
+
+(inspect inspector-expr)
+See class*; use outside the body of a class* form is a syntax error.
+(init init-decl ...)
+See class* and Initialization Variables; use outside the body of a class* form
+is a syntax error.
+(init-field init-decl ...)
+See class*, Initialization Variables, and Fields; use outside the body of a
+class* form is a syntax error.
+(field field-decl ...)
+See class* and Fields; use outside the body of a class* form is a syntax error.
+(inherit-field maybe-renamed ...)
+See class* and Fields; use outside the body of a class* form is a syntax error.
+(init-rest id)
+(init-rest)
+See class* and Initialization Variables; use outside the body of a class* form
+is a syntax error.
+(public maybe-renamed ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(pubment maybe-renamed ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(public-final maybe-renamed ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(override maybe-renamed ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(overment maybe-renamed ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(override-final maybe-renamed ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(augment maybe-renamed ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(augride maybe-renamed ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(augment-final maybe-renamed ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(private id ...)
+See class* and Method Definitions; use outside the body of a class* form is a
+syntax error.
+(inherit maybe-renamed ...)
+See class* and Inherited and Superclass Methods; use outside the body of a
+class* form is a syntax error.
+(inherit/super maybe-renamed ...)
+See class* and Inherited and Superclass Methods; use outside the body of a
+class* form is a syntax error.
+(inherit/inner maybe-renamed ...)
+See class* and Inherited and Superclass Methods; use outside the body of a
+class* form is a syntax error.
+(rename-super renamed ...)
+See class* and Inherited and Superclass Methods; use outside the body of a
+class* form is a syntax error.
+(rename-inner renamed ...)
+See class* and Inherited and Superclass Methods; use outside the body of a
+class* form is a syntax error.
+
+(public* (id expr) ...)
+Shorthand for (begin (public id) ... (define id expr) ...).
+(pubment* (id expr) ...)
+Shorthand for (begin (pubment id) ... (define id expr) ...).
+(public-final* (id expr) ...)
+Shorthand for (begin (public-final id) ... (define id expr) ...).
+(override* (id expr) ...)
+Shorthand for (begin (override id) ... (define id expr) ...).
+(overment* (id expr) ...)
+Shorthand for (begin (overment id) ... (define id expr) ...).
+(override-final* (id expr) ...)
+Shorthand for (begin (override-final id) ... (define id expr) ...).
+(augment* (id expr) ...)
+Shorthand for (begin (augment id) ... (define id expr) ...).
+(augride* (id expr) ...)
+Shorthand for (begin (augride id) ... (define id expr) ...).
+(augment-final* (id expr) ...)
+Shorthand for (begin (augment-final id) ... (define id expr) ...).
+(private* (id expr) ...)
+Shorthand for (begin (private id) ... (define id expr) ...).
+
+(define/public id expr)
+(define/public (id . formals) body ...+)
+Shorthand for (begin (public id) (define id expr)) or (begin (public id) (
+define (id . formals) body ...+))
+(define/pubment id expr)
+(define/pubment (id . formals) body ...+)
+Shorthand for (begin (pubment id) (define id expr)) or (begin (pubment id) (
+define (id . formals) body ...+))
+(define/public-final id expr)
+(define/public-final (id . formals) body ...+)
+Shorthand for (begin (public-final id) (define id expr)) or (begin (
+public-final id) (define (id . formals) body ...+))
+(define/override id expr)
+(define/override (id . formals) body ...+)
+Shorthand for (begin (override id) (define id expr)) or (begin (override id) (
+define (id . formals) body ...+))
+(define/overment id expr)
+(define/overment (id . formals) body ...+)
+Shorthand for (begin (overment id) (define id expr)) or (begin (overment id) (
+define (id . formals) body ...+))
+(define/override-final id expr)
+(define/override-final (id . formals) body ...+)
+Shorthand for (begin (override-final id) (define id expr)) or (begin (
+override-final id) (define (id . formals) body ...+))
+(define/augment id expr)
+(define/augment (id . formals) body ...+)
+Shorthand for (begin (augment id) (define id expr)) or (begin (augment id) (
+define (id . formals) body ...+))
+(define/augride id expr)
+(define/augride (id . formals) body ...+)
+Shorthand for (begin (augride id) (define id expr)) or (begin (augride id) (
+define (id . formals) body ...+))
+(define/augment-final id expr)
+(define/augment-final (id . formals) body ...+)
+Shorthand for (begin (augment-final id) (define id expr)) or (begin (
+augment-final id) (define (id . formals) body ...+))
+(define/private id expr)
+(define/private (id . formals) body ...+)
+Shorthand for (begin (private id) (define id expr)) or (begin (private id) (
+define (id . formals) body ...+))
+
+(class/derived original-datum
+  (name-id super-expr (interface-expr ...) deserialize-id-expr)
+  class-clause
+  ...)
+Like class*, but includes a sub-expression to be used as the source for all
+syntax errors within the class definition. For example,
+define-serializable-class expands to class/derived so that errors in the body
+of the class are reported in terms of define-serializable-class instead of
+class.
+
+The original-datum is the original expression to use for reporting errors.
+
+The name-id is used to name the resulting class; if it is #f, the class name is
+inferred.
+
+The super-expr, interface-exprs, and class-clauses are as for class*.
+
+If the deserialize-id-expr is not literally #f, then a serializable class is
+generated, and the result is two values instead of one: the class and a
+deserialize-info structure produced by make-deserialize-info. The
+deserialize-id-expr should produce a value suitable as the second argument to
+make-serialize-info, and it should refer to an export whose value is the
+deserialize-info structure.
+
+Future optional forms may be added to the sequence that currently ends with
+deserialize-id-expr.
+
+5.2.1 Initialization Variables
+
+A class’s initialization variables, declared with init, init-field, and
+init-rest, are instantiated for each object of a class. Initialization
+variables can be used in the initial value expressions of fields, default value
+expressions for initialization arguments, and in initialization expressions.
+Only initialization variables declared with init-field can be accessed from
+methods; accessing any other initialization variable from a method is a syntax
+error.
+
+The values bound to initialization variables are
+
+  • the arguments provided with instantiate or passed to make-object, if the
+    object is created as a direct instance of the class; or,
+
+  • the arguments passed to the superclass initialization form or procedure, if
+    the object is created as an instance of a derived class.
+
+If an initialization argument is not provided for an initialization variable
+that has an associated default-value-expr, then the default-value-expr
+expression is evaluated to obtain a value for the variable. A
+default-value-expr is only evaluated when an argument is not provided for its
+variable. The environment of default-value-expr includes all of the
+initialization variables, all of the fields, and all of the methods of the
+class. If multiple default-value-exprs are evaluated, they are evaluated from
+left to right. Object creation and field initialization are described in detail
+in Creating Objects.
+
+If an initialization variable has no default-value-expr, then the object
+creation or superclass initialization call must supply an argument for the
+variable, otherwise the exn:fail:object exception is raised.
+
+Initialization arguments can be provided by name or by position. The external
+name of an initialization variable can be used with instantiate or with the
+superclass initialization form. Those forms also accept by-position arguments.
+The make-object procedure and the superclass initialization procedure accept
+only by-position arguments.
+
+Arguments provided by position are converted into by-name arguments using the
+order of init and init-field clauses and the order of variables within each
+clause. When an instantiate form provides both by-position and by-name
+arguments, the converted arguments are placed before by-name arguments. (The
+order can be significant; see also Creating Objects.)
+
+Unless a class contains an init-rest clause, when the number of by-position
+arguments exceeds the number of declared initialization variables, the order of
+variables in the superclass (and so on, up the superclass chain) determines the
+by-name conversion.
+
+If a class expression contains an init-rest clause, there must be only one, and
+it must be last. If it declares a variable, then the variable receives extra
+by-position initialization arguments as a list (similar to a dotted “rest
+argument” in a procedure). An init-rest variable can receive by-position
+initialization arguments that are left over from a by-name conversion for a
+derived class. When a derived class’s superclass initialization provides even
+more by-position arguments, they are prefixed onto the by-position arguments
+accumulated so far.
+
+If too few or too many by-position initialization arguments are provided to an
+object creation or superclass initialization, then the exn:fail:object
+exception is raised. Similarly, if extra by-position arguments are provided to
+a class with an init-rest clause, the exn:fail:object exception is raised.
+
+Unused (by-name) arguments are to be propagated to the superclass, as described
+in Creating Objects. Multiple initialization arguments can use the same name if
+the class derivation contains multiple declarations (in different classes) of
+initialization variables with the name. See Creating Objects for further
+details.
+
+See also Internal and External Names for information about internal and
+external names.
+
+5.2.2 Fields
+
+Each field, init-field, and non-method define-values clause in a class declares
+one or more new fields for the class. Fields declared with field or init-field
+are public. Public fields can be accessed and mutated by subclasses using
+inherit-field. Public fields are also accessible outside the class via
+class-field-accessor and mutable via class-field-mutator (see Field and Method
+Access). Fields declared with define-values are accessible only within the
+class.
+
+A field declared with init-field is both a public field and an initialization
+variable. See Initialization Variables for information about initialization
+variables.
+
+An inherit-field declaration makes a public field defined by a superclass
+directly accessible in the class expression. If the indicated field is not
+defined in the superclass, the exn:fail:object exception is raised when the
+class expression is evaluated. Every field in a superclass is present in a
+derived class, even if it is not declared with inherit-field in the derived
+class. The inherit-field clause does not control inheritance, but merely
+controls lexical scope within a class expression.
+
+When an object is first created, all of its fields have the #<undefined> value
+(see Void and Undefined). The fields of a class are initialized at the same
+time that the class’s initialization expressions are evaluated; see Creating
+Objects for more information.
+
+See also Internal and External Names for information about internal and
+external names.
+
+5.2.3 Methods
+
+5.2.3.1 Method Definitions
+
+Each public, override, augment, pubment, overment, augride, public-final,
+override-final, augment-final, and private clause in a class declares one or
+more method names. Each method name must have a corresponding
+method-definition. The order of public, etc., clauses and their corresponding
+definitions (among themselves, and with respect to other clauses in the class)
+does not matter.
+
+As shown in the grammar for class*, a method definition is syntactically
+restricted to certain procedure forms, as defined by the grammar for
+method-procedure; in the last two forms of method-procedure, the body id must
+be one of the ids bound by let-values or letrec-values. A method-procedure
+expression is not evaluated directly. Instead, for each method, a
+class-specific method procedure is created; it takes an initial object
+argument, in addition to the arguments the procedure would accept if the
+method-procedure expression were evaluated directly. The body of the procedure
+is transformed to access methods and fields through the object argument.
+
+A method declared with public, pubment, or public-final introduces a new method
+into a class. The method must not be present already in the superclass,
+otherwise the exn:fail:object exception is raised when the class expression is
+evaluated. A method declared with public can be overridden in a subclass that
+uses override, overment, or override-final. A method declared with pubment can
+be augmented in a subclass that uses augment, augride, or augment-final. A
+method declared with public-final cannot be overridden or augmented in a
+subclass.
+
+A method declared with override, overment, or override-final overrides a
+definition already present in the superclass. If the method is not already
+present, the exn:fail:object exception is raised when the class expression is
+evaluated. A method declared with override can be overridden again in a
+subclass that uses override, overment, or override-final. A method declared
+with overment can be augmented in a subclass that uses augment, augride, or
+augment-final. A method declared with override-final cannot be overridden
+further or augmented in a subclass.
+
+A method declared with augment, augride, or augment-final augments a definition
+already present in the superclass. If the method is not already present, the
+exn:fail:object exception is raised when the class expression is evaluated. A
+method declared with augment can be augmented further in a subclass that uses
+augment, augride, or augment-final. A method declared with augride can be
+overridden in a subclass that uses override, overment, or override-final. (Such
+an override merely replaces the augmentation, not the method that is
+augmented.) A method declared with augment-final cannot be overridden or
+augmented further in a subclass.
+
+A method declared with private is not accessible outside the class expression,
+cannot be overridden, and never overrides a method in the superclass.
+
+When a method is declared with override, overment, or override-final, then the
+superclass implementation of the method can be called using super form.
+
+When a method is declared with pubment, augment, or overment, then a subclass
+augmenting method can be called using the inner form. The only difference
+between public-final and pubment without a corresponding inner is that
+public-final prevents the declaration of augmenting methods that would be
+ignored.
+
+(super id arg ...)
+(super id arg ... . arg-list-expr)
+Always accesses the superclass method, independent of whether the method is
+overridden again in subclasses. Using the super form outside of class* is a
+syntax error. Each arg is as for #%app: either arg-expr or keyword arg-expr.
+
+The second form is analogous to using apply with a procedure; the arg-list-expr
+must not be a parenthesized expression.
+
+(inner default-expr id arg ...)
+(inner default-expr id arg ... . arg-list-expr)
+If the object’s class does not supply an augmenting method, then default-expr
+is evaluated, and the arg expressions are not evaluated. Otherwise, the
+augmenting method is called with the arg results as arguments, and default-expr
+is not evaluated. If no inner call is evaluated for a particular method, then
+augmenting methods supplied by subclasses are never used. Using the inner form
+outside of class* is an syntax error.
+
+The second form is analogous to using apply with a procedure; the arg-list-expr
+must not be a parenthesized expression.
+
+5.2.3.2 Inherited and Superclass Methods
+
+Each inherit, inherit/super, inherit/inner, rename-super, and rename-inner
+clause declares one or more methods that are defined in the class, but must be
+present in the superclass. The rename-super and rename-inner declarations are
+rarely used, since inherit/super and inherit/inner provide the same access.
+Also, superclass and augmenting methods are typically accessed through super
+and inner in a class that also declares the methods, instead of through inherit
+/super, inherit/inner, rename-super, or rename-inner.
+
+Method names declared with inherit, inherit/super, or inherit/inner access
+overriding declarations, if any, at run time. Method names declared with
+inherit/super can also be used with the super form to access the superclass
+implementation, and method names declared with inherit/inner can also be used
+with the inner form to access an augmenting method, if any.
+
+Method names declared with rename-super always access the superclass’s
+implementation at run-time. Methods declared with rename-inner access a
+subclass’s augmenting method, if any, and must be called with the form
+
+    (id (lambda () default-expr) arg ...)
+
+so that a default-expr is available to evaluate when no augmenting method is
+available. In such a form, lambda is a literal identifier to separate the
+default-expr from the arg. When an augmenting method is available, it receives
+the results of the arg expressions as arguments.
+
+Methods that are present in the superclass but not declared with inherit,
+inherit/super, or inherit/inner or rename-super are not directly accessible in
+the class (though they can be called with send). Every public method in a
+superclass is present in a derived class, even if it is not declared with
+inherit in the derived class; the inherit clause does not control inheritance,
+but merely controls lexical scope within a class expression.
+
+If a method declared with inherit, inherit/super, inherit/inner, rename-super,
+or rename-inner is not present in the superclass, the exn:fail:object exception
+is raised when the class expression is evaluated.
+
+5.2.3.3 Internal and External Names
+
+Each method declared with public, override, augment, pubment, overment, augride
+, public-final, override-final, augment-final, inherit, inherit/super, inherit/
+inner, rename-super, and rename-inner can have separate internal and external
+names when (internal-id external-id) is used for declaring the method. The
+internal name is used to access the method directly within the class expression
+(including within super or inner forms), while the external name is used with
+send and generic (see Field and Method Access). If a single id is provided for
+a method declaration, the identifier is used for both the internal and external
+names.
+
+Method inheritance, overriding, and augmentation are based on external names
+only. Separate internal and external names are required for rename-super and
+rename-inner (for historical reasons, mainly).
+
+Each init, init-field, field, or inherit-field variable similarly has an
+internal and an external name. The internal name is used within the class to
+access the variable, while the external name is used outside the class when
+providing initialization arguments (e.g., to instantiate), inheriting a field,
+or accessing a field externally (e.g., with class-field-accessor). As for
+methods, when inheriting a field with inherit-field, the external name is
+matched to an external field name in the superclass, while the internal name is
+bound in the class expression.
+
+A single identifier can be used as an internal identifier and an external
+identifier, and it is possible to use the same identifier as internal and
+external identifiers for different bindings. Furthermore, within a single
+class, a single name can be used as an external method name, an external field
+name, and an external initialization argument name. Overall, each internal
+identifier must be distinct from all other internal identifiers, each external
+method name must be distinct from all other method names, each external field
+name must be distinct from all other field names, and each initialization
+argument name must be distinct from all other initialization argument names.
+
+By default, external names have no lexical scope, which means, for example,
+that an external method name matches the same syntactic symbol in all uses of
+send. The define-local-member-name and define-member-name forms introduce
+scoped external names.
+
+When a class expression is compiled, identifiers used in place of external
+names must be symbolically distinct (when the corresponding external names are
+required to be distinct), otherwise a syntax error is reported. When no
+external name is bound by define-member-name, then the actual external names
+are guaranteed to be distinct when class expression is evaluated. When any
+external name is bound by define-member-name, the exn:fail:object exception is
+raised by class if the actual external names are not distinct.
+
+(define-local-member-name id ...)
+Unless it appears as the top-level definition, binds each id so that, within
+the scope of the definition, each use of each id as an external name is
+resolved to a hidden name generated by the define-local-member-name
+declaration. Thus, methods, fields, and initialization arguments declared with
+such external-name ids are accessible only in the scope of the
+define-local-member-name declaration. As a top-level definition,
+define-local-member-name binds id to its symbolic form.
+
+The binding introduced by define-local-member-name is a syntax binding that can
+be exported and imported with modules. Each evaluation of a
+define-local-member-name declaration generates a distinct hidden name (except
+as a top-level definition). The interface->method-names procedure does not
+expose hidden names.
+
+Examples:
+
+    (define-values (r o)
+      (let ()
+        (define-local-member-name m)
+        (define c% (class object%
+                     (define/public (m) 10)
+                     (super-new)))
+        (define o (new c%))
+     
+        (values (send o m)
+                o)))
+    > r
+    10
+
+    > (send o m)
+    send: no such method: m for class: c%
+
+
+
+(define-member-name id key-expr)
+Maps a single external name to an external name that is determined by an
+expression. The value of key-expr must be the result of either a
+member-name-key expression or a generate-member-key call.
+
+(member-name-key identifier)
+Produces a representation of the external name for id in the environment of the
+member-name-key expression.
+
+(generate-member-key) → member-name-key?
+Produces a hidden name, just like the binding for define-local-member-name.
+
+(member-name-key? v) → boolean?
+  v : any/c
+Returns #t for values produced by member-name-key and generate-member-key, #f
+otherwise.
+
+(member-name-key=? a-key b-key) → boolean?
+  a-key : member-name-key?
+  b-key : member-name-key?
+Produces #t if member-name keys a-key and b-key represent the same external
+name, #f otherwise.
+
+(member-name-key-hash-code a-key) → integer?
+  a-key : member-name-key?
+Produces an integer hash code consistent with member-name-key=? comparisons,
+analogous to equal-hash-code.
+
+Examples:
+
+    (define (make-c% key)
+      (define-member-name m key)
+      (class object%
+        (define/public (m) 10)
+        (super-new)))
+    > (send (new (make-c% (member-name-key m))) m)
+    10
+
+    > (send (new (make-c% (member-name-key p))) m)
+    send: no such method: m for class: eval:15:0
+
+    > (send (new (make-c% (member-name-key p))) p)
+    10
+
+
+
+    (define (fresh-c%)
+      (let ([key (generate-member-key)])
+        (values (make-c% key) key)))
+     
+    (define-values (fc% key) (fresh-c%))
+     
+
+    > (send (new fc%) m)
+    send: no such method: m for class: eval:15:0
+
+    > (let ()
+        (define-member-name p key)
+        (send (new fc%) p))
+    10
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,142 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+current-ps-setup
+get-face-list
+get-family-builtin-face
+make-bitmap
+make-font
+make-monochrome-bitmap
+read-bitmap
+the-brush-list
+the-color-database
+the-font-list
+the-font-name-directory
+the-pen-list
+[...search manuals...]
+  top← prev  up  next → 
+
+25 Drawing Functions
+
+
+
+(current-ps-setup) → (is-a?/c ps-setup%)
+(current-ps-setup pss) → void?
+  pss : (is-a?/c ps-setup%)
+A parameter that determines the current PostScript configuration settings. See
+post-script-dc% and printer-dc%.
+
+(get-face-list [family]) → (listof string?)
+  family : (one-of/c 'mono 'all) = 'all
+Returns a list of font face names available on the current system. If 'mono is
+provided as the argument, then only faces that are known to correspond to
+monospace fonts are included in the list.
+
+(get-family-builtin-face family) → string?
+   family   :   (one-of/c 'default 'decorative 'roman 'script
+                          'swiss 'modern 'symbol 'system)
+Returns the built-in default face mapping for a particular font family.
+
+See font% for information about family.
+
+(make-bitmap width height [alpha?]) → (is-a?/c bitmap%)
+  width : exact-positive-integer?
+  height : exact-positive-integer?
+  alpha? : any/c = #t
+Returns (make-object bitmap% width height #f alpha?), but this procedure is
+preferred because it defaults alpha? in a more useful way.
+
+(make-font  [ #:size size                                
+              #:face face                                
+              #:family family                            
+              #:style style                              
+              #:weight weight                            
+              #:underlined? underlined?                  
+              #:smoothing smoothing                      
+              #:size-in-pixels? size-in-pixels?])   →   (is-a?/c font%)
+  size : (integer-in 1 255) = 12
+  face : (or/c string? #f) = #f
+   family   :   (one-of/c 'default 'decorative 'roman 'script
+                          'swiss 'modern 'symbol 'system)
+            =   'default
+  style : (one-of/c 'normal 'italic 'slant) = 'normal
+  weight : (one-of/c 'normal 'bold 'light) = 'normal
+  underlined? : any/c = #f
+   smoothing   :   (one-of/c 'default 'partly-smoothed   =   'default
+                              'smoothed 'unsmoothed)
+  size-in-pixels? : any/c = #f
+Creates a font% instance. This procedure provides an equivalent but more
+convenient interface compared to using make-object with font%.
+
+(make-monochrome-bitmap width height [bits]) → (is-a?/c bitmap%)
+  width : exact-positive-integer?
+  height : exact-positive-integer?
+  bits : (or/c bytes? #f) = #f
+Returns (make-object bitmap% width height #t) if bits is #f, or (make-object
+bitmap% bits width height) otherwise. This procedure is preferred to using
+make-object on bitmap% because it is less overloaded.
+
+(read-bitmap    in                            
+              [ kind                          
+                bg-color                      
+                complain-on-failure?])   →   (is-a?/c bitmap%)
+  in : (or path-string? input-port?)
+              (one-of/c 'unknown 'unknown/mask 'unknown/alpha
+                        'gif 'gif/mask 'gif/alpha
+   kind   :             'jpeg 'jpeg/alpha
+                        'png 'png/mask 'png/alpha
+                        'xbm 'xbm/alpha 'xpm 'xpm/alpha
+                        'bmp 'bmp/alpha)
+          =   'unknown/alpha
+  bg-color : (or/c (is-a?/c color%) false/c) = #f
+  complain-on-failure? : any/c = #t
+Returns (make-object bitmap% in kind bg-color complain-on-failure?), but this
+procedure is preferred because it defaults kind and complain-on-failure? in a
+more useful way.
+
+the-brush-list : (is-a?/c brush-list%)
+See brush-list%.
+
+the-color-database : (is-a?/c color-database<%>)
+See color-database<%>.
+
+the-font-list : (is-a?/c font-list%)
+See font-list%.
+
+the-font-name-directory : (is-a?/c font-name-directory<%>)
+See font-name-directory<%>.
+
+the-pen-list : (is-a?/c pen-list%)
+See pen-list%.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

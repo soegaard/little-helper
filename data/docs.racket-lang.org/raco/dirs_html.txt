@@ -1,0 +1,128 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 6  raco setup: Installation Management
+6.1  Running raco setup
+6.2  "info.rkt" File Format
+6.3  API for Installation
+6.4  API for Installing ".plt" Archives
+6.5  API for Finding Installation Directories
+6.6  API for Reading "info.rkt" Files
+6.7  API for Relative Paths
+6.8  API for Cross-References for Installed Manuals
+On this page:
+find-collects-dir
+find-user-collects-dir
+get-collects-search-dirs
+find-doc-dir
+find-user-doc-dir
+get-doc-search-dirs
+find-lib-dir
+find-dll-dir
+find-user-lib-dir
+get-lib-search-dirs
+find-include-dir
+find-user-include-dir
+get-include-search-dirs
+find-console-bin-dir
+find-gui-bin-dir
+absolute-installation?
+[...search manuals...]
+  top← prev  up  next → 
+
+6.5 API for Finding Installation Directories
+
+ (require setup/dirs)
+The setup/dirs library provides several procedures for locating installation
+directories:
+
+(find-collects-dir) → (or/c path? false/c)
+Returns a path to the installation’s main "collects" directory, or #f if none
+can be found. A #f result is likely only in a stand-alone executable that is
+distributed without libraries.
+
+(find-user-collects-dir) → path?
+Returns a path to the user-specific "collects" directory; the directory
+indicated by the returned path may or may not exist.
+
+(get-collects-search-dirs) → (listof path?)
+Returns the same result as (current-library-collection-paths), which means that
+this result is not sensitive to the value of the use-user-specific-search-paths
+parameter.
+
+(find-doc-dir) → (or/c path? false/c)
+Returns a path to the installation’s "doc" directory. The result is #f if no
+such directory is available.
+
+(find-user-doc-dir) → path?
+Returns a path to a user-specific "doc" directory. The directory indicated by
+the returned path may or may not exist.
+
+(get-doc-search-dirs) → (listof path?)
+Returns a list of paths to search for documentation, not including
+documentation stored in individual collections. Unless it is configured
+otherwise, the result includes any non-#f result of (find-doc-dir) and (
+find-user-doc-dir)—but the latter is included only if the value of the
+use-user-specific-search-paths parameter is #t.
+
+(find-lib-dir) → (or/c path? false/c)
+Returns a path to the installation’s "lib" directory, which contains libraries
+and other build information. The result is #f if no such directory is
+available.
+
+(find-dll-dir) → (or/c path? false/c)
+Returns a path to the directory that contains DLLs for use with the current
+executable (e.g., "libmzsch.dll" on Windows). The result is #f if no such
+directory is available, or if no specific directory is available (i.e., other
+than the platform’s normal search path).
+
+(find-user-lib-dir) → path?
+Returns a path to a user-specific "lib" directory; the directory indicated by
+the returned path may or may not exist.
+
+(get-lib-search-dirs) → (listof path?)
+Returns a list of paths to search for libraries. Unless it is configured
+otherwise, the result includes any non-#f result of (find-lib-dir), (
+find-dll-dir), and (find-user-lib-dir)—but the last is included only if the
+value of the use-user-specific-search-paths parameter is #t.
+
+(find-include-dir) → (or/c path? false/c)
+Returns a path to the installation’s "include" directory, which contains ".h"
+files for building Racket extensions and embedding programs. The result is #f
+if no such directory is available.
+
+(find-user-include-dir) → path?
+Returns a path to a user-specific "include" directory; the directory indicated
+by the returned path may or may not exist.
+
+(get-include-search-dirs) → (listof path?)
+Returns a list of paths to search for ".h" files. Unless it is configured
+otherwise, the result includes any non-#f result of (find-include-dir) and (
+find-user-include-dir)—but the latter is included only if the value of the
+use-user-specific-search-paths parameter is #t.
+
+(find-console-bin-dir) → (or/c path? false/c)
+Returns a path to the installation’s executable directory, where the
+stand-alone Racket executable resides. The result is #f if no such directory is
+available.
+
+(find-gui-bin-dir) → (or/c path? false/c)
+Returns a path to the installation’s executable directory, where the
+stand-alone GRacket executable resides. The result is #f if no such directory
+is available.
+
+absolute-installation? : boolean?
+A binary boolean flag that is true if this installation is using absolute path
+names.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

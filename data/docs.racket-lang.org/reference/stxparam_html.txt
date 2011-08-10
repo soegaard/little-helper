@@ -1,0 +1,113 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 11  Macros
+ 11.1  Pattern-Based Syntax Matching
+ 11.2  Syntax Object Content
+ 11.3  Syntax Object Bindings
+ 11.4  Syntax Transformers
+ 11.5  Syntax Parameters
+ 11.6  Local Binding with Splicing Body
+ 11.7  Syntax Object Properties
+ 11.8  Syntax Taints
+ 11.9  Expanding Top-Level Forms
+11.10  File Inclusion
+11.11  Syntax Utilities
+► 11.5  Syntax Parameters
+11.5.1  Syntax Parameter Inspection
+On this page:
+define-syntax-parameter
+syntax-parameterize
+11.5.1 Syntax Parameter Inspection
+syntax-parameter-value
+make-parameter-rename-transformer
+[...search manuals...]
+  top← prev  up  next → 
+
+11.5 Syntax Parameters
+
+ (require racket/stxparam)
+The bindings documented in this section are provided by the racket/stxparam
+library, not racket/base or racket.
+
+(define-syntax-parameter id expr)
+Binds id as syntax to a syntax parameter. The expr is an expression in the
+transformer environment that serves as the default value for the syntax
+parameter. The value is typically obtained by a transformer using
+syntax-parameter-value.
+
+The id can be used with syntax-parameterize or syntax-parameter-value (in a
+transformer). If expr produces a procedure of one argument or a make-set!
+-transformer result, then id can be used as a macro. If expr produces a
+rename-transformer result, then id can be used as a macro that expands to a use
+of the target identifier, but syntax-local-value of id does not produce the
+target’s value.
+
+(syntax-parameterize ((id expr) ...) body-expr ...+)
+
+
+            +See also splicing-syntax-parameterize.
+
+Each id must be bound to a syntax parameter using define-syntax-parameter. Each
+expr is an expression in the transformer environment. During the expansion of
+the body-exprs, the value of each expr is bound to the corresponding id.
+
+If an expr produces a procedure of one argument or a make-set!-transformer
+result, then its id can be used as a macro during the expansion of the
+body-exprs. If expr produces a rename-transformer result, then id can be used
+as a macro that expands to a use of the target identifier, but
+syntax-local-value of id does not produce the target’s value.
+
+11.5.1 Syntax Parameter Inspection
+
+ (require racket/stxparam-exptime)
+
+(syntax-parameter-value id-stx) → any
+  id-stx : syntax?
+This procedure is intended for use in a transformer environment, where id-stx
+is an identifier bound in the normal environment to a syntax parameter. The
+result is the current value of the syntax parameter, as adjusted by
+syntax-parameterize form.
+
+This binding is provided for-syntax by racket/stxparam, since it is normally
+used in a transformer. It is provided normally by racket/stxparam-exptime.
+
+(make-parameter-rename-transformer id-stx) → any
+  id-stx : syntax?
+This procedure is intended for use in a transformer, where id-stx is an
+identifier bound to a syntax parameter. The result is a transformer that
+behaves as id-stx, but that cannot be used with syntax-parameterize or
+syntax-parameter-value.
+
+Using make-parameter-rename-transformer is analogous to defining a procedure
+that calls a parameter. Such a procedure can be exported to others to allow
+access to the parameter value, but not to change the parameter value.
+Similarly, make-parameter-rename-transformer allows a syntax parameter to be
+used as a macro, but not changed.
+
+The result of make-parameter-rename-transformer is not treated specially by
+syntax-local-value, unlike the result of make-rename-transformer.
+
+This binding is provided for-syntax by racket/stxparam, since it is normally
+used in a transformer. It is provided normally by racket/stxparam-exptime.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

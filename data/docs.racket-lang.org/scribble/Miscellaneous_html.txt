@@ -1,0 +1,101 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+▼ 4.3  Manual Forms
+ 4.3.1  Typesetting Code
+ 4.3.2  Documenting Modules
+ 4.3.3  Documenting Forms, Functions, Structure Types, and Values
+ 4.3.4  Documenting Classes and Interfaces
+ 4.3.5  Documenting Signatures
+ 4.3.6  Various String Forms
+ 4.3.7  Links
+ 4.3.8  Indexing
+ 4.3.9  Images
+4.3.10  Bibliography
+4.3.11  Miscellaneous
+4.3.12  Index-Entry Descriptions
+On this page:
+t
+etc
+PLane T
+hash-lang
+void-const
+undefined-const
+commandline
+centerline
+math
+filebox
+[...search manuals...]
+  top← prev  up  next → 
+
+4.3.11 Miscellaneous
+
+(t pre-content ...) → paragraph?
+  pre-content : pre-content?
+Wraps the decoded pre-content as a paragraph.
+
+etc : element?
+Like "etc.", but with an abbreviation-ending period for use in the middle of a
+sentence.
+
+PLaneT : element?
+"PLaneT" (to help make sure you get the letters in the right case).
+
+(hash-lang) → element?
+Returns an element for #lang that is hyperlinked to an explanation.
+
+void-const : element?
+Returns an element for #<void>.
+
+undefined-const : element?
+Returns an element for #<undefined>.
+
+(commandline pre-content ...) → paragraph?
+  pre-content : pre-content?
+Produces an inset command-line example (e.g., in typewriter font).
+
+(centerline pre-flow ...) → nested-flow?
+  pre-flow : pre-flow?
+An alias for centered for backward compatibility.
+
+(math pre-content ...) → element?
+  pre-content : any/c
+The decoded pre-content is further transformed:
+
+  • Any immediate 'rsquo is converted to 'prime.
+
+  • Parentheses and sequences of decimal digits in immediate strings are left
+    as-is, but any other immediate string is italicized.
+
+  • When _ appears before a non-empty sequence of numbers and letters, the
+    sequence is typeset as a subscript.
+
+  • When ^ appears before a non-empty sequence of numbers and letters, the
+    sequence is typeset as a superscript.
+
+(filebox filename pre-flow ...) → block?
+  filename : (or/c string? element?)
+  pre-flow : pre-flow?
+Typesets the pre-flows as the content of filename. For example, the content may
+be inset on the page with filename above it. If filename is a string, it is
+passed to "filepath" to obtain an element.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

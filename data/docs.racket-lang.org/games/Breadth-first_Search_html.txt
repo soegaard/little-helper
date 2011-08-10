@@ -1,0 +1,190 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+On this page:
+<breadth-first-search>
+<breadth-first-search-tests>
+<dist-cell-data-definition>
+<lookup-in-table>
+<build-bfs-table-tests>
+<bfs>
+<build-bfs-table>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18.3 Breadth-first Search
+
+The cat’s move decision is based on a breadth-first search of a graph. The
+graph’s nodes are the cells on the board plus a special node called 'boundary
+that is adjacent to every cell on the boundary of the graph. In addition to the
+boundary edges, there are edges between each pair of adjacent cells, unless one
+of the cells is blocked, in which case it has no edges at all (even to the
+boundary).
+
+This section describes the implementation of the breadth-first search, leaving
+details of how the graph connectivity is computed from the board to the next
+section.
+
+<breadth-first-search> ::=
+
+    <dist-cell-data-definition>
+    <lookup-in-table>
+    <build-bfs-table>
+
+<breadth-first-search-tests> ::=
+
+    <lookup-in-table-tests>
+    <build-bfs-table-tests>
+
+The breadth-first function constructs a distance-map, which is a list of
+dist-cell structs:
+
+<dist-cell-data-definition> ::=
+
+    (define-struct/contract dist-cell ([p (or/c 'boundary posn?)]
+                                       [n natural-number/c])
+      #:transparent)
+
+Each p field in the dist-cell is a position on the board and the n field is a
+natural number, indicating the distance of the shortest path from the node to
+some fixed point on the board.
+
+The function lookup-in-table returns the distance from the fixed point to the
+given posn, returning '∞ if the posn is not in the table.
+
+<lookup-in-table> ::=
+
+    (define/contract (lookup-in-table t p)
+      (-> (listof dist-cell?) posn?
+          (or/c '∞ natural-number/c))
+      (cond
+        [(empty? t) '∞]
+        [else (cond
+                [(equal? p (dist-cell-p (first t)))
+                 (dist-cell-n (first t))]
+                [else
+                 (lookup-in-table (rest t) p)])]))
+
+The build-bfs-table accepts a world and a cell (indicating the fixed point) and
+returns a distance map encoding the distance to that cell. For example, here is
+the distance map for the distance to the boundary.
+
+<build-bfs-table-tests> ::=
+
+    (test/set (build-bfs-table (empty-world 3)
+                               'boundary)
+              (list
+               (make-dist-cell 'boundary 0)
+     
+               (make-dist-cell (make-posn 1 0) 1)
+               (make-dist-cell (make-posn 2 0) 1)
+     
+               (make-dist-cell (make-posn 0 1) 1)
+               (make-dist-cell (make-posn 1 1) 2)
+               (make-dist-cell (make-posn 2 1) 1)
+     
+               (make-dist-cell (make-posn 1 2) 1)
+               (make-dist-cell (make-posn 2 2) 1)))
+
+The boundary is zero steps away; each of the cells that are on the boundary are
+one step away and the center is two steps away.
+
+The core of the breadth-first search is this function, bst. It accepts a queue
+of the pending nodes to visit and a dist-table that records the same
+information as a distance-map, but in an immutable hash-table. The dist-map is
+an accumulator, recording the distances to all of the nodes that have already
+been visited in the graph, and is used here to speed up the compuation. The
+queue is represented as a list of vectors of length two. Each element in the
+queue contains a posn, or the symbol 'boundary and that posn’s distance.
+
+<bfs> ::=
+
+    (define/contract (bfs queue dist-table)
+      (-> (listof (vector/c (or/c 'boundary posn?) natural-number/c))
+          hash?
+          hash?)
+      #:freevar neighbors/w (-> (or/c 'boundary posn?)
+                                (listof (or/c 'boundary posn?)))
+      (cond
+        [(empty? queue) dist-table]
+        [else
+         (let* ([p (vector-ref (first queue) 0)]
+                [dist (vector-ref (first queue) 1)])
+           (cond
+             [(hash-ref dist-table p #f)
+              (bfs (rest queue) dist-table)]
+             [else
+              (bfs
+               (append (rest queue)
+                       (map (λ (p) (vector p (+ dist 1)))
+                            (neighbors/w p)))
+               (hash-set dist-table p dist))]))]))
+
+If the queue is empty, then the accumulator contains bindings for all of the
+(reachable) nodes in the graph, so we just return it. If it isn’t empty, then
+we extract the first element from the queue and name its consituents p and
+dist. Next we check to see if the node at the head of the queue is in
+dist-table. If it is, we just move on to the next element in the queue. If that
+node is not in the dist-table, then we add all of the neighbors to the queue,
+in the append expression, and update the dist-table with the distance to this
+node. Because we always add the new children to the end of the queue and always
+look at the front of the queue, we are guaranteed that the first time we see a
+node, it will be with the shortest distance.
+
+The build-bfs-table function packages up bfs function. It accepts a world and
+an initial position and returns a distance-table.
+
+<build-bfs-table> ::=
+
+    (define/contract (build-bfs-table world init-point)
+      (-> world? (or/c 'boundary posn?)
+          (listof dist-cell?))
+      (define neighbors/w (neighbors world))
+      <bfs>
+     
+      (hash-map
+       (bfs (list (vector init-point 0))
+            (make-immutable-hash '()))
+       make-dist-cell))
+
+As you can see, the first thing it does is bind the free variable in bfs to the
+result of calling the neighbors function (defined in the chunk <neighbors>) and
+then it has the <bfs> chunk. In the body it calls the bfs function and then
+transforms the result, using hash-map, into a list of cells.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

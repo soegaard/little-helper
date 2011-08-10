@@ -1,0 +1,540 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+editor: basic<%>
+has-focus?
+local-edit-sequence?
+run-after-edit-sequence
+get-top-level-window
+save-file-out-of-date?
+save-file/ gui-error
+load-file/ gui-error
+on-close
+can-close?
+close
+get-filename/ untitled-name
+get-pos/ text
+get-pos/ text-dc-location
+editor: basic-mixin
+can-save-file?
+after-save-file
+after-load-file
+on-focus
+on-edit-sequence
+after-edit-sequence
+on-new-box
+on-new-image-snip
+get-file
+put-file
+editor: standard-style-list<%>
+editor: standard-style-list-mixin
+editor: keymap<%>
+get-keymaps
+editor: keymap-mixin
+editor: autowrap<%>
+editor: autowrap-mixin
+editor: file<%>
+get-can-close-parent
+update-frame-filename
+allow-close-with-no-filename?
+user-saves-or-not-modified?
+editor: file-mixin
+set-filename
+can-close?
+get-keymaps
+editor: backup-autosave<%>
+backup?
+autosave?
+do-autosave
+remove-autosave
+editor: backup-autosave-mixin
+on-save-file
+on-close
+on-change
+set-modified
+editor: info<%>
+editor: info-mixin
+lock
+editor: set-default-font-color
+editor: get-default-color-style-name
+editor: set-standard-style-list-delta
+editor: set-standard-style-list-pref-callbacks
+editor: get-standard-style-list
+editor: add-after-user-keymap
+[...search manuals...]
+  top← prev  up  next → 
+
+11 Editor
+
+editor:basic<%> : interface?
+  implements:  editor<%>
+Classes matching this interface support the basic editor<%> functionality
+required by the framework.
+
+
+    (send an-editor:basic has-focus?) → boolean?
+    This function returns #t when the editor has the keyboard focus. It is
+    implemented using: on-focus
+
+    (send an-editor:basic local-edit-sequence?) → boolean?
+    Indicates if this editor is in an edit sequence. Enclosing buffer’s
+    edit-sequence status is not considered by this method.
+
+    See begin-edit-sequence and end-edit-sequence for more info about edit
+    sequences.
+
+    (send an-editor:basic run-after-edit-sequence    thunk        
+                                                   [ tag])   →   void?
+      thunk : (-> void?)
+      tag : (or/c symbol? #f) = #f
+    This method is used to install callbacks that will be run after any
+    edit-sequence completes.
+
+    The procedure thunk will be called immediately if the edit is not in an
+    edit-sequence. If the edit is in an edit-sequence, it will be called when
+    the edit-sequence completes.
+
+    If tag is a symbol, the thunk is keyed on that symbol, and only one thunk
+    per symbol will be called after the edit-sequence. Specifically, the last
+    call to run-after-edit-sequence’s argument will be called.
+
+    (send an-editor:basic get-top-level-window)
+     → (or/c #f (is-a?/c top-level-window<%>))
+    Returns the top-level-window<%> currently associated with this buffer.
+
+    This does not work for embedded editors.
+
+    (send an-editor:basic save-file-out-of-date?) → boolean?
+    Returns #t if the file on disk has been modified, by some other program.
+
+    (send an-editor:basic save-file/gui-error  [ filename        
+                                                 format          
+                                                 show-errors?])  
+     → boolean?
+      filename : (or/c path? #f) = #f
+       format   :   (or/c
+                     'guess  'standard  'text  'text-force-cr  'same  'copy)
+                =   'same
+      show-errors? : boolean? = #t
+    This method is an alternative to save-file. Rather than showing errors via
+    the original stdout, it opens a dialog with an error message showing the
+    error.
+
+    The result indicates if an error happened (the error has already been shown
+    to the user). It returns #t if no error occurred and #f if an error
+    occurred.
+
+    (send an-editor:basic load-file/gui-error  [ filename        
+                                                 format          
+                                                 show-errors?])  
+     → boolean?
+      filename : (or/c string? #f) = #f
+       format   :   (or/c
+                     'guess  'standard  'text  'text-force-cr  'same  'copy)
+                =   'guess
+      show-errors? : boolean? = #t
+    This method is an alternative to load-file. Rather than showing errors via
+    the original stdout, it opens a dialog with an error message showing the
+    error.
+
+    The result indicates if an error happened (the error has already been shown
+    to the user). It returns #t if no error occurred and #f if an error
+    occurred.
+
+    (send an-editor:basic on-close) → void?
+    This method is called when an editor is closed. Typically, this method is
+    called when the frame containing the editor is closed, but in some cases an
+    editor is considered “closed” before the frame it is in is closed (e.g.,
+    when a tab in DrRacket is closed), and thus on-close will be called at that
+    point.
+
+    See also can-close? and close.
+
+    Does nothing.
+    (send an-editor:basic can-close?) → boolean?
+    This method is called to query the editor if is okay to close the editor.
+    Although there is no visible effect associated with closing an editor,
+    there may be some cleanup actions that need to be run when the user is
+    finished with the editor (asking if it should be saved, for example).
+
+    See also on-close and close.
+
+    Returns #t.
+    (send an-editor:basic close) → boolean?
+    This method is merely
+
+        (if (can-close?)
+            (begin (on-close) #t)
+            #f)
+
+    It is intended as a shorthand, helper method for closing an editor. See
+    also can-close? and on-close.
+    (send an-editor:basic get-filename/untitled-name) → string?
+    Returns the printed version of the filename for this editor. If the editor
+    doesn’t yet have a filename, it returns a symbolic name (something like
+    "Untitled").
+
+    (send an-editor:basic get-pos/text event)
+      →   (or/c false/c number?)
+          (or/c false/c (is-a?/c editor<%>))
+      event : (is-a?/c mouse-event%)
+    Calls get-pos/text-dc-location with the x and y coordinates of event.
+    (send an-editor:basic get-pos/text-dc-location   x   
+                                                     y)  
+      →   (or/c false/c number?)
+          (or/c false/c (is-a?/c editor<%>))
+      x : exact-integer?
+      y : exact-integer?
+    This method’s first result is #f when the mouse event does not correspond
+    to a location in the editor.
+
+    If the second result is a text% object, then the first result will be a
+    position in the editor and otherwise the first result will be #f.
+
+    The editor<%> object will always be the nearest enclosing editor containing
+    the point (x, y).
+
+editor:basic-mixin : (class? . -> . class?)
+  argument extends/implements:  editor<%>
+  result implements:  editor:basic<%>
+This provides the basic editor services required by the rest of the framework.
+The result of this mixin uses the same initialization arguments as the mixin’s
+argument.
+Each instance of a class created with this mixin contains a private keymap%
+that is chained to the global keymap via: (send keymap chain-to-keymap (
+keymap:get-global) #f).
+This installs the global keymap keymap:get-global to handle keyboard and mouse
+mappings not handled by keymap. The global keymap is created when the framework
+is invoked.
+
+
+    (send an-editor:basic can-save-file?   filename        
+                                           format)    →   boolean?
+      filename : string?
+      format : symbol?
+    Augments can-save-file? in editor<%>.
+    Checks to see if the file on the disk has been modified out side of this
+    editor, using save-file-out-of-date?. If it has, this method prompts the
+    user to be sure they want to save.
+
+    (send an-editor:basic after-save-file success?) → void?
+      success? : boolean?
+    Augments after-save-file in editor<%>.
+    If the current filename is not a temporary filename, this method calls
+    handler:add-to-recentwith the current filename.
+
+    to add the new filename to the list of recently opened files.
+
+    Additionally, updates a private instance variable with the modification
+    time of the file, for using in implementing save-file-out-of-date?.
+
+    (send an-editor:basic after-load-file success?) → void?
+      success? : boolean?
+    Augments after-load-file in editor<%>.
+    Updates a private instance variable with the modification time of the file,
+    for using in implementing save-file-out-of-date?
+
+    (send an-editor:basic on-focus on?) → void?
+      on? : boolean?
+    Overrides on-focus in editor<%>.
+    Manages the state to implement has-focus?
+
+    (send an-editor:basic on-edit-sequence) → boolean?
+    Augments on-edit-sequence in editor<%>.
+    Always returns #t. Updates a flag for local-edit-sequence?
+    (send an-editor:basic after-edit-sequence) → void?
+    Augments after-edit-sequence in editor<%>.
+    Helps to implement run-after-edit-sequence.
+    (send an-editor:basic on-new-box type) → (is-a?/c editor-snip%)
+      type : (or/c 'pasteboard  'text)
+    Overrides on-new-box in editor<%>.
+    Creates instances of pasteboard:basic% or text:basic% instead of the built
+    in pasteboard% and text% classes.
+    (send an-editor:basic on-new-image-snip   filename        
+                                              kind            
+                                              relative-path?  
+                                              inline?)        
+     → (is-a?/c image-snip%)
+      filename : (or/c path? false/c)
+      kind : (one-of/c 'unknown 'gif 'jpeg 'xbm 'xpm 'bmp 'pict)
+      relative-path? : any/c
+      inline? : any/c
+    Overrides on-new-image-snip in editor<%>.
+
+        (super on-new-image-snip
+               (if (eq? kind 'unknown) 'unknown/mask kind)
+               relative-path?
+               inline?)
+
+    (send an-editor:basic get-file directory) → string
+      directory : (or/c path-string? false/c)
+    Overrides get-file in editor<%>.
+    Uses finder:get-file to find a filename. Also, sets the parameter
+    finder:dialog-parent-parameter to the result of get-top-level-window.
+    (send an-editor:basic put-file   directory            
+                                     default-name)   →   string
+      directory : (or/c path? false/c)
+      default-name : (or/c path? false/c)
+    Overrides put-file in editor<%>.
+    Uses finder:put-file to find a filename. Also, sets the parameter
+    finder:dialog-parent-parameter to the result of get-top-level-window.
+
+editor:standard-style-list<%> : interface?
+  implements:  editor<%>
+This interface is implemented by the results of
+editor:standard-style-list-mixin.
+
+editor:standard-style-list-mixin : (class? . -> . class?)
+  argument extends/implements:  editor<%>
+  result implements:  editor:standard-style-list<%>
+The mixin adds code to the initialization of the class that sets the editor’s
+style list (via set-style-list) to the result of editor:get-standard-style-list
+.
+In addition, it calls set-load-overwrites-styles with #f. This ensures that
+saved files with different settings for the style list do not clobber the
+shared style list.
+
+editor:keymap<%> : interface?
+  implements:  editor:basic<%>
+Classes matching this interface add support for mixing in multiple keymaps.
+They provides an extensible interface to chained keymaps, through the
+get-keymaps method.
+This editor is initialized by calling add-editor-keymap-functions,
+add-text-keymap-functions, and add-pasteboard-keymap-functions.
+
+
+    (send an-editor:keymap get-keymaps)
+     → (list-of (is-a?/c keymap%))
+    The keymaps returned from this method are chained to this editor<%>’s
+    keymap.
+
+    The result of this method should not change – that is, it should return the
+    same list of keymaps each time it is called.
+
+    See also editor:add-after-user-keymap.
+
+    Returns (list (keymap:get-user) (keymap:get-global)) by default.
+
+editor:keymap-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:basic<%>
+  result implements:  editor:keymap<%>
+This provides a mixin that implements the editor:keymap<%> interface.
+
+editor:autowrap<%> : interface?
+  implements:  editor:basic<%>
+Classes implementing this interface keep the auto-wrap state set based on the
+'framework:auto-set-wrap? preference (see preferences:get for more information
+about preferences).
+They install a preferences callback with preferences:add-callback that sets the
+state when the preference changes and initialize the value of auto-wrap to the
+current value of 'framework:auto-set-wrap? via preferences:get.
+
+editor:autowrap-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:basic<%>
+  result implements:  editor:autowrap<%>
+See editor:autowrap<%>
+
+editor:file<%> : interface?
+  implements:  editor:keymap<%>
+Objects supporting this interface are expected to support files.
+
+
+    (send an-editor:file get-can-close-parent)
+     → (or/c false (is-a?/c frame%) (is-a?/c dialog%))
+    The result of this method is used as the parent for the dialog that asks
+    about closing.
+
+    Returns #f by default.
+    (send an-editor:file update-frame-filename) → void?
+    Attempts to find a frame that displays this editor. If it does, it updates
+    the frame’s title based on a new filename in the editor.
+
+    (send an-editor:file allow-close-with-no-filename?) → boolean?
+    This method indicates if closing the file when it hasn’t been saved is a
+    reason to alert the user. See also can-close?.
+
+    Returns #f by default.
+
+    (send an-editor:file user-saves-or-not-modified? allow-cancel?)
+     → boolean?
+      allow-cancel? : #t
+    If the file has not been saved, this prompts the user about saving and, if
+    the user says to save, then it saves the file.
+
+    The result is #t if the save file is up to date, or if the user says it is
+    okay to continue without saving. Generally used when closing the file or
+    quiting the app.
+
+editor:file-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:keymap<%>
+  result implements:  editor:file<%>
+This editor locks itself when the file that is opened is read-only in the
+filesystem.
+The class that this mixin produces uses the same initialization arguments as
+its input.
+
+
+    (send an-editor:file set-filename    name           
+                                       [ temp?])   →   void?
+      name : string?
+      temp? : boolean? = #f
+    Overrides set-filename in editor<%>.
+    Updates the filename on each frame displaying this editor, for each frame
+    that matches frame:editor<%>.
+    (send an-editor:file can-close?) → boolean?
+    Augments can-close? in editor:basic<%>.
+    If the allow-close-with-no-filename? method returns #f, this method checks
+    to see if the file has been saved at all yet. If not, it asks the user
+    about saving (and saves if they ask).
+
+    If the allow-close-with-no-filename? method returns #t, this method does as
+    before, except only asks if the editor’s get-filenamemethod returns a path.
+
+    Also calls inner.
+    (send an-editor:file get-keymaps)
+     → (list-of (is-a?/c keymap%))
+    Overrides get-keymaps in editor:keymap<%>.
+    This returns a list containing the super-class’s keymaps, plus the result
+    of keymap:get-file
+
+editor:backup-autosave<%> : interface?
+  implements:  editor:basic<%>
+Classes matching this interface support backup files and autosaving.
+
+
+    (send an-editor:backup-autosave backup?) → boolean?
+    Indicates whether this editor<%> should be backed up.
+
+    Returns the value of the preferences:get applied to
+    'framework:backup-files?.
+    (send an-editor:backup-autosave autosave?) → boolean?
+    Indicates whether this editor<%> should be autosaved.
+
+    Returns #t.
+    (send an-editor:backup-autosave do-autosave) → (or/c #f path?)
+    This method is called to perform the autosaving. See also autosave:register
+
+    When the file has been modified since it was last saved and autosaving it
+    turned on (via the autosave? method) an autosave file is created for this
+    editor<%>.
+
+    Returns the filename where the autosave took place, or #f if none did.
+    (send an-editor:backup-autosave remove-autosave) → void?
+    This method removes the autosave file associated with this editor<%>.
+
+editor:backup-autosave-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:basic<%>
+  result implements:  editor:backup-autosave<%>
+                      autosave:autosavable<%>
+This mixin adds backup and autosave functionality to an editor.
+During initialization, this object is registered with autosave:register.
+The result of this mixin uses the same initialization arguments as the mixin’s
+argument.
+
+
+    (send an-editor:backup-autosave on-save-file   filename        
+                                                   format)    →   bool
+      filename : path?
+      format : (one-of/c
+     'guess  'standard  'text  'text-force-cr  'same  'copy)
+    Augments on-save-file in editor<%>.
+    If a backup file has not been created this session for this file, deletes
+    any existing backup file and copies the old save file into the backup file.
+    For the backup file’s name, see path-utils:generate-backup-name
+    (send an-editor:backup-autosave on-close) → void?
+    Augments on-close in editor:basic<%>.
+    Deletes the autosave file and turns off autosaving.
+    (send an-editor:backup-autosave on-change) → void?
+    Augments on-change in editor<%>.
+    Sets a flag indicating that this editor<%> needs to be autosaved.
+    (send an-editor:backup-autosave set-modified modified?) → void?
+      modified? : any/c
+    Overrides set-modified in editor<%>.
+    If the file is no longer modified, this method deletes the autosave file.
+    If it is, it updates a flag to indicate that the autosave file is out of
+    date.
+
+editor:info<%> : interface?
+  implements:  editor:basic<%>
+An editor<%> matching this interface provides information about its lock state
+to its top-level-window<%>.
+
+editor:info-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:basic<%>
+  result implements:  editor:info<%>
+This editor tells the frame when it is locked and unlocked. See also
+frame:text-info<%>.
+
+
+    (send an-editor:info lock lock?) → void?
+      lock? : boolean?
+    Overrides lock in editor<%>.
+    Uses run-after-edit-sequence to call lock-status-changed.
+
+(editor:set-default-font-color color) → void?
+  color : (is-a?/c color%)
+Sets the color of the style named editor:get-default-color-style-name.
+(editor:get-default-color-style-name) → string?
+The name of the style (in the list returned by editor:get-standard-style-list)
+that holds the default color.
+(editor:set-standard-style-list-delta   name          
+                                        delta)   →   void?
+  name : string?
+  delta : (is-a?/c style-delta%)
+Finds (or creates) the style named by name in the result of
+editor:get-standard-style-list and sets its delta to delta.
+
+If the style named by name is already in the style list, it must be a delta
+style.
+(editor:set-standard-style-list-pref-callbacks) → any
+Installs the font preference callbacks that update the style list returned by
+editor:get-standard-style-list based on the font preference symbols.
+(editor:get-standard-style-list) → (is-a?/c style-list%)
+Returns a style list that is used for all instances of
+editor:standard-style-list%.
+(editor:add-after-user-keymap   keymap    
+                                keymaps)  
+ → (listof (is-a?/c keymap%))
+  keymap : (is-a?/c keymap%)
+  keymaps : (listof (is-a?/c keymap%))
+Returns a list that contains all of the keymaps in keymaps, in the same
+relative order, but also with keymap, where keymap is now the first keymap
+after keymap:get-user (if that keymap is in the list.)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

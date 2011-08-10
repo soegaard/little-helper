@@ -1,0 +1,72 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Guidelines for developing unstable libraries
+
+Any collection developer may add modules to the unstable collection.
+
+Every module needs an owner to be responsible for it.
+
+  • If you add a module, you are its owner. Add a comment with your name at the
+    top of the module.
+
+  • If you add code to someone else’s module, tag your additions with your
+    name. The module’s owner may ask you to move your code to a separate module
+    if they don’t wish to accept responsibility for it.
+
+When changing a library, check all uses of the library in the collections tree
+and update them if necessary. Notify users of major changes.
+
+Place new modules according to the following rules. (These rules are necessary
+for maintaining PLT’s separate text, gui, and drracket distributions.)
+
+  • Non-GUI modules go under unstable (or subcollections thereof). Put the
+    documentation in unstable/scribblings and include with include-section from
+    unstable/scribblings/unstable.scrbl.
+
+  • GUI modules go under unstable/gui. Put the documentation in unstable/
+    scribblings/gui and include them with include-section from unstable/
+    scribblings/gui.scrbl.
+
+  • Do not add modules depending on DrRacket to the unstable collection.
+
+  • Put tests in tests/unstable.
+
+Keep documentation and tests up to date.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

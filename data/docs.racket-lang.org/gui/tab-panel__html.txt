@@ -1,0 +1,256 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+append
+delete
+get-item-label
+get-number
+get-selection
+set
+set-item-label
+set-selection
+Inherited methods:
+from vertical-panel%
+get-orientation
+set-orientation
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-focus
+on-move
+on-size
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+from area-container<%>
+add-child
+after-new-child
+begin-container-sequence
+border
+change-children
+container-flow-modified
+container-size
+delete-child
+end-container-sequence
+get-alignment
+get-children
+place-children
+reflow-container
+set-alignment
+spacing
+[...search manuals...]
+  top← prev  up  next → 
+
+tab-panel% : class?
+  superclass: vertical-panel%
+
+A tab panel arranges its subwindows in a single column, but also includes a
+horizontal row of tabs at the top of the panel. See also panel%.
+
+The tab-panel% class does not implement the virtual swapping of the panel
+content when a new tab is selected. Instead, it merely invokes a callback
+procedure to indicate that a user changed the tab selection.
+
+(new tab-panel%    [choices choices]                          
+                   [parent parent]                            
+                 [ [callback callback]                        
+                   [style style]                              
+                   [font font]                                
+                   [enabled enabled]                          
+                   [vert-margin vert-margin]                  
+                   [horiz-margin horiz-margin]                
+                   [border border]                            
+                   [spacing spacing]                          
+                   [alignment alignment]                      
+                   [min-width min-width]                      
+                   [min-height min-height]                    
+                   [stretchable-width stretchable-width]      
+                   [stretchable-height stretchable-height]])  
+ → (is-a?/c tab-panel%)
+  choices : (listof label-string?)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+   callback   :   ((is-a?/c tab-panel%) (is-a?/c control-event%)
+                   . -> . any)
+              =   (lambda (b e) (void))
+  style : (listof (one-of/c 'no-border 'deleted)) = null
+  font : (is-a?/c font%) = normal-control-font
+  enabled : any/c = #t
+  vert-margin : (integer-in 0 1000) = 0
+  horiz-margin : (integer-in 0 1000) = 0
+  border : (integer-in 0 1000) = 0
+  spacing : (integer-in 0 1000) = 0
+   alignment   :   (list/c (one-of/c 'left 'center 'right)
+                           (one-of/c 'top 'center 'bottom))
+               =   '(center top)
+  min-width : (integer-in 0 10000) = graphical-minimum-width
+  min-height : (integer-in 0 10000) = graphical-minimum-height
+  stretchable-width : any/c = #t
+  stretchable-height : any/c = #t
+Creates a tab pane, where the choices list specifies the tab labels.
+
+Each string in choices can contain an ampersand, which (in the future) may
+create a mnemonic for clicking the corresponding tab. A double ampersand is
+converted to a single ampersand.
+
+The callback procedure is called (with the event type 'tab-panel) when the user
+changes the tab selection.
+
+If the style list includes 'no-border, no border is drawn around the panel
+content. If style includes 'deleted, then the tab panel is created as hidden,
+and it does not affect its parent’s geometry; the tab panel can be made active
+later by calling parent’s add-child method.
+
+The font argument determines the font for the control. For information about
+the enabled argument, see window<%>. For information about the horiz-margin and
+vert-margin arguments, see subarea<%>. For information about the min-width,
+min-height, stretchable-width, and stretchable-height arguments, see area<%>.
+
+(send a-tab-panel append choice) → void?
+  choice : label-string?
+Adds a tab to the right end of panel’s top row of tabs.
+
+The label string choice can contain &, which (in the future) may create a
+mnemonic for clicking the new tab. A && is converted to &.
+
+(send a-tab-panel delete n) → void?
+  n : exact-nonnegative-integer?
+Deletes an existing tab. If n is equal to or larger than the number of tabs on
+the panel, an exn:fail:contract exception is raised.
+
+(send a-tab-panel get-item-label n) → string?
+  n : exact-nonnegative-integer?
+Gets the label of a tab by position. Tabs are numbered from 0. If n is equal to
+or larger than the number of tabs in the panel, an exn:fail:contract exception
+is raised.
+
+(send a-tab-panel get-number) → exact-nonnegative-integer?
+Returns the number of tabs on the panel.
+
+(send a-tab-panel get-selection)
+ → (or/c exact-nonnegative-integer? false/c)
+Returns the index (counting from 0) of the currently selected tab. If the panel
+has no tabs, the result is #f.
+
+(send a-tab-panel set choices) → void?
+  choices : (listof label-string?)
+Removes all tabs from the panel and installs tabs with the given labels.
+
+(send a-tab-panel set-item-label n label) → void?
+  n : exact-nonnegative-integer?
+  label : label-string?
+Set the label for tab n to label. If n is equal to or larger than the number of
+tabs in the panel, an exn:fail:contract exception is raised.
+
+(send a-tab-panel set-selection n) → void?
+  n : exact-nonnegative-integer?
+Sets the currently selected tab by index (counting from 0). If n is equal to or
+larger than the number of tabs in the panel, an exn:fail:contract exception is
+raised.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

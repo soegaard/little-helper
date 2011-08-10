@@ -1,0 +1,155 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 14  Units (Components)
+14.1  Signatures and Units
+14.2  Invoking Units
+14.3  Linking Units
+14.4  First-Class Units
+14.5  Whole-module Signatures and Units
+14.6  Contracts for Units
+14.7  unit versus module
+[...search manuals...]
+  top← prev  up  next → 
+
+14.4 First-Class Units
+
+The define-unit form combines define with a unit form, similar to the way that
+(define (f x) ....) combines define followed by an identifier with an implicit
+lambda.
+
+Expanding the shorthand, the definition of toy-store@ could almost be written
+as
+
+    (define toy-store@
+      (unit
+       (import toy-factory^)
+       (export toy-store^)
+     
+       (define inventory null)
+     
+       (define (store-color) 'green)
+       ....))
+
+A difference between this expansion and define-unit is that the imports and
+exports of toy-store@ cannot be inferred. That is, besides combining define and
+unit, define-unit attaches static information to the defined identifier so that
+its signature information is available statically to define-values/invoke-unit/
+infer and other forms.
+
+Despite the drawback of losing static signature information, unit can be useful
+in combination with other forms that work with first-class values. For example,
+we could wrap a unit that creates a toy store in a lambda to supply the store’s
+color:
+
+        "toy-store-maker.rkt"
+
+            #lang racket
+             
+            (require "toy-store-sig.rkt"
+                     "toy-factory-sig.rkt")
+             
+            (define toy-store@-maker
+              (lambda (the-color)
+               (unit
+                (import toy-factory^)
+                (export toy-store^)
+             
+                (define inventory null)
+             
+                (define (store-color) the-color)
+             
+                ; the rest is the same as before
+             
+                (define (maybe-repaint t)
+                  (if (eq? (toy-color t) (store-color))
+                      t
+                      (repaint t (store-color))))
+             
+                (define (stock! n)
+                  (set! inventory
+                        (append inventory
+                                (map maybe-repaint
+                                     (build-toys n)))))
+             
+                (define (get-inventory) inventory))))
+             
+            (provide toy-store@-maker)
+
+To invoke a unit created by toy-store@-maker, we must use define-values/
+invoke-unit, instead of the /infer variant:
+
+    > (require "simple-factory-unit.rkt")
+    > (define-values/invoke-unit/infer simple-factory@)
+    Factory started.
+
+    > (require "toy-store-maker.rkt")
+    > (define-values/invoke-unit (toy-store@-maker 'purple)
+        (import toy-factory^)
+        (export toy-store^))
+    > (stock! 2)
+    > (get-inventory)
+    (list (toy 'purple) (toy 'purple))
+
+
+In the define-values/invoke-unit form, the (import toy-factory^) line takes
+bindings from the current context that match the names in toy-factory^ (the
+ones that we created by invoking simple-factory@), and it supplies them as
+imports to toy-store@. The (export toy-store^) clause indicates that the unit
+produced by toy-store@-maker will export toy-store^, and the names from that
+signature are defined after invoking the unit.
+
+To link a unit from toy-store@-maker, we can use the compound-unit form:
+
+    > (require "store-specific-factory-unit.rkt")
+    > (define toy-store+factory@
+        (compound-unit
+         (import)
+         (export TF TS)
+         (link [((TF : toy-factory^)) store-specific-factory@ TS]
+               [((TS : toy-store^)) toy-store@ TF])))
+
+This compound-unit form packs a lot of information into one place. The
+left-hand-side TF and TS in the link clause are binding identifiers. The
+identifier TF is essentially bound to the elements of toy-factory^ as
+implemented by store-specific-factory@. The identifier TS is similarly bound to
+the elements of toy-store^ as implemented by toy-store@. Meanwhile, the
+elements bound to TS are supplied as imports for store-specific-factory@, since
+TS follows store-specific-factory@. The elements bound to TF are similarly
+supplied to toy-store@. Finally, (export TF TS) indicates that the elements
+bound to TF and TS are exported from the compound unit.
+
+The above compound-unit form uses store-specific-factory@ as a first-class
+unit, even though its information could be inferred. Every unit can be used as
+a first-class unit, in addition to its use in inference contexts. Also, various
+forms let a programmer bridge the gap between inferred and first-class worlds.
+For example, define-unit-binding binds a new identifier to the unit produced by
+an arbitrary expression; it statically associates signature information to the
+identifier, and it dynamically checks the signatures against the first-class
+unit produced by the expression.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

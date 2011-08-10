@@ -1,0 +1,374 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Contracts and Boundaries
+7.2  Simple Contracts on Functions
+7.3  Contracts on Functions in General
+7.4  Contracts: A Thorough Example
+7.5  Contracts on Structures
+7.6  Abstract Contracts using #: exists and #: ∃
+7.7  Additional Examples
+7.8  Gotchas
+► 7.2  Simple Contracts on Functions
+7.2.1  Styles of ->
+7.2.2  any and any/ c
+7.2.3  Rolling Your Own Contracts
+7.2.4  Contracts on Higher-order Functions
+7.2.5  Contract Messages with “???”
+On this page:
+7.2.1 Styles of ->
+7.2.2 any and any/ c
+7.2.3 Rolling Your Own Contracts
+7.2.4 Contracts on Higher-order Functions
+7.2.5 Contract Messages with “???”
+[...search manuals...]
+  top← prev  up  next → 
+
+7.2 Simple Contracts on Functions
+
+A mathematical function has a domain and a range. The domain indicates the kind
+of values that the function can accept as arguments, and the range indicates
+the kind of values that it produces. The conventional notation for a describing
+a function with its domain and range is
+
+    f : A -> B
+
+where A is the domain of the function and B is the range.
+
+Functions in a programming language have domains and ranges, too, and a
+contract can ensure that a function receives only values in its range and
+produces only values in its domain. A -> creates such a contract for a
+function. The forms after a -> specify contracts for the domains and finally a
+contract for the range.
+
+Here is a module that might represent a bank account:
+
+    #lang racket
+     
+    (provide/contract
+      [deposit (-> number? any)]
+      [balance (-> number?)])
+     
+    (define amount 0)
+    (define (deposit a) (set! amount (+ amount a)))
+    (define (balance) amount)
+
+The module exports two functions:
+
+  • deposit, which accepts a number and returns some value that is not
+    specified in the contract, and
+
+  • balance, which returns a number indicating the current balance of the
+    account.
+
+When a module exports a function, it establishes two channels of communication
+between itself as a “server” and the “client” module that imports the function.
+If the client module calls the function, it sends a value into the server
+module. Conversely, if such a function call ends and the function returns a
+value, the server module sends a value back to the client module. This
+client–server distinction is important, because when something goes wrong, one
+or the other of the parties is to blame.
+
+If a client module were to apply deposit to 'millions, it would violate the
+contract. The contract-monitoring system would catch this violation and blame
+client for breaking the contract with the above module. In contrast, if the
+balance function were to return 'broke, the contract-monitoring system would
+blame the server module.
+
+A -> by itself is not a contract; it is a contract combinator, which combines
+other contracts to form a contract.
+
+7.2.1 Styles of ->
+
+If you are used to mathematical function, you may prefer a contract arrow to
+appear between the domain and the range of a function, not at the beginning. If
+you have read How to Design Programs, you have seen this many times. Indeed,
+you may have seen contracts such as these in other people’s code:
+
+    (provide/contract
+      [deposit (number? . -> . any)])
+
+If a Racket S-expression contains two dots with a symbol in the middle, the
+reader re-arranges the S-expression and place the symbol at the front, as
+described in Lists and Racket Syntax. Thus,
+
+    (number? . -> . any)
+
+is just another way of writing
+
+    (-> number? any)
+
+7.2.2 any and any/c
+
+The any contract used for deposit matches any kind of result, and it can only
+be used in the range position of a function contract. Instead of any above, we
+could use the more specific contract void?, which says that the function will
+always return the (void) value. The void? contract, however, would require the
+contract monitoring system to check the return value every time the function is
+called, even though the “client” module can’t do much with the value. In
+contrast, any tells the monitoring system not to check the return value, it
+tells a potential client that the “server” module makes no promises at all
+about the function’s return value, even whether it is a single value or
+multiple values.
+
+The any/c contract is similar to any, in that it makes no demands on a value.
+Unlike any, any/c indicates a single value, and it is suitable for use as an
+argument contract. Using any/c as a range contract imposes a check that the
+function produces a single value. That is,
+
+    (-> integer? any)
+
+describes a function that accepts and integer and returns any number of values,
+while
+
+    (-> integer? any/c)
+
+describes a function that accepts an integer and produces a single result (but
+does not say anything more about the result). The function
+
+    (define (f x) (values (+ x 1) (- x 1)))
+
+matches (-> integer? any), but not (-> integer? any/c).
+
+Use any/c as a result contract when it is particularly important to promise a
+single result from a function. Use any when you want to promise as little as
+possible (and incur as little checking as possible) for a function’s result.
+
+7.2.3 Rolling Your Own Contracts
+
+The deposit function adds the given number to the value of amount. While the
+function’s contract prevents clients from applying it to non-numbers, the
+contract still allows them to apply the function to complex numbers, negative
+numbers, or inexact numbers, none of which sensibly represent amounts of money.
+
+The contract system allows programmers to define their own contracts as
+functions:
+
+    #lang racket
+     
+    (define (amount? a)
+      (and (number? a) (integer? a) (exact? a) (>= a 0)))
+     
+    (provide/contract
+      ; an amount is a natural number of cents
+      ; is the given number an amount?
+      [deposit (-> amount? any)]
+      [amount? (-> any/c boolean?)]
+      [balance (-> amount?)])
+     
+    (define amount 0)
+    (define (deposit a) (set! amount (+ amount a)))
+    (define (balance) amount)
+
+This module defines an amount? function and uses it as a contract within ->
+contracts. When a client calls the deposit function as exported with the
+contract (-> amount? any), it must supply an exact, nonnegative integer,
+otherwise the amount? function applied to the argument will return #f, which
+will cause the contract-monitoring system to blame the client. Similarly, the
+server module must provide an exact, nonnegative integer as the result of
+balance to remain blameless.
+
+Of course, it makes no sense to restrict a channel of communication to values
+that the client doesn’t understand. Therefore the module also exports the
+amount? predicate itself, with a contract saying that it accepts an arbitrary
+value and returns a boolean.
+
+In this case, we could also have used natural-number/c in place of amount?,
+since it implies exactly the same check:
+
+    (provide/contract
+      [deposit (-> natural-number/c any)]
+      [balance (-> natural-number/c)])
+
+Every function that accepts one argument can be treated as a predicate and thus
+used as a contract. For combining existing checks into a new one, however,
+contract combinators such as and/c and or/c are often useful. For example, here
+is yet another way to write the contracts above:
+
+    (define amount/c
+      (and/c number? integer? exact? (or/c positive? zero?)))
+     
+    (provide/contract
+      [deposit (-> amount/c any)]
+      [balance (-> amount/c)])
+
+Other values also serve double duty as contracts. For example, if a function
+accepts a number or #f, (or/c number? #f) suffices. Similarly, the amount/c
+contract could have been written with a 0 in place of zero?. If you use a
+regular expression as a contract, the contract accepts strings and byte strings
+that match the regular expression.
+
+Naturally, you can mix your own contract-implementing functions with
+combinators like and/c. Here is a module for creating strings from banking
+records:
+
+    #lang racket
+     
+    (define (has-decimal? str)
+      (define L (string-length str))
+      (and (>= L 3)
+           (char=? #\. (string-ref str (- L 3)))))
+     
+    (provide/contract
+      ; convert a random number to a string
+      [format-number (-> number? string?)]
+     
+      ; convert an amount into a string with a decimal
+      ; point, as in an amount of US currency
+      [format-nat (-> natural-number/c
+                      (and/c string? has-decimal?))])
+
+The contract of the exported function format-number specifies that the function
+consumes a number and produces a string. The contract of the exported function
+format-nat is more interesting than the one of format-number. It consumes only
+natural numbers. Its range contract promises a string that has a . in the third
+position from the right.
+
+If we want to strengthen the promise of the range contract for format-nat so
+that it admits only strings with digits and a single dot, we could write it
+like this:
+
+    #lang racket
+     
+    (define (digit-char? x)
+      (member x '(#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0)))
+     
+    (define (has-decimal? str)
+      (define L (string-length str))
+      (and (>= L 3)
+           (char=? #\. (string-ref str (- L 3)))))
+     
+    (define (is-decimal-string? str)
+      (define L (string-length str))
+      (and (has-decimal? str)
+           (andmap digit-char?
+                   (string->list (substring str 0 (- L 3))))
+           (andmap digit-char?
+                   (string->list (substring str (- L 2) L)))))
+     
+    ....
+     
+    (provide/contract
+      ....
+      ; convert an amount (natural number) of cents
+      ; into a dollar based string
+      [format-nat (-> natural-number/c
+                      (and/c string?
+                             is-decimal-string?))])
+
+Alternately, in this case, we could use a regular expression as a contract:
+
+    #lang racket
+     
+    (provide/contract
+      ....
+      ; convert an amount (natural number) of cents
+      ; into a dollar based string
+      [format-nat (-> natural-number/c
+                      (and/c string? #rx"[0-9]*\\.[0-9][0-9]"))])
+
+7.2.4 Contracts on Higher-order Functions
+
+Function contracts are not just restricted to having simple predicates on their
+domains or ranges. Any of the contract combinators discussed here, including
+function contracts themselves, can be used as contracts on the arguments and
+results of a function.
+
+For example,
+
+    (-> integer? (-> integer? integer?))
+
+is a contract that describes a curried function. It matches functions that
+accept one argument and then return another function accepting a second
+argument before finally returning an integer. If a server exports a function
+make-adder with this contract, and if make-adder returns a value other than a
+function, then the server is to blame. If make-adder does return a function,
+but the resulting function is applied to a value other than an integer, then
+the client is to blame.
+
+Similarly, the contract
+
+    (-> (-> integer? integer?) integer?)
+
+describes functions that accept other functions as its input. If a server
+exports a function twice with this contract and the twice is applied to a value
+other than a function of one argument, then the client is to blame. If twice is
+applied to a function of one argument and twice calls the given function on a
+value other than an integer, then the server is to blame.
+
+7.2.5 Contract Messages with “???”
+
+You wrote your module. You added contracts. You put them into the interface so
+that client programmers have all the information from interfaces. It’s a piece
+of art:
+
+    #lang racket
+     
+    (provide/contract
+     [deposit (-> (lambda (x)
+                    (and (number? x) (integer? x) (>= x 0)))
+                  any)])
+     
+    (define this 0)
+    (define (deposit a) ...)
+
+Several clients used your module. Others used their modules in turn. And all of
+a sudden one of them sees this error message:
+
+    bank-client broke the contract (-> ??? any) it had with myaccount on
+    deposit; expected <???>, given: -10
+
+Clearly, bank-client is a module that uses myaccount but what is the ??? doing
+there? Wouldn’t it be nice if we had a name for this class of data much like we
+have string, number, and so on?
+
+For this situation, Racket provides flat named contracts. The use of “contract”
+in this term shows that contracts are first-class values. The “flat” means that
+the collection of data is a subset of the built-in atomic classes of data; they
+are described by a predicate that consumes all Racket values and produces a
+boolean. The “named” part says what we want to do, which is to name the
+contract so that error messages become intelligible:
+
+    #lang racket
+     
+    (define (amount? x) (and (number? x) (integer? x) (>= x 0)))
+    (define amount (flat-named-contract 'amount amount?))
+     
+    (provide/contract
+     [deposit (amount . -> . any)])
+     
+    (define this 0)
+    (define (deposit a) ...)
+
+With this little change, the error message becomes all of the sudden quite
+readable:
+
+    bank-client broke the contract (-> amount any) it had with myaccount on
+    deposit; expected <amount>, given: -10
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

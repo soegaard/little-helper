@@ -1,0 +1,125 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 11  Macros
+ 11.1  Pattern-Based Syntax Matching
+ 11.2  Syntax Object Content
+ 11.3  Syntax Object Bindings
+ 11.4  Syntax Transformers
+ 11.5  Syntax Parameters
+ 11.6  Local Binding with Splicing Body
+ 11.7  Syntax Object Properties
+ 11.8  Syntax Taints
+ 11.9  Expanding Top-Level Forms
+11.10  File Inclusion
+11.11  Syntax Utilities
+On this page:
+splicing-let
+splicing-letrec
+splicing-let-values
+splicing-letrec-values
+splicing-let-syntax
+splicing-letrec-syntax
+splicing-let-syntaxes
+splicing-letrec-syntaxes
+splicing-letrec-syntaxes+ values
+splicing-local
+splicing-syntax-parameterize
+[...search manuals...]
+  top← prev  up  next → 
+
+11.6 Local Binding with Splicing Body
+
+ (require racket/splicing)
+The bindings documented in this section are provided by the racket/splicing
+library, not racket/base or racket.
+
+splicing-let
+splicing-letrec
+splicing-let-values
+splicing-letrec-values
+splicing-let-syntax
+splicing-letrec-syntax
+splicing-let-syntaxes
+splicing-letrec-syntaxes
+splicing-letrec-syntaxes+values
+splicing-local
+Like let, letrec, let-values, letrec-values, let-syntax, letrec-syntax,
+let-syntaxes, letrec-syntaxes, letrec-syntaxes+values, and local, except that
+in a definition context, the body forms are spliced into the enclosing
+definition context (in the same way as for begin).
+
+Examples:
+
+    > (splicing-let-syntax ([one (lambda (stx) #'1)])
+        (define o one))
+    > o
+    1
+
+    > one
+    reference to undefined identifier: one
+
+
+
+When a splicing binding form occurs in a top-level context or module context,
+its local bindings are treated similarly to definitions. In particular, if a
+reference to one of the splicing form’s bound variables is evaluated before the
+variable is initialized, an unbound variable error is raised, instead of the
+variable evaluating to the undefined value. Also, syntax bindings are evaluated
+every time the module is visited, instead of only once during compilation as in
+let-syntax, etc.
+
+Example:
+
+    > (splicing-letrec ([x bad]
+                        [bad 1])
+        x)
+    reference to undefined identifier: bad.3
+
+
+
+splicing-syntax-parameterize
+Like syntax-parameterize, except that in a definition context, the body forms
+are spliced into the enclosing definition context (in the same way as for begin
+). In a definition context, the body of splicing-syntax-parameterize can be
+empty.
+
+Note that require transformers and provide transformers are not affected by
+syntax parameterization. While all uses of require and provide will be spliced
+into the enclosing context, derived import or export specifications will expand
+as if they had not been inside of the splicing-syntax-parameterize.
+
+Examples:
+
+    > (define-syntax-parameter place (lambda (stx) #'"Kansas"))
+    > (define-syntax-rule (where) `(at ,(place)))
+    > (where)
+    '(at "Kansas")
+
+    > (splicing-syntax-parameterize ([place (lambda (stx) #'"Oz")])
+        (define here (where)))
+    > here
+    '(at "Oz")
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

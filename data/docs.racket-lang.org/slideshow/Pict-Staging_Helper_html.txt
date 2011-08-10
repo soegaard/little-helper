@@ -1,0 +1,79 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 3  Making Slides
+3.1  Primary Slide Functions
+3.2  Slide Registration
+3.3  Viewer Control
+3.4  Constants and Layout Variables
+3.5  Configuration
+3.6  Pict-Staging Helper
+3.7  Slides to Picts
+On this page:
+with-steps
+with-steps~
+[...search manuals...]
+  top← prev  up  next → 
+
+3.6 Pict-Staging Helper
+
+ (require slideshow/step)
+The slideshow/step library provides syntax for breaking a complex slide into
+steps that are more complex than can be handled with 'next and 'alts in a slide
+sequence.
+
+(with-steps (id ...) body ...)
+Evaluates the bodys once for each id, skipping an id if its name ends with ~
+and condense? is true. The results of the last body for each iteration are
+collected into a list, which is the result of the with-steps form.
+
+Within the bodys, several keywords are bound non-hygienically (using the first
+body’s lexical context):
+
+  • (only? id) — returns #t during the id step (i.e., during the evaluation of
+    the bodys for id), #f otherwise.
+
+  • (vonly id) — returns the identity function during the id step, ghost
+    otherwise.
+
+  • (only id then-expr) returns the result of then-expr during the id step,
+    values otherwise.
+
+  • (only id then-expr else-expr) returns the result of then-expr during the id
+    step, the result of else-expr otherwise.
+
+  • (before? id) — returns #t before the id step, #f starting for the id and
+    afterward.
+
+  • (vbefore id), (before id then-expr), or (before id then-expr else-expr) —
+    analogous to vonly and only.
+
+  • (after? id) — returns #t after the id step, #f through the id step.
+
+  • (vafter id), (after id then-expr), or (after id then-expr else-expr) —
+    analogous to vonly and only.
+
+  • (between? a-id b-id) — returns #t starting from the a-id step through the
+    b-id step, #f otherwise.
+
+  • (vbetween a-id b-id), (between a-id b-id then-expr), or (between a-id b-id
+    then-expr else-expr) — analogous to vonly and only.
+
+  • (between-excel? a-id b-id) — returns #t starting from the a-id step through
+    steps before the b-id step, #f for the b-id step and afterward.
+
+  • (vbetween-excl a-id b-id), (between-excl a-id b-id then-expr), or
+    (between-excl a-id b-id then-expr else-expr) — analogous to vonly and only.
+
+(with-steps~ (id ...) body ...)
+Like with-steps, but when condense? is true, then expr is evaluated only for
+the last id (independent of whether the name fo the last id name ends in ~).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

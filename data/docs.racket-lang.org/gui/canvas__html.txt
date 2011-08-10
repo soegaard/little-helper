@@ -1,0 +1,490 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+get-scroll-page
+get-scroll-pos
+get-scroll-range
+get-view-start
+get-virtual-size
+init-auto-scrollbars
+init-manual-scrollbars
+make-bitmap
+on-paint
+on-scroll
+refresh-now
+scroll
+set-scroll-page
+set-scroll-pos
+set-scroll-range
+show-scrollbars
+swap-gl-buffers
+with-gl-context
+Inherited methods:
+from canvas<%>
+accept-tab-focus
+flush
+get-canvas-background
+get-dc
+min-client-height
+min-client-width
+on-char
+on-event
+on-tab-in
+resume-flush
+set-canvas-background
+set-resize-corner
+suspend-flush
+warp-pointer
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-focus
+on-move
+on-size
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+[...search manuals...]
+  top← prev  up  next → 
+
+canvas% : class?
+  superclass: object%
+
+  extends:  canvas<%>
+A canvas% object is a general-purpose window for drawing and handling events.
+See canvas<%> for information about drawing onto a canvas.
+
+(new canvas%    [parent parent]                            
+              [ [style style]                              
+                [paint-callback paint-callback]            
+                [label label]                              
+                [gl-config gl-config]                      
+                [enabled enabled]                          
+                [vert-margin vert-margin]                  
+                [horiz-margin horiz-margin]                
+                [min-width min-width]                      
+                [min-height min-height]                    
+                [stretchable-width stretchable-width]      
+                [stretchable-height stretchable-height]])  
+ → (is-a?/c canvas%)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+               (listof (one-of/c 'border 'control-border 'combo
+   style   :                     'vscroll 'hscroll 'resize-corner
+                                 'gl 'no-autoclear 'transparent
+                                 'no-focus 'deleted))
+           =   null
+   paint-callback   :   ((is-a?/c canvas%) (is-a?/c dc<%>) . -> . any)
+                    =   void
+  label : (or/c label-string? false/c) = #f
+  gl-config : (or/c (is-a?/c gl-config%) false/c) = #f
+  enabled : any/c = #t
+  vert-margin : (integer-in 0 1000) = 0
+  horiz-margin : (integer-in 0 1000) = 0
+  min-width : (integer-in 0 10000) = graphical-minimum-width
+  min-height : (integer-in 0 10000) = graphical-minimum-height
+  stretchable-width : any/c = #t
+  stretchable-height : any/c = #t
+The style argument indicates one or more of the following styles:
+
+  • 'border — gives the canvas a thin border
+
+  • 'control-border — gives the canvas a border that is like a text-field%
+    control
+
+  • 'combo — gives the canvas a combo button that is like a combo-field%
+    control; this style is intended for use with 'control-border and not with
+    'hscroll or 'vscroll
+
+  • 'hscroll — enables horizontal scrolling (initially visible but inactive)
+
+  • 'vscroll — enables vertical scrolling (initially visible but inactive)
+
+  • 'resize-corner — leaves room for a resize control at the canvas’s bottom
+    right when only one scrollbar is visible
+
+  • 'gl — creates a canvas for OpenGL drawing instead of normal dc<%> drawing;
+    call the get-gl-context method on the result of get-dc; this style is
+    usually combined with 'no-autoclear
+
+  • 'no-autoclear — prevents automatic erasing of the canvas by the windowing
+    system; see canvas<%> for information on canvas refresh
+
+  • 'transparent — the canvas is “erased” by the windowing system by letting
+    its parent show through; see canvas<%> for information on window refresh
+    and on the interaction of 'transparent and offscreen buffering; the result
+    is undefined if this flag is combined with 'no-autoclear
+
+  • 'no-focus — prevents the canvas from accepting the keyboard focus when the
+    canvas is clicked, or when the focus method is called
+
+  • 'deleted — creates the canvas as initially hidden and without affecting
+    parent’s geometry; the canvas can be made active later by calling parent’s
+    add-child method
+
+The 'hscroll and 'vscroll styles create a canvas with an initially inactive
+scrollbar. The scrollbars are activated with either init-manual-scrollbars or
+init-auto-scrollbars, and they can be hidden and re-shown with show-scrollbars.
+
+The paint-callback argument is called by the default on-paint method, using the
+canvas and the DC returned by get-dc as the argument.
+
+The label argument names the canvas for get-label, but it is not displayed with
+the canvas.
+
+The gl-config argument determines properties of an OpenGL context for this
+canvas, as obtained through the canvas’s drawing context. See also get-dc and
+get-gl-context in dc<%>.
+
+For information about the enabled argument, see window<%>. For information
+about the horiz-margin and vert-margin arguments, see subarea<%>. For
+information about the min-width, min-height, stretchable-width, and
+stretchable-height arguments, see area<%>.
+
+(send a-canvas get-scroll-page which) → (integer-in 1 1000000)
+  which : (one-of/c 'horizontal 'vertical)
+Get the current page step size of a manual scrollbar. The result is 0 if the
+scrollbar is not active or it is automatic.
+
+The which argument is either 'horizontal or 'vertical, indicating whether to
+get the page step size of the horizontal or vertical scrollbar, respectively.
+
+See also init-manual-scrollbars.
+
+(send a-canvas get-scroll-pos which) → (integer-in 0 1000000)
+  which : (one-of/c 'horizontal 'vertical)
+Gets the current value of a manual scrollbar. The result is always 0 if the
+scrollbar is not active or it is automatic.
+
+The which argument is either 'horizontal or 'vertical, indicating that the
+value of the horizontal or vertical scrollbar should be returned, respectively.
+
+See also init-manual-scrollbars.
+
+(send a-canvas get-scroll-range which) → (integer-in 0 1000000)
+  which : (one-of/c 'horizontal 'vertical)
+Gets the current maximum value of a manual scrollbar. The result is always 0 if
+the scrollbar is not active or it is automatic.
+
+The which argument is either 'horizontal or 'vertical, indicating whether to
+get the maximum value of the horizontal or vertical scrollbar, respectively.
+
+See also init-manual-scrollbars.
+
+(send a-canvas get-view-start)
+  →   (integer-in 0 10000)   (integer-in 0 10000)
+Get the location at which the visible portion of the canvas starts, based on
+the current values of the horizontal and vertical scrollbars if they are
+initialized as automatic (see init-auto-scrollbars). Combined with
+get-client-size, an application can efficiently redraw only the visible portion
+of the canvas. The values are in pixels.
+
+If the scrollbars are disabled or initialized as manual (see
+init-manual-scrollbars), the result is (values 0 0).
+
+(send a-canvas get-virtual-size)
+ → (value (integer-in 0 10000) (integer-in 0 10000))
+Gets the size in device units of the scrollable canvas area (as opposed to the
+client size, which is the area of the canvas currently visible). This is the
+same size as the client size (as returned by get-client-size) unless scrollbars
+are initialized as automatic (see init-auto-scrollbars).
+
+(send a-canvas init-auto-scrollbars   horiz-pixels        
+                                      vert-pixels         
+                                      h-value             
+                                      v-value)       →   void?
+  horiz-pixels : (or/c (integer-in 1 1000000) false/c)
+  vert-pixels : (or/c (integer-in 1 1000000) false/c)
+  h-value : (real-in 0.0 1.0)
+  v-value : (real-in 0.0 1.0)
+Enables and initializes automatic scrollbars for the canvas. A horizontal or
+vertical scrollbar can be activated only in a canvas that was created with the 
+'hscroll or 'vscroll style flag, respectively.
+
+With automatic scrollbars, the programmer specifies the desired virtual size of
+the canvas, and the scrollbars are automatically handled to allow the user to
+scroll around the virtual area. The scrollbars are not automatically hidden if
+they are unneeded; see show-scrollbars.
+
+See also init-manual-scrollbars for information about manual scrollbars. The
+horizontal and vertical scrollbars are always either both manual or both
+automatic, but they are independently enabled. Automatic scrollbars can be
+re-initialized as manual, and vice versa.
+
+If either horiz-pixels or vert-pixels is #f, the scrollbar is not enabled in
+the corresponding direction, and the canvas’s virtual size in that direction is
+the same as its client size.
+
+The h-value and v-value arguments specify the initial values of the scrollbars
+as a fraction of the scrollbar’s range. A 0.0 value initializes the scrollbar
+to its left/top, while a 1.0 value initializes the scrollbar to its right/
+bottom.
+
+See also on-scroll and get-virtual-size.
+
+(send a-canvas init-manual-scrollbars   h-length        
+                                        v-length        
+                                        h-page          
+                                        v-page          
+                                        h-value         
+                                        v-value)   →   void?
+  h-length : (or/c (integer-in 0 1000000) false/c)
+  v-length : (or/c (integer-in 0 1000000) false/c)
+  h-page : (integer-in 1 1000000)
+  v-page : (integer-in 1 1000000)
+  h-value : (integer-in 0 1000000)
+  v-value : (integer-in 0 1000000)
+Enables and initializes manual scrollbars for the canvas. A horizontal or
+vertical scrollbar can be activated only in a canvas that was created with the 
+'hscroll or 'vscroll style flag, respectively.
+
+With manual scrollbars, the programmer is responsible for managing all details
+of the scrollbars, and the scrollbar state has no effect on the canvas’s
+virtual size. Instead, the canvas’s virtual size is the same as its client
+size.
+
+See also init-auto-scrollbars for information about automatic scrollbars. The
+horizontal and vertical scrollbars are always either both manual or both
+automatic, but they are independently enabled. Automatic scrollbars can be
+re-initialized as manual, and vice versa.
+
+The h-length and v-length arguments specify the length of each scrollbar in
+scroll steps (i.e., the maximum value of each scrollbar). If either is #f, the
+scrollbar is disabled in the corresponding direction.
+
+The h-page and v-page arguments set the number of scrollbar steps in a page,
+i.e., the amount moved when pressing above or below the value indicator in the
+scrollbar control.
+
+The h-value and v-value arguments specify the initial values of the scrollbars.
+
+If h-value is greater than h-length or v-value is greater than v-length, an
+exn:fail:contract exception is raised. (The page step may be larger than the
+total size of a scrollbar.)
+
+See also on-scroll and get-virtual-size.
+
+(send a-canvas make-bitmap width height) → (is-a/c? bitmap%)
+  width : exact-positive-integer?
+  height : exact-positive-integer?
+Creates a bitmap that draws in a way that is the same as drawing to the canvas.
+See also make-screen-bitmap.
+
+(send a-canvas on-paint) → void?
+Overrides on-paint in canvas<%>.
+Calls the procedure supplied as the paint-callback argument when the canvas%
+was created.
+
+(send a-canvas on-scroll event) → void?
+  event : (is-a?/c scroll-event%)
+Called when the user changes one of the canvas’s scrollbars. A scroll-event%
+argument provides information about the scroll action.
+
+This method is called only when manual scrollbars are changed, not automatic
+scrollbars; for automatic scrollbars, the on-paint method is called, instead.
+
+(send a-canvas refresh-now  [ paint-proc               
+                              #:flush? flush?])   →   void?
+   paint-proc   :   ((is-a?/c dc<%>) . -> . any)
+                =   (lambda (dc) (send a-canvas on-paint))
+  flush? : any/c = #t
+Calls paint-proc with the canvas’s drawing context to immediately update the
+canvas (in contrast to refresh, which merely queues an update request to be
+handled at the windowing system’s discretion).
+
+Before paint-proc is called, flushing is disabled for the canvas. Also, the
+canvas is erased, unless the canvas has the 'no-autoclear style. After
+paint-proc returns, flushing is enabled, and if flush? is true, then flush is
+called immediately.
+
+(send a-canvas scroll h-value v-value) → void?
+  h-value : (or/c (real-in 0.0 1.0) false/c)
+  v-value : (or/c (real-in 0.0 1.0) false/c)
+Sets the values of automatic scrollbars. (This method has no effect on manual
+scrollbars.)
+
+If either argument is #f, the scrollbar value is not changed in the
+corresponding direction.
+
+The h-value and v-value arguments each specify a fraction of the scrollbar’s
+movement. A 0.0 value sets the scrollbar to its left/top, while a 1.0 value
+sets the scrollbar to its right/bottom. A 0.5 value sets the scrollbar to its
+middle. In general, if the canvas’s virtual size is v, its client size is c,
+and (> v c), then scrolling to p sets the view start to (floor (* p (- v c))).
+
+See also init-auto-scrollbars and get-view-start.
+
+(send a-canvas set-scroll-page which value) → void?
+  which : (one-of/c 'horizontal 'vertical)
+  value : (integer-in 1 1000000)
+Set the current page step size of a manual scrollbar. (This method has no
+effect on automatic scrollbars.)
+
+The which argument is either 'horizontal or 'vertical, indicating whether to
+set the page step size of the horizontal or vertical scrollbar, respectively.
+
+See also init-manual-scrollbars.
+
+(send a-canvas set-scroll-pos which value) → void?
+  which : (one-of/c 'horizontal 'vertical)
+  value : (integer-in 0 1000000)
+Sets the current value of a manual scrollbar. (This method has no effect on
+automatic scrollbars.)
+
+The which argument is either 'horizontal or 'vertical, indicating whether to
+set the value of the horizontal or vertical scrollbar set, respectively.
+
+The value of the canvas’s scrollbar can be changed by the user scrolling, and
+such changes do not go through this method; use on-scroll to monitor scrollbar
+value changes.
+
+See also init-manual-scrollbars and scroll.
+
+(send a-canvas set-scroll-range   which         
+                                  value)   →   void?
+  which : (one-of/c 'horizontal 'vertical)
+  value : (integer-in 0 1000000)
+Sets the current maximum value of a manual scrollbar. (This method has no
+effect on automatic scrollbars.)
+
+The which argument is either 'horizontal or 'vertical, indicating whether to
+set the maximum value of the horizontal or vertical scrollbar, respectively.
+
+See also init-manual-scrollbars.
+
+(send a-canvas show-scrollbars   show-horiz?        
+                                 show-vert?)   →   void?
+  show-horiz? : any/c
+  show-vert? : any/c
+Shows or hides the scrollbars as indicated by show-horiz? and show-vert?. If
+show-horiz? is true and the canvas was not created with the 'hscroll style, an
+exn:fail:contract exception is raised. Similarly, if show-vert? is true and the
+canvas was not created with the 'vscroll style, an exn:fail:contract exception
+is raised.
+
+The horizontal scrollbar can be shown only if the canvas was created with the
+'hscroll style, and the vertical scrollbar can be shown only if the canvas was
+created with the 'vscroll style. See also init-auto-scrollbars and
+init-manual-scrollbars.
+
+(send a-canvas swap-gl-buffers) → void?
+Calls swap-buffers on the result of get-gl-context for this canvas’s DC as
+returned by get-dc.
+
+The swap-buffers method acquires a re-entrant lock, so nested calls to
+with-gl-context on different threads or OpenGL contexts can block or deadlock.
+
+(send a-canvas with-gl-context thunk) → any
+  thunk : (-> any)
+Passes the given thunk to call-as-current of the result of get-gl-context for
+this canvas’s DC as returned by get-dc.
+
+The call-as-current method acquires a re-entrant lock, so nested calls to
+with-gl-context on different threads or OpenGL contexts can block or deadlock.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

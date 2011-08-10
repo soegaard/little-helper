@@ -1,0 +1,272 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+enable
+get-item-label
+get-item-plain-label
+get-number
+get-selection
+is-enabled?
+set-selection
+Inherited methods:
+from control<%>
+command
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-shown?
+on-drop-file
+on-focus
+on-move
+on-size
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+[...search manuals...]
+  top← prev  up  next → 
+
+radio-box% : class?
+  superclass: object%
+
+  extends:  control<%>
+
+A radio-box% control allows the user to select one of number of mutually
+exclusive items. The items are displayed as a vertical column or horizontal row
+of labelled radio buttons. Unlike a list-control<%>, the set of items in a
+radio-box% cannot be changed dynamically.
+
+Whenever the user changes the selected radio button, the radio box’s callback
+procedure is invoked. A callback procedure is provided as an initialization
+argument when each radio box is created.
+
+(new radio-box%    [label label]                              
+                   [choices choices]                          
+                   [parent parent]                            
+                 [ [callback callback]                        
+                   [style style]                              
+                   [selection selection]                      
+                   [font font]                                
+                   [enabled enabled]                          
+                   [vert-margin vert-margin]                  
+                   [horiz-margin horiz-margin]                
+                   [min-width min-width]                      
+                   [min-height min-height]                    
+                   [stretchable-width stretchable-width]      
+                   [stretchable-height stretchable-height]])  
+ → (is-a?/c radio-box%)
+  label : (or/c label-string? false/c)
+  choices : (or/c (listof label-string?) (listof (is-a?/c bitmap%)))
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+   callback   :   ((is-a?/c radio-box%) (is-a?/c control-event%)
+                   . -> . any)
+              =   (lambda (r e) (void))
+               (listof (one-of/c 'horizontal 'vertical
+   style   :                     'vertical-label 'horizontal-label
+                                 'deleted))
+           =   '(vertical)
+  selection : (or/c exact-nonnegative-integer? #f) = 0
+  font : (is-a?/c font%) = normal-control-font
+  enabled : any/c = #t
+  vert-margin : (integer-in 0 1000) = 2
+  horiz-margin : (integer-in 0 1000) = 2
+  min-width : (integer-in 0 10000) = graphical-minimum-width
+  min-height : (integer-in 0 10000) = graphical-minimum-height
+  stretchable-width : any/c = #f
+  stretchable-height : any/c = #f
+Creates a radio button set with string or bitmap labels. The choices list
+specifies the radio button labels; the list of choices must be homogeneous,
+either all strings or all bitmaps.
+
+If & occurs in label, it is specially parsed as for button%.
+
+Each string in choices can also contain a &, which creates a mnemonic for
+clicking the corresponding radio button. As for label, a && is converted to a
+&.
+
+If choices is a list of bitmaps, and if a bitmap has a mask (see
+get-loaded-mask in bitmap%) that is the same size as the bitmap, then the mask
+is used for the label. Modifying a bitmap while it is used as a label has an
+unspecified effect on the displayed label.
+
+If label is a string, it is used as the label for the radio box. Otherwise, the
+radio box does not display its label.
+
+The callback procedure is called (with the event type 'radio-box) when the user
+changes the radio button selection.
+
+The style argument must include either 'vertical for a collection of radio
+buttons vertically arranged, or 'horizontal for a horizontal arrangement. If
+style includes 'vertical-label, then the radio box is created with a label
+above the control; if style does not include 'vertical-label (and optionally
+includes 'horizontal-label), then the label is created to the left of the radio
+box. If style includes 'deleted, then the radio box is created as hidden, and
+it does not affect its parent’s geometry; the radio box can be made active
+later by calling parent’s add-child method.
+
+By default, the first radio button is initially selected. If selection is
+positive or #f, it is passed to set-selection to set the initial radio button
+selection.
+
+The font argument determines the font for the control. For information about
+the enabled argument, see window<%>. For information about the horiz-margin and
+vert-margin arguments, see subarea<%>. For information about the min-width,
+min-height, stretchable-width, and stretchable-height arguments, see area<%>.
+
+(send a-radio-box enable enable?) → void?
+  enable? : any/c
+(send a-radio-box enable n enable?) → void?
+  n : exact-nonnegative-integer?
+  enable? : any/c
+Overrides enable in window<%>.
+If a single argument is provided, the entire radio box is enabled or disabled.
+
+If two arguments are provided, then if enable? is #f, the nth radio button is
+disabled, otherwise it is enabled (assuming the entire radio box is enabled).
+Radio buttons are numbered from 0. If n is equal to or larger than the number
+of radio buttons in the radio box, an exn:fail:contract exception is raised.
+
+(send a-radio-box get-item-label n) → string?
+  n : exact-nonnegative-integer?
+Gets the label of a radio button by position. Radio buttons are numbered from
+0. If n is equal to or larger than the number of radio buttons in the radio
+box, an exn:fail:contract exception is raised.
+
+(send a-radio-box get-item-plain-label n) → string?
+  n : exact-nonnegative-integer?
+Like get-item-label, except that the label must be a string and &s in the label
+are removed.
+
+(send a-radio-box get-number) → exact-nonnegative-integer?
+Returns the number of radio buttons in the radio box.
+
+(send a-radio-box get-selection)
+ → (or/c exact-nonnegative-integer? #f)
+Gets the position of the selected radio button, returning #f if no button is
+selected. Radio buttons are numbered from 0.
+
+(send a-radio-box is-enabled?) → boolean?
+(send a-radio-box is-enabled? n) → boolean?
+  n : exact-nonnegative-integer?
+Overrides is-enabled? in window<%>.
+If no arguments are provided, the enable state of the entire radio box is
+reported.
+
+Otherwise, returns #f if nth radio button is disabled (independent of disabling
+the entire radio box), #t otherwise. Radio buttons are numbered from 0. If n is
+equal to or larger than the number of radio buttons in the radio box, an
+exn:fail:contract exception is raised.
+
+(send a-radio-box set-selection n) → void?
+  n : (or/c exact-nonnegative-integer? #f)
+Sets the selected radio button by position, or deselects all radio buttons if n
+is #f. (The control’s callback procedure is not invoked.) Radio buttons are
+numbered from 0. If n is equal to or larger than the number of radio buttons in
+the radio box, an exn:fail:contract exception is raised.
+
+A radio box’s selection can be changed by the user clicking the control, and
+such changes do not go through this method; use the control callback procedure
+(provided as an initialization argument) to monitor selection changes.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

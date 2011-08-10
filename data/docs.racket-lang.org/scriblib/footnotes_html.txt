@@ -1,0 +1,38 @@
+▼  Scriblib: Extra Scribble Libraries
+1  Examples Using the GUI Toolbox
+2  Figures
+3  Bibliographies
+4  Bib Te X Bibliographies
+5  Footnotes
+6  Conditional Content
+On this page:
+note
+define-footnote
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Footnotes
+
+ (require scriblib/footnote)
+
+(note pre-content ...) → element?
+  pre-content : pre-content?
+Creates a margin note for HTML and a footnote for Latex/PDF output.
+
+(define-footnote footnote-id footnote-part-id)
+Binds footnote-id to a form like note that generates a footnote in HTML output
+as well as Latex/PDF output. To trigger the HTML output of the footnotes that
+are registered through footnote-id, the function bound to footnote-part-id must
+be called at a position that corresponds the bottom of the HTML page. (The
+generated section will not show a title or appear in a table of contents; it
+will look like a footnote area.)
+
+Beware that any content passed to footnote-id will occur twice in at least an
+intermediate form of the document, and perhaps also in the rendered form of the
+document. Consequently, the content passed to footnote-id should not bind link
+targets or include other one-time declarations.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

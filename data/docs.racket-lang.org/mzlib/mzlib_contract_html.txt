@@ -1,0 +1,320 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+define/ contract
+box/ c
+vectorof
+vector/ c
+struct/ c
+build-flat-contract
+->
+->*
+opt->
+opt->*
+->d
+->d*
+->r
+->pp
+->pp-rest
+case->
+object-contract
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/contract)
+
+This library is designed as a backwards compatible library for old uses of
+contracts. It should not be used for new libraries; use racket/contract
+instead.
+
+The main differences: the function contract syntax is more regular and function
+contracts now support keywords, and union is now or/c.
+
+The mzlib/contract library re-exports many bindings from racket/contract:
+
+   </c                             flat-rec-contract
+
+   <=/c                            guilty-party
+
+   =/c                             integer-in
+
+   >/c                             list/c
+
+   >=/c                            listof
+
+   and/c                           make-none/c
+
+   any                             make-proj-contract
+
+   any/c                           natural-number/c
+
+   between/c                       none/c
+
+   box-immutable/c                 not/c
+
+   build-compound-type-name        one-of/c
+
+   coerce-contract                 or/c
+
+   cons/c                          parameter/c
+
+   contract                        printable/c
+
+   contract-first-order-passes?    promise/c
+
+   contract-violation->string      provide/contract
+
+   contract?                       raise-contract-error
+
+   define-contract-struct          real-in
+
+   false/c                         recursive-contract
+
+   flat-contract                   string/len
+
+   flat-contract-predicate         symbols
+
+   flat-contract?                  syntax/c
+
+   flat-murec-contract             vector-immutable/c
+
+   flat-named-contract             vector-immutableof
+
+
+It also provides the old version of the following contracts:
+
+(define/contract id contract-expr init-value-expr)
+Attaches the contract contract-expr to init-value-expr and binds that to id.
+
+The define/contract form treats individual definitions as units of blame. The
+definition itself is responsible for positive (co-variant) positions of the
+contract and each reference to id (including those in the initial value
+expression) must meet the negative positions of the contract.
+
+Error messages with define/contract are not as clear as those provided by
+provide/contract, because define/contract cannot detect the name of the
+definition where the reference to the defined variable occurs. Instead, it uses
+the source location of the reference to the variable as the name of that
+definition.
+
+(box/c c) → flat-contract?
+  c : flat-contract?
+Returns a flat contract that recognizes boxes. The content of the box must
+match c.
+
+(vectorof c) → flat-contract?
+  c : flat-contract?
+Accepts a flat contract and returns a flat contract that checks for vectors
+whose elements match the original contract.
+
+(vector/c c ...) → flat-contract?
+  c : flat-contract?
+Accepts any number of flat contracts and returns a flat contract that
+recognizes vectors. The number of elements in the vector must match the number
+of arguments supplied to vector/c, and each element of the vector must match
+the corresponding flat contract.
+
+(struct/c struct-id flat-contract-expr ...)
+Produces a flat contract that recognizes instances of the structure type named
+by struct-id, and whose field values match the flat contracts produced by the
+flat-contract-exprs.
+
+(build-flat-contract name predicate) → flat-contract?
+  name : symbol?
+  predicate : (-> any/c any)
+Builds a flat contract out of predicate, giving it the name name. Nowadays,
+just using predicate directly is preferred.
+
+(-> contract-dom-expr ... any)
+(-> contract-dom-expr ... contract-rng-expr)
+This is a restricted form of racket/contract’s -> contract that does not handle
+keyword arguments or multiple value results.
+
+(->* (contract-dom-expr ...) ->*rng)
+(->* (contract-dom-expr ...) contract-rest-expr ->*rng)
+ 
+->*rng   =   (contract-rng-expr ...)
+         |   any
+The ->* form matches up to racket/contract’s -> and ->*, according to the
+following rules; each equation on the left refers to a mzlib/contract
+combinator; on the right are the racket/contract equivalents.
+
+    (->* (contract-dom-expr ...) any) =
+    (-> contract-dom-expr ... any)
+
+    (->* (contract-dom-expr ...) (contract-rng-expr ...)) =
+    (-> contract-dom-expr ... (values contract-rng-expr))
+
+    (->* (contract-expr ...) contract-rest-expr any) =
+    (->* (contract-expr ...) #:rest contract-rest-expr any)
+
+    (->* (contract-expr ...) contract-rest-expr (contract-rng-expr ...)) =
+    (->* (contract-expr ...)
+         #:rest contract-rest-expr
+         (values contract-rng-expr ...))
+
+(opt-> (contract-req-expr ...) (contact-opt-expr ...) any)
+(opt-> (contract-req-expr ...) (contact-opt-expr ...) contract-rng-expr)
+The opt-> form is a simplified verison of racket/contract’s ->* and appearances
+of opt-> can be simply replaced with ->*.
+
+(opt->* (contract-req-expr ...) (contact-opt-expr ...) any)
+(opt->* (contract-req-expr ...) (contact-opt-expr ...) (contract-rng-expr ...))
+The opt->* form matches up to racket/contract’s ->*, according to the following
+rules; each equation on the left refers to a mzlib/contract combinator; on the
+right are the racket/contract equivalents.
+
+    (opt->* (contract-req-expr ...) (contract-opt-expr ...) any) =
+    (->* (contract-req-expr ...) (contract-opt-expr ...) any)
+
+    (opt->* (contract-req-expr ...)
+            (contract-opt-expr ...)
+            (contract-rng-expr ...)) =
+    (->* (contract-req-expr ...)
+         (contract-opt-expr ...)
+         (values contract-rng-expr ...))
+
+(->d contract-dom-expr ... contract-rng-fun-expr)
+The ->d contract constructor is just like ->, except that the range position is
+expected to be a function that accepts the actual arguments passed to the
+function, and returns a contract for the range. For example, this is one
+contract for sqrt:
+
+    (->d real?
+         (λ (in)
+           (and/c real?
+                  (λ (out)
+                    (< (abs (- (sqr out) in))
+                       0.01)))))
+
+It says that the input must be a real number, and so must the result, and that
+the square of the result is within 0.01 of input.
+
+(->d* (contract-dom-expr ...) contract-rng-fun-expr)
+(->d* (contract-dom-expr ...) contract-rest-expr contract-rng-fun-expr)
+The ->d* contract constructor is a generalization of ->d to support multiple
+values and rest arguments.
+
+In the two sub-expression case, the first sequence of contracts are contracts
+on the domain of the function and the second subexpression is expected to
+evaluate to a function that accepts as many arguments as there are expressions
+in the first position. It should return multiple values: one contract for each
+result of the function.
+
+In the three sub-expression case, the first and last subexpressions are just
+like the sub-expressions in the two sub-expression case; the middle
+sub-expression si expected to evaluate to a contract on the rest argument.
+
+(->r ([dom-x contract-dom-expr] ...) rng)
+(->r ([dom-x contract-dom-expr] ...) rest-x contract-rest-expr rng)
+ 
+rng   =   any
+      |   (values contract-expr ...)
+      |   contract-expr
+The ->r form is a simplified version of racket/contract’s ->i, where each
+contract-dom-expr is parameterized over all of the dom-x variables (and does
+lax checking; see ->d for details).
+
+(->pp ([dom-x contract-dom-expr] ...) pre-cond-expr any)
+(->pp ([dom-x contract-dom-expr] ...)
+      pre-cond-expr
+      (values [rng-x contract-rng-expr] ...)
+      post-cond-expr)
+(->pp ([dom-x contract-dom-expr] ...)
+      pre-cond-expr
+      contract-rng-expr
+      rng-x
+      post-cond-expr)
+The ->pp form, like ->r is a simplified version of racket/contract’s ->i, where
+each contract-dom-expr is parameterized over all of the dom-x variables (and
+does lax checking; see racket/contract’s ->d for details). Unlike ->r, it also
+has pre- and post-condition expressions; these expressions are also implicitly
+parameterized over all of the dom-x variables and the post-condition is also
+paramterized over rng-x, which is bound to the result of the function.
+
+(->pp-rest ([dom-x contract-dom-expr] ...)
+ rest-x rest-contract-expr pre-cond-expr any)
+(->pp-rest ([dom-x contract-dom-expr] ...)
+           rest-x rest-contract-expr
+           pre-cond-expr
+           (values [rng-x contract-rng-expr] ...)
+           post-cond-expr)
+(->pp-rest ([dom-x contract-dom-expr] ...)
+           rest-x rest-contract-expr
+           pre-cond-expr
+           contract-rng-expr
+           rng-x
+           post-cond-expr)
+Like ->pp, but with an additional contract for the rest arguments of the
+function.
+
+(case-> mzlib/contract-arrow-contract-expr ...)
+Builds a contract analogous to case-lambda, where each case comes from one of
+the contract expression arguments (tried in order).
+
+(object-contract [id mzlib/contract-arrow-contract-expr] ...)
+Builds a contract for objects where each id is expected to be a method on the
+object living up to the corresponding contract
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

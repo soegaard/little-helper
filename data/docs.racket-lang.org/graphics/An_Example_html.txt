@@ -1,0 +1,38 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+[...search manuals...]
+  top← prev  up  next → 
+
+7 An Example
+
+    (open-graphics)
+    ; nothing appears to happen, but the library is initialized...
+     
+    (define w (open-viewport "practice" 300 300))
+    ; viewport window appears
+     
+    ((draw-line w) (make-posn 30 30) (make-posn 100 100))
+    ; line appears
+     
+    (close-viewport w)
+    ; viewport disappears
+     
+    (close-graphics)
+    ; again, nothing appears to happen, but
+    ; unclosed viewports (if any) would disappear
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

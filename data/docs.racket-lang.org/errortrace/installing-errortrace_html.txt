@@ -1,0 +1,28 @@
+▼  Errortrace: Debugging and Profiling
+1  Quick Instructions
+2  Installing Errortrace
+3  Using Errortrace
+4  Errortrace Library
+5  Re-using Errortrace Stack Tracing
+6  Errortrace Key
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Installing Errortrace
+
+Invoking the errortrace module sets the compilation handler to instrument
+Racket source code. It also sets the error display handler to report source
+information for an exception, and it sets the use-compiled-file-paths parameter
+to trigger the use of Errortrace-specific ".zo" files.
+
+NOTE: errortrace has no effect on code loaded as compiled byte code (i.e., from
+a ".zo" file) or native code (i.e., from a ".dll", ".so" or ".dylib" file). You
+can use the --mode errortrace flag to setup-plt to create ".zo" files with
+Errortrace information.
+
+Explicitly requiring errortrace within a module is generally a bad idea, since
+errortrace sets various parameters.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

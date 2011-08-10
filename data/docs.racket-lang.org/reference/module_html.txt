@@ -1,0 +1,179 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+module
+#%module-begin
+#%plain-module-begin
+[...search manuals...]
+  top← prev  up  next → 
+
+2.1 Modules: module, ...
+
+            +The module Form in The Racket Guide introduces module.
+
+(module id module-path form ...)
+Declares a top-level module. If the current-module-declare-name parameter is
+set, the parameter value is used for the module name and id is ignored,
+otherwise (quote id) is the name of the declared module.
+
+            +For a module-like form for use within modules and other contexts,
+            see define-package.
+
+The module-path form must be as for require, and it supplies the initial
+bindings for the body forms. That is, it is treated like a (require
+module-path) prefix before the forms, except that the bindings introduced by
+module-path can be shadowed by definitions and requires in the module body
+forms.
+
+If a single form is provided, then it is partially expanded in a module-begin
+context. If the expansion leads to #%plain-module-begin, then the body of the #
+%plain-module-begin is the body of the module. If partial expansion leads to
+any other primitive form, then the form is wrapped with #%module-begin using
+the lexical context of the module body; this identifier must be bound by the
+initial module-path import, and its expansion must produce a #
+%plain-module-begin to supply the module body. Finally, if multiple forms are
+provided, they are wrapped with #%module-begin, as in the case where a single
+form does not expand to #%plain-module-begin.
+
+After such wrapping, if any, and before any expansion, an 
+'enclosing-module-name property is attached to the #%module-begin syntax object
+(see Syntax Object Properties); the property’s value is a symbol corresponding
+to id.
+
+Each form is partially expanded (see Partial Expansion) in a module context.
+Further action depends on the shape of the form:
+
+  • If it is a begin form, the sub-forms are flattened out into the module’s
+    body and immediately processed in place of the begin.
+
+  • If it is a define-syntaxes or define-values-for-syntax form, then the
+    right-hand side is evaluated (in phase 1), and the binding is immediately
+    installed for further partial expansion within the module. Evaluation of
+    the right-hand side is parameterized to set current-namespace as in
+    let-syntax.
+
+  • If the form is a require form, bindings are introduced immediately, and the
+    imported modules are instantiated or visited as appropriate.
+
+  • If the form is a provide form, then it is recorded for processing after the
+    rest of the body.
+
+  • If the form is a define-values form, then the binding is installed
+    immediately, but the right-hand expression is not expanded further.
+
+  • Similarly, if the form is an expression, it is not expanded further.
+
+After all forms have been partially expanded this way, then the remaining
+expression forms (including those on the right-hand side of a definition) are
+expanded in an expression context.
+
+The scope of all imported identifiers covers the entire module body, as does
+the scope of any identifier defined within the module body. The ordering of
+syntax definitions does not affect the scope of the syntax names; a transformer
+for A can produce expressions containing B, while the transformer for B
+produces expressions containing A, regardless of the order of declarations for
+A and B. However, a syntactic form that produces syntax definitions must be
+defined before it is used.
+
+No identifier can be imported or defined more than once at any phase level.
+Every exported identifier must be imported or defined. No expression can refer
+to a top-level variable.
+
+The evaluation of a module form does not evaluate the expressions in the body
+of the module. Evaluation merely declares a module, whose full name depends
+both on id or (current-module-declare-name).
+
+The module body is executed only when the module is explicitly instantiated via
+require or dynamic-require. On invocation, expressions and definitions are
+evaluated in order as they appear within the module. Each evaluation of an
+expression or definition is wrapped with a continuation prompt (see
+call-with-continuation-prompt) for the default continuation and using the
+default prompt handler.
+
+Accessing a module-level variable before it is defined signals a run-time
+error, just like accessing an undefined global variable. If a module (in its
+fully expanded form) does not contain a set! for an identifier that defined
+within the module, then the identifier is a constant after it is defined; its
+value cannot be changed afterward, not even through reflective mechanisms. The
+compile-enforce-module-constants parameter, however, can be used to disable
+enforcement of constants.
+
+When a syntax object representing a module form has a 'module-language syntax
+property attached, and when the property value is a vector of three elements
+where the first is a module path (in the sense of module-path?) and the second
+is a symbol, then the property value is preserved in the corresponding compiled
+and/or declared module. The third component of the vector should be printable
+and readable, so that it can be preserved in marshaled bytecode. The racket/
+base and racket languages attach '#(racket/language-info get-info #f) to a
+module form. See also module-compiled-language-info, module->language-info, and
+racket/language-info.
+
+See also Modules and Module-Level Variables and Module Phases and Visits.
+
+Example:
+
+    > (module duck racket/base
+        (provide num-eggs quack)
+        (define num-eggs 2)
+        (define (quack n)
+          (unless (zero? n)
+            (printf "quack\n")
+            (quack (sub1 n)))))
+
+
+(#%module-begin form ...)
+Legal only in a module begin context, and handled by the module form.
+
+The #%module-begin form of racket/base wraps every top-level expression to
+print non-#<void> results using current-print.
+
+(#%plain-module-begin form ...)
+Legal only in a module begin context, and handled by the module form.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,247 @@
+Title
+
+Vicinity
+
+Author
+
+Aubrey Jaffer
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access previous messages via the
+archive of the mailing list.
+
+  • Received: 2004/12/30
+  • Draft: 2004/12/30 - 2005/02/27
+  • Final: 2005/03/08
+
+Abstract
+
+A vicinity is a descriptor for a place in the file system. Vicinities hide from
+the programmer the concepts of host, volume, directory, and version. Vicinities
+express only the concept of a file environment where a file name can be
+resolved to a file in a system independent manner.
+
+All of these procedures are file-system dependent. Use of these vicinity
+procedures can make programs file-system independent.
+
+Rationale
+
+Most computer languages expose the syntax of pathnames of the host file-system
+when dealing with files. But a great many programs require read access to data,
+text, or library files they were installed with.
+
+Some programs use literal strings to locate accessory files, breaking on
+installations with different destinations. More savvy coders will construct
+pathnames from environment variables or compile-time definitions.
+
+In most languages, programs intended for portability must condition all
+manipulations of pathnames to the syntax and capabilities of the host
+file-system. Inconsistent conditioning is a common cause of porting failures.
+
+Common-Lisp attacks the general problem of naming files anywhere in any file
+system. It has a six-component pathname datatype to represent names in the most
+complicated file-system imaginable; names in simpler file systems use fewer
+components.
+
+In this arrangement, portable file-handling programs must be capable of
+handling pathnames with 6 components, and those employing fewer. But which
+component will be used is not obvious. Is a ".txt" filename suffix a type or
+part of the name?
+
+Vicinities attack a smaller problem, that of describing pathnames in 5
+predefined locations, and their sub-vicinities. Those predefined locations
+cover the usual areas for ancillary and configuration files used by Scheme
+implementations and programs. The program-vicinity is particularly useful as it
+is the directory where the currently loading file is located. This is captured
+by redefining load to fluid-let a top-level variable with its argument.
+
+The make-vicinity and pathname->vicinity procedures provide means to create new
+base vicinities. Base vicinities should generally be absolute pathnames.
+
+Vicinities need not be tied to individual files in a file system. The files
+named could be members of a zip archive, as Java does. Vicinities can even be
+used on flat file systems (which have no directory structure) by having the
+vicinity express constraints on the file name. On most systems a vicinity is a
+string.
+
+vicinity procedures are supported by all implementations in SLIB.
+
+Specification
+
+Function: program-vicinity
+    Returns the vicinity of the currently loading Scheme code. For an
+    interpreter this would be the directory containing source code. For a
+    compiled system (with multiple files) this would be the directory where the
+    object or executable files are. If no file is currently loading, then the
+    result is undefined. Warning: program-vicinity can return incorrect values
+    if your program escapes back into a load continuation.
+
+Function: library-vicinity
+    Returns the vicinity of the shared Scheme library.
+
+Function: implementation-vicinity
+    Returns the vicinity of the underlying Scheme implementation. This vicinity
+    will likely contain startup code and messages and a compiler.
+
+Function: user-vicinity
+    Returns the vicinity of the current directory of the user. On most systems
+    this is `""' (the empty string).
+
+Function: home-vicinity
+    Returns the vicinity of the user's HOME directory, the directory which
+    typically contains files which customize a computer environment for a user.
+    If scheme is running without a user (eg. a daemon) or if this concept is
+    meaningless for the platform, then home-vicinity returns #f.
+
+Function: in-vicinity vicinity filename
+    Returns a filename suitable for use by load, open-input-file,
+    open-output-file, etc. The returned filename is filename in vicinity.
+    in-vicinity should allow filename to override vicinity when filename is an
+    absolute pathname and vicinity is equal to the value of (user-vicinity).
+    The behavior of in-vicinity when filename is absolute and vicinity is not
+    equal to the value of (user-vicinity) is unspecified. For most systems
+    in-vicinity can be string-append.
+
+Function: sub-vicinity vicinity name
+    Returns the vicinity of vicinity restricted to name. This is used for large
+    systems where names of files in subsystems could conflict. On systems with
+    directory structure sub-vicinity will return a pathname of the subdirectory
+    name of vicinity.
+
+Function: make-vicinity dirpath
+    Returns dirpath as a vicinity for use as first argument to in-vicinity.
+
+Function: pathname->vicinity path
+    Returns the vicinity containing path.
+
+    (pathname->vicinity "/usr/local/lib/scm/Link.scm")
+                        => "/usr/local/lib/scm/"
+
+
+Function: vicinity:suffix? chr
+    Returns the `#t' if chr is a vicinity suffix character; and #f otherwise.
+    Typical vicinity suffixes are `/', `:', and `\',
+
+Implementation
+
+This code is taken from slib/Template.scm and slib/require.scm
+
+;;@ (implementation-vicinity) should be defined to be the pathname of
+;;; the directory where any auxiliary files to your Scheme
+;;; implementation reside.
+(define (implementation-vicinity)
+  (case (software-type)
+    ((UNIX)     "/usr/local/src/scheme/")
+    ((VMS)      "scheme$src:")
+    ((MS-DOS)   "C:\\scheme\\")))
+
+;;@ (library-vicinity) should be defined to be the pathname of the
+;;; directory where files of Scheme library functions reside.
+(define library-vicinity
+  (let ((library-path
+         (or
+          ;; Use this getenv if your implementation supports it.
+          (getenv "SCHEME_LIBRARY_PATH")
+          ;; Use this path if your scheme does not support GETENV
+          ;; or if SCHEME_LIBRARY_PATH is not set.
+          (case (software-type)
+            ((UNIX) "/usr/local/lib/slib/")
+            ((VMS) "lib$scheme:")
+            ((MS-DOS) "C:\\SLIB\\")
+            (else "")))))
+    (lambda () library-path)))
+
+;;@ (home-vicinity) should return the vicinity of the user's HOME
+;;; directory, the directory which typically contains files which
+;;; customize a computer environment for a user.
+(define (home-vicinity)
+  (let ((home (getenv "HOME")))
+    (and home
+         (case (software-type)
+           ((UNIX COHERENT MS-DOS)      ;V7 unix has a / on HOME
+            (if (eqv? #\/ (string-ref home (+ -1 (string-length home))))
+                home
+                (string-append home "/")))
+           (else home)))))
+;@
+(define in-vicinity string-append)
+;@
+(define (user-vicinity)
+  (case (software-type)
+    ((VMS)      "[.]")
+    (else       "")))
+;@
+(define vicinity:suffix?
+  (let ((suffi
+         (case (software-type)
+           ((AMIGA)                             '(#\: #\/))
+           ((MACOS THINKC)                      '(#\:))
+           ((MS-DOS WINDOWS ATARIST OS/2)       '(#\\ #\/))
+           ((NOSVE)                             '(#\: #\.))
+           ((UNIX COHERENT PLAN9)               '(#\/))
+           ((VMS)                               '(#\: #\]))
+           (else
+            (slib:warn "require.scm" 'unknown 'software-type (software-type))
+            "/"))))
+    (lambda (chr) (and (memv chr suffi) #t))))
+;@
+(define (pathname->vicinity pathname)
+  (let loop ((i (- (string-length pathname) 1)))
+    (cond ((negative? i) "")
+          ((vicinity:suffix? (string-ref pathname i))
+           (substring pathname 0 (+ i 1)))
+          (else (loop (- i 1))))))
+(define (program-vicinity)
+  (if *load-pathname*
+      (pathname->vicinity *load-pathname*)
+      (slib:error 'program-vicinity "called while not within load")))
+;@
+(define sub-vicinity
+  (case (software-type)
+    ((VMS) (lambda
+               (vic name)
+             (let ((l (string-length vic)))
+               (if (or (zero? (string-length vic))
+                       (not (char=? #\] (string-ref vic (- l 1)))))
+                   (string-append vic "[" name "]")
+                   (string-append (substring vic 0 (- l 1))
+                                  "." name "]")))))
+    (else (let ((*vicinity-suffix*
+                 (case (software-type)
+                   ((NOSVE) ".")
+                   ((MACOS THINKC) ":")
+                   ((MS-DOS WINDOWS ATARIST OS/2) "\\")
+                   ((UNIX COHERENT PLAN9 AMIGA) "/"))))
+            (lambda (vic name)
+              (string-append vic name *vicinity-suffix*))))))
+;@
+(define (make-vicinity pathname) pathname)
+
+Copyright
+
+Copyright (C) Aubrey Jaffer (2004). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: David Van Horn
+Last modified: Thu Dec 30 23:48:06 EST 2004

@@ -1,0 +1,63 @@
+►  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+▼ 7  Hierarchical List Control
+7.1  hierarchical-list%
+7.2  hierarchical-list-item<%>
+7.3  hierarchical-list-compound-item<%>
+7.4  Snips in a hierarchical-list% Instance
+On this page:
+hierarchical-item-snip%
+get-item
+hierarchical-list-snip%
+get-item
+get-content-buffer
+[...search manuals...]
+  top← prev  up  next → 
+
+7.4 Snips in a hierarchical-list% Instance
+
+The find-snip in text% method of the editor in a hierarchical-list% return
+instances of hierarchical-item-snip% and hierarchical-list-snip%.
+
+hierarchical-item-snip% : class?
+  superclass: editor-snip%
+
+
+
+    (send a-hierarchical-item-snip get-item)
+     → (is-a?/c hierarchical-list-item<%>)
+    Returns the hierarchical-list-item<%> corresponding to the snip.
+
+hierarchical-list-snip% : class?
+  superclass: editor-snip%
+
+
+
+    (send a-hierarchical-list-snip get-item)
+     → (is-a?/c hierarchical-list-compound-item<%>)
+    Returns the hierarchical-list-compound-item<%> corresponding to the snip.
+
+    (send a-hierarchical-list-snip get-content-buffer)
+     → (is-a?/c text%)
+    Returns the text% that contains the sub-item snips.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

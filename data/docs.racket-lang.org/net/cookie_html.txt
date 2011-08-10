@@ -1,0 +1,215 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 20  Cookie: HTTP Client Storage
+20.1  Functions
+20.2  Examples
+20.3  Cookie Unit
+20.4  Cookie Signature
+On this page:
+20.1 Functions
+cookie?
+valid-domain?
+cookie-name?
+cookie-value?
+set-cookie
+cookie: add-comment
+cookie: add-domain
+cookie: add-max-age
+cookie: add-path
+cookie: secure
+cookie: version
+print-cookie
+get-cookie
+get-cookie/ single
+cookie-error
+20.2 Examples
+20.2.1 Creating a cookie
+20.2.2 Parsing a cookie
+20.3 Cookie Unit
+cookie@
+20.4 Cookie Signature
+cookie^
+[...search manuals...]
+  top← prev  up  next → 
+
+20 Cookie: HTTP Client Storage
+
+ (require net/cookie)
+The net/cookie library provides utilities for using cookies as specified in RFC
+2109 [RFC2109].
+
+20.1 Functions
+
+(cookie? v) → boolean?
+  v : any/c
+Returns #t if v represents a cookie, #f otherwise.
+
+(valid-domain? v) → boolean?
+  v : any/c
+Returns #t if v represents a valid domain, #f otherwise.
+
+(cookie-name? v) → boolean?
+  v : any/c
+Returns #t if v is a valid cookie name string, #f otherwise.
+
+(cookie-value? v) → boolean?
+  v : any/c
+Returns #t if v is a valid cookie value string, #f otherwise.
+
+(set-cookie name value) → cookie?
+  name : cookie-name?
+  value : cookie-value?
+Creates a new cookie, with default values for required fields.
+
+(cookie:add-comment cookie comment) → cookie?
+  cookie : cookie?
+  comment : string?
+Modifies cookie with a comment, and also returns cookie.
+
+(cookie:add-domain cookie domain) → cookie?
+  cookie : cookie?
+  domain : valid-domain?
+Modifies cookie with a domain, and also returns cookie. The domain must match a
+prefix of the request URI.
+
+(cookie:add-max-age cookie seconds) → cookie?
+  cookie : cookie?
+  seconds : exact-nonnegative-integer?
+Modifies cookie with a maximum age, and also returns cookie. The seconds
+argument is number of seconds that a client should retain the cookie.
+
+(cookie:add-path cookie path) → cookie?
+  cookie : cookie?
+  path : valid-path?
+Modifies cookie with a path, and also returns cookie.
+
+(cookie:secure cookie secure) → cookie?
+  cookie : cookie?
+  secure : boolean?
+Modifies cookie with a security flag, and also returns cookie.
+
+(cookie:version cookie version) → cookie?
+  cookie : cookie?
+  version : exact-nonnegative-integer?
+Modifies cookie with a version, and also returns cookie. The default is the
+only known incarnation of HTTP cookies: 1.
+
+(print-cookie cookie) → string?
+  cookie : cookie?
+Prints cookie to a string. Empty fields do not appear in the output except when
+there is a required default.
+
+(get-cookie name cookies) → (listof cookie-value?)
+  name : cookie-name?
+  cookies : string?
+Returns a list with all the values (strings) associated with name.
+
+The method used to obtain the "Cookie" header depends on the web server. It may
+be an environment variable (CGI), or you may have to read it from the input
+port (FastCGI), or maybe it comes in an initial-request structure, etc. The
+get-cookie and get-cookie/single procedure can be used to extract fields from a
+"Cookie" field value.
+
+(get-cookie/single name cookies) → (or/c cookie-value? false/c)
+  name : cookie-name?
+  cookies : string?
+Like get-cookie, but returns the just first value string associated to name, or
+#f if no association is found.
+
+(struct   cookie-error exn:fail ()
+          #:extra-constructor-name make-cookie-error)
+Raised for errors when handling cookies.
+
+20.2 Examples
+
+20.2.1 Creating a cookie
+
+    (let ((c (cookie:add-max-age
+              (cookie:add-path
+               (set-cookie "foo" "bar")
+               "/servlets")
+              3600)))
+      (print-cookie c))
+
+Produces
+
+    "foo=bar; Max-Age=3600; Path=/servlets; Version=1"
+
+To use this output in a “regular” CGI, instead of the last line use:
+
+    (display (format "Set-Cookie: ~a" (print-cookie c)))
+
+and to use with the PLT Web Server, use:
+
+    (make-response/full code message (current-seconds) mime
+                        (list (make-header #"Set-Cookie" (string->bytes/utf-8 (
+    print-cookie c))))
+                        body)
+
+20.2.2 Parsing a cookie
+
+Imagine your Cookie header looks like this:
+
+    > (define cookies
+        "test2=2; test3=3; xfcTheme=theme6; xfcTheme=theme2")
+
+Then, to get the values of the xfcTheme cookie, use
+
+    > (get-cookie "xfcTheme" cookies)
+    '("theme6" "theme2")
+
+    > (get-cookie/single "xfcTheme" cookies)
+    "theme6"
+
+
+If you try to get a cookie that simply is not there:
+
+    > (get-cookie/single "foo" cookies)
+    #f
+
+    > (get-cookie "foo" cookies)
+    '()
+
+
+Note that not having a cookie is normally not an error. Most clients won’t have
+a cookie set then first arrive at your site.
+
+20.3 Cookie Unit
+
+ (require net/cookie-unit)
+
+cookie@ : unit?
+Imports nothing, exports cookie^.
+
+20.4 Cookie Signature
+
+ (require net/cookie-sig)
+
+cookie^ : signature
+
+Includes everything exported by the net/cookie module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

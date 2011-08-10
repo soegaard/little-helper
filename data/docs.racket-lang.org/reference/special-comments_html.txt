@@ -1,0 +1,66 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 12  Input and Output
+ 12.1  Ports
+ 12.2  Byte and String Input
+ 12.3  Byte and String Output
+ 12.4  Reading
+ 12.5  Writing
+ 12.6  The Reader
+ 12.7  The Printer
+ 12.8  Pretty Printing
+ 12.9  Reader Extension
+12.10  Printer Extension
+12.11  Serialization
+12.12  Fast-Load Serialization
+▼ 12.9  Reader Extension
+12.9.1  Readtables
+12.9.2  Reader-Extension Procedures
+12.9.3  Special Comments
+On this page:
+make-special-comment
+special-comment?
+special-comment-value
+[...search manuals...]
+  top← prev  up  next → 
+
+12.9.3 Special Comments
+
+(make-special-comment v) → special-comment?
+  v : any/c
+Creates a special-comment value that encapsulates v. The read, read-syntax,
+etc., procedures treat values constructed with make-special-comment as
+delimiting whitespace when returned by a reader-extension procedure (see
+Reader-Extension Procedures).
+
+(special-comment? v) → boolean?
+  v : any/c
+Returns #t if v is the result of make-special-comment, #f otherwise.
+
+(special-comment-value sc) → any
+  sc : special-comment?
+Returns the value encapsulated by the special-comment value sc. This value is
+never used directly by a reader, but it might be used by the context of a
+read-char-or-special, etc., call that detects a special comment.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

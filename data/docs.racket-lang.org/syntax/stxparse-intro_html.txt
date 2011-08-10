@@ -1,0 +1,403 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+▼ 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+[...search manuals...]
+  top← prev  up  next → 
+
+8.1 Introduction
+
+This section provides an introduction to writing robust macros with
+syntax-parse and syntax classes.
+
+As a running example we use the following task: write a macro named mylet that
+has the same syntax and behavior as Racket’s let form. The macro should produce
+good error messages when used incorrectly.
+
+Here is the specification of mylet’s syntax:
+
+    (mylet ([var-id rhs-expr] ...) body ...+)
+    (mylet loop-id ([var-id rhs-expr] ...) body ...+)
+
+For simplicity, we handle only the first case for now. We return to the second
+case later in the introduction.
+
+The macro can be implemented very simply using define-syntax-rule:
+
+    > (define-syntax-rule (mylet ([var rhs] ...) body ...)
+        ((lambda (var ...) body ...) rhs ...))
+
+When used correctly, the macro works, but it behaves very badly in the presence
+of errors. In some cases, the macro merely fails with an uninformative error
+message; in others, it blithely accepts illegal syntax and passes it along to
+lambda, with strange consequences:
+
+    > (mylet ([a 1] [b 2]) (+ a b))
+    3
+
+    > (mylet (b 2) (sub1 b))
+    mylet: use does not match pattern: (mylet ((var rhs) ...)
+
+    body ...) at: (mylet (b 2) (sub1 b))
+
+    > (mylet ([1 a]) (add1 a))
+    lambda: not an identifier, identifier with default, or
+
+    keyword at: 1
+
+    > (mylet ([#:x 1] [y 2]) (* x y))
+    struct eval:145:0: expects 0 arguments plus an argument
+
+    with keyword #:x, given 2: 1 2
+
+
+These examples of illegal syntax are not to suggest that a typical programmer
+would make such mistakes attempting to use mylet. At least, not often, not
+after an initial learning curve. But macros are also used by inexpert
+programmers and as targets of other macros (or code generators), and many
+macros are far more complex than mylet. Macros must validate their syntax and
+report appropriate errors. Furthermore, the macro writer benefits from the
+machine-checked specification of syntax in the form of more readable,
+maintainable code.
+
+We can improve the error behavior of the macro by using syntax-parse. First, we
+import syntax-parse into the transformer environment, since we will use it to
+implement a macro transformer.
+
+    > (require (for-syntax syntax/parse))
+
+The following is the syntax specification above transliterated into a
+syntax-parse macro definition. It behaves no better than the version using
+define-syntax-rule above.
+
+    > (define-syntax (mylet stx)
+        (syntax-parse stx
+          [(_ ([var-id rhs-expr] ...) body ...+)
+           #'((lambda (var-id ...) body ...) rhs-expr ...)]))
+
+One minor difference is the use of ...+ in the pattern; ... means match zero or
+more repetitions of the preceding pattern; ...+ means match one or more. Only
+... may be used in the template, however.
+
+The first step toward validation and high-quality error reporting is annotating
+each of the macro’s pattern variables with the syntax class that describes its
+acceptable syntax. In mylet, each variable must be an identifier (id for short)
+and each right-hand side must be an expr (expression). An annotated pattern
+variable is written by concatenating the pattern variable name, a colon
+character, and the syntax class name.For an alternative to the “colon” syntax,
+see the ~var pattern form.
+
+    > (define-syntax (mylet stx)
+        (syntax-parse stx
+          [(_ ((var:id rhs:expr) ...) body ...+)
+           #'((lambda (var ...) body ...) rhs ...)]))
+
+Note that the syntax class annotations do not appear in the template (i.e.,
+var, not var:id).
+
+The syntax class annotations are checked when we use the macro.
+
+    > (mylet ([a 1] [b 2]) (+ a b))
+    3
+
+    > (mylet (["a" 1]) (add1 a))
+    mylet: expected identifier at: "a"
+
+
+The expr syntax class does not actually check that the term it matches is a
+valid expression—that would require calling that macro expander. Instead, expr
+just means not a keyword.
+
+    > (mylet ([a #:whoops]) 1)
+    mylet: expected expression at: #:whoops
+
+
+Also, syntax-parse knows how to report a few kinds of errors without any help:
+
+    > (mylet ([a 1 2]) (* a a))
+    mylet: unexpected term at: 2
+
+
+There are other kinds of errors, however, that this macro does not handle
+gracefully:
+
+    > (mylet (a 1) (+ a 2))
+    mylet: bad syntax at: (mylet (a 1) (+ a 2))
+
+
+It’s too much to ask for the macro to respond, “This expression is missing a
+pair of parentheses around (a 1).” The pattern matcher is not that smart. But
+it can pinpoint the source of the error: when it encountered a it was expecting
+what we might call a “binding pair,” but that term is not in its vocabulary
+yet.
+
+To allow syntax-parse to synthesize better errors, we must attach descriptions
+to the patterns we recognize as discrete syntactic categories. One way of doing
+that is by defining new syntax classes:Another way is the ~describe pattern
+form.
+
+    > (define-syntax (mylet stx)
+      
+        (define-syntax-class binding
+          #:description "binding pair"
+          (pattern (var:id rhs:expr)))
+      
+        (syntax-parse stx
+          [(_ (b:binding ...) body ...+)
+           #'((lambda (b.var ...) body ...) b.rhs ...)]))
+
+Note that we write b.var and b.rhs now. They are the nested attributes formed
+from the annotated pattern variable b and the attributes var and rhs of the
+syntax class binding.
+
+Now the error messages can talk about “binding pairs.”
+
+    > (mylet (a 1) (+ a 2))
+    mylet: expected binding pair at: a
+
+
+Errors are still reported in more specific terms when possible:
+
+    > (mylet (["a" 1]) (+ a 2))
+    mylet: expected identifier at: "a"
+
+
+There is one other constraint on the legal syntax of mylet. The variables bound
+by the different binding pairs must be distinct. Otherwise the macro creates an
+illegal lambda form:
+
+    > (mylet ([a 1] [a 2]) (+ a a))
+    lambda: duplicate argument name at: a
+
+
+Constraints such as the distinctness requirement are expressed as side
+conditions, thus:
+
+    > (define-syntax (mylet stx)
+      
+        (define-syntax-class binding
+          #:description "binding pair"
+          (pattern (var:id rhs:expr)))
+      
+        (syntax-parse stx
+          [(_ (b:binding ...) body ...+)
+           #:fail-when (check-duplicate-identifier
+                        (syntax->list #'(b.var ...)))
+                       "duplicate variable name"
+           #'((lambda (b.var ...) body ...) b.rhs ...)]))
+
+    > (mylet ([a 1] [a 2]) (+ a a))
+    mylet: duplicate variable name at: a
+
+
+The #:fail-when keyword is followed by two expressions: the condition and the
+error message. When the condition evaluates to anything but #f, the pattern
+fails. Additionally, if the condition evaluates to a syntax object, that syntax
+object is used to pinpoint the cause of the failure.
+
+Syntax classes can have side conditions, too. Here is the macro rewritten to
+include another syntax class representing a “sequence of distinct binding
+pairs.”
+
+    > (define-syntax (mylet stx)
+      
+        (define-syntax-class binding
+          #:description "binding pair"
+          (pattern (var:id rhs:expr)))
+      
+        (define-syntax-class distinct-bindings
+          #:description "sequence of distinct binding pairs"
+          (pattern (b:binding ...)
+                   #:fail-when (check-duplicate-identifier
+                                (syntax->list #'(b.var ...)))
+                               "duplicate variable name"
+                   #:with (var ...) #'(b.var ...)
+                   #:with (rhs ...) #'(b.rhs ...)))
+      
+        (syntax-parse stx
+          [(_ bs:distinct-bindings . body)
+           #'((lambda (bs.var ...) . body) bs.rhs ...)]))
+
+Here we’ve introduced the #:with clause. A #:with clause matches a pattern with
+a computed term. Here we use it to bind var and rhs as attributes of
+distinct-bindings. By default, a syntax class only exports its patterns’
+pattern variables as attributes, not their nested attributes.The alternative
+would be to explicitly declare the attributes of distinct-bindings to include
+the nested attributes b.var and b.rhs, using the #:attribute option. Then the
+macro would refer to bs.b.var and bs.b.rhs.
+
+Alas, so far the macro only implements half of the functionality offered by
+Racket’s let. We must add the “named-let” form. That turns out to be as simple
+as adding a new clause:
+
+    > (define-syntax (mylet stx)
+      
+        (define-syntax-class binding
+          #:description "binding pair"
+          (pattern (var:id rhs:expr)))
+      
+        (define-syntax-class distinct-bindings
+          #:description "sequence of distinct binding pairs"
+          (pattern (b:binding ...)
+                   #:fail-when (check-duplicate-identifier
+                                (syntax->list #'(b.var ...)))
+                               "duplicate variable name"
+                   #:with (var ...) #'(b.var ...)
+                   #:with (rhs ...) #'(b.rhs ...)))
+      
+        (syntax-parse stx
+          [(_ bs:distinct-bindings body ...+)
+           #'((lambda (bs.var ...) body ...) bs.rhs ...)]
+          [(_ loop:id bs:distinct-bindings body ...+)
+           #'(letrec ([loop (lambda (bs.var ...) body ...)])
+               (loop bs.rhs ...))]))
+
+We are able to reuse the distinct-bindings syntax class, so the addition of the
+“named-let” syntax requires only three lines.
+
+But does adding this new case affect syntax-parse’s ability to pinpoint and
+report errors?
+
+    > (mylet ([a 1] [b 2]) (+ a b))
+    3
+
+    > (mylet (["a" 1]) (add1 a))
+    mylet: expected identifier at: "a"
+
+    > (mylet ([a #:whoops]) 1)
+    mylet: expected expression at: #:whoops
+
+    > (mylet ([a 1 2]) (* a a))
+    mylet: unexpected term at: 2
+
+    > (mylet (a 1) (+ a 2))
+    mylet: expected binding pair at: a
+
+    > (mylet ([a 1] [a 2]) (+ a a))
+    mylet: duplicate variable name at: a
+
+
+The error reporting for the original syntax seems intact. We should verify that
+the named-let syntax is working, that syntax-parse is not simply ignoring that
+clause.
+
+    > (mylet loop ([a 1] [b 2]) (+ a b))
+    3
+
+    > (mylet loop (["a" 1]) (add1 a))
+    mylet: expected identifier at: "a"
+
+    > (mylet loop ([a #:whoops]) 1)
+    mylet: expected expression at: #:whoops
+
+    > (mylet loop ([a 1 2]) (* a a))
+    mylet: unexpected term at: 2
+
+    > (mylet loop (a 1) (+ a 2))
+    mylet: expected binding pair at: a
+
+    > (mylet loop ([a 1] [a 2]) (+ a a))
+    mylet: duplicate variable name at: a
+
+
+How does syntax-parse decide which clause the programmer was attempting, so it
+can use it as a basis for error reporting? After all, each of the bad uses of
+the named-let syntax are also bad uses of the normal syntax, and vice versa.
+And yet the macro doen not produce errors like “mylet: expected sequence of
+distinct binding pairs at: loop.”
+
+The answer is that syntax-parse records a list of all the potential errors
+(including ones like loop not matching distinct-binding) along with the
+progress made before each error. Only the error with the most progress is
+reported.
+
+For example, in this bad use of the macro,
+
+    > (mylet loop (["a" 1]) (add1 a))
+    mylet: expected identifier at: "a"
+
+
+there are two potential errors: expected distinct-bindings at loop and expected
+identifier at "a". The second error occurs further in the term than the first,
+so it is reported.
+
+For another example, consider this term:
+
+    > (mylet (["a" 1]) (add1 a))
+    mylet: expected identifier at: "a"
+
+
+Again, there are two potential errors: expected identifier at (["a" 1]) and
+expected identifier at "a". They both occur at the second term (or first
+argument, if you prefer), but the second error occurs deeper in the term.
+Progress is based on a left-to-right traversal of the syntax.
+
+A final example: consider the following:
+
+    > (mylet ([a 1] [a 2]) (+ a a))
+    mylet: duplicate variable name at: a
+
+
+There are two errors again: duplicate variable name at ([a 1] [a 2]) and
+expected identifier at ([a 1] [a 2]). Note that as far as syntax-parse is
+concerned, the progress associated with the duplicate error message is the
+second term (first argument), not the second occurrence of a. That’s because
+the check is associated with the entire distinct-bindings pattern. It would
+seem that both errors have the same progress, and yet only the first one is
+reported. The difference between the two is that the first error is from a
+post-traversal check, whereas the second is from a normal (i.e., pre-traversal)
+check. A post-traveral check is considered to have made more progress than a
+pre-traversal check of the same term; indeed, it also has greater progress than
+any failure within the term.
+
+It is, however, possible for multiple potential errors to occur with the same
+progress. Here’s one example:
+
+    > (mylet "not-even-close")
+    mylet: expected identifier or expected sequence of distinct
+
+    binding pairs at: "not-even-close"
+
+
+In this case syntax-parse reports both errors.
+
+Even with all of the annotations we have added to our macro, there are still
+some misuses that defy syntax-parse’s error reporting capabilities, such as
+this example:
+
+    > (mylet)
+    mylet: bad syntax at: (mylet)
+
+
+The philosophy behind syntax-parse is that in these situations, a generic error
+such as “bad syntax” is justified. The use of mylet here is so far off that the
+only informative error message would include a complete recapitulation of the
+syntax of mylet. That is not the role of error messages, however; it is the
+role of documentation.
+
+This section has provided an introduction to syntax classes, side conditions,
+and progress-ordered error reporting. But syntax-parse has many more features.
+Continue to the Examples section for samples of other features in working code,
+or skip to the subsequent sections for the complete reference documentation.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

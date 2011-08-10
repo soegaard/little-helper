@@ -1,0 +1,150 @@
+Title
+
+SRFI 16: Syntax for procedures of variable arity.
+
+Author
+
+Lars T Hansen
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access the discussion via the
+archive of the mailing list.
+
+  • Received: 1999/11/01
+  • Draft: 1999/11/06-2000/01/07
+  • Final: 2000/03/10
+
+Abstract
+
+CASE-LAMBDA, a syntax for procedures with a variable number of arguments, is
+introduced.
+
+Rationale
+
+CASE-LAMBDA reduces the clutter of procedures that execute different code
+depending on the number of arguments they were passed; it is a pattern-matching
+mechanism that matches on the number of arguments. CASE-LAMBDA is available in
+some Scheme systems.
+
+While CASE-LAMBDA can be implemented as a macro using only facilities available
+in R5RS Scheme, it admits considerable implementation-specific optimization.
+
+Specification
+
+(CASE-LAMBDA <clause> ...)
+    Syntax
+
+    Each <clause> should have the form (<formals> <body>), where <formals> is a
+    formal arguments list as for LAMBDA, cf section 4.1.4 of the R5RS. Each
+    <body> is a <tail-body>, cf section 3.5 of the R5RS.
+
+    A CASE-LAMBDA expression evaluates to a procedure that accepts a variable
+    number of arguments and is lexically scoped in the same manner as
+    procedures resulting from LAMBDA expressions. When the procedure is called
+    with some arguments V1 .. Vk, then the first <clause> for which the
+    arguments agree with <formals> is selected, where agreement is specified as
+    for the <formals> of a LAMBDA expression. The variables of <formals> are
+    bound to fresh locations, the values V1 .. Vk are stored in those
+    locations, the <body> is evaluated in the extended environment, and the
+    results of <body> are returned as the results of the procedure call.
+
+    It is an error for the arguments not to agree with the <formals> of any
+    <clause>.
+
+                 (define plus
+                   (case-lambda
+                     (() 0)
+                     ((x) x)
+                     ((x y) (+ x y))
+                     ((x y z) (+ (+ x y) z))
+                     (args (apply + args))))
+
+                 (plus)                     --> 0
+                 (plus 1)                   --> 1
+                 (plus 1 2 3)               --> 6
+
+                 ((case-lambda
+                   ((a) a)
+                   ((a b) (* a b)))
+                  1 2 3)                    --> error
+
+
+Implementation
+
+The following implementation is written in R5RS Scheme. It is not compatible
+with the IEEE Scheme standard because the IEEE standard does not contain the
+high-level macro system.
+
+The implementation assumes that some top-level names defined by the R5RS are
+bound to their original values.
+
+;; This code is in the public domain.
+
+(define-syntax case-lambda
+  (syntax-rules ()
+    ((case-lambda
+      (?a1 ?e1 ...)
+      ?clause1 ...)
+     (lambda args
+       (let ((l (length args)))
+         (case-lambda "CLAUSE" args l
+           (?a1 ?e1 ...)
+           ?clause1 ...))))
+    ((case-lambda "CLAUSE" ?args ?l
+      ((?a1 ...) ?e1 ...)
+      ?clause1 ...)
+     (if (= ?l (length '(?a1 ...)))
+         (apply (lambda (?a1 ...) ?e1 ...) ?args)
+         (case-lambda "CLAUSE" ?args ?l
+           ?clause1 ...)))
+    ((case-lambda "CLAUSE" ?args ?l
+      ((?a1 . ?ar) ?e1 ...)
+      ?clause1 ...)
+     (case-lambda "IMPROPER" ?args ?l 1 (?a1 . ?ar) (?ar ?e1 ...)
+       ?clause1 ...))
+    ((case-lambda "CLAUSE" ?args ?l
+      (?a1 ?e1 ...)
+      ?clause1 ...)
+     (let ((?a1 ?args))
+       ?e1 ...))
+    ((case-lambda "CLAUSE" ?args ?l)
+     (error "Wrong number of arguments to CASE-LAMBDA."))
+    ((case-lambda "IMPROPER" ?args ?l ?k ?al ((?a1 . ?ar) ?e1 ...)
+      ?clause1 ...)
+     (case-lambda "IMPROPER" ?args ?l (+ ?k 1) ?al (?ar ?e1 ...)
+      ?clause1 ...))
+    ((case-lambda "IMPROPER" ?args ?l ?k ?al (?ar ?e1 ...)
+      ?clause1 ...)
+     (if (>= ?l ?k)
+         (apply (lambda ?al ?e1 ...) ?args)
+         (case-lambda "CLAUSE" ?args ?l
+           ?clause1 ...)))))
+
+Copyright
+
+Copyright (C) Lars T Hansen (1999). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Mike Sperber
+Last modified: Mon Apr 19 20:38:48 CEST 2004

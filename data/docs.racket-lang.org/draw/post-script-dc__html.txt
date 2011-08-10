@@ -1,0 +1,183 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+Inherited methods:
+from dc<%>
+cache-font-metrics-key
+clear
+copy
+draw-arc
+draw-bitmap
+draw-bitmap-section
+draw-ellipse
+draw-line
+draw-lines
+draw-path
+draw-point
+draw-polygon
+draw-rectangle
+draw-rounded-rectangle
+draw-spline
+draw-text
+end-doc
+end-page
+erase
+flush
+get-alpha
+get-background
+get-brush
+get-char-height
+get-char-width
+get-clipping-region
+get-device-scale
+get-font
+get-gl-context
+get-initial-matrix
+get-origin
+get-pen
+get-rotation
+get-scale
+get-size
+get-smoothing
+get-text-background
+get-text-extent
+get-text-foreground
+get-text-mode
+get-transformation
+glyph-exists?
+ok?
+resume-flush
+rotate
+scale
+set-alpha
+set-background
+set-brush
+set-clipping-rect
+set-clipping-region
+set-font
+set-initial-matrix
+set-origin
+set-pen
+set-rotation
+set-scale
+set-smoothing
+set-text-background
+set-text-foreground
+set-text-mode
+set-transformation
+start-doc
+start-page
+suspend-flush
+transform
+translate
+try-color
+[...search manuals...]
+  top← prev  up  next → 
+
+post-script-dc% : class?
+  superclass: object%
+
+  extends:  dc<%>
+A post-script-dc% object is a PostScript device context, that can write
+PostScript files on any platform. See also ps-setup% and pdf-dc%.
+
+Be sure to use the following methods to start/end drawing:
+
+  • start-doc
+
+  • start-page
+
+  • end-page
+
+  • end-doc
+
+Attempts to use a drawing method outside of an active page raises an exception.
+
+See also printer-dc%.
+
+(new post-script-dc%  [ [interactive interactive]        
+                        [parent parent]                  
+                        [use-paper-bbox use-paper-bbox]  
+                        [as-eps as-eps]                  
+                        [width width]                    
+                        [height height]                  
+                        [output output]])                
+ → (is-a?/c post-script-dc%)
+  interactive : any/c = #t
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%) false/c)
+            =   #f
+  use-paper-bbox : any/c = #f
+  as-eps : any/c = #t
+  width : (or/c (and/c real? (not/c negative?)) #f) = #f
+  height : (or/c (and/c real? (not/c negative?)) #f) = #f
+  output : (or/c path-string? output-port? #f) = #f
+If interactive is true, the user is given a dialog for setting printing
+parameters (see get-ps-setup-from-user); the resulting configuration is
+installed as the current configuration). If the user chooses to print to a file
+(the only possibility on Windows and Mac OS X), another dialog is given to
+select the filename. If the user hits cancel in either of these dialogs, then
+ok? returns #f.
+
+If parent is not #f, it is used as the parent window of the configuration
+dialog.
+
+If interactive is #f, then the settings returned by current-ps-setup are used.
+A file dialog is still presented to the user if the get-file method returns #f
+and output is #f, and the user may hit Cancel in that case so that ok? returns
+#f.
+
+If use-paper-bbox is #f, then the PostScript bounding box for the output is
+determined by width and height (which are rounded upward using ceiling). If
+use-paper-bbox is not #f, then the bounding box is determined by the current
+paper size (as specified by current-ps-setup). When width or height is #f, then
+the corresponding dimension is determined by the paper size, even if
+use-paper-bbox is #f.
+
+If as-eps is #f, then the generated PostScript does not include an Encapsulated
+PostScript (EPS) header, and instead includes a generic PostScript header. The
+margin and translation factors specified by current-ps-setup are used only when
+as-eps is #f. If as-eps is true, then the generated PostScript includes a
+header that identifiers it as EPS.
+
+When output is not #f, then file-mode output is written to output. If output is
+#f, then the destination is determined via current-ps-setup or by prompting the
+user for a pathname. When output is a port, then data is written to port by a
+thread that is created with the post-script-dc% instance; in case that writing
+thread’s custodian is shut down, calling end-doc resumes the port-writing
+thread with thread-resume and (current-thread) as the second argument.
+
+See also ps-setup% and current-ps-setup. The settings for a particular
+post-script-dc% object are fixed to the values in the current configuration
+when the object is created (after the user has interactively adjusted them when
+interactive is true).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

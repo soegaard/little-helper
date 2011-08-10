@@ -1,0 +1,364 @@
+▼  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+Index
+
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+ 
+
+#%module-begin
+...+
+action pattern
+Action patterns
+annotated pattern variable
+Attaching Documentation to Exports
+attribute
+attribute
+boolean
+bound-id-table-count
+bound-id-table-for-each
+bound-id-table-map
+bound-id-table-ref
+bound-id-table-remove
+bound-id-table-remove!
+bound-id-table-set
+bound-id-table-set!
+bound-id-table?
+bound-identifier-mapping-for-each
+bound-identifier-mapping-get
+bound-identifier-mapping-map
+bound-identifier-mapping-put!
+bound-identifier-mapping?
+build-expand-context
+build-source-location
+build-source-location-list
+build-source-location-syntax
+build-source-location-vector
+build-struct-expand-info
+build-struct-generation
+build-struct-generation*
+build-struct-names
+char
+check-expression
+check-identifier
+check-module-form
+check-procedure
+check-source-location!
+check-stx-boolean
+check-stx-listof
+check-stx-string
+collapse-module-path
+collapse-module-path-index
+Computing the Free Variables of an Expression
+Contracts for macro sub-expressions
+Contracts for syntax classes
+Contracts on macro sub-expressions
+Controlling Syntax Templates
+conventions
+cut
+debug-parse
+Debugging and inspection tools
+Deconstructing Syntax Objects
+define-conventions
+define-eh-alternative-set
+define-literal-set
+define-primitive-splicing-syntax-class
+define-simple-macro
+define-splicing-syntax-class
+define-syntax-class
+define-syntax-class/specialize
+define/syntax-parse
+Defining simple macros
+Dictionaries for bound-identifier=?
+Dictionaries for free-identifier=?
+ellipsis depth
+Ellipsis-head alternative sets
+ellipsis-head alternative sets
+ellipsis-head pattern
+Ellipsis-head patterns
+eval-compile-time-part-of-top-level
+eval-compile-time-part-of-top-level/compile
+exact-integer
+exact-nonnegative-integer
+exact-positive-integer
+Examples
+exn:get-module-code
+exn:get-module-code-path
+exn:get-module-code?
+expand-syntax-top-level-with-compile-time-evals
+expand-syntax-top-level-with-compile-time-evals/flatten
+expand-top-level-with-compile-time-evals
+Expanding define-struct-like Forms
+Experimental
+expr
+expr/c
+Extracting Inferred Names
+flatten-begin
+Flattening begin Forms
+free-id-table-count
+free-id-table-for-each
+free-id-table-map
+free-id-table-ref
+free-id-table-remove
+free-id-table-remove!
+free-id-table-set
+free-id-table-set!
+free-id-table?
+free-identifier-mapping-for-each
+free-identifier-mapping-get
+free-identifier-mapping-map
+free-identifier-mapping-put!
+free-identifier-mapping?
+free-vars
+generate-expand-context
+generate-struct-declaration
+get-module-code
+Getting Module Compiled Code
+Hashing on bound-identifier=? and free-identifier=?
+head pattern
+Head patterns
+Helpers for Processing Keyword Syntax
+id
+identifier
+Identifier dictionaries
+immutable-bound-id-table?
+immutable-free-id-table?
+incompatibility
+Inspecting Modules and Module Dependencies
+integer
+Introduction
+kernel-form-identifier-list
+kernel-literals
+kernel-syntax-case
+kernel-syntax-case*
+kernel-syntax-case*/phase
+kernel-syntax-case/phase
+keyword
+keyword-table
+Legacy Zodiac Interface
+Library syntax classes and literal sets
+list patterns
+literal
+Literal sets
+literal sets
+Literal sets and Conventions
+literal-set->predicate
+lookup-documentation
+Macro Transformer Helpers
+make-bound-id-table
+make-bound-identifier-mapping
+make-exn:get-module-code
+make-free-id-table
+make-free-identifier-mapping
+make-immutable-bound-id-table
+make-immutable-free-id-table
+make-meta-reader
+make-module-identifier-mapping
+Matching Fully-Expanded Expressions
+moddep-current-open-input-file
+Module Reader
+module-identifier-mapping-for-each
+module-identifier-mapping-get
+module-identifier-mapping-map
+module-identifier-mapping-put!
+module-identifier-mapping?
+module-or-top-identifier=?
+Module-Processing Helpers
+Modules and reusable syntax classes
+More keyword arguments
+mutable-bound-id-table?
+mutable-free-id-table?
+nat
+nested attributes
+Non-Module Compilation And Expansion
+Non-syntax-valued attributes
+normalize-definition
+number
+Optional keyword arguments
+options
+options-select
+options-select-row
+options-select-value
+parse-define-struct
+parse-keyword-options
+parse-keyword-options/eol
+Parsing and specifying syntax
+Parsing define-like Forms
+Parsing syntax
+pattern
+Pattern directives
+pattern directives
+pattern variable
+Pattern variables and attributes
+pattern-directive
+Procedural splicing syntax classes
+proper head pattern
+proper single-term pattern
+provide-and-document
+provide-syntax-class/contract
+quote-character-position
+quote-character-span
+quote-column-number
+quote-line-number
+quote-module-name
+quote-module-path
+quote-source-file
+quote-srcloc
+Quoting
+raise-read-eof-error
+raise-read-error
+Raising exn:fail:read
+Reader Helpers
+Reading Module Source Code
+Reflection
+reified-splicing-syntax-class?
+reified-syntax-class-arity
+reified-syntax-class-attributes
+reified-syntax-class-curry
+reified-syntax-class-keywords
+reified-syntax-class?
+reify-syntax-class
+Rendering Syntax Objects with Formatting
+replace-context
+Replacing Lexical Context
+Representations
+resolve-module-path
+resolve-module-path-index
+resolve-path-spec
+Resolving include-like Paths
+Resolving Module Paths to File Paths
+show-import-tree
+Simplifying Module Paths
+single-term pattern
+Single-term patterns
+Source Locations
+source-location->prefix
+source-location->string
+source-location-column
+source-location-end
+source-location-known?
+source-location-line
+source-location-list?
+source-location-position
+source-location-source
+source-location-span
+source-location-vector?
+source-location?
+Specifying syntax with syntax classes
+splicing syntax class
+static
+str
+strip-context
+struct-declaration-info?
+struct:exn:get-module-code
+stx->list
+stx-car
+stx-cdr
+stx-list?
+stx-map
+stx-null?
+stx-pair?
+Support for local-expand
+Syntactic normalization
+syntax class
+Syntax class specialization
+Syntax classes
+Syntax Object Helpers
+Syntax patterns
+syntax patterns
+syntax->string
+syntax-class-arity
+syntax-class-attributes
+syntax-class-keywords
+syntax-class-parse
+syntax-class/c
+syntax-local-infer-name
+syntax-parse
+syntax-parser
+syntax/boundmap
+syntax/context
+syntax/define
+syntax/docprovide
+syntax/flatten-begin
+syntax/free-vars
+syntax/id-table
+syntax/kerncase
+syntax/keyword
+syntax/location
+syntax/modcode
+syntax/modcollapse
+syntax/moddep
+syntax/modread
+syntax/modresolve
+syntax/module-reader
+syntax/name
+syntax/parse
+syntax/parse/debug
+syntax/parse/define
+syntax/parse/experimental/contract
+syntax/parse/experimental/eh
+syntax/parse/experimental/provide
+syntax/parse/experimental/reflect
+syntax/parse/experimental/specialize
+syntax/parse/experimental/splicing
+syntax/path-spec
+syntax/readerr
+syntax/srcloc
+syntax/strip-context
+syntax/struct
+syntax/stx
+syntax/template
+syntax/to-string
+syntax/toplevel
+syntax/trusted-xforms
+syntax/zodiac
+syntax/zodiac-sig
+syntax/zodiac-unit
+Syntax: Meta-Programming Helpers
+transform-template
+Trusting Standard Recertifying Transformers
+update-source-location
+Variants with uniform meanings
+Variants with varied meanings
+with-module-reading-parameterization
+wrap-read-all
+~!
+~and
+~between
+~bind
+~commit
+~datum
+~delimit-cut
+~describe
+~do
+~eh-var
+~fail
+~literal
+~not
+~once
+~optional
+~or
+~parse
+~peek
+~peek-not
+~reflect
+~rest
+~seq
+~splicing-reflect
+~var
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

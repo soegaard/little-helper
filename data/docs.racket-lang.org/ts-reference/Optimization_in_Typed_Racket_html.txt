@@ -1,0 +1,33 @@
+▼  The Typed Racket Reference
+ 1  Type Reference
+ 2  Special Form Reference
+ 3  Libraries Provided With Typed Racket
+ 4  Utilities
+ 5  Typed Racket Syntax Without Type Checking
+ 6  Typed Regions
+ 7  Optimization in Typed Racket
+ 8  Legacy Forms
+ 9  Compatibility Languages
+10  Experimental Features
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Optimization in Typed Racket
+
+See Optimization in Typed Racket in the guide for tips to get the most out of
+the optimizer.
+
+Typed Racket provides a type-driven optimizer that rewrites well-typed programs
+to potentially make them faster. It should in no way make your programs slower
+or unsafe.
+
+Typed Racket’s optimizer is turned on by default. If you want to deactivate it
+(for debugging, for instance), you must add the #:no-optimize keyword when
+specifying the language of your program:
+
+    #lang typed/racket #:no-optimize
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

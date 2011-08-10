@@ -1,0 +1,273 @@
+▼  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+► 10  3D-Liniengraphik: "line3d.ss"
+10.1  Szenen erzeugen
+10.2  3D-Vektoren
+10.3  4D-Vektoren
+10.4  4x4 Matrizen
+10.5  3d-Linien
+On this page:
+10.1 Szenen erzeugen
+render-scene
+create-camera-matrix
+10.2 3D-Vektoren
+vec3
+make-vec3
+add-vec3
+sub-vec3
+mult-vec3
+div-vec3
+dotproduct-vec3
+norm Quad-vec3
+norm-vec3
+normalize-vec3
+crossproduct-vec3
+10.3 4D-Vektoren
+vec4
+make-vec4
+add-vec4
+sub-vec4
+mult-vec4
+div-vec4
+dotproduct-vec4
+norm Quad-vec4
+norm-vec4
+normalize-vec4
+expand-vec3
+10.4 4x4 Matrizen
+matrix4x4
+make-matrix4x4
+create-matrix4x4
+transpose-matrix4x4
+multiply-matrix-vec4
+transform-vec3
+multiply-matrix
+create-translation-matrix
+create-rotation-x-matrix
+create-rotation-y-matrix
+create-rotation-z-matrix
+create-lookat-matrix
+create-projection-matrix
+create-viewport-matrix
+10.5 3d-Linien
+line3d
+make-line3d
+line3d-a
+line3d-b
+line3d-color
+create-box
+transform-primitive-list
+[...search manuals...]
+  top← prev  up  next → 
+
+10 3D-Liniengraphik: "line3d.ss"
+
+Note: This is documentation for the "line3d.rkt" teachpack that goes with the
+German textbook Die Macht der Abstraktion.
+
+Dieses teachpack definiert Prozeduren fu:r lineare Algebra und 3D-Rendering:
+
+10.1 Szenen erzeugen
+
+render-scene : (natural natural (list-of line3d) matrix4x4 -> image)
+Der Aufruf (render-scene width height scene camera-matrix)erzeugt die Szene in
+ein Bild mit Breite width und Ho:he height. Position, Orientierung und
+Projektion werden durch die camera-matrix festgelegt.
+
+create-camera-matrix : (vec3 vec3 number natural natural -> matrix4x4)
+Der Aufruf (create-camera-matrix position lookat vertical-fov width height)
+erzeugt eine 4x4 Matrix. Diese kodiert eine Kamera an der Position position,
+die auf die Position lookat schaut. vertical-fov bezeichnet das vertikale Feld
+der Szene.
+
+Zum Beispiel:
+
+    ; scene-data (simple box example)
+    (define box
+      (create-box 1.0 1.0 1.0 "brown"))
+    ; screen
+    (define screenWidth 320)
+    (define screenHeight 240)
+    ; camera
+    (define pos (make-vec3 5 5 3))
+    (define lookat (make-vec3 0 0 0))
+    (define camera
+       (create-camera-matrix pos lookat 70.0 screenWidth screenHeight))
+    ; render image
+    (render-scene screenWidth screenHeight box camera)
+
+10.2 3D-Vektoren
+
+vec3 : signature
+Ein 3D-Vektor (Name: vec3) ist ein Record, der durch den Aufruf make-vec3
+erstellt wird.
+
+make-vec3 : (number number number -> vec3)
+(make-vec3 x y z) erstellt einen Vektor (x,y,z).
+
+add-vec3 : (vec3 vec3 -> vec3)
+(add-vec3 a b) gibt die Summe von a und b zuru:ck.
+
+sub-vec3 : (vec3 vec3 -> vec3)
+(sub-vec3 a b) gibt die Differenz zwischen a und b zuru:ck.
+
+mult-vec3 : (vec3 number -> vec3)
+(mult-vec3 a s) gibt den das Produkt von a und s zuru:ck.
+
+div-vec3 : (vec3 number -> vec3)
+(div-vec3 a s) gibt den das Produkt von a und dem Kehrwert von s zuru:ck.
+
+dotproduct-vec3 : (vec3 vec3 -> number)
+(dotproduct-vec3 a b) gibt das Produkt von a und b zuru:ck.
+
+normQuad-vec3 : (vec3 -> number)
+(normQuad-vec3 a) gibt die quadrierte Norm/La:nge |a|^2 eines Vektors a zuru:ck
+(Quadrat der Euklidischen Norm.)
+
+norm-vec3 : (vec3 -> number)
+(norm-vec3 a) gibt die Norm/La:nge |a| eines Vektors a zuru:ck (Euklidische
+Norm.)
+
+normalize-vec3 : (vec3 -> vec3)
+(normalize-vec3 a) normalisiert a.
+
+crossproduct-vec3 : (vec3 vec3-> vec3)
+(crossproduct-vec3 a b) gibt das Kreuzprodukt von a und b zuru:ck (einen Vektor
+der senkrecht auf a und b steht).
+
+10.3 4D-Vektoren
+
+vec4 : signature
+Ein 4D-Vektor vec4 ist ein 4D-Vektor. Folgende Prozeduren werden
+bereitgestellt:
+
+make-vec4 : (number number number number -> vec4)
+(make-vec4 a b c d) erzeugt einen Vektor aus a, b, c und d.
+
+add-vec4 : (vec4 vec4 -> vec4)
+(add-vec4 a b) gibt die Summe von a und b zuru:ck.
+
+sub-vec4 : (vec4 vec4 -> vec4)
+(sub-vec4 a b) gibt die Differenz zwischen a und b zuru:ck.
+
+mult-vec4 : (vec4 number -> vec4)
+(mult-vec4 a s) gibt den das Produkt von a und s zuru:ck.
+
+div-vec4 : (vec4 number -> vec4)
+(div-vec4 a s) gibt den das Produkt von a und dem Kehrwert von s zuru:ck.
+
+dotproduct-vec4 : (vec3 vec4 -> number)
+(dotproduct-vec4 a b) gibt die quadrierte Norm/La:nge |a|^2 eines Vektors a
+zuru:ck (Quadrat der Euklidischen Norm.)
+
+normQuad-vec4 : (vec4 -> number)
+(normQuad-vec4 a) gibt die quadrierte Norm/La:nge |a|^2 eines Vektors a zuru:ck
+(Quadrat der Euklidischen Norm.)
+
+norm-vec4 : (vec4 -> number)
+(norm-vec4 a) gibt die Norm/La:nge |a| eines Vektors a zuru:ck (Euklidische
+Norm)
+
+normalize-vec4 : (vec4 -> vec4)
+(normalize-vec4 a) normalisiert a.
+
+expand-vec3 : (vec3 number -> vec4)
+(expand-vec3 a s) gibt den 4D-Vektor mit s als letze Komponente zuru:ck
+(erweitert a mit s).
+
+10.4 4x4 Matrizen
+
+matrix4x4 : signature
+Eine Matrix matrix4x4 ist ein Record, der durch den Aufruf make-matrix4x4
+erstellt wird.
+
+make-matrix4x4 : (vec4 vec4 vec4 vec4 -> matrix4x4)
+(make-matrix4x4 a b c d) erstellt eine Matrix aus a, b, c und d.
+
+create-matrix4x4 : (vec3 vec3 vec3 vec3 -> matrix4x4)
+(create-matrix4x4 a b c d) erweitert jeden Vektor in einen 4D-Vektor und
+kombiniert diese zu einer Matrix a, b, c und d, wobei a, b, c mit 0 und d mit 1
+erweitert wird, um eine homogene Matrix zu erzeugen.
+
+transpose-matrix4x4 : (matrix4x4 -> matrix4x)
+(transpose-matrix4x4 m) erstellt die transponierte Matrix m^T.
+
+multiply-matrix-vec4 : (matrix vec4 -> vec4)
+(multiply-matrix-vec4 m v) gibt die Matrix mv zuru:ck. Die w-Komponente ist
+nicht normalisiert.
+
+transform-vec3 : (matrix4x4 vec3 -> vec3)
+(transform-vec3 m v) erweitert v mit 1, multipliziert m mit v und dividiert das
+Ergebnis mit w.
+
+multiply-matrix : (matrix4x4 matrix4x4 -> matrix4x4)
+(multiply-matrix a b) gibt die Matrix a*b zuru:ck.
+
+create-translation-matrix : (vec3 -> matrix4x4)
+(create-translation-matrix v) gibt die Translations-Matrix zuru:ck.
+
+create-rotation-x-matrix : (number -> matrix4x4)
+(create-rotation-x-matrix a) gibt eine Rotations-Matrix zuru:ck die um die
+X-Achse mit dem Winkel a rotiert.
+
+create-rotation-y-matrix : (number -> matrix4x4)
+(create-rotation-y-matrix a) gibt eine Rotations-Matrix zuru:ck die um die
+Y-Achse mit dem Winkel a rotiert.
+
+create-rotation-z-matrix : (number -> matrix4x4)
+(create-rotation-z-matrix a) gibt eine Rotations-Matrix zuru:ck die um die
+Z-Achse mit dem Winkel a rotiert.
+
+create-lookat-matrix : (vec3 vec3 vec3 -> matrix4x4)
+(create-lookat-matrix pos lookat up) gibt eine Kameramatrix. Ursprungspunkt ist
+pos, die Z-Achse zeigt auf lookat.
+
+create-projection-matrix : (number -> matrix4x4)
+(create-projection-matrix vertical-fov/2) erzeugt eine Projektions-Matrix.
+vertical-fov/2 gibt den vertikalen Winkel der Ansicht dividiert durch 2 an.
+
+create-viewport-matrix : (natural natural -> matrix4x4)
+(create-viewport-matrix width height) gibt einen Ausschnitt an.
+
+10.5 3d-Linien
+
+line3d : signature
+Eine 3d-Linie line3d ist ein Record, der durch den Aufruf make-line3d erstellt
+wird und eine farbige Linie zwischen zwei Punkten im 3-dimensionalen Raum
+darstellt.
+
+make-line3d : (vec3 vec3 color -> line3d)
+(make-line3d a b col) erstellt eine 3D-Linie zwischen Punkt a und Punkt b mit
+der Farbe col.
+
+line3d-a : (line3d -> vec3)
+extrahiert den Anfangspunkt einer 3D-Linie.
+
+line3d-b : (line3d -> vec3)
+extrahiert den Endpunkt einer 3D-Linie.
+
+line3d-color : (line3d -> color)
+extrahiert die Farbe einer 3D-Linie.
+
+create-box : (number number number color -> (list-of line3d))
+(create-box width height depth color) erstellt eine Box am Punkt (0,0,0) in den
+angebenen Ausmassen.
+
+transform-primitive-list : ((list-of line3d) matrix4x4 -> (list-of line3d))
+(transform-primitive-list scene transformationr) wendet transformation auf alle
+Punkte der Linien in scene an und gibt diese zuru:ck.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

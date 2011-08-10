@@ -1,0 +1,1038 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+▼ 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+► 8.5  Syntax patterns
+8.5.1  Single-term patterns
+8.5.2  Head patterns
+8.5.3  Ellipsis-head patterns
+8.5.4  Action patterns
+On this page:
+~var
+~and
+~or
+~describe
+~commit
+~delimit-cut
+~optional
+8.5.1 Single-term patterns
+8.5.2 Head patterns
+8.5.3 Ellipsis-head patterns
+8.5.4 Action patterns
+[...search manuals...]
+  top← prev  up  next → 
+
+8.5 Syntax patterns
+
+The grammar of syntax patterns used by syntax/parse facilities is given in the
+following table. There are four main kinds of syntax pattern:
+
+  • single-term patterns, abbreviated S-pattern
+
+  • head patterns, abbreviated H-pattern
+
+  • ellipsis-head patterns, abbreviated EH-pattern
+
+  • action patterns, abbreviated A-pattern
+
+A fifth kind, list patterns (abbreviated L-pattern), is a just a syntactically
+restricted subset of single-term patterns.
+
+When a special form in this manual refers to syntax-pattern (eg, the
+description of the syntax-parse special form), it means specifically
+single-term pattern.
+
+         S-pattern   =   pvar-id
+                     |   pvar-id:syntax-class-id
+                     |   literal-id
+                     |   (~vars- id)
+                     |   (~vars+ id syntax-class-id)
+                     |   (~vars+ id (syntax-class-id arg ...))
+                     |   (~literal literal-id)
+                     |   atomic-datum
+                     |   (~datum datum)
+                     |   (H-pattern . S-pattern)
+                     |   (A-pattern . S-pattern)
+                     |   (EH-pattern ... . S-pattern)
+                     |   (H-pattern ...+ . S-pattern)
+                     |   (~ands proper-S/A-pattern ...+)
+                     |   (~ors S-pattern ...+)
+                     |   (~not S-pattern)
+                     |   #(pattern-part ...)
+                     |   #s(prefab-struct-key pattern-part ...)
+                     |   #&S-pattern
+                     |   (~rest S-pattern)
+                     |   (~describes maybe-opaque expr S-pattern)
+                     |   (~commits S-pattern)
+                     |   (~delimit-cuts S-pattern)
+                     |   A-pattern
+                          
+         L-pattern   =   ()
+                     |   (A-pattern . L-pattern)
+                     |   (H-pattern . L-pattern)
+                     |   (EH-pattern ... . L-pattern)
+                     |   (H-pattern ...+ . L-pattern)
+                     |   (~rest L-pattern)
+                          
+         H-pattern   =   pvar-id:splicing-syntax-class-id
+                     |   (~varh id splicing-syntax-class-id)
+                     |   (~varh id (splicing-syntax-class-id arg ...))
+                     |   (~seq . L-pattern)
+                     |   (~andh proper-H/A-pattern ...+)
+                     |   (~orh H-pattern ...+)
+                     |   (~optionalh H-pattern maybe-optional-option)
+                     |   (~describeh maybe-opaque expr H-pattern)
+                     |   (~commith H-pattern)
+                     |   (~delimit-cuth H-pattern)
+                     |   (~peek H-pattern)
+                     |   (~peek-not H-pattern)
+                     |   proper-S-pattern
+                          
+        EH-pattern   =   (~oreh EH-pattern ...)
+                     |   (~once H-pattern once-option ...)
+                     |   (~optionaleh H-pattern optional-option ...)
+                     |   (~between H min-number max-number between-option)
+                     |   H-pattern
+                          
+         A-pattern   =   ~!
+                     |   (~bind [attr-arity-decl expr] ...)
+                     |   (~fail maybe-fail-condition maybe-message-expr)
+                     |   (~parse S-pattern stx-expr)
+                     |   (~anda A-pattern ...+)
+                     |   (~do defn-or-expr ...)
+                          
+  proper-S-pattern   =   a S-pattern that is not a A-pattern
+                          
+  proper-H-pattern   =   a H-pattern that is not a S-pattern
+
+The following pattern keywords can be used in multiple pattern variants:
+
+~var
+One of ~vars-, ~vars+, or ~varh.
+
+~and
+One of ~ands, ~andh, or ~anda:
+
+  • ~anda if all of the conjuncts are action patterns
+
+  • ~andh if any of the conjuncts is a proper head pattern
+
+  • ~ands otherwise
+
+~or
+One of ~ors, ~orh, or ~oreh:
+
+  • ~oreh if the pattern occurs directly before ellipses (...) or immediately
+    within another ~oreh pattern
+
+  • ~orh if any of the disjuncts is a proper head pattern
+
+  • ~ors otherwise
+
+~describe
+One of ~describes or ~describeh:
+
+  • ~describeh if the subpattern is a proper head pattern
+
+  • ~describes otherwise
+
+~commit
+One of ~commits or ~commith:
+
+  • ~commith if the subpattern is a proper head pattern
+
+  • ~commits otherwise
+
+~delimit-cut
+One of ~delimit-cuts or ~delimit-cuth:
+
+  • ~delimit-cuth if the subpattern is a proper head pattern
+
+  • ~delimit-cuts otherwise
+
+~optional
+One of ~optionalh or ~optionaleh:
+
+  • ~optionaleh if it is an immediate disjunct of a ~oreh pattern
+
+  • ~optionalh otherwise
+
+8.5.1 Single-term patterns
+
+A single-term pattern (abbreviated S-pattern) is a pattern that describes a
+single term. These are like the traditional patterns used in syntax-rules and
+syntax-case, but with additional variants that make them more expressive.
+
+“Single-term” does not mean “atomic”; a single-term pattern can have complex
+structure, and it can match terms that have many parts. For example, (17 ...)
+is a single-term pattern that matches any term that is a proper list of
+repeated 17 numerals.
+
+A proper single-term pattern is one that is not an action pattern.
+
+The list patterns (for “list pattern”) are single-term patterns having a
+restricted structure that guarantees that they match only terms that are proper
+lists.
+
+Here are the variants of single-term pattern:
+
+    id
+
+    An identifier can be either a pattern variable, an annotated pattern
+    variable, or a literal:
+
+      □ If id is the “pattern” name of an entry in the literals list, it is a
+        literal pattern that behaves like (~literal id).
+
+        Examples:
+
+            > (syntax-parse #'(define x 12)
+                #:literals (define)
+                [(define var:id body:expr) 'ok])
+            'ok
+
+            > (syntax-parse #'(lambda x 12)
+                #:literals (define)
+                [(define var:id body:expr) 'ok])
+            lambda: expected the identifier `define' at: lambda
+
+            > (syntax-parse #'(define x 12)
+                #:literals ([def define])
+                [(def var:id body:expr) 'ok])
+            'ok
+
+            > (syntax-parse #'(lambda x 12)
+                #:literals ([def define])
+                [(def var:id body:expr) 'ok])
+            lambda: expected the identifier `define' at: lambda
+
+
+      □ If id is of the form pvar-id:syntax-class-id (that is, two names joined
+        by a colon character), it is an annotated pattern variable, and the
+        pattern is equivalent to (~var pvar-id syntax-class-id).
+
+        Examples:
+
+            > (syntax-parse #'a
+                [var:id (syntax-e #'var)])
+            'a
+
+            > (syntax-parse #'12
+                [var:id (syntax-e #'var)])
+            ?: expected identifier at: 12
+
+            > (define-syntax-class two
+                #:attributes (x y)
+                (pattern (x y)))
+            > (syntax-parse #'(a b)
+                [t:two (syntax->datum #'(t t.x t.y))])
+            '((a b) a b)
+
+            > (syntax-parse #'(a b)
+                [t
+                 #:declare t two
+                 (syntax->datum #'(t t.x t.y))])
+            '((a b) a b)
+
+
+      □ Otherwise, id is a pattern variable, and the pattern is equivalent to (
+        ~var id).
+
+    (~var pvar-id)
+
+    A pattern variable. If pvar-id has no syntax class (by #:convention), the
+    pattern variable matches anything. The pattern variable is bound to the
+    matched subterm, unless the pattern variable is the wildcard (_), in which
+    case no binding occurs.
+
+    If pvar-id does have an associated syntax class, it behaves like an
+    annotated pattern variable with the implicit syntax class inserted.
+
+    (~var pvar-id syntax-class-use)
+     
+    syntax-class-use   =   syntax-class-id
+                       |   (syntax-class-id arg ...)
+
+    An annotated pattern variable. The pattern matches only terms accepted by
+    syntax-class-id (parameterized by the arg-exprs, if present).
+
+    In addition to binding pvar-id, an annotated pattern variable also binds 
+    nested attributes from the syntax class. The names of the nested attributes
+    are formed by prefixing pvar-id. (that is, pvar-id followed by a “dot”
+    character) to the name of the syntax class’s attribute.
+
+    If pvar-id is _, no attributes are bound.
+
+    Examples:
+
+        > (syntax-parse #'a
+            [(~var var id) (syntax-e #'var)])
+        'a
+
+        > (syntax-parse #'12
+            [(~var var id) (syntax-e #'var)])
+        ?: expected identifier at: 12
+
+        > (define-syntax-class two
+            #:attributes (x y)
+            (pattern (x y)))
+        > (syntax-parse #'(a b)
+            [(~var t two) (syntax->datum #'(t t.x t.y))])
+        '((a b) a b)
+
+        > (define-syntax-class (nat-less-than n)
+            (pattern x:nat #:when (< (syntax-e #'x) n)))
+        > (syntax-parse #'(1 2 3 4 5)
+            [((~var small (nat-less-than 4)) ... large:nat ...)
+             (list #'(small ...) #'(large ...))])
+        '(#<syntax:65:0 (1 2 3)> #<syntax:65:0 (4 5)>)
+
+
+
+    (~literal literal-id)
+
+    A literal identifier pattern. Matches any identifier free-identifier=? to
+    literal-id.
+
+    Examples:
+
+        > (syntax-parse #'(define x 12)
+            [((~literal define) var:id body:expr) 'ok])
+        'ok
+
+        > (syntax-parse #'(lambda x 12)
+            [((~literal define) var:id body:expr) 'ok])
+        lambda: expected the identifier `define' at: lambda
+
+
+
+    atomic-datum
+
+    Numbers, strings, booleans, keywords, and the empty list match as literals.
+
+    Examples:
+
+        > (syntax-parse #'(a #:foo bar)
+            [(x #:foo y) (syntax->datum #'y)])
+        'bar
+
+        > (syntax-parse #'(a foo bar)
+            [(x #:foo y) (syntax->datum #'y)])
+        a: expected the literal #:foo at: foo
+
+
+
+    (~datum datum)
+
+    Matches syntax whose S-expression contents (obtained by syntax->datum) is
+    equal? to the given datum.
+
+    Examples:
+
+        > (syntax-parse #'(a #:foo bar)
+            [(x (~datum #:foo) y) (syntax->datum #'y)])
+        'bar
+
+        > (syntax-parse #'(a foo bar)
+            [(x (~datum #:foo) y) (syntax->datum #'y)])
+        a: expected the literal #:foo at: foo
+
+
+
+    The ~datum form is useful for recognizing identifiers symbolically, in
+    contrast to the ~literal form, which recognizes them by binding.
+
+    Examples:
+
+        > (syntax-parse (let ([define 'something-else]) #'(define x y))
+            [((~datum define) var:id e:expr) 'yes]
+            [_ 'no])
+        'yes
+
+        > (syntax-parse (let ([define 'something-else]) #'(define x y))
+            [((~literal define) var:id e:expr) 'yes]
+            [_ 'no])
+        'no
+
+
+
+    (H-pattern . S-pattern)
+
+    Matches any term that can be decomposed into a list prefix matching
+    H-pattern and a suffix matching S-pattern.
+
+    Note that the pattern may match terms that are not even improper lists; if
+    the head pattern can match a zero-length head, then the whole pattern
+    matches whatever the tail pattern accepts.
+
+    The first pattern can be a single-term pattern, in which case the whole
+    pattern matches any pair whose first element matches the first pattern and
+    whose rest matches the second.
+
+    See head patterns for more information.
+
+    (A-pattern . S-pattern)
+
+    Performs the actions specified by A-pattern, then matches any term that
+    matches S-pattern.
+
+    Pragmatically, one can throw an action pattern into any list pattern. Thus,
+    (x y z) is a pattern matching a list of three terms, and (x y ~! z) is a
+    pattern matching a list of three terms, with a cut performed after the
+    second one. In other words, action patterns “don’t take up space.”
+
+    See action patterns for more information.
+
+    (EH-pattern ... . S-pattern)
+
+    Matches any term that can be decomposed into a list head matching some
+    number of repetitions of the EH-pattern alternatives (subject to its
+    repetition constraints) followed by a list tail matching S-pattern.
+
+    In other words, the whole pattern matches either the second pattern (which
+    need not be a list) or a term whose head matches one of the alternatives of
+    the first pattern and whose tail recursively matches the whole sequence
+    pattern.
+
+    See ellipsis-head patterns for more information.
+
+    (H-pattern ...+ . S-pattern)
+
+    Like an ellipses (...) pattern, but requires at one occurrence of the head
+    pattern to be present.
+
+    That is, the following patterns are equivalent:
+      □ (H ...+ . S)
+
+      □ ((~between H 1 +inf.0) ... . S)
+
+    Examples:
+
+        > (syntax-parse #'(1 2 3)
+            [(n:nat ...+) 'ok])
+        'ok
+
+        > (syntax-parse #'()
+            [(n:nat ...+) 'ok]
+            [_ 'none])
+        'none
+
+
+
+    (~and S/A-pattern ...)
+
+    Matches any term that matches all of the subpatterns.
+
+    The subpatterns can contain a mixture of single-term patterns and action
+    patterns, but must contain at least one single-term pattern.
+
+    Attributes bound in subpatterns are available to subsequent subpatterns.
+    The whole pattern binds all of the subpatterns’ attributes.
+
+    One use for ~and-patterns is preserving a whole term (including its lexical
+    context, source location, etc) while also examining its structure. Syntax
+    classes are useful for the same purpose, but ~and can be lighter weight.
+
+    Examples:
+
+        > (define-syntax (import stx)
+            (raise-syntax-error #f "illegal use of import" stx))
+        > (define (check-imports stx) ....)
+        > (syntax-parse #'(m (import one two))
+            #:literals (import)
+            [(_ (~and import-clause (import i ...)))
+             (let ([bad (check-imports
+                         (syntax->list #'(i ...)))])
+               (when bad
+                 (raise-syntax-error
+                  #f "bad import" #'import-clause bad))
+               'ok)])
+        'ok
+
+
+
+    (~or S-pattern ...)
+
+    Matches any term that matches one of the included patterns. The
+    alternatives are tried in order.
+
+    The whole pattern binds all of the subpatterns’ attributes. An attribute
+    that is not bound by the “chosen” subpattern has a value of #f. The same
+    attribute may be bound by multiple subpatterns, and if it is bound by all
+    of the subpatterns, it is sure to have a value if the whole pattern
+    matches.
+
+    Examples:
+
+        > (syntax-parse #'a
+            [(~or x:id y:nat) (values (attribute x) (attribute y))])
+        #<syntax:79:0 a>
+
+        #f
+
+        > (syntax-parse #'(a 1)
+            [(~or (x:id y:nat) (x:id)) (values #'x (attribute y))])
+        #<syntax:80:0 a>
+
+        #<syntax:80:0 1>
+
+        > (syntax-parse #'(b)
+            [(~or (x:id y:nat) (x:id)) (values #'x (attribute y))])
+        #<syntax:81:0 b>
+
+        #f
+
+
+
+    (~not S-pattern)
+
+    Matches any term that does not match the subpattern. None of the
+    subpattern’s attributes are bound outside of the ~not-pattern.
+
+    Example:
+
+        > (syntax-parse #'(x y z => u v)
+            #:literals (=>)
+            [((~and before (~not =>)) ... => after ...)
+             (list #'(before ...) #'(after ...))])
+        '(#<syntax:82:0 (x y z)> #<syntax:82:0 (u v)>)
+
+
+
+    #(pattern-part ...)
+
+    Matches a term that is a vector whose elements, when considered as a list,
+    match the single-term pattern corresponding to (pattern-part ...).
+
+    Examples:
+
+        > (syntax-parse #'#(1 2 3)
+            [#(x y z) (syntax->datum #'z)])
+        3
+
+        > (syntax-parse #'#(1 2 3)
+            [#(x y ...) (syntax->datum #'(y ...))])
+        '(2 3)
+
+        > (syntax-parse #'#(1 2 3)
+            [#(x ~rest y) (syntax->datum #'y)])
+        '(2 3)
+
+
+
+    #s(prefab-struct-key pattern-part ...)
+
+    Matches a term that is a prefab struct whose key is exactly the given key
+    and whose sequence of fields, when considered as a list, match the
+    single-term pattern corresponding to (pattern-part ...).
+
+    Examples:
+
+        > (syntax-parse #'#s(point 1 2 3)
+            [#s(point x y z) 'ok])
+        'ok
+
+        > (syntax-parse #'#s(point 1 2 3)
+            [#s(point x y ...) (syntax->datum #'(y ...))])
+        '(2 3)
+
+        > (syntax-parse #'#s(point 1 2 3)
+            [#s(point x ~rest y) (syntax->datum #'y)])
+        '(2 3)
+
+
+
+    #&S-pattern
+
+    Matches a term that is a box whose contents matches the inner single-term
+    pattern.
+
+    Example:
+
+        > (syntax-parse #'#&5
+            [#&n:nat 'ok])
+        'ok
+
+
+
+    (~rest S-pattern)
+
+    Matches just like S-pattern. The ~rest pattern form is useful in positions
+    where improper (“dotted”) lists are not allowed by the reader, such as
+    vector and structure patterns (see above).
+
+    Examples:
+
+        > (syntax-parse #'(1 2 3)
+            [(x ~rest y) (syntax->datum #'y)])
+        '(2 3)
+
+        > (syntax-parse #'#(1 2 3)
+            [#(x ~rest y) (syntax->datum #'y)])
+        '(2 3)
+
+
+
+    (~describe maybe-opaque expr S-pattern)
+     
+    maybe-opaque   =  
+                   |   #:opaque
+     
+       expr   :   (or/c string? #f)
+
+    The ~describe pattern form annotates a pattern with a description, a string
+    expression that is evaluated in the scope of all prior attribute bindings.
+    If parsing the inner pattern fails, then the description is used to
+    synthesize the error message.
+
+    A ~describe pattern has no effect on backtracking.
+
+    (~commit S-pattern)
+
+    The ~commit pattern form affects backtracking in two ways:
+
+      □ If the pattern succeeds, then all choice points created within the
+        subpattern are discarded, and a failure after the ~commit pattern
+        backtracks only to choice points before the ~commit pattern, never one
+        within it.
+
+      □ A cut (~!) within a ~commit pattern only eliminates choice-points
+        created within the ~commit pattern. In this sense, it acts just like
+        ~delimit-cut.
+
+    (~delimit-cut S-pattern)
+
+    The ~delimit-cut pattern form affects backtracking in the following way:
+
+      □ A cut (~!) within a ~delimit-cut pattern only eliminates choice-points
+        created within the ~delimit-cut pattern.
+
+    A-pattern
+
+    An action pattern is considered a single-term pattern when there is no
+    ambiguity; it matches any term.
+
+8.5.2 Head patterns
+
+A head pattern (abbreviated H-pattern) is a pattern that describes some number
+of terms that occur at the head of some list (possibly an improper list). A
+head pattern’s usefulness comes from being able to match heads of different
+lengths, such as optional forms like keyword arguments.
+
+A proper head pattern is a head pattern that is not a single-term pattern.
+
+Here are the variants of head pattern:
+
+    pvar-id:splicing-syntax-class-id
+
+    Equivalent to (~var pvar-id splicing-syntax-class-id).
+
+    (~var pvar-id splicing-syntax-class-use)
+     
+    splicing-syntax-class-use   =   splicing-syntax-class-id
+                                |   (splicing-syntax-class-id arg ...)
+
+    Pattern variable annotated with a splicing syntax class. Similar to a
+    normal annotated pattern variable, except matches a head pattern.
+
+    (~seq . L-pattern)
+
+    Matches a sequence of terms whose elements, if put in a list, would match
+    L-pattern.
+
+    Example:
+
+        > (syntax-parse #'(1 2 3 4)
+            [((~seq 1 2 3) 4) 'ok])
+        'ok
+
+
+
+    See also the section on ellipsis-head patterns for more interesting
+    examples of ~seq.
+
+    (~and H-pattern ...)
+
+    Like the single-term pattern version, ~ands, but matches a sequence of
+    terms instead.
+
+    Example:
+
+        > (syntax-parse #'(#:a 1 #:b 2 3 4 5)
+            [((~and (~seq (~seq k:keyword e:expr) ...)
+                    (~seq keyword-stuff ...))
+              positional-stuff ...)
+             (syntax->datum #'((k ...) (e ...) (keyword-stuff ...)))])
+        '((#:a #:b) (1 2) (#:a 1 #:b 2))
+
+
+
+    The head pattern variant of ~and requires that all of the subpatterns be
+    proper head patterns (not single-term patterns). This is to prevent typos
+    like the following, a variant of the previous example with the second ~seq
+    omitted:
+
+    Examples:
+
+        > (syntax-parse #'(#:a 1 #:b 2 3 4 5)
+            [((~and (~seq (~seq k:keyword e:expr) ...)
+                    (keyword-stuff ...))
+              positional-stuff ...)
+             (syntax->datum #'((k ...) (e ...) (keyword-stuff ...)))])
+        syntax-parse: single-term pattern not allowed after head
+
+        pattern at: (keyword-stuff ...)
+
+        ; If the example above were allowed, it would be equivalent to this:
+        > (syntax-parse #'(#:a 1 #:b 2 3 4 5)
+            [((~and (~seq (~seq k:keyword e:expr) ...)
+                    (~seq (keyword-stuff ...)))
+              positional-stuff ...)
+             (syntax->datum #'((k ...) (e ...) (keyword-stuff ...)))])
+        ?: expected keyword at: 3
+
+
+
+    (~or H-pattern ...)
+
+    Like the single-term pattern version, ~ors, but matches a sequence of terms
+    instead.
+
+    Examples:
+
+        > (syntax-parse #'(m #:foo 2 a b c)
+            [(_ (~or (~seq #:foo x) (~seq)) y:id ...)
+             (attribute x)])
+        #<syntax:96:0 2>
+
+        > (syntax-parse #'(m a b c)
+            [(_ (~or (~seq #:foo x) (~seq)) y:id ...)
+             (attribute x)])
+        #f
+
+
+
+    (~optional H-pattern maybe-optional-option)
+     
+    maybe-optional-option   =  
+                            |   #:defaults ([attr-arity-decl expr] ...)
+                                 
+          attr-arity-decl   =   attr-id
+                            |   (attr-id depth)
+
+    Matches either the given head subpattern or an empty sequence of terms. If
+    the #:defaults option is given, the subsequent attribute bindings are used
+    if the subpattern does not match. The default attributes must be a subset
+    of the subpattern’s attributes.
+
+    Examples:
+
+        > (syntax-parse #'(m #:foo 2 a b c)
+            [(_ (~optional (~seq #:foo x) #:defaults ([x #'#f])) y:id ...)
+             (attribute x)])
+        #<syntax:98:0 2>
+
+        > (syntax-parse #'(m a b c)
+            [(_ (~optional (~seq #:foo x) #:defaults ([x #'#f])) y:id ...)
+             (attribute x)])
+        #<syntax:99:0 #f>
+
+        > (syntax-parse #'(m a b c)
+            [(_ (~optional (~seq #:foo x)) y:id ...)
+             (attribute x)])
+        #f
+
+        > (syntax-parse #'(m #:syms a b c)
+            [(_ (~optional (~seq #:nums n:nat ...) #:defaults ([(n 1) null]))
+                (~optional (~seq #:syms s:id ...) #:defaults ([(s 1) null])))
+             #'((n ...) (s ...))])
+        #<syntax:101:0 (() (a b c))>
+
+
+
+    (~describe expr H-pattern)
+
+    Like the single-term pattern version, ~describes, but matches a head
+    pattern instead.
+
+    (~commit H-pattern)
+
+    Like the single-term pattern version, ~commits, but matches a head pattern
+    instead.
+
+    (~delimit-cut H-pattern)
+
+    Like the single-term pattern version, ~delimit-cuts, but matches a head
+    pattern instead.
+
+    (~peek H-pattern)
+
+    Matches the H-pattern but then resets the matching position, so the ~peek
+    pattern consumes no input. Used to look ahead in a sequence.
+
+    Examples:
+
+        > (define-splicing-syntax-class nf-id ; non-final id
+            (pattern (~seq x:id (~peek another:id))))
+        > (syntax-parse #'(a b c 1 2 3)
+            [(n:nf-id ... rest ...)
+             (printf "nf-ids are ~s\n" (syntax->datum #'(n.x ...)))
+             (printf "rest is ~s\n" (syntax->datum #'(rest ...)))])
+        nf-ids are (a b)
+
+        rest is (c 1 2 3)
+
+
+
+    (~peek-not H-pattern)
+
+    Like ~peek, but succeeds if the subpattern fails and fails if the
+    subpattern succeeds. On success, the ~peek-not resets the matching
+    position, so the pattern consumes no input. Used to look ahead in a
+    sequence. None of the subpattern’s attributes are bound outside of the
+    ~peek-not-pattern.
+
+    Examples:
+
+        > (define-splicing-syntax-class final ; final term
+            (pattern (~seq x (~peek-not _))))
+        > (syntax-parse #'(a b c)
+            [((~or f:final o:other) ...)
+             (printf "finals are ~s\n" (syntax->datum #'(f.x ...)))
+             (printf "others are ~s\n" (syntax->datum #'(o ...)))])
+        syntax-parse: not defined as syntax class at: other
+
+
+
+    S-pattern
+
+    Matches a sequence of one element, which must be a term matching S-pattern.
+
+8.5.3 Ellipsis-head patterns
+
+An ellipsis-head pattern (abbreviated EH-pattern) is pattern that describes
+some number of terms, like a head pattern, but also places contraints on the
+number of times it occurs in a repetition. They are useful for matching, for
+example, keyword arguments where the keywords may come in any order. Multiple
+alternatives are grouped together via ~oreh.
+
+Examples:
+
+    > (define parser1
+        (syntax-parser
+         [((~or (~once (~seq #:a x) #:name "#:a keyword")
+                (~optional (~seq #:b y) #:name "#:b keyword")
+                (~seq #:c z)) ...)
+          'ok]))
+    > (parser1 #'(#:a 1))
+    'ok
+
+    > (parser1 #'(#:b 2 #:c 3 #:c 25 #:a 'hi))
+    'ok
+
+    > (parser1 #'(#:a 1 #:a 2))
+    ?: too many occurrences of #:a keyword at: ()
+
+
+
+The pattern requires exactly one occurrence of the #:a keyword and argument, at
+most one occurrence of the #:b keyword and argument, and any number of #:c
+keywords and arguments. The “pieces” can occur in any order.
+
+Here are the variants of ellipsis-head pattern:
+
+    (~or EH-pattern ...)
+
+    Matches if any of the inner EH-pattern alternatives match.
+
+    (~once H-pattern once-option ...)
+     
+    once-option   =   #:name name-expr
+                  |   #:too-few too-few-message-expr
+                  |   #:too-many too-many-message-expr
+     
+           name-expr   :   (or/c string? #f)
+           too-few-message-expr   :   (or/c string? #f)
+           too-many-message-expr   :   (or/c string? #f)
+
+
+    Matches if the inner H-pattern matches. This pattern must be matched
+    exactly once in the match of the entire repetition sequence.
+
+    If the pattern is not matched in the repetition sequence, then the ellipsis
+    pattern fails with the message either too-few-message-expr or "missing
+    required occurrence of name-expr".
+
+    If the pattern is chosen more than once in the repetition sequence, then
+    the ellipsis pattern fails with the message either too-many-message-expr or
+    "too many occurrences of name-expr".
+
+    (~optional H-pattern optional-option ...)
+     
+    optional-option   =   #:name name-expr
+                      |   #:too-many too-many-message-expr
+                      |   #:defaults ([attr-id expr] ...)
+     
+           name-expr   :   (or/c string? #f)
+           too-many-message-expr   :   (or/c string? #f)
+
+
+    Matches if the inner H-pattern matches. This pattern may be used at most
+    once in the match of the entire repetition.
+
+    If the pattern is matched more than once in the repetition sequence, then
+    the ellipsis pattern fails with the message either too-many-message-expr or
+    "too many occurrences of name-expr".
+
+    If the #:defaults option is given, the following attribute bindings are
+    used if the subpattern does not match at all in the sequence. The default
+    attributes must be a subset of the subpattern’s attributes.
+
+    (~between H-pattern min-number max-number between-option ...)
+     
+    reps-option   =   #:name name-expr
+                  |   #:too-few too-few-message-expr
+                  |   #:too-many too-many-message-expr
+     
+           name-expr   :   (or/c syntax? #f)
+           too-few-message-expr   :   (or/c syntax? #f)
+
+
+    Matches if the inner H-pattern matches. This pattern must be matched at
+    least min-number and at most max-number times in the entire repetition.
+
+    If the pattern is matched too few times, then the ellipsis pattern fails
+    with the message either too-few-message-expr or "too few occurrences of
+    name-expr".
+
+    If the pattern is chosen too many times, then the ellipsis pattern fails
+    with the message either too-many-message-expr or "too few occurrences of
+    name-expr".
+
+8.5.4 Action patterns
+
+An action pattern (abbreviated A-pattern) does not describe any syntax; rather,
+it has an effect such as the binding of attributes or the modification of the
+matching process.
+
+    ~!
+
+    The cut operator, written ~!, eliminates backtracking choice points and
+    commits parsing to the current branch of the pattern it is exploring.
+
+    Common opportunities for cut-patterns come from recognizing special forms
+    based on keywords. Consider the following expression:
+
+        > (syntax-parse #'(define-values a 123)
+            #:literals (define-values define-syntaxes)
+            [(define-values (x:id ...) e) 'define-values]
+            [(define-syntaxes (x:id ...) e) 'define-syntaxes]
+            [e 'expression])
+        'expression
+
+
+    Given the ill-formed term (define-values a 123), the expression tries the
+    first clause, fails to match a against the pattern (x:id ...), and then
+    backtracks to the second clause and ultimately the third clause, producing
+    the value 'expression. But the term is not an expression; it is an
+    ill-formed use of define-values. The proper way to write the syntax-parse
+    expression follows:
+
+        > (syntax-parse #'(define-values a 123)
+            #:literals (define-values define-syntaxes)
+            [(define-values ~! (x:id ...) e) 'define-values]
+            [(define-syntaxes ~! (x:id ...) e) 'define-syntaxes]
+            [e 'expression])
+        define-values: bad syntax at: (define-values a 123)
+
+
+    Now, given the same term, syntax-parse tries the first clause, and since
+    the keyword define-values matches, the cut-pattern commits to the current
+    pattern, eliminating the choice points for the second and third clauses. So
+    when the clause fails to match, the syntax-parse expression raises an
+    error.
+
+    The effect of a ~! pattern is delimited by the nearest enclosing
+    ~delimit-cut or ~commit pattern. If there is no enclosing ~describe pattern
+    but the cut occurs within a syntax class definition, then only choice
+    points within the syntax class definition are discarded. A ~! pattern is
+    not allowed within a ~not pattern unless there is an intervening
+    ~delimit-cut or ~commit pattern.
+
+    (~bind [attr-arity-decl expr] ...)
+     
+    attr-arity-decl   =   attr-name-id
+                      |   (attr-name-id depth)
+
+    Evaluates the exprs and binds them to the given attr-ids as attributes.
+
+    (~fail maybe-fail-condition maybe-message-expr)
+     
+    maybe-fail-condition   =  
+                           |   #:when condition-expr
+                           |   #:unless condition-expr
+                                
+      maybe-message-expr   =  
+                           |   message-expr
+     
+       message-expr   :   (or/c string? #f)
+
+    If the condition is absent, or if the #:when condition evaluates to a true
+    value, or if the #:unless condition evaluates to #f, then the pattern fails
+    with the given message. If the message is omitted, the default value #f is
+    used, representing “no message.”
+
+    Fail patterns can be used together with cut patterns to recognize specific
+    ill-formed terms and address them with custom failure messages.
+
+    (~parse S-pattern stx-expr)
+     
+       stx-expr   :   syntax?
+
+    Evaluates stx-expr to a syntax object and matches it against S-pattern.
+
+    (~and A-pattern ...+)
+
+    Performs the actions of each A-pattern.
+
+    (~do defn-or-expr ...)
+
+    Takes a sequence of definitions and expressions, which may be intermixed,
+    and evaluates them in the scope of all previous attribute bindings. The
+    names bound by the definitions are in scope in the expressions of
+    subsequent patterns and clauses.
+
+    There is currently no way to bind attributes using a ~do pattern. It is an
+    error to shadow an attribute binding with a definition in a ~do block.
+
+    Example:
+
+        > (syntax-parse #'(1 2 3)
+            [(a b (~do (printf "a was ~s\n" #'a)) c:id) 'ok])
+        a was #<syntax:112:0 1>
+
+        ?: expected identifier at: 3
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

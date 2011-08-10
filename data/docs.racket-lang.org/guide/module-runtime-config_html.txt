@@ -1,0 +1,253 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 17  Creating Languages
+17.1  Module Languages
+17.2  Reader Extensions
+17.3  Defining new #lang Languages
+▼ 17.3  Defining new #lang Languages
+17.3.1  Designating a #lang Language
+17.3.2  Using #lang reader
+17.3.3  Using #lang s-exp syntax/ module-reader
+17.3.4  Installing a Language
+17.3.5  Source-Handling Configuration
+17.3.6  Module-Handling Configuration
+[...search manuals...]
+  top← prev  up  next → 
+
+17.3.6 Module-Handling Configuration
+
+Suppose that the file "death-list-5.rkt" contains
+
+        "death-list-5.rkt"
+
+            #lang racket
+            (list "O-Ren Ishii"
+                  "Vernita Green"
+                  "Budd"
+                  "Elle Driver"
+                  "Bill")
+
+If you require "death-list-5.rkt" directly, then it prints the list in the
+usual Racket result format:
+
+    > (require "death-list-5.rkt")
+    '("O-Ren Ishii" "Vernita Green" "Budd" "Elle Driver" "Bill")
+
+
+However, if "death-list-5.rkt" is required by a "kiddo.rkt" that is implemented
+with scheme instead of racket:
+
+        "kiddo.rkt"
+
+            #lang scheme
+            (require "death-list-5.rkt")
+
+then, if you run "kiddo.rkt" file in DrRacket or if you run it directly with
+racket, "kiddo.rkt" causes "death-list-5.rkt" to print its list in traditional
+Scheme format, without the leading quote:
+
+    ("O-Ren Ishii" "Vernita Green" "Budd" "Elle Driver" "Bill")
+
+The "kiddo.rkt" example illustrates how the format for printing a result value
+can depend on the main module of a program instead of the language that is used
+to implement it.
+
+Unlike the syntax-coloring property of a language (as described in
+Source-Handling Configuration), the result-value format is a property of a
+module (via its language) as opposed to a property of the module’s source text.
+That is, the run-time configuration for a module should be available even if
+the module is compiled to bytecode form and the source is unavailable. Due to
+this difference, language properties such as run-time configuration are not
+reported via a get-info function that exported from the language’s parser
+module, but instead through a separate module whose name is attached to the
+syntax object for a parsed module form.
+
+Going back to the literal language (see Source-Handling Configuration), we can
+adjust the language so that directly running a literal module causes it to
+print out its string, while using a literal module in a larger program simply
+provides data without printing. To make this work, we will need three extra
+module files:
+
+    .... (the main installation or the user’s space)
+     |- "collects"
+          |- "literal"
+               |- "lang"
+               |    |- "reader.rkt"
+               |- "language-info.rkt"   (new)
+               |- "runtime-config.rkt"  (new)
+               |- "show.rkt"            (new)
+
+  • The "literal/language-info.rkt" module provides reflective information
+    about the language of modules written in the literal language. The name of
+    this module is not special; it will be connected to the literal language
+    through a change to "literal/lang/reader.rkt".
+
+  • The "literal/runtime-config.rkt" module will be identified by "literal/
+    language-info.rkt" as the run-time configuration code for a main module
+    that uses the literal language.
+
+  • The "literal/show.rkt" module will provide a show function to be applied to
+    the string content of a literal module. The run-time configuration action
+    in "literal/runtime-config.rkt" will instruct show to print the strings
+    that it is given, but only when a module using the literal language is run
+    directly.
+
+Multiple modules are needed to implement the printing change, because the
+different modules must run at different times. For example, the code needed to
+parse a literal module is not needed after the module has been compiled, while
+the run-time configuration code is needed only when the module is run as the
+main module of a program. Similarly, when creating a stand-alone executable
+with raco exe, the main module (in compiled form) must be queried for its
+run-time configuration, but the module and its configuration action should not
+run until the executable is started. By using different modules for these
+different tasks, we avoid loading code at times when it is not needed.
+
+The three new files are connected to the literal language by changes to
+"literal/lang/reader.rkt":
+
+  • The module form generated by the read-syntax function must import the
+    literal/show module and call its show function.
+
+  • The module form must be annotated with a 'language-info syntax property,
+    whose value points to a get-language-info function exported by a literal/
+    language-info module. The get-language-info function will be responsible
+    for reporting the literal/runtime-config as the run-time configuration
+    action of the language.
+
+    The 'language-info syntax property value is a vector that contains a module
+    (in this case literal/language-info), a symbol for one of the module’s
+    exports (get-language-info in this case), and an data value (which is not
+    needed in this case). The data component allows information to be
+    propagated from the source to the module’s language information.
+
+These changes are implemented in the following revised "literal/lang/
+reader.rkt":
+
+        "literal/lang/reader.rkt"
+
+            #lang racket
+            (require syntax/strip-context)
+             
+            (provide (rename-out [literal-read read]
+                                 [literal-read-syntax read-syntax])
+                     get-info)
+             
+            (define (literal-read in)
+              (syntax->datum
+               (literal-read-syntax #f in)))
+             
+            (define (literal-read-syntax src in)
+              (with-syntax ([str (port->string in)])
+                (syntax-property
+                 (strip-context
+                  #'(module anything racket
+                      (require literal/show)
+                      (provide data)
+                      (define data 'str)
+                      (show data)))
+                 'module-language
+                 '#(literal/language-info get-language-info #f))))
+             
+            (define (get-info in mod line col pos)
+              (lambda (key default)
+                (case key
+                  [(color-lexer)
+                   (dynamic-require 'syntax-color/default-lexer
+                                    'default-lexer)]
+                  [else default])))
+
+When a module form with a 'module-language property is compiled, the property
+value is preserved with the compiled module, and it is accessible via
+reflective functions like module->language-info. When racket or DrRacket runs a
+module, it uses module->language-info to obtain a vector that contains a module
+name, export name, and data value. The result of the function applied to the
+data should be another function that answers queries, much like the get-info
+function in a language reader.
+
+For literal, "literal/language-info.rkt" is implemented as:
+
+        "literal/language-info.rkt"
+
+            #lang racket
+             
+            (provide get-language-info)
+             
+            (define (get-language-info data)
+              (lambda (key default)
+                (case key
+                  [(configure-runtime)
+                   '(#(literal/runtime-config configure #f))]
+                  [else default])))
+
+The function returned by get-language-info answers a 'configure-runtime query
+with a list of yet more vectors, where each vector contains a module name, an
+exported name, and a data value. For the literal language, the run-time
+configuration action implemented in "literal/runtime-config.rkt" is to enable
+printing of strings that are sent to show:
+
+        "literal/runtime-config.rkt"
+
+            #lang racket
+            (require "show.rkt")
+             
+            (provide configure)
+             
+            (define (configure data)
+              (show-enabled #t))
+
+Finally, the "literal/runtime-config.rkt" module must provide the show-enabled
+parameter and show function:
+
+        "literal/runtime-config.rkt"
+
+            #lang racket
+             
+            (provide show show-enabled)
+             
+            (define show-enabled (make-parameter #f))
+             
+            (define (show v)
+              (when (show-enabled)
+                (display v)))
+
+With all of the pieces for literal in place, try running the following variant
+of "tuvalu.rkt" directly and through a require from another module:
+
+        "tuvalu.rkt"
+
+            #lang literal
+            Technology!
+            System!
+            Perfect!
+
+When using syntax/module-reader to implement a language, specify a module’s
+language information through the #:language-info optional specification. The
+value provided through #:language-info is attached to a module form directly as
+a syntax property.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

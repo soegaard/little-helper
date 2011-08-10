@@ -1,0 +1,66 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Simple Goals and Queries
+
+Racklog objects are the same as Racket objects. However, there are two subsets
+of these objects that are of special interest to Racklog: goals and predicates.
+We will first look at some simple goals. Predicates will introduce predicates
+and ways of making complex goals using predicates.
+
+A goal is an object whose truth or falsity we can check. A goal that turns out
+to be true is said to succeed. A goal that turns out to be false is said to
+fail.
+
+Two simple goals that are provided in Racklog are:
+
+    %true
+    %fail
+
+The goal %true succeeds. The goal %fail always fails.
+
+(The names of all Racklog primitive objects start with %. This is to avoid
+clashes with the names of conventional Racket objects of related meaning.
+User-created objects in Racklog are not required to follow this convention.)
+
+A Racklog user can query a goal by wrapping it in a %which-form.
+
+    (%which () %true)
+
+evaluates to (), indicating success, whereas:
+
+    (%which () %fail)
+
+evaluates to #f, indicating failure.
+
+Note 1: The second subexpression of the %which-form is the empty list (). Later
+(Solving Goals), we will see %whiches with other lists as the second subform.
+
+Henceforth, we will use the notation:
+
+    > E
+    'F
+
+
+to say that E evaluates to F. Thus,
+
+    > (%which () %true)
+    '()
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

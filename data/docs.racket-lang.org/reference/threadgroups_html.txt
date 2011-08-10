@@ -1,0 +1,70 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 13  Reflection and Security
+ 13.1  Namespaces
+ 13.2  Evaluation and Compilation
+ 13.3  The racket/ load Language
+ 13.4  Module Names and Loading
+ 13.5  Impersonators and Chaperones
+ 13.6  Security Guards
+ 13.7  Custodians
+ 13.8  Thread Groups
+ 13.9  Structure Inspectors
+13.10  Code Inspectors
+13.11  Sandboxed Evaluation
+On this page:
+make-thread-group
+thread-group?
+current-thread-group
+[...search manuals...]
+  top← prev  up  next → 
+
+13.8 Thread Groups
+
+A thread group is a collection of threads and other thread groups that have
+equal claim to the CPU. By nesting thread groups and by creating certain
+threads within certain groups, a programmer can control the amount of CPU
+allocated to a set of threads. Every thread belongs to a thread group, which is
+determined by the current-thread-group parameter when the thread is created.
+Thread groups and custodians (see Custodians) are independent.
+
+The root thread group receives all of the CPU that the operating system gives
+Racket. Every thread or nested group in a particular thread group receives
+equal allocation of the CPU (a portion of the group’s access), although a
+thread may relinquish part of its allocation by sleeping or synchronizing with
+other processes.
+
+(make-thread-group [group]) → thread-group?
+  group : thread-group? = (current-thread-group)
+Creates a new thread group that belongs to group.
+
+(thread-group? v) → boolean?
+  v : any/c
+Returns #t if v is a thread group value, #f otherwise.
+
+(current-thread-group) → thread-group?
+(current-thread-group group) → void?
+  group : thread-group?
+A parameter that determines the thread group for newly created threads.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

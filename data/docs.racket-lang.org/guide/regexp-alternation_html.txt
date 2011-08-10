@@ -1,0 +1,93 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 9  Regular Expressions
+ 9.1  Writing Regexp Patterns
+ 9.2  Matching Regexp Patterns
+ 9.3  Basic Assertions
+ 9.4  Characters and Character Classes
+ 9.5  Quantifiers
+ 9.6  Clusters
+ 9.7  Alternation
+ 9.8  Backtracking
+ 9.9  Looking Ahead and Behind
+9.10  An Extended Example
+[...search manuals...]
+  top← prev  up  next → 
+
+9.7 Alternation
+
+You can specify a list of alternate subpatterns by separating them by |. The |
+separates subpatterns in the nearest enclosing cluster (or in the entire
+pattern string if there are no enclosing parens).
+
+    > (regexp-match #rx"f(ee|i|o|um)" "a small, final fee")
+    '("fi" "i")
+
+    > (regexp-replace* #rx"([yi])s(e[sdr]?|ing|ation)"
+                       (string-append
+                        "analyse an energising organisation"
+                        " pulsing with noisy organisms")
+                       "\\1z\\2")
+    "analyze an energizing organization pulsing with noisy organisms"
+
+
+Note again that if you wish to use clustering merely to specify a list of
+alternate subpatterns but do not want the submatch, use (?: instead of (.
+
+    > (regexp-match #rx"f(?:ee|i|o|um)" "fun for all")
+    '("fo")
+
+
+An important thing to note about alternation is that the leftmost matching
+alternate is picked regardless of its length. Thus, if one of the alternates is
+a prefix of a later alternate, the latter may not have a chance to match.
+
+    > (regexp-match #rx"call|call-with-current-continuation"
+                    "call-with-current-continuation")
+    '("call")
+
+
+To allow the longer alternate to have a shot at matching, place it before the
+shorter one:
+
+    > (regexp-match #rx"call-with-current-continuation|call"
+                    "call-with-current-continuation")
+    '("call-with-current-continuation")
+
+
+In any case, an overall match for the entire regexp is always preferred to an
+overall non-match. In the following, the longer alternate still wins, because
+its preferred shorter prefix fails to yield an overall match.
+
+    > (regexp-match
+       #rx"(?:call|call-with-current-continuation) constrained"
+       "call-with-current-continuation constrained")
+    '("call-with-current-continuation constrained")
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

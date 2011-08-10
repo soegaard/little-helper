@@ -1,0 +1,461 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+add-function
+break-sequence
+call-function
+chain-to-keymap
+get-double-click-interval
+handle-key-event
+handle-mouse-event
+map-function
+remove-chained-keymap
+remove-grab-key-function
+remove-grab-mouse-function
+set-break-sequence-callback
+set-double-click-interval
+set-grab-key-function
+set-grab-mouse-function
+[...search manuals...]
+  top← prev  up  next → 
+
+keymap% : class?
+  superclass: object%
+
+A keymap% object is used by editor<%> objects to map keyboard and mouse
+sequences to arbitrary functions in an extensible way. Keymaps can be used
+without editors, as well. A keymap% object contains
+
+  • a mapping from function names to event-handling procedures; and
+
+  • a mapping from key and mouse sequences to function names.
+
+A handler procedure in a keymap is invoked with a key-event% object or a
+mouse-event% object. It is also given another value that depends on the context
+in which the keymap is used (or, more specifically, the arguments to
+handle-key-event or handle-mouse-event). For keymaps associated with editor<%>
+objects, the extra parameter is generally the editor<%> object that received
+the keyboard or mouse event.
+
+(new keymap%) → (is-a?/c keymap%)
+Creates an empty keymap.
+
+(send a-keymap add-function name func) → void?
+  name : string?
+  func : (any/c (is-a?/c event%) . -> . any/c)
+Names a new function to handle events, called in response to handle-key-event,
+handle-mouse-event, or call-function. The return value is of the procedure is
+ignored.
+
+If there was already a function mapped to this name, it will be replaced with
+the given function.
+
+When the function is called, it gets the arguments that were passed to
+handle-key-event, handle-mouse-event, or call-function. For keymaps associated
+with an editor, this is normally the target editor.
+
+(send a-keymap break-sequence) → void?
+Clears the state of the keymap if it is in the middle of a key sequence. For
+example, the user may have hit escape, and then changed to another window; if
+escape is part of a keyboard sequence, the keymap state needs to be cleared
+because the user is not going to complete the sequence.
+
+A break callback function can be installed with set-break-sequence-callback.
+
+(send a-keymap call-function    name                
+                                in                  
+                                event               
+                              [ try-chain?])   →   boolean?
+  name : string?
+  in : any/c
+  event : (is-a?/c event%)
+  try-chain? : any/c = #f
+Calls a named event handler directly. If the function cannot be found or the
+found handler did not want to handle the event, #f is returned. Otherwise, the
+return value is the boolean return value of the event handler.
+
+The in and event arguments are passed on to the keymap handler procedure if one
+is found.
+
+If try-chain? is not #f, keymaps chained to this one are searched for the
+function name. If the function is not found and try-chain? is #f; an exception
+is also raised, but the exception handler cannot escape (see Continuations and
+Event Dispatch).
+
+(send a-keymap chain-to-keymap   next            
+                                 prefix?)   →   void?
+  next : (is-a?/c keymap%)
+  prefix? : any/c
+Chains next off a-keymap The next keymap will be used to handle events which
+are not handled by a-keymap. If prefix? is a true value, then next will take
+precedence over other keymaps already chained to a-keymap.
+
+Multiple keymaps can be chained off one keymap using chain-to-keymap. When
+keymaps are chained off a main keymap, events not handled by the main keymap
+are passed to the chained keymaps until some chained keymap handles the events.
+Keymaps can be chained together in an arbitrary acyclic graph.
+
+Keymap chaining is useful because multiple-event sequences are handled
+correctly for chained groups. Without chaining, a sequence of events can
+produce state in a keymap that must be reset when a callback is invoked in one
+of the keymaps. This state can be manually cleared with break-sequence, though
+calling the break-sequence method also invokes the handler installed by
+set-break-sequence-callback.
+
+(send a-keymap get-double-click-interval)
+ → (integer-in 0 1000000)
+Returns the maximum number of milliseconds that can separate the clicks of a
+double-click.
+
+The default interval is determined in a platform-specific way, but it can be
+overridden globally though the 'GRacket:doubleClickTime preference; see
+Preferences.
+
+(send a-keymap handle-key-event in event) → boolean?
+  in : any/c
+  event : (is-a?/c key-event%)
+Attempts to handle a keyboard event, returning #t if the event was handled
+(i.e., a handler was found and it returned a true value), #f otherwise.
+
+See also call-function.
+
+(send a-keymap handle-mouse-event in event) → boolean?
+  in : any/c
+  event : (is-a?/c mouse-event%)
+Attempts to handle a mouse event, returning #t if the event was handled (i.e.,
+a handler was found and it returned a true value), #f otherwise.
+
+See also call-function.
+
+(send a-keymap map-function keyname fname) → void?
+  keyname : string?
+  fname : string?
+Maps an input state sequence to a function name using a string-encoded sequence
+in keyname. The format of keyname is a sequence of semicolon-delimited input
+states; each state is made up of a sequence of modifier identifiers followed by
+a key identifier.
+
+The modifier identifiers are:
+
+  • s: — All platforms: Shift
+
+  • c: — All platforms: Control
+
+  • a: — Mac OS X: Option
+
+  • m: — Windows: Alt; Unix: Meta; Mac OS X: Command, when
+    map-command-as-meta-key produces #t
+
+  • d: — Mac OS X: Command
+
+  • l: — All platforms: Caps Lock
+
+  • ?: — All platforms: allow match to character produced by opposite use of
+    Shift, AltGr/Option, and/or Caps Lock, when available; see
+    get-other-shift-key-code in key-event%
+
+If a particular modifier is not mentioned in a state string, it matches states
+whether that modifier is pressed or not pressed. A ~ preceding a modifier makes
+the string match only states where the corresponding modifier is not pressed.
+If the state string begins with :, then the string matches a state only if
+modifiers (other than Caps Lock) not mentioned in the string are not pressed.
+
+A key identifier can be either a character on the keyboard (e.g., a, 2, ?) or a
+special name. The special names are as follows:
+
+  • leftbutton (button down)
+
+  • rightbutton
+
+  • middlebutton
+
+  • leftbuttondouble (button down for double-click)
+
+  • rightbuttondouble
+
+  • middlebuttondouble
+
+  • leftbuttontriple (button down for triple-click)
+
+  • rightbuttontriple
+
+  • middlebuttontriple
+
+  • leftbuttonseq (all events from button down through button up)
+
+  • rightbuttonseq
+
+  • middlebuttonseq
+
+  • wheelup
+
+  • wheeldown
+
+  • wheelleft
+
+  • wheelright
+
+  • esc
+
+  • delete
+
+  • del (same as delete)
+
+  • insert
+
+  • ins (same as insert)
+
+  • add
+
+  • subtract
+
+  • multiply
+
+  • divide
+
+  • backspace
+
+  • back
+
+  • return
+
+  • enter (same as return)
+
+  • tab
+
+  • space
+
+  • right
+
+  • left
+
+  • up
+
+  • down
+
+  • home
+
+  • end
+
+  • pageup
+
+  • pagedown
+
+  • semicolon (since ; separates sequence steps)
+
+  • colon (since : separates modifiers)
+
+  • numpad0
+
+  • numpad1
+
+  • numpad2
+
+  • numpad3
+
+  • numpad4
+
+  • numpad5
+
+  • numpad6
+
+  • numpad7
+
+  • numpad8
+
+  • numpad9
+
+  • numpadenter
+
+  • f1
+
+  • f2
+
+  • f3
+
+  • f4
+
+  • f5
+
+  • f6
+
+  • f7
+
+  • f8
+
+  • f9
+
+  • f10
+
+  • f11
+
+  • f12
+
+  • f13
+
+  • f14
+
+  • f15
+
+  • f16
+
+  • f17
+
+  • f18
+
+  • f19
+
+  • f20
+
+  • f21
+
+  • f22
+
+  • f23
+
+  • f24
+
+For a special keyword, the capitalization does not matter. However,
+capitalization is important for single-letter keynames. Furthermore,
+single-letter ASCII keynames are treated specially: A and s:a are both treated
+as s:A. However, when c: is included on Windows without m:, or when d: is
+included on Mac OS X, then ASCII letters are not upcased with s:, since the
+upcasing behavior of the Shift key is cancelled by Control without Alt (on
+Windows) or by Command (on Mac OS X).
+
+A state can match multiple state strings mapped in a keymap (or keymap chain);
+when a state matches multiple state strings, a mapping is selected by ranking
+the strings according to specificity. A state string that mentions more pressed
+modifiers ranks higher than other state strings, and if two strings mention the
+same number of pressed modifiers, the one that mentions more unpressed
+modifiers ranks higher. Finally, a state string that includes ?: and matches
+only with the opposite use of Shift, AltGr/Option, and/or Caps Lock ranks below
+all matches that do not depend on ?:, and one that requires the opposite use of
+both Shift and AltGr/Option ranks even lower. In the case that multiple
+matching strings have the same rank, a match is selected arbitrarily.
+
+Examples:
+
+  • "space" — matches whenever the space bar is pressed, regardless of the
+    state of modifiers keys.
+
+  • "~c:space" — matches whenever the space bar is pressed and the Control key
+    is not pressed.
+
+  • "a" — matches whenever a is typed, regardless of the state of modifiers
+    keys (other than Shift).
+
+  • ":a" — matches only when a is typed with no modifier keys pressed.
+
+  • "~c:a" — matches whenever a is typed and neither the Shift key nor the
+    Control key is pressed.
+
+  • ":esc;:c:c" — matches an Escape key press (no modifiers) followed by a
+    Control-C press (no modifiers other than Control).
+
+  • "?:d:+" — matches when Command is pressed with key that produces +, even if
+    producing + normally requires pressing Shift.
+
+A call to map-function that would map a particular key sequence both as a
+prefix and as a complete sequence raises an exception, but the exception
+handler cannot escape (see Continuations and Event Dispatch).
+
+A function name does not have to be mapped to a handler before input states are
+mapped to the name; the handler is dispatched by name at the time of
+invocation. The event handler mapped to a function name can be changed without
+affecting the map from input states to function names.
+
+(send a-keymap remove-chained-keymap keymap) → void?
+  keymap : (is-a?/c keymap%)
+If keymap was previously chained from this keymap (through chain-to-keymap),
+then it is removed from the chain-to list.
+
+(send a-keymap remove-grab-key-function) → void?
+Removes a callback installed with set-grab-key-function.
+
+(send a-keymap remove-grab-mouse-function) → void?
+Removes a callback installed with set-grab-mouse-function.
+
+(send a-keymap set-break-sequence-callback f) → void?
+  f : (-> any)
+Installs a callback procedure that is invoked when break-sequence is called.
+After it is invoked once, the callback is removed from the keymap. If another
+callback is installed before break-sequence is called, the old callback is
+invoked immediately before the new one is installed.
+
+(send a-keymap set-double-click-interval n) → void?
+  n : (integer-in 0 1000000)
+Sets the maximum number of milliseconds that can separate the clicks of a
+double-click.
+
+(send a-keymap set-grab-key-function f) → void?
+           ((or/c string? false?)
+            (is-a?/c keymap%)
+   f   :    any/c
+            (is-a?/c key-event%)
+            . -> . any)
+Installs a callback procedure that is invoked after the keymap matches input to
+a function name or fails to match an input. Only one keyboard grab function can
+be installed at a time. When keymaps are chained to a keymap with a grab
+callback, the callback is invoked for matches in the chained keymap (when the
+chained keymap does not have its own grab callback).
+
+If a grab callback returns a true value for a matching or non-matching
+callback, the event is considered handled. If the callback returns a true value
+for a matching callback, then the matching keymap function is not called by the
+keymap.
+
+The callback procedure f will be invoked as:
+
+    (f str keymap editor event)
+
+The str argument is the name of a function for a matching callback, or #f for a
+non-matching callback. The keymap argument is the keymap that matched (possibly
+a keymap chained to the one in which the callback was installed) or the keymap
+in which the callback was installed. The editor and event arguments are the
+same as passed on to the matching keymap function.
+
+Key grab callback functions are de-installed with remove-grab-key-function.
+
+(send a-keymap set-grab-mouse-function f) → void?
+           ((or/c string? false?)
+            (is-a?/c keymap%)
+   f   :    any/c
+            (is-a?/c mouse-event%)
+            . -> . any)
+Like set-grab-key-function, but for mouse events.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

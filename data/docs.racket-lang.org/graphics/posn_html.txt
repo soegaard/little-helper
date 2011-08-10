@@ -1,0 +1,54 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+On this page:
+posn
+get-pixel
+get-color-pixel
+test-pixel
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Position Operations
+
+A position is a pixel location within a viewport. The upper-left corner is
+pixel (0, 0), and positions increase to the right and down.
+
+(struct   posn (x y)
+          #:extra-constructor-name make-posn)
+  x : real?
+  y : real?
+Represents a positions.
+
+((get-pixel viewport) p) → (one-of/c 0 1)
+  viewport : viewport?
+  p : posn?
+Returns the color of the pixel at position p in viewport; 0 denotes white and 1
+denotes not white.
+
+((get-color-pixel viewport) p) → rgb?
+  viewport : viewport?
+  p : posn?
+Returns an rgb value for color of the pixel at position p in viewport.
+
+((test-pixel viewport) color) → rgb?
+  viewport : viewport?
+               (or/c (integer-in 0 299)
+   color   :         string?
+                     rgb?)
+Returns the color that will actually be used if color is used to draw.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

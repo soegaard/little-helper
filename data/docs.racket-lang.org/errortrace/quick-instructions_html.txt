@@ -1,0 +1,51 @@
+▼  Errortrace: Debugging and Profiling
+1  Quick Instructions
+2  Installing Errortrace
+3  Using Errortrace
+4  Errortrace Library
+5  Re-using Errortrace Stack Tracing
+6  Errortrace Key
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Quick Instructions
+
+First, throw away ".zo" versions of your program—at least for the modules or
+files that should be instrumented for error reporting or profiling.
+
+Then,
+
+  • If your program has a module file ‹prog›, run it with
+
+      racket -l errortrace -t ‹prog›
+
+  • 
+    If you program is a non-module top-level sequence of definitions and
+    expressions, you can instead add
+
+
+        (require errortrace)
+
+    to the beginning of the program or start Racket with the -l option before
+    the arguments to load your program:
+      racket -l errortrace ...
+
+  • 
+    If you have no main program and you want to use Racket interactively,
+    include the -i flag before -l:
+      racket -i -l errortrace
+
+After starting errortrace in one of these ways, when an exception occurs, the
+exception handler something like a stack trace with most recent contexts first.
+
+The errortrace module is strange: Don’t import it into another module. Instead,
+the errortrace module is meant to be invoked from the top-level, so that it can
+install an evaluation handler, exception handler, etc.
+
+To reuse parts of the code of errortrace, import errortrace/errortrace-lib.
+That library contains all of the bindings described here, but does not set the
+compilation handler or the error display handler.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

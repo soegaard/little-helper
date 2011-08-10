@@ -1,0 +1,94 @@
+▼  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+On this page:
+ffi-obj
+ffi-obj?
+ffi-obj-lib
+ffi-obj-name
+ctype-basetype
+ctype-scheme->c
+ctype-c->scheme
+ffi-call
+ffi-callback
+ffi-callback?
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Unexported Primitive Functions
+
+Parts of the ffi/unsafe library are implemented by the Racket built-in '#
+%foreign module. The '#%foreign module is not intended for direct use, but it
+exports the following procedures. If you find any of these useful, please let
+us know.
+
+(ffi-obj objname lib) → any
+  objname : (or/c string? bytes? symbol?)
+  lib : (or/c ffi-lib? path-string? #f)
+Pulls out a foreign object from a library, returning a Racket value that can be
+used as a pointer. If a name is provided instead of a foreign-library value,
+ffi-lib is used to create a library object.
+
+(ffi-obj? x) → boolean?
+  x : any/c
+(ffi-obj-lib obj) → ffi-lib?
+  obj : ffi-obj?
+(ffi-obj-name obj) → string?
+  obj : ffi-obj?
+A predicate for objects returned by ffi-obj, and accessor functions that return
+its corresponding library object and name. These values can also be used as C
+pointer objects.
+
+(ctype-basetype type) → (or/c ctype? #f)
+  type : ctype?
+(ctype-scheme->c type) → procedure?
+  type : ctype?
+(ctype-c->scheme type) → procedure?
+  type : ctype?
+Accessors for the components of a C type object, made by make-ctype. The
+ctype-basetype selector returns a symbol for primitive types that names the
+type, a list of ctypes for cstructs, and another ctype for user-defined ctypes.
+
+(ffi-call ptr in-types out-type [abi]) → any
+  ptr : any/c
+  in-types : (listof ctype?)
+  out-type : ctype?
+  abi : (or/c symbol/c #f) = #f
+The primitive mechanism that creates Racket “callout” values. The given ptr
+(any pointer value, including ffi-obj values) is wrapped in a Racket-callable
+primitive function that uses the types to specify how values are marshaled.
+
+The optional abi argument determines the foreign ABI that is used. #f or
+'default will use a platform-dependent default; other possible values are
+'stdcall and 'sysv (the latter corresponds to “cdecl”). This is especially
+important on Windows, where most system functions are 'stdcall, which is not
+the default.
+
+(ffi-callback    proc             
+                 in-types         
+                 out-type         
+               [ abi              
+                 atomic?])   →   ffi-callback?
+  proc : any/c
+  in-types : any/c
+  out-type : any/c
+  abi : (or/c symbol/c #f) = #f
+  atomic? : any/c = #f
+The symmetric counterpart of ffi-call. It receives a Racket procedure and
+creates a callback object, which can also be used as a pointer. This object can
+be used as a C-callable function, which invokes proc using the types to specify
+how values are marshaled.
+
+(ffi-callback? x) → boolean?
+  x : any/c
+A predicate for callback values that are created by ffi-callback.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

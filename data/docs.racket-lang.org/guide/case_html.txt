@@ -1,0 +1,92 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 4  Expressions and Definitions
+ 4.1  Notation
+ 4.2  Identifiers and Binding
+ 4.3  Function Calls (Procedure Applications)
+ 4.4  Functions (Procedures): lambda
+ 4.5  Definitions: define
+ 4.6  Local Binding
+ 4.7  Conditionals
+ 4.8  Sequencing
+ 4.9  Assignment: set!
+4.10  Quoting: quote and ’
+4.11  Quasiquoting: quasiquote and `
+4.12  Simple Dispatch: case
+4.13  Dynamic Binding: parameterize
+[...search manuals...]
+  top← prev  up  next → 
+
+4.12 Simple Dispatch: case
+
+The case form dispatches to a clause by matching the result of an expression to
+the values for the clause:
+
+    (case expr
+      [(datum ...+) expr ...+]
+      ...)
+
+Each datum will be compared to the result of the first expr using eqv?. Since
+eqv? doesn’t work on many kinds of values, notably strings and lists, each
+datum is typically a number, symbol, or boolean.
+
+Multiple datums can be supplied for each clause, and the corresponding expr is
+evaluated if any of the datums match.
+
+Example:
+
+    > (let ([v (random 6)])
+        (printf "~a\n" v)
+        (case v
+          [(0) 'zero]
+          [(1) 'one]
+          [(2) 'two]
+          [(3 4 5) 'many]))
+    4
+
+    'many
+
+
+
+The last clause of a case form can use else, just like cond:
+
+Example:
+
+    > (case (random 6)
+        [(0) 'zero]
+        [(1) 'one]
+        [(2) 'two]
+        [else 'many])
+    'two
+
+
+
+For more general pattern matching, use match, which is introduced in Pattern
+Matching.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,67 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+get-x
+get-y
+set-x
+set-y
+[...search manuals...]
+  top← prev  up  next → 
+
+point% : class?
+  superclass: object%
+
+A point% is used for certain drawing commands. It encapsulates two real
+numbers.
+
+(make-object point%) → (is-a?/c point%)
+(make-object point% x y) → (is-a?/c point%)
+  x : real?
+  y : real?
+Creates a point. If x and y are not supplied, they are set to 0.
+
+(send a-point get-x) → real?
+Gets the point x-value.
+
+(send a-point get-y) → real?
+Gets the point y-value.
+
+(send a-point set-x x) → void?
+  x : real?
+Sets the point x-value.
+
+(send a-point set-y y) → void?
+  y : real?
+Sets the point y-value.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

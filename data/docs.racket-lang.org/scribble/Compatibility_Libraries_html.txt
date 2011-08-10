@@ -1,0 +1,394 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+► 4.8  Compatibility Libraries
+4.8.1  Compatibility Structures And Processing
+4.8.2  Compatibility Basic Functions
+On this page:
+4.8.1 Compatibility Structures And Processing
+make-part
+part-flow
+part-title-content
+make-versioned-part
+versioned-part?
+make-unnumbered-part
+unnumbered-part?
+make-paragraph
+paragraph-content
+make-styled-paragraph
+styled-paragraph?
+styled-paragraph-style
+make-omitable-paragraph
+omitable-paragraph?
+make-table
+table-flowss
+make-itemization
+make-styled-itemization
+styled-itemization?
+styled-itemization-style
+make-blockquote
+make-auxiliary-table
+auxiliary-table?
+make-compound-paragraph
+make-element
+make-toc-element
+make-target-element
+make-toc-target-element
+make-page-target-element
+make-redirect-target-element
+make-link-element
+make-index-element
+element?
+element-content
+element-style
+make-aux-element
+make-hover-element
+make-script-element
+with-attributes
+target-url
+image-file
+element->string
+4.8.2 Compatibility Basic Functions
+span-class
+itemize
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+4.8 Compatibility Libraries
+
+4.8.1 Compatibility Structures And Processing
+
+ (require scribble/struct)
+The scribble/struct compatibility library mostly re-exports scribble/core, but
+using some different names (e.g., blockquote instead of nested-flow).
+
+The following structure types and functions are re-exported directly:
+
+    collect-info resolve-info tag? block?
+    delayed-block collected-info delayed-element
+    part-relative-element collect-info-parents
+    collect-element render-element generated-tag
+    tag-key content->string element->string
+    block-width element-width
+    info-key? part-collected-info collect-put!
+    resolve-get resolve-get/tentative resolve-get/ext?
+    resolve-search resolve-get-keys
+
+The following structure types are re-exported, but the constructors and some
+selectors are replaced as documented further below:
+
+    part paragraph table itemization compound-paragraph
+    element toc-element target-element toc-target-element
+    page-target-element redirect-target-element link-element
+    index-element
+
+Several additional compatibility functions and structure types are also
+exported.
+
+(make-part   tag-prefix           
+             tags                 
+             title-content        
+             style                
+             to-collect           
+             blocks               
+             parts)          →   part?
+  tag-prefix : (or/c false/c string?)
+  tags : (listof tag?)
+  title-content : (or/c false/c list?)
+  style : any/c
+  to-collect : list?
+  blocks : (listof block?)
+  parts : (listof part?)
+For backward compatibility. Compared to the normal constructor for part, parses
+style to convert old formats to the current one. Also, if title-content is a
+list with a single item, the item by itself is stored in the resulting part.
+
+(part-flow p) → (listof block?)
+  p : part?
+For backward compatibility. An alias for part-blocks.
+
+(part-title-content p) → list?
+  p : part?
+For backward compatibility. Like the normal selector, but if the result would
+not be a list, it is coerced to one.
+
+(make-versioned-part   tag-prefix           
+                       tags                 
+                       title-content        
+                       style                
+                       to-collect           
+                       blocks               
+                       parts                
+                       version)        →   part?
+  tag-prefix : (or/c false/c string?)
+  tags : (listof tag?)
+  title-content : (or/c false/c list?)
+  style : any/c
+  to-collect : list?
+  blocks : (listof block?)
+  parts : (listof part?)
+  version : string?
+(versioned-part? v) → boolean?
+  v : any/c
+For backward compatibility. Like make-part, but adds a the document-version
+style property using the given version. The versioned-part? predicate
+recognizes a part with a document-version property.
+
+(make-unnumbered-part   tag-prefix           
+                        tags                 
+                        title-content        
+                        style                
+                        to-collect           
+                        blocks               
+                        parts)          →   part?
+  tag-prefix : (or/c false/c string?)
+  tags : (listof tag?)
+  title-content : (or/c false/c list?)
+  style : any/c
+  to-collect : list?
+  blocks : (listof block?)
+  parts : (listof part?)
+(unnumbered-part? v) → boolean?
+  v : any/c
+For backward compatibility. Like make-part, but adds the 'unnumbered style
+property. The unnumbered-part? predicate recognizes a part with the 'unnumbered
+property.
+
+(make-paragraph content) → paragraph?
+  content : list?
+For backward compatibility. Compared to the normal constructor for paragraph,
+omits a style argument. Also, if content is a list containing a single item,
+the item by itself is stored in the resulting paragraph.
+
+(paragraph-content p) → list?
+  p : paragraph?
+For backward compatibility. Like the normal selector, but if the result would
+not be a list, it is coerced to one.
+
+(make-styled-paragraph content style) → paragraph?
+  content : list?
+  style : any/c
+(styled-paragraph? v) → boolean?
+  v : any/c
+(styled-paragraph-style p) → style?
+  p : paragraph?
+For backward compatibility. Compared to the normal constructor for paragraph,
+parses style to convert old formats to the current one. The styled-paragraph?
+predicate and styled-paragraph-style accessor are aliases for paragraph? and
+paragraph-style.
+
+(make-omitable-paragraph content) → paragraph?
+  content : list?
+(omitable-paragraph? v) → boolean?
+  v : any/c
+For backward compatibility. Like make-paragraph, but adds the 'omitable style
+property. The omitable-paragraph? predicate checks for a paragraph with the
+property.
+
+(make-table style blocksss) → table?
+  style : any/c
+  blocksss : (listof (listof (or/c (listof block?) (one-of/c 'cont))))
+For backward compatibility. Compared to the normal constructor for table, the
+style is converted, and each cell has a list of blocks instead of a single
+block. If any such list has multiple blocks, they are combined into a
+nested-flow.
+
+(table-flowss table)
+ → (listof (listof (or/c (listof block?) (one-of/c 'cont))))
+  table : table?
+For backward compatibility. Like table-blockss, but adds a list wrapper to be
+consistent with make-table.
+
+(make-itemization blockss) → itemization?
+  blockss : (listof (listof block?))
+For backward compatibility. Compared to the normal constructor for itemization,
+omits a style argument.
+
+(make-styled-itemization style blockss) → itemization?
+  style : any/c
+  blockss : (listof (listof block?))
+(styled-itemization? v) → boolean?
+  v : any/c
+(styled-itemization-style i) → style?
+  i : itemization?
+For backward compatibility. Compared to the normal constructor for itemization,
+parses style to convert old formats to the current one. The styled-itemization?
+predicate is an alias for itemization?, and styled-itemization-style is an
+alias for itemization-style.
+
+(make-blockquote style blocks) → nested-flow?
+  style : any/c
+  blocks : (listof block?)
+For backward compatibility. Like make-nested-flow, but style is parsed to the
+current format.
+
+(make-auxiliary-table style blocksss) → table?
+  style : any/c
+  blocksss : (listof (listof (or/c (listof block?) (one-of/c 'cont))))
+(auxiliary-table? v) → boolean?
+  v : any/c
+For backward compatibility. Like make-table, but adds the 'aux style property.
+The auxiliary-table? predicate recognizes tables with the 'aux property.
+
+(make-compound-paragraph style blocks) → compound-paragraph?
+  style : any/c
+  blocks : (listof block?)
+For backward compatibility. Compared to the normal constructor for
+compound-paragraph, parses style to convert old formats to the current one.
+
+(make-element style content) → element?
+  style : any/c
+  content : list?
+(make-toc-element style content toc-content) → toc-element?
+  style : any/c
+  content : list?
+  toc-content : list?
+(make-target-element style content tag) → target-element?
+  style : any/c
+  content : list?
+  tag : tag?
+(make-toc-target-element style content tag) → toc-target-element?
+  style : any/c
+  content : list?
+  tag : tag?
+(make-page-target-element style content tag)
+ → page-target-element?
+  style : any/c
+  content : list?
+  tag : tag?
+(make-redirect-target-element   style        
+                                content      
+                                tag          
+                                alt-path     
+                                alt-anchor)  
+ → redirect-target-element?
+  style : any/c
+  content : list?
+  tag : tag?
+  alt-path : path-string?
+  alt-anchor : string?
+(make-link-element style content tag) → link-element?
+  style : any/c
+  content : list?
+  tag : tag?
+(make-index-element   style            
+                      content          
+                      tag              
+                      tag              
+                      plain-seq        
+                      entry-seq        
+                      desc)       →   index-element?
+  style : any/c
+  content : list?
+  tag : tag?
+  tag : tag?
+  plain-seq : (and/c pair? (listof string?))
+  entry-seq : list?
+  desc : any/c
+For backward compatibility. Compared to the normal constructors, parses style
+to convert old formats to the current one.
+
+(element? v) → boolean?
+  v : any/c
+(element-content e) → list?
+  e : element?
+(element-style e) → element-style?
+  e : element?
+For backward compatibility. A content list is treated as an element by these
+functions, and the result of element-content is always a list.
+
+(make-aux-element style content) → element?
+  style : any/c
+  content : list?
+For backward compatibility. Like make-element, but adds the 'aux style property
+.
+
+(make-hover-element style content text) → element?
+  style : any/c
+  content : list?
+  text : string?
+For backward compatibility. Like make-element, but adds hover-property
+containing text to the element’s style.
+
+(make-script-element   style          
+                       content        
+                       type           
+                       script)   →   element?
+  style : any/c
+  content : list?
+  type : string?
+  script : (or/c path-string? (listof string?))
+For backward compatibility. Like make-element, but adds script-property
+containing type and script to the element’s style.
+
+(struct   with-attributes (style assoc)
+          #:extra-constructor-name make-with-attributes)
+  style : any/c
+  assoc : (listof (cons/c symbol? string?))
+For backward compatibility. Used for an element’s style to combine a base style
+with arbitrary HTML attributes. When the style field is itself an instance of
+with-attributes, its content is automatically flattened into the enclosing
+with-attributes when it is used (when, e.g., rendering an element or paragraph
+).
+
+(struct   target-url (addr style)
+          #:extra-constructor-name make-target-url)
+  addr : path-string?
+  style : any/c
+For backward compatibility. Used as a style for an element. The style at this
+layer is a style for the hyperlink.
+
+(struct   image-file (path scale)
+          #:extra-constructor-name make-image-file)
+   path   :   (or/c path-string?
+                    (cons/c 'collects (listof bytes?)))
+  scale : real?
+For backward compatibility. Used as a style for an element to inline an image.
+The path field can be a result of path->main-collects-relative.
+
+(element->string element) → string?
+  element : content?
+(element->string element renderer p info) → string?
+  element : content?
+  renderer : any/c
+  p : part?
+  info : resolve-info?
+For backward compatibility. An alias for content->string.
+
+4.8.2 Compatibility Basic Functions
+
+ (require scribble/basic)
+The scribble/basic compatibility library mostly just re-exports scribble/base.
+
+(span-class style-name pre-content ...) → element?
+  style-name : string?
+  pre-content : any/c
+For backward compatibility. Wraps the decoded pre-content as an element with
+style style-name.
+
+(itemize itm ... [#:style style]) → itemization?
+  itm : (or/c whitespace? an-item?)
+  style : (or/c style? string? symbol? #f) = #f
+For backward compatibility. Like itemlist, but whitespace strings among the
+itms are ignored.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,166 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 17  Running Racket
+17.1  Running Racket or GRacket
+17.2  Libraries and Collections
+17.3  Interactive Help
+17.4  Interactive Module Loading
+17.5  Debugging
+On this page:
+find-library-collection-paths
+collection-file-path
+collection-path
+current-library-collection-paths
+use-user-specific-search-paths
+[...search manuals...]
+  top← prev  up  next → 
+
+17.2 Libraries and Collections
+
+A library is module declaration for use by multiple programs. Racket further
+groups libraries into collections that can be easily distributed and easily
+added to a local Racket installation.
+
+Some collections are distributed via PLaneT. Such collections are referenced
+through a planet module path (see require) and are downloaded by Racket on
+demand.
+
+Other collections are distributed with Racket, in which case each collection is
+a directory that is located in a "collects" directory relative to the Racket
+executable. A collection can also be installed in a user-specific directory.
+More generally, the search path for installed collections can be configured
+through the current-library-collection-paths parameter. In all of these cases,
+the collections are referenced through lib paths (see require).
+
+For example, the following module uses the "getinfo.rkt" library module from
+the "setup" collection, and the "cards.rkt" library module from the "games"
+collection’s "cards" subcollection:
+
+    #lang racket
+    (require (lib "setup/getinfo.rkt")
+             (lib "games/cards/cards.rkt"))
+    ....
+
+This example is more compactly and more commonly written as
+
+    #lang racket
+    (require setup/getinfo
+             games/cards/cards)
+    ....
+
+When an identifier id is used in a require form, it is converted to (lib
+rel-string) where rel-string is the string form of id.
+
+A rel-string in (lib rel-string) consists of one or more path elements that
+name collections, and then a final path element that names a library file; the
+path elements are separated by /. If rel-string contains no /s, then then /
+main.rkt is implicitly appended to the path. If rel-string contains / but does
+not end with a file suffix, then .rkt is implicitly appended to the path.
+
+The translation of a planet or lib path to a module declaration is determined
+by the module name resolver, as specified by the current-module-name-resolver
+parameter.
+
+For the default module name resolver, the search path for collections is
+determined by the current-library-collection-paths parameter. The list of paths
+in current-library-collection-paths is searched from first to last to locate
+the first that contains rel-string. In other words, the filesystem tree for
+each element in the search path is spliced together with the filesystem trees
+of other path elements. Some Racket tools rely on unique resolution of module
+path names, so an installation and current-library-collection-paths
+configuration should not allow multiple files to match the same collection and
+file name.
+
+The value of the current-library-collection-paths parameter is initialized in
+the Racket executable to the result of (find-library-collection-paths).
+
+(find-library-collection-paths  [ pre-extras           
+                                  post-extras])   →   (listof path?)
+  pre-extras : (listof path-string?) = null
+  post-extras : (listof path-string?) = null
+Produces a list of paths as follows:
+
+  • The path produced by (build-path (find-system-path 'addon-dir) (version)
+    "collects") is the first element of the default collection path list,
+    unless the value of the use-user-specific-search-paths parameter is #f.
+
+  • Extra directories provided in pre-extras are included next to the default
+    collection path list, converted to complete paths relative to the
+    executable.
+
+  • If the directory specified by (find-system-path 'collects-dir) is absolute,
+    or if it is relative (to the executable) and it exists, then it is added to
+    the end of the default collection path list.
+
+  • Extra directories provided in post-extras are included last in the default
+    collection path list, converted to complete paths relative to the
+    executable.
+
+  • If the PLTCOLLECTS environment variable is defined, it is combined with the
+    default list using path-list-string->path-list. If it is not defined, the
+    default collection path list (as constructed by the first three bullets
+    above) is used directly.
+
+    Note that on Unix and Mac OS X, paths are separated by :, and on Windows by
+    ;. Also, path-list-string->path-list splices the default paths at an empty
+    path, for example, with many Unix shells you can set PLTCOLLECTS to ":`pwd
+    `", "`pwd`:", or "`pwd`" to specify search the current directory after,
+    before, or instead of the default paths, respectively.
+
+(collection-file-path file collection ...+) → path?
+  file : path-string?
+  collection : path-string?
+Returns the path to the file indicated by file in the collection specified by
+the collections, where the second collection (if any) names a sub-collection,
+and so on. If file is not found, but file ends in ".rkt" and a file with the
+suffix ".ss" exists, then the directory of the ".ss" file is used. If file is
+not found and the ".rkt"/".ss" conversion does not apply, but a directory
+corresponding to the collections is found, then a path using the first such
+directory is returned. Finally, if the collection is not found, the
+exn:fail:filesystem exception is raised.
+
+(collection-path collection ...+) → path?
+  collection : path-string?
+Like collection-file-path, but without a specified file name, so that the first
+directory indicated by collections is returned. The collection-file-path
+function normally should be used, instead, to support splicing of
+library-collection trees at the file level.
+
+(current-library-collection-paths)
+ → (listof (and/c path? complete-path?))
+(current-library-collection-paths paths) → void?
+  paths : (listof (and/c path? complete-path?))
+Parameter that determines a list of complete directory paths for library
+collections used by require. See Libraries and Collections for more
+information.
+
+(use-user-specific-search-paths) → boolean?
+(use-user-specific-search-paths on?) → void?
+  on? : any/c
+Parameter that determines whether user-specific paths, which are in the
+directory produced by (find-system-path 'addon-dir), are included in search
+paths for collections and other files. For example,
+find-library-collection-paths omits the user-specific collection directory when
+this parameter’s value is #f.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

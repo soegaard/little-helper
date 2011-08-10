@@ -1,0 +1,106 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 4  Structures
+4.1  Defining Structure Types: struct
+4.2  Creating Structure Types
+4.3  Structure Type Properties
+4.4  Copying and Updating Structures
+4.5  Structure Utilities
+4.6  Structure Type Transformer Binding
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Structures
+
+            +Programmer-Defined Datatypes in The Racket Guide introduces
+            structure types via struct.
+
+A structure type is a record datatype composing a number of fields. A 
+structure, an instance of a structure type, is a first-class value that
+contains a value for each field of the structure type. A structure instance is
+created with a type-specific constructor procedure, and its field values are
+accessed and changed with type-specific accessor and mutator procedures. In
+addition, each structure type has a predicate procedure that answers #t for
+instances of the structure type and #f for any other value.
+
+A structure type’s fields are essentially unnamed, though names are supported
+for error-reporting purposes. The constructor procedure takes one value for
+each field of the structure type, except that some of the fields of a structure
+type can be automatic fields; the automatic fields are initialized to a
+constant that is associated with the structure type, and the corresponding
+arguments are omitted from the constructor procedure. All automatic fields in a
+structure type follow the non-automatic fields.
+
+A structure type can be created as a structure subtype of an existing base
+structure type. An instance of a structure subtype can always be used as an
+instance of the base structure type, but the subtype gets its own predicate
+procedure, and it may have its own fields in addition to the fields of the base
+type.
+
+A structure subtype “inherits” the fields of its base type. If the base type
+has m fields, and if n fields are specified for the new structure subtype, then
+the resulting structure type has m+n fields. The value for automatic fields can
+be different in a subtype than in its base type.
+
+If m′ of the original m fields are non-automatic (where m′<m), and n′ of the
+new fields are automatic (where n′<n), then m′+n′ field values must be provided
+to the subtype’s constructor procedure. Values for the first m fields of a
+subtype instance are accessed with selector procedures for the original base
+type (or its supertypes), and the last n are accessed with subtype-specific
+selectors. Subtype-specific accessors and mutators for the first m fields do
+not exist.
+
+The struct form and make-struct-type procedure typically create a new structure
+type, but they can also access prefab (i.e., previously fabricated) structure
+types that are globally shared, and whose instances can be parsed and written
+by the default reader (see The Reader) and printer (see The Printer). Prefab
+structure types can inherit only from other prefab structure types, and they
+cannot have guards (see Creating Structure Types) or properties (see Structure
+Type Properties). Exactly one prefab structure type exists for each combination
+of name, supertype, field count, automatic field count, automatic field value
+(when there is at least one automatic field), and field mutability.
+
+            +Serialization also provides information on reading and writing
+            structures.
+
+Two structure values are eqv? if and only if they are eq?. Two structure values
+are equal? if they are eq?. By default, two structure values are also equal? if
+they are instances of the same structure type, no fields are opaque, and the
+results of applying struct->vector to the structs are equal?. (Consequently,
+equal? testing for structures may depend on the current inspector.) A structure
+type can override the default equal? definition through the prop:equal+hash
+property.
+
+    4.1 Defining Structure Types: struct
+
+    4.2 Creating Structure Types
+
+    4.3 Structure Type Properties
+
+    4.4 Copying and Updating Structures
+
+    4.5 Structure Utilities
+
+    4.6 Structure Type Transformer Binding
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

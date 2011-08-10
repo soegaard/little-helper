@@ -1,0 +1,36 @@
+▼  GL: 3-D Graphics
+1  Using Open GL
+2  C-Style Open GL
+3  Racket-Style Open GL
+4  Open GL Vectors
+5  Bitmaps
+   Index
+On this page:
+bitmap->gl-list
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Bitmaps
+
+ (require sgl/bitmap)
+
+(bitmap->gl-list    bitmap                        
+                  [ #:with-gl with-gl-proc        
+                    #:mask mask])            →   exact-integer?
+  bitmap : (is-a?/c bitmap%)
+  with-gl-proc : ((-> any) . -> . any) = (lambda (f) (f))
+   mask   :   (or/c (is-a?/c bitmap%) false/c)
+          =   (send bitmap get-loaded-mask)
+Converts the given bitmap into an OpenGL list that can be rendered with
+gl-call-list or glCallList. The rendered object is a square on the z=0 plane
+with corners at (0,0) and (1,1).
+
+The with-gl-proc must accept a thunk and call it while the relevant OpenGL
+context is selected. Otherwise, the relevant OpenGL context must be selected
+already.
+
+If mask is not #f, it is used as the mask bitmap for extracting alpha values.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

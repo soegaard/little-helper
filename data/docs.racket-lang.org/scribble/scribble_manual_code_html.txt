@@ -1,0 +1,435 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+▼ 4.3  Manual Forms
+ 4.3.1  Typesetting Code
+ 4.3.2  Documenting Modules
+ 4.3.3  Documenting Forms, Functions, Structure Types, and Values
+ 4.3.4  Documenting Classes and Interfaces
+ 4.3.5  Documenting Signatures
+ 4.3.6  Various String Forms
+ 4.3.7  Links
+ 4.3.8  Indexing
+ 4.3.9  Images
+4.3.10  Bibliography
+4.3.11  Miscellaneous
+4.3.12  Index-Entry Descriptions
+► 4.3.1  Typesetting Code
+4.3.1.1  Typesetting Comments
+On this page:
+codeblock
+racketblock
+RACKETBLOCK
+racketblock0
+RACKETBLOCK0
+racketresultblock
+racketresultblock0
+RACKETRESULTBLOCK
+RACKETRESULTBLOCK0
+racketinput
+RACKETINPUT
+racketinput0
+RACKETINPUT0
+racketmod
+racketmod0
+racket
+RACKET
+racketresult
+racketid
+racketmodname
+racketmodlink
+litchar
+racketfont
+racketvalfont
+racketresultfont
+racketidfont
+racketvarfont
+racketkeywordfont
+racketparenfont
+racketmetafont
+racketerror
+racketmodfont
+racketoutput
+procedure
+var
+svar
+schemeblock
+SCHEMEBLOCK
+schemeblock0
+SCHEMEBLOCK0
+schemeinput
+schememod
+scheme
+SCHEME
+schemeresult
+schemeid
+schememodname
+schememodlink
+schemefont
+schemevalfont
+schemeresultfont
+schemeidfont
+schemevarfont
+schemekeywordfont
+schemeparenfont
+schememetafont
+schemeerror
+schememodfont
+schemeoutput
+4.3.1.1 Typesetting Comments
+[...search manuals...]
+  top← prev  up  next → 
+
+4.3.1 Typesetting Code
+
+(codeblock option ... str-expr ...+)
+ 
+option   =   #:keep-lang-line? keep-expr
+         |   #:indent indent-expr
+         |   #:expand expand-expr
+         |   #:context context-expr
+         |   #:w/line-numbers line-number-expr
+ 
+       keep-expr    :   any/c
+       indent-expr   :   exact-nonnegative-integer?
+       expand-expr   :   (or/c #f (syntax-object? . -> . syntax-object?))
+       context-expr   :   syntax-object?
+       line-number-expr   :   (or/c #f exact-nonnegative-integer?)
+
+Parses the code formed by the strings produced by the str-exprs as a Racket
+module (roughly) and produces a block that typesets the code inset via nested
+with the style 'code-inset.
+
+The str-exprs should normally start with #lang to determine the reader syntax
+for the module, but the resulting “module” need not expand or compile—except as
+needed by expand-expr. If expand-expr is omitted or produces false, then the
+input formed by str-expr is read until an end-of-file is encountered, otherwise
+a single form is read from the input.
+
+When keep-expr produces a true value (the default), the first line in the input
+(which is typically #lang) is preserved in the typeset output, otherwise the
+first line is dropped. The typeset code is indented by the amount specified by
+indent-expr, which defaults to 2.
+
+When expand-expr produces #f (which is the default), identifiers in the typeset
+code are colored and linked based on for-label bindings in the lexical
+environment of the syntax object provided by context-expr. The default
+context-expr has the same lexical context as the first str-expr. When
+line-number-expr is true, line number is enabled starting from
+line-number-expr.
+
+When expand-expr produces a procedure, it is used to macro-expand the parsed
+program, and syntax coloring is based on the parsed program.
+
+For example,
+
+    @codeblock|{
+      #lang scribble/manual
+      @codeblock{
+        #lang scribble/manual
+        @title{Hello}
+      }
+    }|
+
+produces the typeset result
+
+    #lang scribble/manual
+    @codeblock{
+      #lang scribble/manual
+      @title{Hello}
+    }
+
+(racketblock datum ...)
+Typesets the datum sequence as a table of Racket code inset inset via nested
+with the style 'code-inset. The source locations of the datums determine the
+generated layout. For example,
+
+    (racketblock
+     (define (loop x)
+       (loop (not x))))
+
+produces the output
+
+    (define (loop x)
+      (loop (not x)))
+
+with the (loop (not x)) indented under define, because that’s the way it is
+idented the use of racketblock.
+
+Furthermore, define is typeset as a keyword (bold and black) and as a hyperlink
+to define’s definition in the reference manual, because this document was built
+using a for-label binding of define (in the source) that matches a definition
+in the reference manual. Similarly, not is a hyperlink to the its definition in
+the reference manual.
+
+Use unsyntax to escape back to an expression that produces an element. For
+example,
+
+    (racketblock
+      (+ 1 #,(elem (racket x) (subscript "2"))))
+
+produces
+
+    (+ 1 x2)
+
+The unsyntax form is regonized via free-identifier=?, so if you want to typeset
+code that includes unsyntax, you can simply hide the usual binding:
+
+    (racketblock
+      (let ([unsyntax #f])
+        (racketblock
+          #'(+ 1 #,x))))
+
+Or use RACKETBLOCK, whose escape form is UNSYNTAX instead of unsyntax.
+
+A few other escapes are recognized symbolically:
+
+  • (code:line datum ...) typesets as the sequence of datums (i.e., without the
+    code:line wrapper).
+
+  • (code:comment datum) typesets like datum, but colored as a comment and
+    prefixed with a semi-colon. A typical datum escapes from Racket-typesetting
+    mode using unsyntax and produces a paragraph using t:
+
+      (code:comment @#,t{this is a comment})
+
+
+    (Note that @#,foo{...} reads as #,(foo "...").)
+
+  • typesets as a blank space.
+
+  • (code:hilite datum) typesets like datum, but with a background highlight.
+
+  • (code:quote datum) typesets like (quote datum), but without rendering the
+    quote as '.
+
+  • _id typesets as id, but colored as a variable (like racketvarfont); this
+    escape applies only if _id has no for-label binding and is not specifically
+    colored as a subform non-terminal via defform, a variable via defproc, etc.
+
+See also scribble/comment-reader.
+
+(RACKETBLOCK datum ...)
+Like racketblock, but with the expression escape UNSYNTAX instead of unsyntax.
+
+(racketblock0 datum ...)
+Like racketblock, but without insetting the code via nested.
+
+(RACKETBLOCK0 datum ...)
+Like RACKETBLOCK, but without insetting the code via nested.
+
+(racketresultblock datum ...)
+(racketresultblock0 datum ...)
+(RACKETRESULTBLOCK datum ...)
+(RACKETRESULTBLOCK0 datum ...)
+Like racketblock, etc., but colors the typeset text as a result (i.e., a single
+color with no hyperlinks) instead of code.
+
+(racketinput datum ...)
+(RACKETINPUT datum ...)
+Like racketblock and RACKETBLOCK, but the datums are typeset after a prompt
+representing a REPL.
+
+(racketinput0 datum ...)
+(RACKETINPUT0 datum ...)
+Like racketinput and RACKETINPUT, but without insetting the code via nested.
+
+(racketmod maybe-file lang datum ...)
+ 
+maybe-file   =  
+             |   #:file filename-expr
+Like racketblock, but the datum are typeset inside a #lang-form module whose
+language is lang.
+
+The source location of lang (relative to the body datums) determines the
+relative positioning of the #lang line in the typeset output. So, line up lang
+with the left end of the content code.
+
+If #:file is provided, then the code block is typeset using filebox with
+filename-expr as the filename argument.
+
+(racketmod0 maybe-file lang datum ...)
+Like racketmod, but without insetting the code via nested.
+
+(racket datum ...)
+Like racketblock, but typeset on a single line and wrapped with its enclosing
+paragraph, independent of the formatting of datum.
+
+(RACKET datum ...)
+Like racket, but with the UNSYNTAX escape like racketblock.
+
+(racketresult datum ...)
+Like racket, but typeset as a result (i.e., a single color with no hyperlinks).
+
+(racketid datum ...)
+Like racket, but typeset as an unbound identifier (i.e., no coloring or
+hyperlinks).
+
+(racketmodname datum)
+(racketmodname (unsyntax expr))
+Like racket, but typeset as a module path. If datum is an identifier or expr
+produces a symbol, then it is hyperlinked to the module path’s definition as
+created by defmodule.
+
+(racketmodlink datum pre-content-expr ...)
+Like racketmod, but separating the module path to link from the content to be
+linked. The datum module path is always linked, even if it is not an
+identifier.
+
+(litchar str ...) → element?
+  str : string?
+Typesets strs as a representation of literal text. Use this when you have to
+talk about the individual characters in a stream of text, as as when
+documenting a reader extension.
+
+(racketfont pre-content ...) → element?
+  pre-content : pre-content?
+Typesets decoded pre-content as uncolored, unhyperlinked Racket. This procedure
+is useful for typesetting things like #lang, which are not readable by
+themselves.
+
+(racketvalfont pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored as a value.
+
+(racketresultfont pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored as a REPL result.
+
+(racketidfont pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored as an identifier.
+
+(racketvarfont pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored as a variable (i.e., an argument or sub-form in a
+procedure being documented).
+
+(racketkeywordfont pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored as a syntactic form name.
+
+(racketparenfont pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored like parentheses.
+
+(racketmetafont pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored as meta-syntax, such as backquote or unquote.
+
+(racketerror pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored as error-message text.
+
+(racketmodfont pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored as module name.
+
+(racketoutput pre-content ...) → element?
+  pre-content : pre-content?
+Like racketfont, but colored as output.
+
+(procedure pre-content ...) → element?
+  pre-content : pre-content?
+Typesets decoded pre-content as a procedure name in a REPL result (e.g., in
+typewriter font with a #<procedure: prefix and > suffix.).
+
+(var datum)
+Typesets datum as an identifier that is an argument or sub-form in a procedure
+being documented. Normally, the defproc and defform arrange for racket to
+format such identifiers automatically in the description of the procedure, but
+use var if that cannot work for some reason.
+
+(svar datum)
+Like var, but for subform non-terminals in a form definition.
+
+(schemeblock datum ...)
+(SCHEMEBLOCK datum ...)
+(schemeblock0 datum ...)
+(SCHEMEBLOCK0 datum ...)
+(schemeinput datum ...)
+(schememod lang datum ...)
+(scheme datum ...)
+(SCHEME datum ...)
+(schemeresult datum ...)
+(schemeid datum ...)
+(schememodname datum)
+(schememodname (unsyntax expr))
+(schememodlink datum pre-content-expr ...)
+(schemefont pre-content ...) → element?
+  pre-content : pre-content?
+(schemevalfont pre-content ...) → element?
+  pre-content : pre-content?
+(schemeresultfont pre-content ...) → element?
+  pre-content : pre-content?
+(schemeidfont pre-content ...) → element?
+  pre-content : pre-content?
+(schemevarfont pre-content ...) → element?
+  pre-content : pre-content?
+(schemekeywordfont pre-content ...) → element?
+  pre-content : pre-content?
+(schemeparenfont pre-content ...) → element?
+  pre-content : pre-content?
+(schememetafont pre-content ...) → element?
+  pre-content : pre-content?
+(schemeerror pre-content ...) → element?
+  pre-content : pre-content?
+(schememodfont pre-content ...) → element?
+  pre-content : pre-content?
+(schemeoutput pre-content ...) → element?
+  pre-content : pre-content?
+Compatibility aliases. Each scheme... name is an alias for the corresponding
+racket... binding.
+
+4.3.1.1 Typesetting Comments
+
+ #reader scribble/comment-reader
+
+As a reader module, scribble/comment-reader reads a single S-expression that
+contains ;-based comment lines, and it wraps the comments with code:comment for
+use with forms like racketblock. More precisely, scribble/comment-reader
+extends the current reader to adjust the parsing of ;.
+
+For example, within a Scribble document that imports scribble/manual,
+
+  @#reader scribble/comment-reader
+
+   (racketblock
+
+    ;; This is not a pipe
+
+    (make-pipe)
+
+   )
+
+
+generates
+
+    ; This is not a pipe
+    (make-pipe)
+
+The initial @ is needed above to shift into S-expression mode, so that #reader
+is recognized as a reader declaration instead of literal text. Also, the
+example uses (racketblock ....) instead of @racketblock[....] because the
+@-reader would drop comments within the racketblock before giving scribble/
+comment-reader a chance to convert them.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

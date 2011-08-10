@@ -1,0 +1,182 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 7  Low-Level Scribble API
+ 7.1  Scribble Layers
+ 7.2  @ Reader Internals
+ 7.3  Structures And Processing
+ 7.4  Renderer
+ 7.5  Decoding Text
+ 7.6  Document Language
+ 7.7  Document Reader
+ 7.8  Cross-Reference Utilities
+ 7.9  Extending and Configuring Scribble Output
+7.10  Connecting to "racket"
+► 7.4  Renderer
+7.4.1  Base Renderer
+7.4.2  Text Renderer
+7.4.3  HTML Renderer
+7.4.4  Latex Renderer
+On this page:
+7.4.1 Base Renderer
+render%
+traverse
+collect
+resolve
+render
+serialize-info
+deserialize-info
+7.4.2 Text Renderer
+render-mixin
+7.4.3 HTML Renderer
+render-mixin
+set-external-tag-path
+render-multi-mixin
+7.4.4 Latex Renderer
+render-mixin
+[...search manuals...]
+  top← prev  up  next → 
+
+7.4 Renderer
+
+A renderer is an object that provides two main methods: collect and render. The
+first method is called to collect global information about the document,
+including information that spans multiple documents rendered together; the
+collection pass tends to be format-independent, and it usually implemented
+completely by the base renderer. The latter method generates the actual output,
+which is naturally specific to a particular format.
+
+7.4.1 Base Renderer
+
+ (require scribble/base-render)
+The scribble/base-render module provides render%, which implements the core of
+a renderer. This rendering class must be refined with a mixin from scribble/
+text-render, scribble/html-render, or scribble/latex-render.
+
+The mixin structure is meant to support document-specific extensions to the
+renderers. For example, the scribble command-line tool might, in the future,
+extract rendering mixins from a document module (in addition to the document
+proper).
+
+See the "base-render.rkt" source for more information about the methods of the
+renderer. Documents built with higher layers, such as scribble/manual,
+generally do not call the render object’s methods directly.
+
+render% : class?
+  superclass: object%
+
+Represents a renderer.
+
+
+    (new render%                                            
+         [dest-dir dest-dir]                                
+       [ [refer-to-existing-files refer-to-existing-files]  
+         [root-path root-path]])                            
+     → (is-a?/c render%)
+      dest-dir : path-string?
+      refer-to-existing-files : any/c = #f
+      root-path : (or/c path-string? false/c) = #f
+    Creates a renderer whose output will go to dest-dir. For example, dest-dir
+    could name the directory containing the output Latex file, the HTML file
+    for a single-file output, or the output sub-directory for multi-file HTML
+    output.
+
+    If root-path is not #f, it is normally the same as dest-dir or a parent of
+    dest-dir. It causes cross-reference information to record destination files
+    relative to root-path; when cross-reference information is serialized, it
+    can be deserialized via deserialize-info with a different root path
+    (indicating that the destination files have moved).
+
+    (send a-render traverse srcs dests) → (and/c hash? immutable?)
+      srcs : (listof part?)
+      dests : (listof path-string?)
+    Performs the traverse pass, producing a hash table that contains the
+    replacements for and traverse-blocks and traverse-elementss. See render for
+    information on the dests argument.
+
+    (send a-render collect srcs dests fp) → collect-info?
+      srcs : (listof part?)
+      dests : (listof path-string?)
+      fp : (and/c hash? immutable?)
+    Performs the collect pass. See render for information on the dests
+    argument. The fp argument is a result from the traverse method.
+
+    (send a-render resolve srcs dests ci) → resolve-info?
+      srcs : (listof part?)
+      dests : (listof path-string?)
+      ci : collect-info?
+    Performs the resolve pass. See render for information on the dests
+    argument. The ci argument is a result from the collect method.
+
+    (send a-render render srcs dests ri) → void?
+      srcs : (listof part?)
+      dests : (listof path-string?)
+      ri : resolve-info?
+    Produces the final output. The ri argument is a result from the render
+    method.
+
+    The dests provide names of files for Latex or single-file HTML output, or
+    names of sub-directories for multi-file HTML output. If the dests are
+    relative, they’re relative to the current directory; normally, they should
+    indicates a path within the dest-dir supplied on initialization of the
+    render% object.
+
+    (send a-render serialize-info ri) → any/c
+      ri : resolve-info?
+    Serializes the collected info in ri.
+
+    (send a-render deserialize-info    v                         
+                                       ci                        
+                                     [ #:root root-path])   →   void?
+      v : any/c
+      ci : collect-info?
+      root-path : (or/c path-string? false/c) = #f
+    Adds the deserialized form of v to ci.
+
+    If root-path is not #f, then file paths that are recorded in ci as relative
+    to an instantiation-supplied root-path are deserialized as relative instead
+    to the given root-path.
+
+7.4.2 Text Renderer
+
+ (require scribble/text-render)
+render-mixin : (class? . -> . class?)
+  argument extends/implements:  render%
+Specializes a render% class for generating plain text.
+
+7.4.3 HTML Renderer
+
+ (require scribble/html-render)
+render-mixin : (class? . -> . class?)
+  argument extends/implements:  render%
+Specializes a render% class for generating HTML output.
+
+
+    (send a-render set-external-tag-path url) → void?
+      url : string?
+    Configures the renderer to redirect links to external via url, adding a tag
+    query element to the end of the URL that contains the Base64-encoded, print
+    ed, serialized original tag (in the sense of link-element) for the link.
+
+render-multi-mixin : (class? . -> . class?)
+  argument extends/implements:  render%
+Further specializes a rendering class produced by render-mixin for generating
+multiple HTML files.
+
+7.4.4 Latex Renderer
+
+ (require scribble/latex-render)
+render-mixin : (class? . -> . class?)
+  argument extends/implements:  render%
+Specializes a render% class for generating Latex input.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

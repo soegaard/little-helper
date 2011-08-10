@@ -1,0 +1,351 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+► 14  Functions
+14.1  Simple Functions
+14.2  Higher Order Predicates
+14.3  Currying and (Partial) Application
+14.4  Eta Expansion
+14.5  Parameter Arguments
+On this page:
+14.1 Simple Functions
+14.2 Higher Order Predicates
+negate
+conjoin
+disjoin
+14.3 Currying and (Partial) Application
+call
+papply
+papplyr
+curryn
+currynr
+14.4 Eta Expansion
+eta
+eta*
+14.5 Parameter Arguments
+lambda/ parameter
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+14 Functions
+
+Carl Eastlund <cce@racket-lang.org>
+
+ (require unstable/function)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+This module provides tools for higher-order programming and creating functions.
+
+14.1 Simple Functions
+
+14.2 Higher Order Predicates
+
+((negate f) x ...) → boolean?
+  f : (-> A ... boolean?)
+  x : A
+Negates the results of f; equivalent to (not (f x ...)).
+
+This function is reprovided from scheme/function.
+
+Examples:
+
+    (define f (negate exact-integer?))
+    reference to undefined identifier: negate
+
+    > (f 1)
+    reference to undefined identifier: f
+
+    > (f 'one)
+    reference to undefined identifier: f
+
+
+
+((conjoin f ...) x ...) → boolean?
+  f : (-> A ... boolean?)
+  x : A
+Combines calls to each function with and. Equivalent to (and (f x ...) ...)
+
+Examples:
+
+    (define f (conjoin exact? integer?))
+    > (f 1)
+    #t
+
+    > (f 1.0)
+    #f
+
+    > (f 1/2)
+    #f
+
+    > (f 0.5)
+    #f
+
+
+
+((disjoin f ...) x ...) → boolean?
+  f : (-> A ... boolean?)
+  x : A
+Combines calls to each function with or. Equivalent to (or (f x ...) ...)
+
+Examples:
+
+    (define f (disjoin exact? integer?))
+    > (f 1)
+    #t
+
+    > (f 1.0)
+    #t
+
+    > (f 1/2)
+    #t
+
+    > (f 0.5)
+    #f
+
+
+
+14.3 Currying and (Partial) Application
+
+(call f x ...) → B
+  f : (-> A ... B)
+  x : A
+Passes x ... to f. Keyword arguments are allowed. Equivalent to (f x ...).
+Useful for application in higher-order contexts.
+
+Examples:
+
+    > (map call
+           (list + - * /)
+           (list 1 2 3 4)
+           (list 5 6 7 8))
+    '(6 -4 21 1/2)
+
+    (define count 0)
+    (define (inc)
+      (set! count (+ count 1)))
+    (define (reset)
+      (set! count 0))
+    (define (show)
+      (printf "~a\n" count))
+    > (for-each call (list inc inc show reset show))
+    2
+
+    0
+
+
+
+(papply f x ...) → (B ... -> C)
+  f : (A ... B ... -> C)
+  x : A
+(papplyr f x ...) → (A ... -> C)
+  f : (A ... B ... -> C)
+  x : B
+The papply and papplyr functions partially apply f to x ..., which may include
+keyword arguments. They obey the following equations:
+
+    ((papply f x ...) y ...) = (f x ... y ...)
+    ((papplyr f x ...) y ...) = (f y ... x ...)
+
+Examples:
+
+    (define reciprocal (papply / 1))
+    > (reciprocal 3)
+    1/3
+
+    > (reciprocal 4)
+    1/4
+
+    (define halve (papplyr / 2))
+    > (halve 3)
+    3/2
+
+    > (halve 4)
+    2
+
+
+
+(curryn n f x ...) → (A1 ... -> ooo -> An ... -> B)
+  n : exact-nonnegative-integer?
+  f : (A0 ... A1 ... ooo An ... -> B)
+  x : A0
+(currynr n f x ...) → (An ... -> ooo -> A1 ... -> B)
+  n : exact-nonnegative-integer?
+  f : (A1 ... ooo An ... An+1 ... -> B)
+  x : An+1
+Note: The ooo above denotes a loosely associating ellipsis.
+
+The curryn and currynr functions construct a curried version of f, specialized
+at x ..., that produces a result after n further applications. Arguments at any
+stage of application may include keyword arguments, so long as no keyword is
+duplicated. These curried functions obey the following equations:
+
+    (curryn 0 f x ...) = (f x ...)
+    ((curryn (+ n 1) f x ...) y ...) = (curryn n f x ... y ...)
+     
+    (currynr 0 f x ...) = (f x ...)
+    ((currynr (+ n 1) f x ...) y ...) = (currynr n f y ... x ...)
+
+The call, papply, and papplyr utilities are related to curryn and currynr in
+the following manner:
+
+    (call f x ...) = (curryn 0 f x ...) = (currynr 0 f x ...)
+    (papply f x ...) = (curryn 1 f x ...)
+    (papplyr f x ...) = (currynr 1 f x ...)
+
+Examples:
+
+    (define reciprocal (curryn 1 / 1))
+    > (reciprocal 3)
+    1/3
+
+    > (reciprocal 4)
+    1/4
+
+    (define subtract-from (curryn 2 -))
+    (define from-10 (subtract-from 10))
+    > (from-10 5)
+    5
+
+    > (from-10 10)
+    0
+
+    (define from-0 (subtract-from 0))
+    > (from-0 5)
+    -5
+
+    > (from-0 10)
+    -10
+
+    (define halve (currynr 1 / 2))
+    > (halve 3)
+    3/2
+
+    > (halve 4)
+    2
+
+    (define subtract (currynr 2 -))
+    (define minus-10 (subtract 10))
+    > (minus-10 5)
+    -5
+
+    > (minus-10 10)
+    0
+
+    (define minus-0 (subtract 0))
+    > (minus-0 5)
+    5
+
+    > (minus-0 10)
+    10
+
+
+
+14.4 Eta Expansion
+
+(eta f)
+Produces a function equivalent to f, except that f is evaluated every time it
+is called.
+
+This is useful for function expressions that may be run, but not called, before
+f is defined. The eta expression will produce a function without evaluating f.
+
+Examples:
+
+    (define f (eta g))
+    > f
+    #<procedure:eta>
+
+    (define g (lambda (x) (+ x 1)))
+    > (f 1)
+    2
+
+
+
+(eta* f x ...)
+Produces a function equivalent to f, with argument list x .... In simple cases,
+this is equivalent to (lambda (x ...) (f x ...)). Optional (positional or
+keyword) arguments are not allowed.
+
+This macro behaves similarly to eta, but produces a function with statically
+known arity which may improve efficiency and error reporting.
+
+Examples:
+
+    (define f (eta* g x))
+    > f
+    #<procedure:f>
+
+    > (procedure-arity f)
+    1
+
+    (define g (lambda (x) (+ x 1)))
+    > (f 1)
+    2
+
+
+
+14.5 Parameter Arguments
+
+(lambda/parameter (param-arg ...) body ...)
+ 
+     param-arg   =   param-arg-spec
+                 |   keyword param-spec
+                      
+param-arg-spec   =   id
+                 |   [id default-expr]
+                 |   [id #:param param-expr]
+Constructs a function much like lambda, except that some optional arguments
+correspond to the value of a parameter. For each clause of the form [id #:param
+param-expr], param-expr must evaluate to a value param satisfying parameter?.
+The default value of the argument id is (param); param is bound to id via
+parameterize during the function call.
+
+Examples:
+
+    (define p (open-output-string))
+    (define hello-world
+      (lambda/parameter ([port #:param current-output-port])
+        (display "Hello, World!")
+        (newline port)))
+    > (hello-world p)
+    > (get-output-string p)
+    "Hello, World!\n"
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

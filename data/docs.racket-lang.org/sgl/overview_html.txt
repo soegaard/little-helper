@@ -1,0 +1,37 @@
+▼  GL: 3-D Graphics
+1  Using Open GL
+2  C-Style Open GL
+3  Racket-Style Open GL
+4  Open GL Vectors
+5  Bitmaps
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Using OpenGL
+
+The sgl/gl library provides direct access to the C-style OpenGL API, whereas
+the sgl library provides a more Racket-like interface. The sgl/gl library
+provides a binding for each #defined constant and for most functions in OpenGL
+1.5 and GLU 1.3. The functions perform comparable checking to their C-language
+counterparts; they check the types of their arguments, but do not check the
+length of array arguments. The sgl library provides wrappers around many of the
+functions in the sgl/gl library to present a more Racket-friendly interface,
+including function names that follow Racket conventions, and checked, symbolic
+enumeration arguments, and array-length checks.
+
+Warning on Safety: OpenGL programming is inherently unsafe, even when using
+only the sgl library. Although sgl checks the arguments to each function call,
+violation of higher-level assumptions of the system’s OpenGL library can cause
+it to crash, bringing the entire Racket system down. For example, sending a
+large number of vertices in a single glBegin causes at least some GL
+implementations to crash.
+
+Some examples are available in the "examples" directory of the "sgl" collection
+in the Racket installation. For "alpha.rkt", try choosing the "sk.jpg" image
+distritbuted with Racket in the "icons" collection; you may have to press the t
+key a few times if the spinning cube is blank.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

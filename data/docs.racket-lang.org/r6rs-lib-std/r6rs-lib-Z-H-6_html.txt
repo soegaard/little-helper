@@ -1,0 +1,196 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 5
+
+Control structures
+
+This chapter describes the (rnrs control (6))library, which provides useful
+control structures.
+
+(when <test> <expression[1]> <expression[2]> ...)    syntax 
+(unless <test> <expression[1]> <expression[2]> ...)    syntax 
+
+Syntax: <Test> must be an expression.
+
+Semantics: A when expression is evaluated by evaluating the <test> expression.
+If <test> evaluates to a true value, the remaining <expression>s are evaluated
+in order, and the results of the last <expression> are returned as the results
+of the entire when expression. Otherwise, the when expression returns
+unspecified values. An unless expression is evaluated by evaluating the <test>
+expression. If <test> evaluates to #f, the remaining <expression>s are
+evaluated in order, and the results of the last <expression> are returned as
+the results of the entire unless expression. Otherwise, the unless expression
+returns unspecified values.
+
+The final <expression> is in tail context if the when or unless form is itself
+in tail context.
+
+(when (> 3 2) ’greater)         ⇒ greater
+(when (< 3 2) ’greater)         ⇒ unspecified
+(unless (> 3 2) ’less)         ⇒ unspecified
+(unless (< 3 2) ’less)         ⇒ less
+
+The when and unless expressions are derived forms. They could be defined by the
+following macros:
+
+(define-syntax when
+  (syntax-rules ()
+    ((when test result1 result2 ...)
+     (if test
+         (begin result1 result2 ...)))))
+
+(define-syntax unless
+  (syntax-rules ()
+    ((unless test result1 result2 ...)
+     (if (not test)
+         (begin result1 result2 ...)))))
+
+(do ((<variable[1]> <init[1]> <step[1]>)    syntax 
+...)
+(<test> <expression> ...)
+<command> ...)
+
+Syntax: The <init>s, <step>s, <test>s, and <command>s must be expressions. The
+<variable>s must be pairwise distinct variables.
+
+Semantics: The do expression is an iteration construct. It specifies a set of
+variables to be bound, how they are to be initialized at the start, and how
+they are to be updated on each iteration.
+
+A do expression is evaluated as follows: The <init> expressions are evaluated
+(in some unspecified order), the <variable>s are bound to fresh locations, the
+results of the <init> expressions are stored in the bindings of the <variable>
+s, and then the iteration phase begins.
+
+Each iteration begins by evaluating <test>; if the result is #f, then the
+<command>s are evaluated in order for effect, the <step> expressions are
+evaluated in some unspecified order, the <variable>s are bound to fresh
+locations holding the results, and the next iteration begins.
+
+If <test> evaluates to a true value, the <expression>s are evaluated from left
+to right and the values of the last <expression> are returned. If no
+<expression>s are present, then the do expression returns unspecified values.
+
+The regionof the binding of a <variable> consists of the entire do expression
+except for the <init>s.
+
+A <step> may be omitted, in which case the effect is the same as if (<variable>
+<init> <variable>) had been written instead of (<variable> <init>).
+
+If a do expression appears in a tail context, the <expression>s are a <tail
+sequence> in the sense of report section on “Tail calls and tail contexts”,
+i.e., the last <expression> is also in a tail context.
+
+(do ((vec (make-vector 5))
+     (i 0 (+ i 1)))
+    ((= i 5) vec)
+  (vector-set! vec i i))                  ⇒  #(0 1 2 3 4)
+
+(let ((x ’(1 3 5 7 9)))
+  (do ((x x (cdr x))
+       (sum 0 (+ sum (car x))))
+      ((null? x) sum)))                     ⇒  25
+
+The following definition of do uses a trick to expand the variable clauses.
+
+(define-syntax do
+  (syntax-rules ()
+    ((do ((var init step ...) ...)
+         (test expr ...)
+         command ...)
+     (letrec
+       ((loop
+         (lambda (var ...)
+           (if test
+               (begin
+                 #f ; avoid empty begin
+                 expr ...)
+               (begin
+                 command
+                 ...
+                 (loop (do "step" var step ...)
+                       ...))))))
+       (loop init ...)))
+    ((do "step" x)
+     x)
+    ((do "step" x y)
+     y)))
+
+(case-lambda <case-lambda clause> ...)    syntax 
+
+Syntax: Each <case-lambda clause> must be of the form
+
+(<formals> <body>)
+
+<Formals> must be as in a lambda form (report section on “Procedures”), and
+<body> is as described in report section on “Bodies and sequences”.
+
+Semantics: A case-lambda expression evaluates to a procedure. This procedure,
+when applied, tries to match its arguments to the <case-lambda clause>s in
+order. The arguments match a clause if one of the following conditions is
+fulfilled:
+
+  • <Formals> has the form (<variable> ...) and the number of arguments is the
+    same as the number of formal parameters in <formals>.
+
+  • <Formals> has the form
+    (<variable[1]> ...<variable[n]> . <variable[n+1])>
+    and the number of arguments is at least n.
+
+  • <Formals> has the form <variable>.
+
+For the first clause matched by the arguments, the variables of the <formals>
+are bound to fresh locations containing the argument values in the same
+arrangement as with lambda.
+
+The last expression of a <body> in a case-lambda expression is in tail context.
+
+If the arguments match none of the clauses, an exception with condition type &
+assertion is raised.
+
+(define foo
+  (case-lambda 
+   (() ’zero)
+   ((x) (list ’one x))
+   ((x y) (list ’two x y))
+   ((a b c d . e) (list ’four a b c d e))
+   (rest (list ’rest rest))))
+
+(foo)         ⇒ zero
+(foo 1)         ⇒ (one 1)
+(foo 1 2)         ⇒ (two 1 2)
+(foo 1 2 3)         ⇒ (rest (1 2 3))
+(foo 1 2 3 4)         ⇒ (four 1 2 3 4 ())
+
+The case-lambda keyword can be defined in terms of lambda by the following
+macros:
+
+(define-syntax case-lambda
+  (syntax-rules ()
+    ((_ (fmls b1 b2 ...))
+     (lambda fmls b1 b2 ...))
+    ((_ (fmls b1 b2 ...) ...)
+     (lambda args
+       (let ((n (length args)))
+         (case-lambda-help args n
+           (fmls b1 b2 ...) ...))))))
+
+(define-syntax case-lambda-help
+  (syntax-rules ()
+    ((_ args n)
+     (assertion-violation #f
+       "unexpected number of arguments"))
+    ((_ args n ((x ...) b1 b2 ...) more ...)
+     (if (= n (length ’(x ...)))
+         (apply (lambda (x ...) b1 b2 ...) args)
+         (case-lambda-help args n more ...)))
+    ((_ args n ((x1 x2 ... . r) b1 b2 ...) more ...)
+     (if (>= n (length ’(x1 x2 ...)))
+         (apply (lambda (x1 x2 ... . r) b1 b2 ...)
+                   args)
+         (case-lambda-help args n more ...)))
+    ((_ args n (r b1 b2 ...) more ...)
+     (apply (lambda r b1 b2 ...) args))))
+
+                        [Go to first, previous, next page;   contents;   index]
+

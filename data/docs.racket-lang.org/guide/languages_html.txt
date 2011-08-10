@@ -1,0 +1,83 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 17  Creating Languages
+17.1  Module Languages
+17.2  Reader Extensions
+17.3  Defining new #lang Languages
+[...search manuals...]
+  top← prev  up  next → 
+
+17 Creating Languages
+
+The macro facilities defined in the preceding chapter let a programmer define
+syntactic extensions to a language, but a macro is limited in two ways:
+
+  • a macro cannot restrict the syntax available in its context or change the
+    meaning of surrounding forms; and
+
+  • a macro can extend the syntax of a language only within the parameters of
+    the language’s lexical conventions, such as using parentheses to group the
+    macro name with its subforms and using the core syntax of identifiers,
+    keywords, and literals.
+
+            +The distinction between the reader and expander layer is
+            introduced in Lists and Racket Syntax.
+
+That is, a macro can only extend a language, and it can do so only at the
+expander layer. Racket offers additional facilities for defining a starting
+point of the expander layer, for extending the reader layer, for defining the
+starting point of the reader layer, and for packaging a reader and expander
+starting point into a conveniently named language.
+
+    17.1 Module Languages
+
+      17.1.1 Implicit Form Bindings
+
+      17.1.2 Using #lang s-exp
+
+    17.2 Reader Extensions
+
+      17.2.1 Source Locations
+
+      17.2.2 Readtables
+
+    17.3 Defining new #lang Languages
+
+      17.3.1 Designating a #lang Language
+
+      17.3.2 Using #lang reader
+
+      17.3.3 Using #lang s-exp syntax/module-reader
+
+      17.3.4 Installing a Language
+
+      17.3.5 Source-Handling Configuration
+
+      17.3.6 Module-Handling Configuration
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,307 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+► 31  Test
+31.1  Actions and completeness
+31.2  Errors
+31.3  Technical Issues
+31.4  Test Functions
+On this page:
+31.1 Actions and completeness
+31.2 Errors
+31.3 Technical Issues
+31.3.1 Active Frame
+31.3.2 Thread Issues
+31.3.3 Window Manager (Unix only)
+31.4 Test Functions
+test: button-push
+test: set-radio-box!
+test: set-radio-box-item!
+test: set-check-box!
+test: set-choice!
+test: set-list-box!
+test: keystroke
+test: menu-select
+test: mouse-click
+test: run-interval
+test: current-get-eventspaces
+test: new-window
+test: close-top-level-window
+test: top-level-focus-window-has?
+test: number-pending-actions
+test: reraise-error
+test: run-one
+[...search manuals...]
+  top← prev  up  next → 
+
+31 Test
+
+ (require framework/test)
+
+The framework provides several new primitive functions that simulate user
+actions, which may be used to test applications. You use these primitives and
+combine them just as regular Racket functions. For example,
+
+    (test:keystroke #\A)
+    (test:menu-select "File" "Save")
+
+sends a keystroke event to the window with the keyboard focus and invokes the
+callback function for the “Save” menu item from the “File” menu. This has the
+same effect as if the user typed the key “A”, pulled down the “File” menu and
+selected “Save”.
+
+It is possible to load this portion of the framework without loading the rest
+of the framework. Use (require framework/test).
+
+Currently, the test engine has primitives for pushing buttons, setting
+check-boxes and choices, sending keystrokes, selecting menu items and clicking
+the mouse. Many functions that are also useful in application testing, such as
+traversing a tree of panels, getting the text from a canvas, determining if a
+window is shown, and so on, exist in GRacket.
+
+31.1 Actions and completeness
+
+The actions associated with a testing primitive may not have finished when the
+primitive returns to its caller. Some actions may yield control before they can
+complete. For example, selecting “Save As...” from the “File” menu opens a
+dialog box and will not complete until the “OK” or “Cancel” button is pushed.
+
+However, all testing functions wait at least a minimum interval before
+returning to give the action a chance to finish. This interval controls the
+speed at which the test suite runs, and gives some slack time for events to
+complete. The default interval is 100 milliseconds. The interval can be queried
+or set with test:run-interval.
+
+A primitive action will not return until the run-interval has expired and the
+action has finished, raised an error, or yielded. The number of incomplete
+actions is given by test:number-pending-actions.
+
+Note: Once a primitive action is started, it is not possible to undo it or kill
+its remaining effect. Thus, it is not possible to write a utility that flushes
+the incomplete actions and resets number-pending-actions to zero.
+
+However, actions which do not complete right away often provide a way to cancel
+themselves. For example, many dialog boxes have a “Cancel” button which will
+terminate the action with no further effect. But this is accomplished by
+sending an additional action (the button push), not by undoing the original
+action.
+
+31.2 Errors
+
+Errors in the primitive actions (which necessarily run in the handler thread)
+are caught and reraised in the calling thread.
+
+However, the primitive actions can only guarantee that the action has started,
+and they may return before the action has completed. As a consequence, an
+action may raise an error long after the function that started it has returned.
+In this case, the error is saved and reraised at the first opportunity (the
+next primitive action).
+
+The test engine keeps a buffer for one error, saving only the first error. Any
+subsequent errors are discarded. Reraising an error empties the buffer,
+allowing the next error to be saved.
+
+The function test:reraise-error reraises any pending errors.
+
+31.3 Technical Issues
+
+31.3.1 Active Frame
+
+The Self Test primitive actions all implicitly apply to the top-most (active)
+frame.
+
+31.3.2 Thread Issues
+
+The code started by the primitive actions must run in the handler thread of the
+eventspace where the event takes place. As a result, the test suite that
+invokes the primitive actions must not run in that handler thread (or else some
+actions will deadlock). See make-eventspace for more info.
+
+31.3.3 Window Manager (Unix only)
+
+In order for the Self Tester to work correctly, the window manager must set the
+keyboard focus to follow the active frame. This is the default behavior in
+Microsoft Windows and MacOS, but not in X windows.
+
+In X windows, you must explicitly tell your window manager to set the keyboard
+focus to the top-most frame, regardless of the position of the actual mouse.
+
+31.4 Test Functions
+
+(test:button-push button) → void?
+                (or/c (λ (str)
+                        (and (string? str)
+                             (test:top-level-focus-window-has?
+                              (λ (c)
+                                (and (is-a? c button%)
+                                     (string=? (send c get-label) str)
+                                     (send c is-enabled?)
+   button   :                        (send c is-shown?))))))
+                 
+                      (and/c (is-a?/c button%)
+                             (λ (btn)
+                               (and (send btn is-enabled?)
+                                    (send btn is-shown?)))
+                             (λ (btn)
+                               (test:top-level-focus-window-has?
+                                (λ (c) (eq? c btn))))))
+Simulates pushing button. If a string is supplied, the primitive searches for a
+button labelled with that string in the active frame. Otherwise, it pushes the
+button argument.
+(test:set-radio-box! radio-box state) → void?
+  radio-box : (or/c string? regexp? (is-a?/c radio-box%))
+  state : (or/c string? number?)
+Sets the radio-box to the label matching state. If state is a string, this
+function finds the choice with that label. If it is a regexp, this function
+finds the first choice whose label matches the regexp. If it is a number, it
+uses the number as an index into the state. If the number is out of range or if
+the label isn’t in the radio box, an exception is raised.
+
+If radio-box is a string, this function searches for a radio-box% object with a
+label matching that string, otherwise it uses radio-box itself.
+(test:set-radio-box-item! entry) → void?
+  entry : (or/c string? regexp?)
+Finds a radio-box% that has a label matching entry and sets the radio-box to
+entry.
+(test:set-check-box! check-box state) → void?
+  check-box : (or/c string? (is-a?/c check-box%))
+  state : boolean?
+Clears the check-box% item if state is #f, and sets it otherwise.
+
+If check-box is a string, this function searches for a check-box% with a label
+matching that string, otherwise it uses check-box itself.
+(test:set-choice! choice str) → void?
+  choice : (or/c string? (is-a?/c choice%))
+  str : (or/c string? (and/c number? exact? integer? positive?))
+Selects choice’s item str. If choice is a string, this function searches for a
+choice% with a label matching that string, otherwise it uses choice itself.
+(test:set-list-box! choice str) → void?
+  choice : (or/c string? (is-a?/c list-box%))
+  str : (or/c string? (and/c number? exact? integer? positive?))
+Selects list-box’s item str. If list-box is a string, this function searches
+for a list-box% with a label matching that string, otherwise it uses list-box
+itself.
+(test:keystroke key [modifier-list]) → void?
+  key : (or/c char? symbol?)
+   modifier-list   :   (listof (symbols
+                        'alt 'control 'meta 'shift 'noalt 'nocontrol 'nometea 'noshift))
+                   =   null
+This function simulates a user pressing a key. The argument, key, is just like
+the argument to the get-key-code method of the key-event% class.
+
+Note: To send the “Enter” key, use #\return, not #\newline.
+
+The 'shift or 'noshift modifier is implicitly set from key, but is overridden
+by the argument list. The 'shift modifier is set for any capitol alpha-numeric
+letters and any of the following characters:
+
+    #\? #\: #\~ #\\ #\|
+    #\< #\> #\{ #\} #\[ #\] #\( #\)
+    #\! #\@ #\# #\$ #\% #\^ #\& #\* #\_ #\+
+
+If conflicting modifiers are provided, the ones later in the list are used.
+(test:menu-select menu item) → void?
+  menu : string?
+  item : string?
+Selects the menu-item named item in the menu named menu.
+
+Note: The string for the menu item does not include its keyboard equivalent.
+For example, to select “New” from the “File” menu, use “New”, not “New Ctrl+m
+n”.
+(test:mouse-click button x y [modifiers]) → void?
+  button : (symbols 'left 'middle 'right)
+  x : (and/c exact? integer?)
+  y : (and/c exact? integer?)
+   modifiers   :   (listof (symbols
+                    'alt 'control 'meta 'shift 'noalt 'nocontrol 'nometa 'noshift))
+               =   null
+Simulates a mouse click at the coordinate (x,y) in the currently focused
+window, assuming that it supports the on-event method. Use test:button-push to
+click on a button.
+
+On the Macintosh, 'right corresponds to holding down the command modifier key
+while clicking and 'middle cannot be generated.
+
+Under Windows, 'middle can only be generated if the user has a three button
+mouse.
+
+The modifiers later in the list modifiers take precedence over ones that appear
+earlier.
+(test:run-interval msec) → void?
+  msec : number?
+(test:run-interval) → number?
+See also Actions and completeness. The first case in the case-lambda sets the
+run interval to msec milliseconds and the second returns the current setting.
+(test:current-get-eventspaces) → (-> (listof eventspace?))
+(test:current-get-eventspaces func) → void?
+  func : (-> (listof eventspace?))
+This parameter that specifies which evenspaces (see also Event Dispatching and
+Eventspaces) are considered when finding the frontmost frame. The first case
+sets the parameter to func. The procedure func will be invoked with no
+arguments to determine the eventspaces to consider when finding the frontmost
+frame for simulated user events. The second case returns the current value of
+the parameter. This will be a procedure which, when invoked, returns a list of
+eventspaces.
+(test:new-window window) → void?
+  window : (is-a?/c window<%>)
+Moves the keyboard focus to a new window within the currently active frame.
+Unfortunately, neither this function nor any other function in the test engine
+can cause the focus to move from the top-most (active) frame.
+(test:close-top-level-window tlw) → void?
+  tlw : (is-a?/c top-level-window<%>)
+Use this function to simulate clicking on the close box of a frame. Closes tlw
+with this expression:
+
+    (when (send tlw can-close?)
+      (send tlw on-close)
+      (send tlw show #f))
+
+(test:top-level-focus-window-has? test) → boolean?
+  test : (-> (is-a?/c area<%>) boolean?)
+Calls test for each child of the top-level-focus-frame and returns #t if test
+ever does, otherwise returns #f. If there is no top-level-focus-window, returns
+#f.
+(test:number-pending-actions) → number?
+Returns the number of pending events (those that haven’t completed yet)
+(test:reraise-error) → void?
+See also Errors.
+(test:run-one f) → void?
+  f : (-> void?)
+Runs the function f as if it was a simulated event.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

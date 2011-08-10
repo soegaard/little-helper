@@ -1,0 +1,320 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+accept-tab-focus
+flush
+get-canvas-background
+get-dc
+min-client-height
+min-client-width
+on-char
+on-event
+on-paint
+on-tab-in
+resume-flush
+set-canvas-background
+set-resize-corner
+suspend-flush
+warp-pointer
+Inherited methods:
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-focus
+on-move
+on-size
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+[...search manuals...]
+  top← prev  up  next → 
+
+canvas<%> : interface?
+  implements:  subwindow<%>
+A canvas is a subwindow onto which graphics and text can be drawn. Canvases
+also receive mouse and keyboard events.
+
+The canvas<%> interface is implemented by two classes:
+
+  • canvas% — a canvas for arbitrary drawing and event handling; and
+
+  • editor-canvas% — a canvas for displaying editor<%> objects.
+
+To draw onto a canvas, get its device context via get-dc. There are two basic
+approaches to updating a canvas:
+
+  • Drawing normally occurs during the canvas’s on-paint callback. The canvas%
+    class supports a paint-callback initialization argument to be called from
+    the default on-paint method.
+
+    A canvas’s on-paint method is called automatically as an event when the
+    windowing system determines that the canvas must be updated, such as when
+    the canvas is first shown or when it is resized. Use the refresh method to
+    explicitly trigger an on-paint call from the windowing system. (Multiple
+    refresh requests before on-paint can be called are coaleced into a single
+    on-paint call.)
+
+    Before the windowing system calls on-paint, it may erase the canvas’s
+    background (see erase), depending on the style of the canvas (e.g., as
+    determined by the style initialization argument for canvas%). Even when the
+    canvas’s style suppresses explicit clearing of the canvas, a canvas may be
+    erased by the windowing system due to window-moving and -resizing
+    operations. For a transparent canvas, “erased” means that the canvas’s
+    parent window shows through.
+
+  • Drawing can also occur at any time outside an on-paint call form the
+    windowing system, including from threads other than the handler thread of
+    the canvas’s eventspace. Drawing outside an on-paint callback from the
+    system is transient in the sense that windowing activity can erase the
+    canvas, but the drawing is persistent as long as no windowing refresh is
+    needed.
+
+    Calling an on-paint method directly is the same as drawing outside an
+    on-paint callback from the windowing system. For a canvas%, use refresh-now
+    to force an immediate update of the canvas’s content that is otherwise
+    analogous to queueing an update with refresh.
+
+Drawing to a canvas’s drawing context actually renders into an offscreen
+buffer. The buffer is automatically flushed to the screen asynchronously,
+explicitly via the flush method, or explicitly via flush-display—unless
+flushing has been disabled for the canvas. The suspend-flush method suspends
+flushing for a canvas until a matching resume-flush calls; calls to
+suspend-flush and resume-flush can be nested, in which case flushing is
+suspended until the outermost suspend-flush is balanced by a resume-flush. An
+on-paint call from the windowing system is implicitly wrapped with
+suspend-flush and resume-flush calls, as is a call to a paint procedure by
+refresh-now.
+
+In the case of a transparent canvas, line and text smoothing can depend on the
+window that serves as the canvas’s background. For example, smoothing may color
+pixels differently depending on whether the target context is white or gray.
+Background-sensitive smoothing is supported only if a relatively small number
+of drawing commands are recorded in the canvas’s offscreen buffer, however.
+
+(send a-canvas accept-tab-focus) → boolean?
+(send a-canvas accept-tab-focus on?) → void?
+  on? : any/c
+Gets or sets whether tab-focus is enabled for the canvas (assuming that the
+canvas is not created with the 'no-focus style for canvas%). When tab-focus is
+enabled, the canvas can receive the keyboard focus when the user navigates
+among a frame or dialog’s controls with the Tab and arrow keys. By default,
+tab-focus is disabled.
+
+When tab-focus is enabled for a canvas% object, Tab, arrow, Enter, and Escape
+keyboard events are consumed by a frame’s default on-traverse-char method. (In
+addition, a dialog’s default method consumes Escape key events.) Otherwise,
+on-traverse-char allows the keyboard events to be propagated to the canvas.
+
+For an editor-canvas% object, handling of Tab, arrow, Enter, and Escape
+keyboard events is determined by the allow-tab-exit method.
+
+(send a-canvas flush) → void?
+Like flush-display, but constrained if possible to the canvas.
+
+(send a-canvas get-canvas-background)
+ → (or/c (is-a?/c color%) false/c)
+Returns the color currently used to “erase” the canvas content before on-paint
+is called. See also set-canvas-background.
+
+The result is #f if the canvas was created with the 'transparent style,
+otherwise it is always a color% object.
+
+(send a-canvas get-dc) → (is-a?/c dc<%>)
+Gets the canvas’s device context. See dc<%> for more information about drawing.
+
+(send a-canvas min-client-height) → (integer-in 0 10000)
+(send a-canvas min-client-height h) → void?
+  h : (integer-in 0 10000)
+Gets or sets the canvas’s minimum height for geometry management, based on the
+client size rather than the full size. The client height is obtained or changed
+via min-height in area<%>, adding or subtracting border and scrollbar sizes as
+appropriate.
+
+The minimum height is ignored when it is smaller than the canvas’s graphical
+minimum height. See Geometry Management for more information.
+
+(send a-canvas min-client-width) → (integer-in 0 10000)
+(send a-canvas min-client-width w) → void?
+  w : (integer-in 0 10000)
+Gets or sets the canvas’s minimum width for geometry management, based on the
+canvas’s client size rather than its full size. The client width is obtained or
+changed via min-width in area<%>, adding or subtracting border and scrollbar
+sizes as appropriate.
+
+The minimum width is ignored when it is smaller than the canvas’s graphical
+minimum width. See Geometry Management for more information.
+
+(send a-canvas on-char ch) → void?
+  ch : (is-a?/c key-event%)
+Specification: Called when the canvas receives a keyboard event. See also Mouse
+and Keyboard Events.
+
+Default implementation: Does nothing.
+
+(send a-canvas on-event event) → void?
+  event : (is-a?/c mouse-event%)
+Specification: Called when the canvas receives a mouse event. See also Mouse
+and Keyboard Events, noting in particular that certain mouse events can get
+dropped.
+
+Default implementation: Does nothing.
+
+(send a-canvas on-paint) → void?
+Specification: Called when the canvas is exposed or resized so that the image
+in the canvas can be repainted.
+
+When on-paint is called in response to a system expose event and only a portion
+of the canvas is newly exposed, any drawing operations performed by on-paint
+are clipped to the newly-exposed region; however, the clipping region as
+reported by get-clipping-region does not change.
+
+Default implementation: Does nothing.
+
+(send a-canvas on-tab-in) → void?
+Specification: Called when the keyboard focus enters the canvas via keyboard
+navigation events. The on-focus method is also called, as usual for a focus
+change. When the keyboard focus leaves a canvas due to a navigation event, only
+on-focus is called.
+
+See also accept-tab-focus and on-traverse-char in top-level-window<%> .
+
+Default implementation: Does nothing.
+
+(send a-canvas resume-flush) → void?
+See canvas<%> for information on canvas flushing.
+
+(send a-canvas set-canvas-background color) → void?
+  color : (is-a?/c color%)
+Sets the color used to “erase” the canvas content before on-paint is called.
+(This color is typically associated with the canvas at a low level, so that it
+is used even when a complete refresh of the canvas is delayed by other
+activity.)
+
+If the canvas was created with the 'transparent style, an exn:fail:contract
+exception is raised.
+
+(send a-canvas set-resize-corner on?) → void?
+  on? : any/c
+On Mac OS X, enables or disables space for a resize tab at the canvas’s
+lower-right corner when only one scrollbar is visible. This method has no
+effect on Windows or Unix, and it has no effect when both or no scrollbars are
+visible. The resize corner is disabled by default, but it can be enabled when a
+canvas is created with the 'resize-corner style.
+
+(send a-canvas suspend-flush) → void?
+See canvas<%> for information on canvas flushing.
+
+Beware that suspending flushing for a canvas can discourage refreshes for other
+windows in the same frame on some platforms.
+
+(send a-canvas warp-pointer x y) → void?
+  x : (integer-in 0 10000)
+  y : (integer-in 0 10000)
+Moves the cursor to the given location on the canvas.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

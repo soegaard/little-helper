@@ -1,0 +1,377 @@
+▼  Redex: Practical Semantics Engineering
+1  Patterns
+2  Terms
+3  Languages
+4  Reduction Relations
+5  Metafunctions and Relations
+6  Testing
+7  GUI
+8  Typesetting
+   Index
+On this page:
+traces
+traces/ ps
+stepper
+stepper/ seed
+term-node-children
+term-node-parents
+term-node-labels
+term-node-set-color!
+term-node-color
+term-node-set-red!
+term-node-expr
+term-node-set-position!
+term-node-x
+term-node-y
+term-node-width
+term-node-height
+term-node?
+reduction-steps-cutoff
+initial-font-size
+initial-char-width
+dark-pen-color
+dark-brush-color
+light-pen-color
+light-brush-color
+dark-text-color
+light-text-color
+pretty-print-parameters
+default-pretty-printer
+[...search manuals...]
+  top← prev  up  next → 
+
+7 GUI
+
+ (require redex/gui)
+
+This section describes the GUI tools that Redex provides for exploring
+reduction sequences.
+
+(traces    reductions                                         
+           expr                                               
+         [ #:multiple? multiple?                              
+           #:pred pred                                        
+           #:pp pp                                            
+           #:colors colors                                    
+           #:racket-colors? racket-colors?                    
+           #:scheme-colors? scheme-colors?                    
+           #:filter term-filter                               
+           #:x-spacing x-spacing                              
+           #:y-spacing y-spacing                              
+           #:layout layout                                    
+           #:edge-labels? edge-label-font                     
+           #:edge-label-font edge-label-font                  
+           #:graph-pasteboard-mixin graph-pasteboard-mixin])  
+ → void?
+  reductions : reduction-relation?
+  expr : (or/c any/c (listof any/c))
+  multiple? : boolean? = #f
+   pred   :   (or/c (-> sexp any)               =   (lambda (x) #t)
+                    (-> sexp term-node? any))
+   pp   :   (or/c (any -> string)
+                  (any output-port number (is-a?/c text%) -> void))
+        =   default-pretty-printer
+                (listof
+   colors   :    (cons/c string?
+                         (and/c (listof (or/c string? (is-a?/c color%)))
+                                (lambda (x) (<= 0 (length x) 6)))))
+            =   '()
+  racket-colors? : boolean? = #t
+  scheme-colors? : boolean? = racket-colors?
+   term-filter   :   (-> any/c (or/c #f string?) any/c)
+                 =   (lambda (x y) #t)
+  x-spacing : number? = 15
+  y-spacing : number? = 15
+  layout : (-> (listof term-node?) void) = void
+  edge-label-font : boolean? = #t
+  edge-label-font : (or/c #f (is-a?/c font%)) = #f
+   graph-pasteboard-mixin   :   (make-mixin-contract graph-pasteboard<%>)
+                            =   values
+This function opens a new window and inserts each expression in expr (if
+multiple? is #t – if multiple? is #f, then expr is treated as a single
+expression). Then, it reduces the terms until at least reduction-steps-cutoff
+(see below) different terms are found, or no more reductions can occur. It
+inserts each new term into the gui. Clicking the reduce button reduces until
+reduction-steps-cutoff more terms are found.
+
+The pred function indicates if a term has a particular property. If it returns
+#f, the term is displayed with a pink background. If it returns a string or a
+color% object, the term is displayed with a background of that color (using
+the-color-database to map the string to a color). If it returns any other
+value, the term is displayed normally. If the pred function accepts two
+arguments, a term-node corresponding to the term is passed to the predicate.
+This lets the predicate function explore the (names of the) reductions that led
+to this term, using term-node-children, term-node-parents, and term-node-labels
+.
+
+The pred function may be called more than once per node. In particular, it is
+called each time an edge is added to a node. The latest value returned
+determines the color.
+
+The pp function is used to specially print expressions. It must either accept
+one or four arguments. If it accepts one argument, it will be passed each term
+and is expected to return a string to display the term.
+
+If the pp function takes four arguments, it should render its first argument
+into the port (its second argument) with width at most given by the number (its
+third argument). The final argument is the text where the port is connected –
+characters written to the port go to the end of the editor.
+
+The colors argument, if provided, specifies a list of reduction-name/color-list
+pairs. The traces gui will color arrows drawn because of the given reduction
+name with the given color instead of using the default color.
+
+The cdr of each of the elements of colors is a list of colors, organized in
+pairs. The first two colors cover the colors of the line and the border around
+the arrow head, the first when the mouse is over a graph node that is connected
+to that arrow, and the second for when the mouse is not over that arrow.
+Similarly, the next colors are for the text drawn on the arrow and the last two
+are for the color that fills the arrow head. If fewer than six colors are
+specified, the specified colors are used and then defaults are filled in for
+the remaining colors.
+
+The racket-colors? argument (along with scheme-colors?, retained for backward
+compatibility), controls the coloring of each window. When racket-colors? is #t
+(and scheme-colors? is #t too), traces colors the contents according to
+DrRacket’s Racket-mode color scheme; otherwise, traces uses a black color
+scheme.
+
+The term-filter function is called each time a new node is about to be inserted
+into the graph. If the filter returns false, the node is not inserted into the
+graph.
+
+The x-spacing and y-spacing control the amount of space put between the snips
+in the default layout.
+
+The layout argument is called (with all of the terms) when new terms are
+inserted into the window. In general, it is called after new terms are inserted
+in response to the user clicking on the reduce button, and after the initial
+set of terms is inserted. See also term-node-set-position!.
+
+If edge-labels? is #t (the default), then edge labels are drawn; otherwise not.
+
+The edge-label-font argument is used as the font on the edge labels. If #f is
+suppled, the dc<%> object’s default font is used.
+
+The traces library uses an instance of the mrlib/graph library’s
+graph-pasteboard<%> interface to layout the graphs. Sometimes, overriding one
+of its methods can help give finer-grained control over the layout, so the
+graph-pasteboard-mixin is applied to the class before it is instantiated. Also
+note that all of the snips inserted into the editor by this library have a
+get-term-node method which returns the snip’s term-node.
+
+(traces/ps    reductions                                        
+              expr                                              
+              file                                              
+            [ #:multiple? multiple?                             
+              #:pred pred                                       
+              #:pp pp                                           
+              #:colors colors                                   
+              #:filter term-filter                              
+              #:layout layout                                   
+              #:x-spacing x-spacing                             
+              #:y-spacing y-spacing                             
+              #:edge-labels? edge-label-font                    
+              #:edge-label-font edge-label-font                 
+              #:graph-pasteboard-mixin graph-pasteboard-mixin]  
+              #:post-process post-process)                      
+ → void?
+  reductions : reduction-relation?
+  expr : (or/c any/c (listof any/c))
+  file : (or/c path-string? path?)
+  multiple? : boolean? = #f
+   pred   :   (or/c (-> sexp any)               =   (lambda (x) #t)
+                    (-> sexp term-node? any))
+   pp   :   (or/c (any -> string)
+                  (any output-port number (is-a?/c text%) -> void))
+        =   default-pretty-printer
+                (listof
+   colors   :    (cons/c string?
+                         (and/c (listof (or/c string? (is-a?/c color%)))
+                                (lambda (x) (<= 0 (length x) 6)))))
+            =   '()
+   term-filter   :   (-> any/c (or/c #f string?) any/c)
+                 =   (lambda (x y) #t)
+  layout : (-> (listof term-node?) void) = void
+  x-spacing : number? = 15
+  y-spacing : number? = 15
+  edge-label-font : boolean? = #t
+  edge-label-font : (or/c #f (is-a?/c font%)) = #f
+   graph-pasteboard-mixin   :   (make-mixin-contract graph-pasteboard<%>)
+                            =   values
+  post-process : (-> (is-a?/c graph-pasteboard<%>) any/c)
+This function behaves just like the function traces, but instead of opening a
+window to show the reduction graph, it just saves the reduction graph to the
+specified file.
+
+All of the arguments behave like the arguments to traces, with the exception of
+the post-process argument. It is called just before the PostScript is created
+with the graph pasteboard.
+
+(stepper reductions t [pp]) → void?
+  reductions : reduction-relation?
+  t : any/c
+   pp   :   (or/c (any -> string)
+                  (any output-port number (is-a?/c text%) -> void))
+        =   default-pretty-printer
+This function opens a stepper window for exploring the behavior of the term t
+in the reduction system given by reductions.
+
+The pp argument is the same as to the traces function but is here for backwards
+compatibility only and should not be changed for most uses, but instead
+adjusted with pretty-print-parameters. Specifically, the highlighting shown in
+the stepper window can be wrong if default-pretty-printer does not print
+sufficiently similarly to how pretty-print prints (when adjusted by
+pretty-print-parameters’s behavior, of course).
+
+(stepper/seed reductions seed [pp]) → void?
+  reductions : reduction-relation?
+  seed : (cons/c any/c (listof any/c))
+   pp   :   (or/c (any -> string)
+                  (any output-port number (is-a?/c text%) -> void))
+        =   default-pretty-printer
+Like stepper, this function opens a stepper window, but it seeds it with the
+reduction-sequence supplied in seed.
+
+(term-node-children tn) → (listof term-node?)
+  tn : term-node?
+Returns a list of the children (ie, terms that this term reduces to) of the
+given node.
+
+Note that this function does not return all terms that this term reduces to –
+only those that are currently in the graph.
+
+(term-node-parents tn) → (listof term-node?)
+  tn : term-node?
+Returns a list of the parents (ie, terms that reduced to the current term) of
+the given node.
+
+Note that this function does not return all terms that reduce to this one –
+only those that are currently in the graph.
+(term-node-labels tn) → (listof (or/c false/c string?))
+  tn : term-node
+Returns a list of the names of the reductions that led to the given node, in
+the same order as the result of term-node-parents. If the list contains #f,
+that means that the corresponding step does not have a label.
+
+(term-node-set-color! tn color) → void?
+  tn : term-node?
+  color : (or/c string? (is-a?/c color%) false/c)
+Changes the highlighting of the node; if its second argument is #f, the
+coloring is removed, otherwise the color is set to the specified color% object
+or the color named by the string. The color-database<%> is used to convert the
+string to a color% object.
+
+(term-node-color tn) → (or/c string? (is-a?/c color%) false/c)
+  tn : term-node?
+Returns the current highlighting of the node. See also term-node-set-color!.
+
+(term-node-set-red! tn red?) → void?
+  tn : term-node?
+  red? : boolean?
+Changes the highlighting of the node; if its second argument is #t, the term is
+colored pink, if it is #f, the term is not colored specially.
+
+(term-node-expr tn) → any
+  tn : term-node?
+Returns the expression in this node.
+
+(term-node-set-position! tn x y) → void?
+  tn : term-node?
+  x : (and/c real? positive?)
+  y : (and/c real? positive?)
+Sets the position of tn in the graph to (x,y).
+
+(term-node-x tn) → real
+  tn : term-node?
+Returns the x coordinate of tn in the window.
+(term-node-y tn) → real
+  tn : term-node?
+Returns the y coordinate of tn in the window.
+(term-node-width tn) → real
+  tn : term-node?
+Returns the width of tn in the window.
+(term-node-height tn) → real?
+  tn : term-node?
+Returns the height of tn in the window.
+
+(term-node? v) → boolean?
+  v : any/c
+Recognizes term nodes.
+
+(reduction-steps-cutoff) → number?
+(reduction-steps-cutoff cutoff) → void?
+  cutoff : number?
+A parameter that controls how many steps the traces function takes before
+stopping.
+
+(initial-font-size) → number?
+(initial-font-size size) → void?
+  size : number?
+A parameter that controls the initial font size for the terms shown in the GUI
+window.
+
+(initial-char-width) → (or/c number? (-> any/c number?))
+(initial-char-width width) → void?
+  width : (or/c number? (-> any/c number?))
+A parameter that determines the initial width of the boxes where terms are
+displayed (measured in characters) for both the stepper and traces.
+
+If its value is a number, then the number is used as the width for every term.
+If its value is a function, then the function is called with each term and the
+resulting number is used as the width.
+
+(dark-pen-color) → (or/c string? (is-a?/c color<%>))
+(dark-pen-color color) → void?
+  color : (or/c string? (is-a?/c color<%>))
+(dark-brush-color) → (or/c string? (is-a?/c color<%>))
+(dark-brush-color color) → void?
+  color : (or/c string? (is-a?/c color<%>))
+(light-pen-color) → (or/c string? (is-a?/c color<%>))
+(light-pen-color color) → void?
+  color : (or/c string? (is-a?/c color<%>))
+(light-brush-color) → (or/c string? (is-a?/c color<%>))
+(light-brush-color color) → void?
+  color : (or/c string? (is-a?/c color<%>))
+(dark-text-color) → (or/c string? (is-a?/c color<%>))
+(dark-text-color color) → void?
+  color : (or/c string? (is-a?/c color<%>))
+(light-text-color) → (or/c string? (is-a?/c color<%>))
+(light-text-color color) → void?
+  color : (or/c string? (is-a?/c color<%>))
+These six parameters control the color of the edges in the graph.
+
+The dark colors are used when the mouse is over one of the nodes that is
+connected to this edge. The light colors are used when it isn’t.
+
+The pen colors control the color of the line. The brush colors control the
+color used to fill the arrowhead and the text colors control the color used to
+draw the label on the edge.
+
+(pretty-print-parameters) → (-> (-> any/c) any/c)
+(pretty-print-parameters f) → void?
+  f : (-> (-> any/c) any/c)
+A parameter that is used to set other pretty-print parameters.
+
+Specifically, whenever default-pretty-printer prints something it calls f with
+a thunk that does the actual printing. Thus, f can adjust pretty-print’s
+parameters to adjust how printing happens.
+
+(default-pretty-printer v port width text) → void?
+  v : any/c
+  port : output-port?
+  width : exact-nonnegative-integer?
+  text : (is-a?/c text%)
+This is the default value of pp used by traces and stepper and it uses
+pretty-print.
+
+This function uses the value of pretty-print-parameters to adjust how it
+prints.
+
+It sets the pretty-print-columns parameter to width, and it sets
+pretty-print-size-hook and pretty-print-print-hook to print holes and the
+symbol 'hole to match the way they are input in a term expression.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

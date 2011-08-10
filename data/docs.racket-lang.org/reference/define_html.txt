@@ -1,0 +1,310 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+► 2.14  Definitions: define, define-syntax, ...
+2.14.1  require Macros
+2.14.2  provide Macros
+On this page:
+define
+define-values
+define-syntax
+define-syntaxes
+define-for-syntax
+define-values-for-syntax
+2.14.1 require Macros
+define-require-syntax
+2.14.2 provide Macros
+define-provide-syntax
+[...search manuals...]
+  top← prev  up  next → 
+
+2.14 Definitions: define, define-syntax, ...
+
+            +Definitions: define in The Racket Guide introduces definitions.
+
+(define id expr)
+(define (head args) body ...+)
+ 
+head   =   id
+       |   (head args)
+            
+args   =   arg ...
+       |   arg ... . rest-id
+            
+ arg   =   arg-id
+       |   [arg-id default-expr]
+       |   keyword arg-id
+       |   keyword [arg-id default-expr]
+The first form binds id to the result of expr, and the second form binds id to
+a procedure. In the second case, the generated procedure is (CVT (head args)
+body ...+), using the CVT meta-function defined as follows:
+
+    (CVT (id . kw-formals) . datum)   = (lambda kw-formals . datum)
+    (CVT (head . kw-formals) . datum) = (lambda kw-formals expr)
+                                         if (CVT head . datum) = expr
+
+In an internal-definition context (see Internal Definitions), a define form
+introduces a local binding. At the top level, the top-level binding for id is
+created after evaluating expr, if it does not exist already, and the top-level
+mapping of id (in the namespace linked with the compiled definition) is set to
+the binding at the same time.
+
+Examples:
+
+    (define x 10)
+    > x
+    10
+
+
+
+    (define (f x)
+      (+ x 1))
+     
+
+    > (f 10)
+    11
+
+
+    (define ((f x) [y 20])
+      (+ x y))
+     
+
+    > ((f 10) 30)
+    40
+
+    > ((f 10))
+    30
+
+
+(define-values (id ...) expr)
+Evaluates the expr, and binds the results to the ids, in order, if the number
+of results matches the number of ids; if expr produces a different number of
+results, the exn:fail:contract exception is raised.
+
+In an internal-definition context (see Internal Definitions), a define-values
+form introduces local bindings. At the top level, the top-level binding for
+each id is created after evaluating expr, if it does not exist already, and the
+top-level mapping of each id (in the namespace linked with the compiled
+definition) is set to the binding at the same time.
+
+Examples:
+
+    (define-values () (values))
+    (define-values (x y z) (values 1 2 3))
+    > z
+    3
+
+
+
+(define-syntax id expr)
+(define-syntax (head args) body ...+)
+The first form creates a transformer binding (see Transformer Bindings) of id
+with the value of expr, which is an expression at phase level 1 relative to the
+surrounding context. (See Identifiers and Binding for information on phase
+levels.) Evaluation of expr side is parameterized to set current-namespace as
+in let-syntax.
+
+The second form is a shorthand the same as for define; it expands to a
+definition of the first form where the expr is a lambda form.
+
+In an internal-definition context (see Internal Definitions), a define-syntax
+form introduces a local binding.
+
+Examples:
+
+    > (define-syntax foo
+        (syntax-rules ()
+          ((_ a ...)
+           (printf "~a\n" (list a ...)))))
+    > (foo 1 2 3 4)
+    (1 2 3 4)
+
+    > (define-syntax (bar syntax-object)
+        (syntax-case syntax-object ()
+          ((_ a ...)
+           #'(printf "~a\n" (list a ...)))))
+    > (bar 1 2 3 4)
+    (1 2 3 4)
+
+
+
+(define-syntaxes (id ...) expr)
+Like define-syntax, but creates a transformer binding for each id. The expr
+should produce as many values as ids, and each value is bound to the
+corresponding id.
+
+When expr produces zero values for a top-level define-syntaxes (i.e., not in a
+module or internal-definition position), then the ids are effectively declared
+without binding; see Macro-Introduced Bindings.
+
+In an internal-definition context (see Internal Definitions), a define-syntaxes
+form introduces local bindings.
+
+Examples:
+
+    > (define-syntaxes (foo1 foo2 foo3)
+        (let ([transformer1 (lambda (syntax-object)
+                              (syntax-case syntax-object ()
+                                [(_) #'1]))]
+              [transformer2 (lambda (syntax-object)
+                              (syntax-case syntax-object ()
+                                [(_) #'2]))]
+              [transformer3 (lambda (syntax-object)
+                              (syntax-case syntax-object ()
+                                [(_) #'3]))])
+          (values transformer1
+                  transformer2
+                  transformer3)))
+    > (foo1)
+    1
+
+    > (foo2)
+    2
+
+    > (foo3)
+    3
+
+
+
+(define-for-syntax id expr)
+(define-for-syntax (head args) body ...+)
+Like define, except that the binding is at phase level 1 instead of phase level
+0 relative to its context. The expression for the binding is also at phase
+level 1. (See Identifiers and Binding for information on phase levels.)
+Evaluation of expr side is parameterized to set current-namespace as in
+let-syntax.
+
+Within a module, bindings introduced by define-for-syntax must appear before
+their uses or in the same define-for-syntax form (i.e., the define-for-syntax
+form must be expanded before the use is expanded). In particular, mutually
+recursive functions bound by define-for-syntax must be defined by the same
+define-for-syntax form.
+
+Examples:
+
+    > (define-for-syntax helper 2)
+    > (define-syntax (make-two syntax-object)
+       (printf "helper is ~a\n" helper)
+       #'2)
+    > (make-two)
+    helper is 2
+
+    2
+
+    ; `helper' is not bound in the runtime phase
+    > helper
+    reference to undefined identifier: helper
+
+    > (define-for-syntax (filter-ids ids)
+        (filter identifier? ids))
+    > (define-syntax (show-variables syntax-object)
+        (syntax-case syntax-object ()
+          [(_ expr ...)
+           (with-syntax ([(only-ids ...)
+                          (filter-ids (syntax->list #'(expr ...)))])
+             #'(list only-ids ...))]))
+    > (let ([a 1] [b 2] [c 3])
+        (show-variables a 5 2 b c))
+    '(1 2 3)
+
+
+
+(define-values-for-syntax (id ...) expr)
+Like define-for-syntax, but expr must produce as many values as supplied ids,
+and all of the ids are bound (at phase level 1).
+
+Examples:
+
+    > (define-values-for-syntax (foo1 foo2) (values 1 2))
+    > (define-syntax (bar syntax-object)
+        (printf "foo1 is ~a foo2 is ~a\n" foo1 foo2)
+        #'2)
+    > (bar)
+    foo1 is 1 foo2 is 2
+
+    2
+
+
+
+2.14.1 require Macros
+
+ (require racket/require-syntax)
+The bindings documented in this section are provided by the racket/
+require-syntax library, not racket/base or racket.
+
+(define-require-syntax id expr)
+(define-require-syntax (id args ...) body ...+)
+The first form is like define-syntax, but for a require sub-form. The proc-expr
+must produce a procedure that accepts and returns a syntax object representing
+a require sub-form.
+
+This form expands to define-syntax with a use of make-require-transformer; see
+require Transformers for more information.
+
+The second form is a shorthand the same as for define-syntax; it expands to a
+definition of the first form where the expr is a lambda form.
+
+2.14.2 provide Macros
+
+ (require racket/provide-syntax)
+The bindings documented in this section are provided by the racket/
+provide-syntax library, not racket/base or racket.
+
+(define-provide-syntax id expr)
+(define-provide-syntax (id args ...) body ...+)
+The first form is like define-syntax, but for a provide sub-form. The proc-expr
+must produce a procedure that accepts and returns a syntax object representing
+a provide sub-form.
+
+This form expands to define-syntax with a use of make-provide-transformer; see
+provide Transformers for more information.
+
+The second form is a shorthand the same as for define-syntax; it expands to a
+definition of the first form where the expr is a lambda form.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

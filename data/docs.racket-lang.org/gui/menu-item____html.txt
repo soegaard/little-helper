@@ -1,0 +1,109 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+delete
+get-parent
+is-deleted?
+restore
+[...search manuals...]
+  top← prev  up  next → 
+
+menu-item<%> : interface?
+A menu-item<%> object is an element within a menu%, popup-menu%, or menu-bar%.
+Operations that affect the parent — such as renaming the item, deleting the
+item, or adding a check beside the item — are accomplished via the menu-item<%>
+object.
+
+A menu item is either a separator-menu-item% object (merely a separator), of a
+labelled-menu-item<%> object; the latter is more specifically an instance of
+either menu-item% (a plain menu item), checkable-menu-item% (a checkable menu
+item), or menu% (a submenu).
+
+(send a-menu-item delete) → void?
+Removes the item from its parent. If the menu item is already deleted, delete
+has no effect.
+
+See also restore.
+
+(send a-menu-item get-parent)
+ → (or/c (is-a?/c menu%) (is-a?/c popup-menu%) (is-a?/c menu-bar%))
+Returns the menu, popup menu, or menu bar containing the item. The parent for a
+menu item is specified when the menu item is created, and it cannot be changed.
+
+(send a-menu-item is-deleted?) → boolean?
+Returns #t if the menu item is deleted from its parent, #f otherwise.
+
+(send a-menu-item restore) → void?
+Adds a deleted item back into its parent. The item is always restored to the
+end of the parent, regardless of its original position. If the item is not
+currently deleted, restore has no effect.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

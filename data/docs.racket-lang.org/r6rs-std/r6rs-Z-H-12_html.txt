@@ -1,0 +1,143 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 9
+
+Primitive syntax
+
+After the import form within a library form or a top-level program, the forms
+that constitute the body of the library or the top-level program depend on the
+libraries that are imported. In particular, imported syntactic keywords
+determine the available syntactic abstractions and whether each form is a
+definition or expression. A few form types are always available independent of
+imported libraries, however, including constant literals, variable references,
+procedure calls, and macro uses.
+
+9.1  Primitive expression types
+
+The entries in this section all describe expressions, which may occur in the
+place of <expression> syntactic variables. See also section 11.4.
+
+Constant literals
+
+<number>    syntax 
+<boolean>    syntax 
+<character>    syntax 
+<string>    syntax 
+<bytevector>    syntax 
+
+An expression consisting of a representation of a number object, a boolean, a
+character, a string, or a bytevector, evaluates “to itself”.
+
+145932             ⇒  145932
+#t           ⇒  #t
+"abc"              ⇒  "abc"
+#vu8(2 24 123)         ⇒ #vu8(2 24 123)
+
+As noted in section 5.10, the value of a literal expression is immutable.
+
+Variable references
+
+<variable>    syntax 
+
+An expression consisting of a variable(section 5.2) is a variable reference if
+it is not a macro use (see below). The value of the variable reference is the
+value stored in the location to which the variable is bound. It is a syntax
+violation to reference an unboundvariable.
+
+The following example examples assumes the base library has been imported:
+
+(define x 28)
+x           ⇒  28
+
+Procedure calls
+
+(<operator> <operand[1]> ...)    syntax 
+
+A procedure call consists of expressions for the procedure to be called and the
+arguments to be passed to it, with enclosing parentheses. A form in an
+expression context is a procedure call if <operator> is not an identifier bound
+as a syntactic keyword (see section 9.2 below).
+
+When a procedure call is evaluated, the operator and operand expressions are
+evaluated (in an unspecified order) and the resulting procedure is passed the
+resulting arguments.
+
+The following examples assume the (rnrs base (6)) library has been imported:
+
+(+ 3 4)                                  ⇒  7
+((if #f + *) 3 4)                 ⇒  12
+
+If the value of <operator> is not a procedure, an exception with condition type
+&assertion is raised. Also, if <operator> does not accept as many arguments as
+there are <operand>s, an exception with condition type &assertion is raised.
+
+    Note:   In contrast to other dialects of Lisp, the order of evaluation is
+    unspecified, and the operator expression and the operand expressions are
+    always evaluated with the same evaluation rules.
+
+    Although the order of evaluation is otherwise unspecified, the effect of
+    any concurrent evaluation of the operator and operand expressions is
+    constrained to be consistent with some sequential order of evaluation. The
+    order of evaluation may be chosen differently for each procedure call.
+
+    Note:   In many dialects of Lisp, the form () is a legitimate expression.
+    In Scheme, expressions written as list/pair forms must have at least one
+    subexpression, so () is not a syntactically valid expression.
+
+9.2  Macros
+
+Libraries and top-level programs can define and use new kinds of derived
+expressions and definitions called syntactic abstractions or macros.A syntactic
+abstraction is created by binding a keyword to a macro transformer or, simply,
+transformer. The transformer determines how a use of the macro (called a macro
+use) is transcribed into a more primitive form.
+
+Most macro uses have the form:
+
+(<keyword> <datum> ...)
+
+where <keyword> is an identifier that uniquely determines the kind of form.
+This identifier is called the syntactic keyword, or simply keyword, of the
+macro. The number of <datum>s and the syntax of each depends on the syntactic
+abstraction.
+
+Macro uses can also take the form of improper lists, singleton identifiers, or
+set! forms, where the second subform of the set! is the keyword (see section 
+11.19) library section on “make-variable-transformer”):
+
+(<keyword> <datum> ... . <datum>)
+<keyword>
+(set! <keyword> <datum>)
+
+The define-syntax, let-syntax and letrec-syntax forms, described in sections 
+11.2.2 and 11.18, create bindings for keywords, associate them with macro
+transformers, and control the scope within which they are visible.
+
+The syntax-rules and identifier-syntax forms, described in section 11.19,
+create transformers via a pattern language. Moreover, the syntax-case form,
+described in library chapter on “syntax-case”, allows creating transformers via
+arbitrary Scheme code.
+
+Keywords occupy the same name space as variables. That is, within the same
+scope, an identifier can be bound as a variable or keyword, or neither, but not
+both, and local bindings of either kind may shadow other bindings of either
+kind.
+
+Macros defined using syntax-rules and identifier-syntax are “hygienic” and
+“referentially transparent” and thus preserve Scheme’s lexical scoping [16, 15
+, 2, 6, 9]:
+
+  • If a macro transformer inserts a binding for an identifier (variable or
+    keyword) not appearing in the macro use, the identifier is in effect
+    renamed throughout its scope to avoid conflicts with other identifiers.
+
+  • If a macro transformer inserts a free reference to an identifier, the
+    reference refers to the binding that was visible where the transformer was
+    specified, regardless of any local bindings that may surround the use of
+    the macro.
+
+Macros defined using the syntax-case facility are also hygienic unless datum->
+syntax (see library section on “Syntax-object and datum conversions”) is used.
+
+                        [Go to first, previous, next page;   contents;   index]
+

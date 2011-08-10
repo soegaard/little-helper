@@ -1,0 +1,260 @@
+▼  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+Scribble: The Racket Documentation Tool
+
+Matthew Flatt
+and Eli Barzilay
+
+Scribble is a collection of tools for creating prose documents—papers, books,
+library documentation, etc.—in HTML or PDF (via Latex) form. More generally,
+Scribble helps you write programs that are rich in textual content, whether the
+content is prose to be typeset or any other form of text to be generated
+programmatically.
+
+This document is itself written using Scribble. You can see its source at http:
+//git.racket-lang.org/plt/tree/HEAD:/collects/scribblings/scribble, starting
+with the "scribble.scrbl" file.
+
+    1 Getting Started
+
+      1.1 A First Example
+
+      1.2 Multiple Sections
+
+      1.3 Splitting the Document Source
+
+      1.4 Document Styles
+
+      1.5 More Functions
+
+      1.6 Text Mode vs. Racket Mode for Arguments
+
+      1.7 @ Syntax Basics
+
+      1.8 Decoding Sequences
+
+      1.9 Next Steps
+
+    2 @ Syntax
+
+      2.1 The Scribble Syntax at a Glance
+
+      2.2 The Command Part
+
+      2.3 The Datum Part
+
+      2.4 The Body Part
+
+        2.4.1 Alternative Body Syntax
+
+        2.4.2 Racket Expression Escapes
+
+        2.4.3 Comments
+
+        2.4.4 Spaces, Newlines, and Indentation
+
+    3 High-Level Scribble API
+
+      3.1 Base Document Format
+
+        3.1.1 Document Structure
+
+        3.1.2 Blocks
+
+        3.1.3 Text Styles and Content
+
+        3.1.4 Spacing
+
+        3.1.5 Links
+
+        3.1.6 Indexing
+
+        3.1.7 Tables of Contents
+
+      3.2 Racket Manual Format
+
+      3.3 SIGPLAN Paper Format
+
+      3.4 JFP Paper Format
+
+      3.5 LNCS Paper Format
+
+    4 Scribbling Documentation
+
+      4.1 Getting Started with Documentation
+
+        4.1.1 Setting Up Library Documentation
+
+        4.1.2 Racket Typesetting and Hyperlinks
+
+        4.1.3 Section Hyperlinks
+
+        4.1.4 Defining Racket Bindings
+
+        4.1.5 Showing Racket Examples
+
+        4.1.6 Multi-Page Sections
+
+      4.2 Style Guide
+
+        4.2.1 Prose and Terminology
+
+        4.2.2 Typesetting Code
+
+        4.2.3 Typesetting Prose
+
+        4.2.4 Section Titles
+
+        4.2.5 Indexing
+
+        4.2.6 Examples
+
+      4.3 Manual Forms
+
+        4.3.1 Typesetting Code
+
+          4.3.1.1 Typesetting Comments
+
+        4.3.2 Documenting Modules
+
+        4.3.3 Documenting Forms, Functions, Structure Types, and Values
+
+        4.3.4 Documenting Classes and Interfaces
+
+        4.3.5 Documenting Signatures
+
+        4.3.6 Various String Forms
+
+        4.3.7 Links
+
+        4.3.8 Indexing
+
+        4.3.9 Images
+
+        4.3.10 Bibliography
+
+        4.3.11 Miscellaneous
+
+        4.3.12 Index-Entry Descriptions
+
+      4.4 Racket
+
+      4.5 Evaluation and Examples
+
+      4.6 In-Source Documentation
+
+        4.6.1 Source Annotations for Documentation
+
+        4.6.2 Extracting Documentation from Source
+
+      4.7 BNF Grammars
+
+      4.8 Compatibility Libraries
+
+        4.8.1 Compatibility Structures And Processing
+
+        4.8.2 Compatibility Basic Functions
+
+    5 Literate Programming
+
+      5.1 scribble/lp Language
+
+      5.2 scribble/lp-include Module
+
+    6 Text Generation
+
+      6.1 Writing Text Files
+
+      6.2 Defining Functions and More
+
+      6.3 Using Printouts
+
+      6.4 Indentation in Preprocessed output
+
+      6.5 Using External Files
+
+    7 Low-Level Scribble API
+
+      7.1 Scribble Layers
+
+        7.1.1 Typical Composition
+
+        7.1.2 Layer Roadmap
+
+      7.2 @ Reader Internals
+
+        7.2.1 Using the @ Reader
+
+        7.2.2 Syntax Properties
+
+        7.2.3 Adding @-expressions to a Language
+
+        7.2.4 Interface
+
+      7.3 Structures And Processing
+
+        7.3.1 Parts
+
+        7.3.2 Tags
+
+        7.3.3 Styles
+
+        7.3.4 Collected and Resolved Information
+
+        7.3.5 Structure Reference
+
+        7.3.6 HTML Style Properties
+
+        7.3.7 Latex Style Properties
+
+      7.4 Renderer
+
+        7.4.1 Base Renderer
+
+        7.4.2 Text Renderer
+
+        7.4.3 HTML Renderer
+
+        7.4.4 Latex Renderer
+
+      7.5 Decoding Text
+
+      7.6 Document Language
+
+      7.7 Document Reader
+
+      7.8 Cross-Reference Utilities
+
+      7.9 Extending and Configuring Scribble Output
+
+        7.9.1 Implementing Styles
+
+        7.9.2 Configuring Output
+
+        7.9.3 Predefined Latex Macros
+
+      7.10 Connecting to "racket"
+
+    8 Running scribble
+
+      8.1 Extra and Format-Specific Files
+
+      8.2 Handling Cross-References
+
+    Index
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

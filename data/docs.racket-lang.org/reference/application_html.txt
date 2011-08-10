@@ -1,0 +1,130 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+#%app
+#%plain-app
+[...search manuals...]
+  top← prev  up  next → 
+
+2.7 Procedure Applications and #%app
+
+            +Function Calls (Procedure Applications) in The Racket Guide
+            introduces procedure applications.
+
+(proc-expr arg ...)
+Applies a procedure, when proc-expr is not an identifier that has a transformer
+binding (see Expansion (Parsing)).
+
+More precisely, the expander converts this form to (#%app proc-expr arg ...),
+giving #%app the lexical context that is associated with the original form
+(i.e., the pair that combines proc-expr and its arguments). Typically, the
+lexical context of the pair indicates the procedure-application #%app that is
+described next. See also Expansion Steps.
+
+Examples:
+
+    > (+ 1 2)
+    3
+
+    > ((lambda (x #:arg y) (list y x)) #:arg 2 1)
+    '(2 1)
+
+
+
+(#%app proc-expr arg ...)
+Applies a procedure. Each arg is one of the following:
+
+    arg-expr
+
+    The resulting value is a non-keyword argument.
+
+    keyword arg-expr
+
+    The resulting value is a keyword argument using keyword. Each keyword in
+    the application must be distinct.
+
+The proc-expr and arg-exprs are evaluated in order, left to right. If the
+result of proc-expr is a procedure that accepts as many arguments as
+non-keyword arg-exprs, if it accepts arguments for all of the keywords in the
+application, and if all required keyword-based arguments are represented among
+the keywords in the application, then the procedure is called with the values
+of the arg-exprs. Otherwise, the exn:fail:contract exception is raised.
+
+The continuation of the procedure call is the same as the continuation of the
+application expression, so the results of the procedure are the results of the
+application expression.
+
+The relative order of keyword-based arguments matters only for the order of
+arg-expr evaluations; the arguments are associated with argument variables in
+the applied procedure based on the keywords, and not their positions. The other
+arg-expr values, in contrast, are associated with variables according to their
+order in the application form.
+
+See also Expansion Steps for information on how the expander introduces #%app
+identifiers.
+
+Examples:
+
+    > (#%app + 1 2)
+    3
+
+    > (#%app (lambda (x #:arg y) (list y x)) #:arg 2 1)
+    '(2 1)
+
+    > (#%app cons)
+    cons: expects 2 arguments, given 0
+
+
+
+(#%plain-app proc-expr arg-expr ...)
+(#%plain-app)
+Like #%app, but without support for keyword arguments. As a special case, (#
+%plain-app) produces '().
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,41 @@
+▼  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+On this page:
+show-help
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Showing Text Help
+
+ (require games/show-help)
+
+(show-help coll-path frame-title [verbatim?]) → (-> any)
+  coll-path : (listof string?)
+  frame-title : string?
+  verbatim? : any/c = #f
+Returns a thunk for showing a help window based on plain text. Multiple
+invocations of the thunk bring the same window to the foreground (until the
+user closes the window).
+
+The help window displays "doc.txt" from the collection specified by coll-path.
+
+The frame-title argument is used for the help window title.
+
+If verbatim? is true, then "doc.txt" is displayed verbatim, otherwise it is
+formatted as follows:
+
+  • Any line of the form **....** is omitted.
+
+  • Any line that starts with * after whitespace is indented as a bullet point.
+
+  • Any line that contains only -s and is as long as the previous line causes
+    the previous line to be formatted as a title.
+
+  • Other lines are paragraph-flowed to fit the window.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,749 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+► 2  Values and Types
+2.1  Standard Types
+2.2  Global Constants
+2.3  Strings
+2.4  Value Functions
+On this page:
+2.1 Standard Types
+2.2 Global Constants
+2.3 Strings
+2.4 Value Functions
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Values and Types
+
+A Racket value is represented by a pointer-sized value. The low bit is a mark
+bit: a 1 in the low bit indicates an immediate integer, a 0 indicates a
+(word-aligned) pointer.
+
+A pointer Racket value references a structure that begins with a Scheme_Object
+sub-structure, which in turn starts with a tag that has the C type Scheme_Type.
+The rest of the structure, following the Scheme_Object header, is
+type-dependent. Racket’s C interface gives Racket values the type
+Scheme_Object*. (The “object” here does not refer to objects in the sense of
+the racket/class library.)
+
+Examples of Scheme_Type values include scheme_pair_type and scheme_symbol_type.
+Some of these are implemented as instances of Scheme_Simple_Object, which is
+defined in "scheme.h", but extension or embedding code should never access this
+structure directly. Instead, the code should use macros, such as SCHEME_CAR,
+that provide access to the data of common Racket types.
+
+For most Racket types, a constructor is provided for creating values of the
+type. For example, scheme_make_pair takes two Scheme_Object* values and returns
+the cons of the values.
+
+The macro SCHEME_TYPE takes a Scheme_Object * and returns the type of the
+object. This macro performs the tag-bit check, and returns scheme_integer_type
+when the value is an immediate integer; otherwise, SCHEME_TYPE follows the
+pointer to get the type tag. Macros are provided to test for common Racket
+types; for example, SCHEME_PAIRP returns 1 if the value is a cons cell, 0
+otherwise.
+
+In addition to providing constructors, Racket defines six global constant
+Racket values: scheme_true, scheme_false, scheme_null, scheme_eof, scheme_void,
+and scheme_undefined. Each of these has a type tag, but each is normally
+recognized via its constant address.
+
+An extension or embedding application can create new a primitive data type by
+calling scheme_make_type, which returns a fresh Scheme_Type value. To create a
+collectable instance of this type, allocate memory for the instance with
+scheme_malloc. From Racket’s perspective, the main constraint on the data
+format of such an instance is that the first sizeof(Scheme_Object) bytes must
+correspond to a Scheme_Object record; furthermore, the first sizeof
+(Scheme_Type) bytes must contain the value returned by scheme_make_type.
+Extensions with modest needs can use scheme_make_cptr, instead of creating an
+entirely new type.
+
+Racket values should never be allocated on the stack, and they should never
+contain pointers to values on the stack. Besides the problem of restricting the
+value’s lifetime to that of the stack frame, allocating values on the stack
+creates problems for continuations and threads, both of which copy into and out
+of the stack.
+
+2.1 Standard Types
+
+The following are the Scheme_Type values for the standard types:
+
+  • scheme_bool_type — the constants scheme_true and scheme_false are the only
+    values of this type; use SCHEME_FALSEP to recognize scheme_false and use
+    SCHEME_TRUEP to recognize anything except scheme_false; test for this type
+    with SCHEME_BOOLP
+
+  • scheme_char_type — SCHEME_CHAR_VAL extracts the character (of type mzchar);
+    test for this type with SCHEME_CHARP
+
+  • scheme_integer_type — fixnum integers, which are identified via the tag bit
+    rather than following a pointer to this Scheme_Type value; SCHEME_INT_VAL
+    extracts the integer to an intptr_t; test for this type with SCHEME_INTP
+
+  • scheme_double_type — flonum inexact numbers; SCHEME_FLOAT_VAL or 
+    SCHEME_DBL_VAL extracts the floating-point value; test for this type with 
+    SCHEME_DBLP
+
+  • scheme_float_type — single-precision flonum inexact numbers, when
+    specifically enabled when compiling Racket; SCHEME_FLOAT_VAL or 
+    SCHEME_FLT_VAL extracts the floating-point value; test for this type with 
+    SCHEME_FLTP
+
+  • scheme_bignum_type — test for this type with SCHEME_BIGNUMP
+
+  • scheme_rational_type — test for this type with SCHEME_RATIONALP
+
+  • scheme_complex_type — test for this type or scheme_complex_izi_type with 
+    SCHEME_COMPLEXP
+
+  • scheme_complex_izi_type — complex number with an inexact zero imaginary
+    part (so it counts as a real number); test for this type specifically with 
+    SCHEME_COMPLEX_IZIP
+
+  • scheme_char_string_type — SCHEME_CHAR_STR_VAL extracts the string as a
+    mzchar*; the string is always nul-terminated, but may also contain embedded
+    nul characters, and the Racket string is modified if this string is
+    modified; SCHEME_CHAR_STRLEN_VAL extracts the string length (in characters,
+    not counting the nul terminator); test for this type with 
+    SCHEME_CHAR_STRINGP
+
+  • scheme_byte_string_type — SCHEME_BYTE_STR_VAL extracts the string as a
+    char*; the string is always nul-terminated, but may also contain embedded
+    nul characters, and the Racket string is modified if this string is
+    modified; SCHEME_BYTE_STRLEN_VAL extracts the string length (in bytes, not
+    counting the nul terminator); test for this type with SCHEME_BYTE_STRINGP
+
+  • scheme_path_type — SCHEME_PATH_VAL extracts the path as a char*; the string
+    is always nul-terminated; SCHEME_PATH_LEN extracts the path length (in
+    bytes, not counting the nul terminator); test for this type with 
+    SCHEME_PATHP
+
+  • scheme_symbol_type — SCHEME_SYM_VAL extracts the symbol’s string as a char*
+    UTF-8 encoding (do not modify this string); SCHEME_SYM_LEN extracts the
+    number of bytes in the symbol name (not counting the nul terminator); test
+    for this type with SCHEME_SYMBOLP; 3m: see Cooperating with 3m for a
+    caution about SCHEME_SYM_VAL
+
+  • scheme_keyword_type — SCHEME_KEYWORD_VAL extracts the keyword’s string
+    (without the leading hash colon) as a char* UTF-8 encoding (do not modify
+    this string); SCHEME_KEYWORD_LEN extracts the number of bytes in the
+    keyword name (not counting the nul terminator); test for this type with 
+    SCHEME_KEYWORDP; 3m: see Cooperating with 3m for a caution about
+    SCHEME_KEYWORD_VAL
+
+  • scheme_box_type — SCHEME_BOX_VAL extracts/sets the boxed value; test for
+    this type with SCHEME_BOXP
+
+  • scheme_pair_type — SCHEME_CAR extracts/sets the car and SCHEME_CDR extracts
+    /sets the cdr; test for this type with SCHEME_PAIRP
+
+  • scheme_mutable_pair_type — SCHEME_MCAR extracts/sets the mcar and 
+    SCHEME_MCDR extracts/sets the mcdr; test for this type with SCHEME_MPAIRP
+
+  • scheme_vector_type — SCHEME_VEC_SIZE extracts the length and SCHEME_VEC_ELS
+    extracts the array of Racket values (the Racket vector is modified when
+    this array is modified); test for this type with SCHEME_VECTORP; 3m: see
+    Cooperating with 3m for a caution about SCHEME_VEC_ELS
+
+  • scheme_structure_type — structure instances; test for this type with 
+    SCHEME_STRUCTP
+
+  • scheme_struct_type_type — structure types; test for this type with 
+    SCHEME_STRUCT_TYPEP
+
+  • scheme_struct_property_type — structure type properties
+
+  • scheme_input_port_type — SCHEME_INPORT_VAL extracts/sets the user data
+    pointer; test for just this type with SCHEME_INPORTP, but use 
+    SCHEME_INPUT_PORTP to recognize all input ports (including structures with
+    the prop:input-port property)
+
+  • scheme_output_port_type — SCHEME_OUTPORT_VAL extracts/sets the user data
+    pointer; test for just this type with SCHEME_OUTPORTP, but use 
+    SCHEME_OUTPUT_PORTP to recognize all output ports (including structures
+    with the prop:output-port property)
+
+  • scheme_thread_type — thread descriptors; test for this type with 
+    SCHEME_THREADP
+
+  • scheme_sema_type — semaphores; test for this type with SCHEME_SEMAP
+
+  • scheme_hash_table_type — test for this type with SCHEME_HASHTP
+
+  • scheme_bucket_table_type — test for this type with SCHEME_BUCKTP
+
+  • scheme_weak_box_type — test for this type with SCHEME_WEAKP; 
+    SCHEME_WEAK_PTR extracts the contained object, or NULL after the content is
+    collected; do not set the content of a weak box
+
+  • scheme_namespace_type — namespaces; test for this type with 
+    SCHEME_NAMESPACEP
+
+  • scheme_cpointer_type — #<void> pointer with a type-describing
+    Scheme_Object; SCHEME_CPTR_VAL extracts the pointer and SCHEME_CPTR_TYPE
+    extracts the type tag object; test for this type with SCHEME_CPTRP. The tag
+    is used when printing such objects when it’s a symbol, a byte string, a
+    string, or a pair holding one of these in its car.
+
+The following are the procedure types:
+
+  • scheme_prim_type — a primitive procedure, possibly with data elements
+
+  • scheme_closed_prim_type — an old-style primitive procedure with a data
+    pointer
+
+  • scheme_compiled_closure_type — a Racket procedure
+
+  • scheme_cont_type — a continuation
+
+  • scheme_escaping_cont_type — an escape continuation
+
+  • scheme_case_closure_type — a case-lambda procedure
+
+  • scheme_native_closure_type — a procedure with native code generated by the
+    just-in-time compiler
+
+The predicate SCHEME_PROCP returns 1 for all procedure types and 0 for anything
+else.
+
+The following are additional number predicates:
+
+  • SCHEME_NUMBERP — all numerical types
+
+  • SCHEME_REALP — all non-complex numerical types, plus
+    scheme_complex_izi_type
+
+  • SCHEME_EXACT_INTEGERP — fixnums and bignums
+
+  • SCHEME_EXACT_REALP — fixnums, bignums, and rationals
+
+  • SCHEME_FLOATP — both single-precision (when enabled) and double-precision
+    flonums
+
+2.2 Global Constants
+
+There are six global constants:
+
+  • scheme_null — test for this value with SCHEME_NULLP
+
+  • scheme_eof — test for this value with SCHEME_EOFP
+
+  • scheme_true
+
+  • scheme_false — test for this value with SCHEME_FALSEP; test against it with
+    SCHEME_TRUEP
+
+  • scheme_void — test for this value with SCHEME_VOIDP
+
+  • scheme_undefined
+
+2.3 Strings
+
+As noted in Racket, Unicode, Characters, and Strings, a Racket character is a
+Unicode code point represented by a mzchar value, and character strings are
+mzchar arrays. Racket also supplies byte strings, which are char arrays.
+
+For a character string s, SCHEME_CHAR_STR_VAL(s) produces a pointer to mzchars,
+not chars. Convert a character string to its UTF-8 encoding as byte string with
+scheme_char_string_to_byte_string. For a byte string bs, SCHEME_BYTE_STR_VAL
+(bs) produces a pointer to chars. The function
+scheme_byte_string_to_char_string decodes a byte string as UTF-8 and produces a
+character string. The functions scheme_char_string_to_byte_string_locale and
+scheme_byte_string_to_char_string_locale are similar, but they use the current
+locale’s encoding instead of UTF-8.
+
+For more fine-grained control over UTF-8 encoding, use the scheme_utf8_decode
+and scheme_utf8_encode functions, which are described in String Encodings.
+
+2.4 Value Functions
+
+Scheme_Object*   scheme_make_char ( mzchar ch)
+
+Returns the character value. The ch value must be a legal Unicode code point
+(and not a surrogate, for example). The first 256 characters are represented by
+constant Racket values, and others are allocated.
+
+Scheme_Object*   scheme_make_char_or_null ( mzchar ch)
+
+Like scheme_make_char, but the result is NULL if ch is not a legal Unicode code
+point.
+
+Scheme_Object*   scheme_make_character ( mzchar ch)
+
+Returns the character value. This is a macro that directly accesses the array
+of constant characters when ch is less than 256.
+
+Scheme_Object*   scheme_make_ascii_character ( mzchar ch)
+
+Returns the character value, assuming that ch is less than 256. (This is a
+macro.)
+
+Scheme_Object*   scheme_make_integer ( intptr_t i)
+
+Returns the integer value; i must fit in a fixnum. (This is a macro.)
+
+Scheme_Object*   scheme_make_integer_value ( intptr_t i)
+
+Returns the integer value. If i does not fit in a fixnum, a bignum is returned.
+
+Scheme_Object*
+
+scheme_make_integer_value_from_unsigned ( uintptr_t i)
+
+Like scheme_make_integer_value, but for unsigned integers.
+
+Scheme_Object*
+
+scheme_make_integer_value_from_long_long ( mzlonglong i)
+
+Like scheme_make_integer_value, but for mzlonglong values (see Integers).
+
+Scheme_Object*
+
+scheme_make_integer_value_from_unsigned_long_long ( umzlonglong i)
+
+Like scheme_make_integer_value_from_long_long, but for unsigned integers.
+
+Scheme_Object*
+
+scheme_make_integer_value_from_long_halves ( uintptr_t hi,
+
+                                             uintptr_t lo)
+
+Creates an integer given the high and low intptr_ts of a signed integer. Note
+that on 64-bit platforms where long long is the same as intptr_t, the resulting
+integer has 128 bits. (See also Integers.)
+
+Scheme_Object*
+
+scheme_make_integer_value_from_unsigned_long_halves ( uintptr_t hi,
+
+                                                      uintptr_t lo)
+
+Creates an integer given the high and low intptr_ts of an unsigned integer.
+Note that on 64-bit platforms where long long is the same as intptr_t, the
+resulting integer has 128 bits.
+
+int   scheme_get_int_val ( Scheme_Object* o,
+
+                           intptr_t* i)
+
+Extracts the integer value. Unlike the SCHEME_INT_VAL macro, this procedure
+will extract an integer that fits in a intptr_t from a Racket bignum. If o fits
+in a intptr_t, the extracted integer is placed in *i and 1 is returned;
+otherwise, 0 is returned and *i is unmodified.
+
+int   scheme_get_unsigned_int_val ( Scheme_Object* o,
+
+                                    uintptr_t* i)
+
+Like scheme_get_int_val, but for unsigned integers.
+
+int   scheme_get_long_long_val ( Scheme_Object* o,
+
+                                 mzlonglong* i)
+
+Like scheme_get_int_val, but for mzlonglong values (see Integers).
+
+int   scheme_get_unsigned_long_long_val ( Scheme_Object* o,
+
+                                          umzlonglong* i)
+
+Like scheme_get_int_val, but for unsigned mzlonglong values (see Integers).
+
+Scheme_Object*   scheme_make_double ( double d)
+
+Creates a new floating-point value.
+
+Scheme_Object*   scheme_make_float ( float d)
+
+Creates a new single-precision floating-point value. The procedure is available
+only when Racket is compiled with single-precision numbers enabled.
+
+double   scheme_real_to_double ( Scheme_Object* o)
+
+Converts a Racket real number to a double-precision floating-point value.
+
+Scheme_Object*   scheme_make_pair ( Scheme_Object* carv,
+
+                                    Scheme_Object* cdrv)
+
+Makes a cons pair.
+
+Scheme_Object*   scheme_make_byte_string ( char* bytes)
+
+Makes a Racket byte string from a nul-terminated C string. The bytes string is
+copied.
+
+Scheme_Object*
+
+scheme_make_byte_string_without_copying ( char* bytes)
+
+Like scheme_make_byte_string, but the string is not copied.
+
+Scheme_Object*   scheme_make_sized_byte_string ( char* bytes,
+
+                                                 intptr_t len,
+
+                                                 int copy)
+
+Makes a byte string value with size len. A copy of bytes is made if copy is not
+0. The string bytes should contain len bytes; bytes can contain the nul byte at
+any position, and need not be nul-terminated if copy is non-zero. However, if
+len is negative, then the nul-terminated length of bytes is used for the
+length, and if copy is zero, then bytes must be nul-terminated.
+
+Scheme_Object*   scheme_make_sized_offset_byte_string ( char* bytes,
+
+                                                        intptr_t d,
+
+                                                        intptr_t len,
+
+                                                        int copy)
+
+Like scheme_make_sized_byte_string, except the len characters start from
+position d in bytes. If d is non-zero, then copy must be non-zero.
+
+Scheme_Object*   scheme_alloc_byte_string ( intptr_t size,
+
+                                            char fill)
+
+Allocates a new Racket byte string.
+
+Scheme_Object*   scheme_append_byte_string ( Scheme_Object* a,
+
+                                             Scheme_Object* b)
+
+Creates a new byte string by appending the two given byte strings.
+
+Scheme_Object*   scheme_make_locale_string ( char* bytes)
+
+Makes a Racket string from a nul-terminated byte string that is a
+locale-specific encoding of a character string; a new string is allocated
+during decoding. The “locale in the name of this function thus refers to bytes,
+and not the resulting string (which is internally stored as UCS-4).
+
+Scheme_Object*   scheme_make_utf8_string ( char* bytes)
+
+Makes a Racket string from a nul-terminated byte string that is a UTF-8
+encoding. A new string is allocated during decoding. The “utf8” in the name of
+this function thus refers to bytes, and not the resulting string (which is
+internally stored as UCS-4).
+
+Scheme_Object*   scheme_make_sized_utf8_string ( char* bytes,
+
+                                                 intptr_t len)
+
+Makes a string value, based on len UTF-8-encoding bytes (so the resulting
+string is len characters or less). The string bytes should contain at least len
+bytes; bytes can contain the nul byte at any position, and need not be
+null-terminated. However, if len is negative, then the nul-terminated length of
+bytes is used for the length.
+
+Scheme_Object*   scheme_make_sized_offset_utf8_string ( char* bytes,
+
+                                                        intptr_t d,
+
+                                                        intptr_t len)
+
+Like scheme_make_sized_char_string, except the len characters start from
+position d in bytes.
+
+Scheme_Object*   scheme_make_char_string ( mzchar* chars)
+
+Makes a Racket string from a nul-terminated UCS-4 string. The chars string is
+copied.
+
+Scheme_Object*
+
+scheme_make_char_string_without_copying ( mzchar* chars)
+
+Like scheme_make_char_string, but the string is not copied.
+
+Scheme_Object*   scheme_make_sized_char_string ( mzchar* chars,
+
+                                                 intptr_t len,
+
+                                                 int copy)
+
+Makes a string value with size len. A copy of chars is made if copy is not 0.
+The string chars should contain len characters; chars can contain the nul
+character at any position, and need not be nul-terminated if copy is non-zero.
+However, if len is negative, then the nul-terminated length of chars is used
+for the length, and if copy is zero, then the chars must be nul-terminated.
+
+Scheme_Object*
+
+scheme_make_sized_offset_char_string ( mzchar* chars,
+
+                                       intptr_t d,
+
+                                       intptr_t len,
+
+                                       int copy)
+
+Like scheme_make_sized_char_string, except the len characters start from
+position d in chars. If d is non-zero, then copy must be non-zero.
+
+Scheme_Object*   scheme_alloc_char_string ( intptr_t size,
+
+                                            mzchar fill)
+
+Allocates a new Racket string.
+
+Scheme_Object*   scheme_append_char_string ( Scheme_Object* a,
+
+                                             Scheme_Object* b)
+
+Creates a new string by appending the two given strings.
+
+Scheme_Object*
+
+scheme_char_string_to_byte_string ( Scheme_Object* s)
+
+Converts a Racket character string into a Racket byte string via UTF-8.
+
+Scheme_Object*
+
+scheme_byte_string_to_char_string ( Scheme_Object* s)
+
+Converts a Racket byte string into a Racket character string via UTF-8.
+
+Scheme_Object*
+
+scheme_char_string_to_byte_string_locale ( Scheme_Object* s)
+
+Converts a Racket character string into a Racket byte string via the locale’s
+encoding.
+
+Scheme_Object*
+
+scheme_byte_string_to_char_string_locale ( Scheme_Object* s)
+
+Converts a Racket byte string into a Racket character string via the locale’s
+encoding.
+
+Scheme_Object*   scheme_intern_symbol ( char* name)
+
+Finds (or creates) the symbol matching the given nul-terminated, ASCII string
+(not UTF-8). The case of name is (non-destructively) normalized before
+interning if scheme_case_sensitive is 0.
+
+Scheme_Object*   scheme_intern_exact_symbol ( char* name,
+
+                                              int len)
+
+Creates or finds a symbol given the symbol’s length in UTF-8-encoding bytes.
+The case of name is not normalized.
+
+Scheme_Object*   scheme_intern_exact_char_symbol ( mzchar* name,
+
+                                                   int len)
+
+Like scheme_intern_exact_symbol, but given a character array instead of a
+UTF-8-encoding byte array.
+
+Scheme_Object*   scheme_make_symbol ( char* name)
+
+Creates an uninterned symbol from a nul-terminated, UTF-8-encoding string. The
+case is not normalized.
+
+Scheme_Object*   scheme_make_exact_symbol ( char* name,
+
+                                            int len)
+
+Creates an uninterned symbol given the symbol’s length in UTF-8-encoded bytes.
+
+Scheme_Object*   scheme_intern_exact_keyword ( char* name,
+
+                                               int len)
+
+Creates or finds a keyword given the keywords length in UTF-8-encoding bytes.
+The case of name is not normalized, and it should not include the leading hash
+and colon of the keyword’s printed form.
+
+Scheme_Object*   scheme_intern_exact_char_keyword ( mzchar* name,
+
+                                                    int len)
+
+Like scheme_intern_exact_keyword, but given a character array instead of a
+UTF-8-encoding byte array.
+
+Scheme_Object*   scheme_make_vector ( intptr_t size,
+
+                                      Scheme_Object* fill)
+
+Allocates a new vector.
+
+Scheme_Object*   scheme_box ( Scheme_Object* v)
+
+Creates a new box containing the value v.
+
+Scheme_Object*   scheme_make_weak_box ( Scheme_Object* v)
+
+Creates a new weak box containing the value v.
+
+Scheme_Type   scheme_make_type ( char* name)
+
+Creates a new type (not a Racket value). The type tag is valid across all place
+s.
+
+Scheme_Object*   scheme_make_cptr ( void* ptr,
+
+                                    const Scheme_Object* typetag)
+
+Creates a C-pointer object that encapsulates ptr and uses typetag to identify
+the type of the pointer. The SCHEME_CPTRP macro recognizes objects created by
+scheme_make_cptr. The SCHEME_CPTR_VAL macro extracts the original ptr from the
+Racket object, and SCHEME_CPTR_TYPE extracts the type tag. The
+SCHEME_CPTR_OFFSETVAL macro returns 0 for the result Racket object.
+
+The ptr can refer to either memory managed by the garbage collector or by some
+other memory manager. Beware, however, of retaining a ptr that refers to memory
+released by another memory manager, since the enclosing memory range might
+later become managed by the garbage collector (in which case ptr might become
+an invalid pointer that can crash the garbage collector).
+
+Scheme_Object*
+
+scheme_make_external_cptr ( void* ptr,
+
+                            const Scheme_Object* typetag)
+
+Like scheme_make_cptr, but ptr is never treated as referencing memory managed
+by the garbage collector.
+
+Scheme_Object*
+
+scheme_make_offset_cptr ( void* ptr,
+
+                          intptr_t offset,
+
+                          const Scheme_Object* typetag)
+
+Creates a C-pointer object that encapsulates both ptr and offset. The
+SCHEME_CPTR_OFFSETVAL macro returns offset for the result Racket object (and
+the macro be used to change the offset, since it also works on objects with no
+offset).
+
+The ptr can refer to either memory managed by the garbage collector or by some
+other memory manager; see also scheme_make_cptr.
+
+Scheme_Object*
+
+scheme_make_offset_external_cptr ( void* ptr,
+
+                                   intptr_t offset,
+
+                                   const Scheme_Object* typetag)
+
+Like scheme_make_offset_cptr, but ptr is never treated as referencing memory
+managed by the garbage collector.
+
+void   scheme_set_type_printer ( Scheme_Type type,
+
+                                 Scheme_Type_Printer printer)
+
+Installs a printer to be used for printing (or writing or displaying) values
+that have the type tag type.
+
+The type of printer is defined as follows:
+
+  typedef void (*Scheme_Type_Printer)(Scheme_Object *v, int dis,
+
+                                      Scheme_Print_Params *pp);
+
+
+Such a printer must print a representation of the value using
+scheme_print_bytes and scheme_print_string. The first argument to the printer,
+v, is the value to be printed. The second argument indicates whether v is
+printed via write or display. The last argument is to be passed on to
+scheme_print_bytes or scheme_print_string to identify the printing context.
+
+void   scheme_print_bytes ( Scheme_Print_Params* pp,
+
+                            const char* str,
+
+                            int offset,
+
+                            int len)
+
+Writes the content of str — starting from offset and running len bytes — into a
+printing context determined by pp. This function is for use by a printer that
+is installed with scheme_set_type_printer.
+
+void   scheme_print_string ( Scheme_Print_Params* pp,
+
+                             const mzchar* str,
+
+                             int offset,
+
+                             int len)
+
+Writes the content of str — starting from offset and running len characters —
+into a printing context determined by pp. This function is for use by a printer
+that is installed with scheme_set_type_printer.
+
+void   scheme_set_type_equality ( Scheme_Type type,
+
+                                  Scheme_Equal_Proc equalp,
+
+                                  Scheme_Primary_Hash_Proc hash1,
+
+                                  Scheme_Secondary_Hash_Proc hash2)
+
+Installs an equality predicate and associated hash functions for values that
+have the type tag type. The equalp predicate is only applied to values that
+both have tag type.
+
+The type of equalp, hash1, and hash2 are defined as follows:
+
+  typedef int (*Scheme_Equal_Proc)(Scheme_Object* obj1,
+
+                                   Scheme_Object* obj2,
+
+                                   void* cycle_data);
+
+  typedef intptr_t (*Scheme_Primary_Hash_Proc)(Scheme_Object* obj,
+
+                                           intptr_t base,
+
+                                           void* cycle_data);
+
+  typedef intptr_t (*Scheme_Secondary_Hash_Proc)(Scheme_Object* obj,
+
+                                            void* cycle_data);
+
+
+The two hash functions are use to generate primary and secondary keys for
+double hashing in an equal?-based hash table. The result of the primary-key
+function should depend on both obj and base.
+
+The cycle_data argument in each case allows checking and hashing on cyclic
+values. It is intended for use in recursive checking or hashing via
+scheme_recur_equal, scheme_recur_equal_hash_key, and
+scheme_recur_equal_hash_key. That is, do not call plain scheme_equal,
+scheme_equal_hash_key, or scheme_equal_hash_key for recursive checking or
+hashing on sub-elements of the given value(s).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

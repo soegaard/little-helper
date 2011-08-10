@@ -1,0 +1,61 @@
+▼  File: Racket File Format Libraries
+1  Convertible: Data-Conversion Protocol
+2  gzip Compression and File Creation
+3  gzip Decompression
+4  zip File Creation
+5  tar File Creation
+6  MD5 Message Digest
+7  SHA1 Message Digest
+8  GIF File Writing
+9  Windows Registry
+   Bibliography
+   Index
+On this page:
+sha1
+sha1-bytes
+bytes->hex-string
+[...search manuals...]
+  top← prev  up  next → 
+
+7 SHA1 Message Digest
+
+ (require file/sha1)
+
+See openssl/sha1 for a faster implementation.
+
+(sha1 in) → string?
+  in : input-port
+Returns a 40-character string that represents the SHA-1 hash (in hexadecimal
+notation) of the content from in, consuming all of the input from in until an
+end-of-file.
+
+The sha1 function composes bytes->hex-string with sha1-bytes.
+
+Example:
+
+    > (sha1 (open-input-bytes #"abc"))
+    "a9993e364706816aba3e25717850c26c9cd0d89d"
+
+
+
+(sha1-bytes in) → bytes?
+  in : input-port
+Returns a 20-byte byte string that represents the SHA-1 hash of the content
+from in, consuming all of the input from in until an end-of-file.
+
+Example:
+
+    > (sha1-bytes (open-input-bytes #"abc"))
+    #"\251\231>6G\6\201j\272>%qxP\302l\234\320\330\235"
+
+
+
+(bytes->hex-string bstr) → string?
+  bstr : bytes?
+Converts the given byte string to a string representation, where each byte in
+bstr is converted to its two-digit hexadecimal representation in the resulting
+string.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

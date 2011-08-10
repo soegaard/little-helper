@@ -1,0 +1,130 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+Inherited methods:
+from dc<%>
+cache-font-metrics-key
+clear
+copy
+draw-arc
+draw-bitmap
+draw-bitmap-section
+draw-ellipse
+draw-line
+draw-lines
+draw-path
+draw-point
+draw-polygon
+draw-rectangle
+draw-rounded-rectangle
+draw-spline
+draw-text
+end-doc
+end-page
+erase
+flush
+get-alpha
+get-background
+get-brush
+get-char-height
+get-char-width
+get-clipping-region
+get-device-scale
+get-font
+get-gl-context
+get-initial-matrix
+get-origin
+get-pen
+get-rotation
+get-scale
+get-size
+get-smoothing
+get-text-background
+get-text-extent
+get-text-foreground
+get-text-mode
+get-transformation
+glyph-exists?
+ok?
+resume-flush
+rotate
+scale
+set-alpha
+set-background
+set-brush
+set-clipping-rect
+set-clipping-region
+set-font
+set-initial-matrix
+set-origin
+set-pen
+set-rotation
+set-scale
+set-smoothing
+set-text-background
+set-text-foreground
+set-text-mode
+set-transformation
+start-doc
+start-page
+suspend-flush
+transform
+translate
+try-color
+[...search manuals...]
+  top← prev  up  next → 
+
+svg-dc% : class?
+  superclass: object%
+
+  extends:  dc<%>
+Similar to post-script-dc%, but generates a SVG (scalable vector graphics) file
+instead of a PostScript file.
+
+(new svg-dc%    [width width]            
+                [height height]          
+                [output output]          
+              [ [exists exists]])   →   (is-a?/c svg-dc%)
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+  output : (or/c path-string? output-port?)
+                (or/c 'error 'append 'update 'can-update
+   exists   :         'replace 'truncate                   =   'error
+                      'must-truncate 'truncate/replace)
+The width and height arguments determine the width and height of the generated
+image.
+
+The image is written to output. If output is a path and the file exists
+already, then exists determines how the existing file is handled in the same
+way as for the #:exists argument to open-output-file.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

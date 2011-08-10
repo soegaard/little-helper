@@ -1,0 +1,100 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 17  Creating Languages
+17.1  Module Languages
+17.2  Reader Extensions
+17.3  Defining new #lang Languages
+▼ 17.3  Defining new #lang Languages
+17.3.1  Designating a #lang Language
+17.3.2  Using #lang reader
+17.3.3  Using #lang s-exp syntax/ module-reader
+17.3.4  Installing a Language
+17.3.5  Source-Handling Configuration
+17.3.6  Module-Handling Configuration
+[...search manuals...]
+  top← prev  up  next → 
+
+17.3.2 Using #lang reader
+
+The reader language for #lang is similar to s-exp, in that it acts as a kind of
+meta-language. Whereas s-exp lets a programmer specify a module language at the
+expander layer of parsing, reader lets a programmer specify a language at the
+reader level.
+
+A #lang reader must be followed by a module path, and the specified module must
+provide two functions: read and read-syntax. The protocol is the same as for a
+#reader implementation, but for #lang, the read and read-syntax functions must
+produce a module form that is based on the rest of the input file for the
+module.
+
+The following "literal.rkt" module implements a language that treats its entire
+body as literal text and exports the text as a data string:
+
+        "literal.rkt"
+
+            #lang racket
+            (require syntax/strip-context)
+             
+            (provide (rename-out [literal-read read]
+                                 [literal-read-syntax read-syntax]))
+             
+            (define (literal-read in)
+              (syntax->datum
+               (literal-read-syntax #f in)))
+             
+            (define (literal-read-syntax src in)
+              (with-syntax ([str (port->string in)])
+                (strip-context
+                 #'(module anything racket
+                     (provide data)
+                     (define data 'str)))))
+
+The "literal.rkt" language uses strip-context on the generated module
+expression, because a read-syntax function should return a syntax obejct with
+no lexical context. Also, the "literal.rkt" language creates a module named
+anything, which is an arbitrary choice; the language is intended to be used in
+a file, and the longhand module name is ignored when it appears in a required
+file.
+
+The "literal.rkt" language can be used in a module "tuvalu.rkt":
+
+        "tuvalu.rkt"
+
+            #lang reader "literal.rkt"
+            Technology!
+            System!
+            Perfect!
+
+Importing "tuvalu.rkt" binds data to a string version of the module content:
+
+    > (require "tuvalu.rkt")
+    > data
+    "\nTechnology!\nSystem!\nPerfect!\n"
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

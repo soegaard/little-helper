@@ -1,0 +1,133 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+pregexp-match
+pregexp-match-positions
+pregexp-split
+pregexp-replace
+pregexp-replace*
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/pregexp)
+
+The mzlib/pregexp library provides wrappers around regexp-match, etc. that
+coerce string and byte-string arguments to pregexp matchers instead of regexp
+matchers.
+
+The library also re-exports: pregexp, and it re-exports regexp-quote as
+pregexp-quote.
+
+(pregexp-match    pattern        
+                  input          
+                [ start-pos      
+                  end-pos        
+                  output-port])  
+      (or/c (listof (or/c (cons (or/c string? bytes?)
+  →                             (or/c string? bytes?))
+                          false/c))
+            false/c)
+  pattern : (or/c string? bytes? regexp? byte-regexp?)
+  input : (or/c string? bytes? input-port?)
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : (or/c exact-nonnegative-integer? false/c) = #f
+  output-port : (or/c output-port? false/c) = #f
+(pregexp-match-positions    pattern        
+                            input          
+                          [ start-pos      
+                            end-pos        
+                            output-port])  
+      (or/c (listof (or/c (cons exact-nonnegative-integer?
+  →                             exact-nonnegative-integer?)
+                          false/c))
+            false/c)
+  pattern : (or/c string? bytes? regexp? byte-regexp?)
+  input : (or/c string? bytes? input-port?)
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : (or/c exact-nonnegative-integer? false/c) = #f
+  output-port : (or/c output-port? false/c) = #f
+(pregexp-split    pattern          
+                  input            
+                [ start-pos        
+                  end-pos])   →   (listof (or/c string? bytes?))
+  pattern : (or/c string? bytes? regexp? byte-regexp?)
+  input : (or/c string? bytes? input-port?)
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : (or/c exact-nonnegative-integer? false/c) = #f
+(pregexp-replace pattern input insert) → (or/c string? bytes?)
+  pattern : (or/c string? bytes? regexp? byte-regexp?)
+  input : (or/c string? bytes?)
+                (or/c string? bytes?
+   insert   :         (string? . -> . string?)
+                      (bytes? . -> . bytes?))
+(pregexp-replace* pattern input insert) → (or/c string? bytes?)
+  pattern : (or/c string? bytes? regexp? byte-regexp?)
+  input : (or/c string? bytes?)
+                (or/c string? bytes?
+   insert   :         (string? . -> . string?)
+                      (bytes? . -> . bytes?))
+Like regexp-match, etc., but a string pattern argument is compiled via pregexp,
+and a byte string pattern argument is compiled via byte-pregexp.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

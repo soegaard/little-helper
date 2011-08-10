@@ -1,0 +1,178 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 15  Reflection and Dynamic Evaluation
+15.1  eval
+15.2  Manipulating Namespaces
+15.3  Scripting Evaluation and Using load
+► 15.2  Manipulating Namespaces
+15.2.1  Creating and Installing Namespaces
+15.2.2  Sharing Data and Code Across Namespaces
+On this page:
+15.2.1 Creating and Installing Namespaces
+15.2.2 Sharing Data and Code Across Namespaces
+[...search manuals...]
+  top← prev  up  next → 
+
+15.2 Manipulating Namespaces
+
+A namespace encapsulates two pieces of information:
+
+  • A mapping from identifiers to bindings. For example, a namespace might map
+    the identifier lambda to the lambda form. An “empty” namespace is one that
+    maps every identifier to an uninitialized top-level variable.
+
+  • A mapping from module names to module declarations and instances.
+
+The first mapping is used for evaluating expressions in a top-level context, as
+in (eval '(lambda (x) (+ x 1))). The second mapping is used, for example, by
+dynamic-require to locate a module. The call (eval '(require racket/base))
+normally uses both pieces: the identifier mapping determines the binding of
+require; if it turns out to mean require, then the module mapping is used to
+locate the racket/base module.
+
+From the perspective of the core Racket run-time system, all evaluation is
+reflective. Execution starts with an initial namespace that contains a few
+primitive modules, and that is further populated by loading files and modules
+as specified on the command line or as supplied in the REPL. Top-level require
+and define forms adjusts the identifier mapping, and module declarations
+(typically loaded on demand for a require form) adjust the module mapping.
+
+15.2.1 Creating and Installing Namespaces
+
+The function make-empty-namespace creates a new, empty namespace. Since the
+namespace is truly empty, it cannot at first be used to evaluate any top-level
+expression—not even (require racket). In particular,
+
+    (parameterize ([current-namespace (make-empty-namespace)])
+      (namespace-require 'racket))
+
+fails, because the namespace does not include the primitive modules on which
+racket is built.
+
+To make a namespace useful, some modules must be attached from an existing
+namespace. Attaching a module adjusts the mapping of module names to instances
+by transitively copying entries (the module and all its imports) from an
+existing namespace’s mapping. Normally, instead of just attaching the primitive
+modules—whose names and organization are subject to change—a higher-level
+module is attached, such as racket or racket/base.
+
+The make-base-empty-namespace function provides a namespace that is empty,
+except that racket/base is attached. The resulting namespace is still “empty”
+in the sense that the identifiers-to-bindings part of the namespace has no
+mappings; only the module mapping has been populated. Nevertheless, with an
+initial module mapping, further modules can be loaded.
+
+A namespace created with make-base-empty-namespace is suitable for many basic
+dynamic tasks. For example, suppose that a my-dsl library implements a
+domain-specific language in which you want to execute commands from a
+user-specified file. A namespace created with make-base-empty-namespace is
+enough to get started:
+
+    (define (run-dsl file)
+      (parameterize ([current-namespace (make-base-empty-namespace)])
+        (namespace-require 'my-dsl)
+        (load file)))
+
+Note that the parameterize of current-namespace does not affect the meaning of
+identifiers like namespace-require within the parameterize body. Those
+identifiers obtain their meaning from the enclosing context (probably a
+module). Only expressions that are dynamic with respect to this code, such as
+the content of loaded files, are affected by the parameterize.
+
+Another subtle point in the above example is the use of (namespace-require
+'my-dsl) instead of (eval '(require my-dsl)). The latter would not work,
+because eval needs to obtain a meaning for require in the namespace, and the
+namespace’s identifier mapping is initially empty. The namespace-require
+function, in contrast, directly imports the given module into the current
+namespace. Starting with (namespace-require 'racket/base) would introduce a
+binding for require and make a subsequent (eval '(require my-dsl)) work. The
+above is better, not only because it is more compact, but also because it
+avoids introducing bindings that are not part of the domain-specific languages.
+
+15.2.2 Sharing Data and Code Across Namespaces
+
+Modules not attached to a new namespace will be loaded and instantiated afresh
+if they are demanded by evaluation. For example, racket/base does not include
+racket/class, and loading racket/class again will create a distinct class
+datatype:
+
+    > (require racket/class)
+    > (class? object%)
+    #t
+
+    > (class?
+       (parameterize ([current-namespace (make-base-empty-namespace)])
+         (namespace-require 'racket/class) ; loads again
+         (eval 'object%)))
+    #f
+
+
+For cases when dynamically loaded code needs to share more code and data with
+its context, use the namespace-attach-module function. The first argument to
+namespace-attach-module is a source namespace from which to draw a module
+instance; in some cases, the current namespace is known to include the module
+that needs to be shared:
+
+    > (require racket/class)
+    > (class?
+       (let ([ns (make-base-empty-namespace)])
+         (namespace-attach-module (current-namespace)
+                                  'racket/class
+                                  ns)
+         (parameterize ([current-namespace ns])
+           (namespace-require 'racket/class) ; uses attached
+           (eval 'object%))))
+    #t
+
+
+Within a module, however, the combination of define-namespace-anchor and
+namespace-anchor->empty-namespace offers a more reliable method for obtaining a
+source namespace:
+
+    #lang racket/base
+     
+    (require racket/class)
+     
+    (define-namespace-anchor a)
+     
+    (define (load-plug-in file)
+      (let ([ns (make-base-empty-namespace)])
+        (namespace-attach-module (namespace-anchor->empty-namespace a)
+                                 'racket/class
+                                  ns)
+        (parameterize ([current-namespace ns])
+          (dynamic-require file 'plug-in%))))
+
+The anchor bound by namespace-attach-module connects the run time of a module
+with the namespace in which a module is loaded (which might differ from the
+current namespace). In the above example, since the enclosing module requires
+racket/class, the namespace produced by namespace-anchor->empty-namespace
+certainly contains an instance of racket/class. Moreover, that instance is the
+same as the one imported into the module, so the class datatype is shared.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

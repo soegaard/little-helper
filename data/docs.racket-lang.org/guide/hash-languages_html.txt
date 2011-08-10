@@ -1,0 +1,67 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 17  Creating Languages
+17.1  Module Languages
+17.2  Reader Extensions
+17.3  Defining new #lang Languages
+▼ 17.3  Defining new #lang Languages
+17.3.1  Designating a #lang Language
+17.3.2  Using #lang reader
+17.3.3  Using #lang s-exp syntax/ module-reader
+17.3.4  Installing a Language
+17.3.5  Source-Handling Configuration
+17.3.6  Module-Handling Configuration
+[...search manuals...]
+  top← prev  up  next → 
+
+17.3 Defining new #lang Languages
+
+When loading a module as a source program that starts
+
+    #lang language
+
+the language determines the way that the rest of the module is parsed at the
+reader level. The reader-level parse must produce a module form as a syntax
+object. As always, the second sub-form after module specifies the module
+language that controls the meaning of the module’s body forms. Thus, a language
+specified after #lang controls both the reader-level and expander-level parsing
+of a module.
+
+    17.3.1 Designating a #lang Language
+
+    17.3.2 Using #lang reader
+
+    17.3.3 Using #lang s-exp syntax/module-reader
+
+    17.3.4 Installing a Language
+
+    17.3.5 Source-Handling Configuration
+
+    17.3.6 Module-Handling Configuration
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

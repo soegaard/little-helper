@@ -1,0 +1,119 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+set!
+set!-values
+[...search manuals...]
+  top← prev  up  next → 
+
+2.17 Assignment: set! and set!-values
+
+            +Assignment: set! in The Racket Guide introduces set!.
+
+(set! id expr)
+If id has a transformer binding to an assignment transformer, as produced by
+make-set!-transformer or as an instance of a structure type with the prop:set!
+-transformer property, then this form is expanded by calling the assignment
+transformer with the full expressions. If id has a transformer binding to a
+rename transformer as produced by make-rename-transformer or as an instance of
+a structure type with the prop:rename-transformer property, then this form is
+expanded by replacing id with the target identifier (e.g., the one provided to
+make-rename-transformer). If a transformer binding has both prop:set!
+-transformer ad prop:rename-transformer properties, the latter takes
+precedence.
+
+Otherwise, evaluates expr and installs the result into the location for id,
+which must be bound as a local variable or defined as a top-level variable or
+module-level variable. If id refers to an imported binding, a syntax error is
+reported. If id refers to a top-level variable that has not been defined, the
+exn:fail:contract exception is raised.
+
+See also compile-allow-set!-undefined.
+
+Examples:
+
+    (define x 12)
+    > (set! x (add1 x))
+    > x
+    13
+
+    > (let ([x 5])
+        (set! x (add1 x))
+        x)
+    6
+
+    > (set! i-am-not-defined 10)
+    set!: cannot set undefined variable: i-am-not-defined
+
+
+
+(set!-values (id ...) expr)
+Assuming that all ids refer to variables, this form evaluates expr, which must
+produce as many values as supplied ids. The location of each id is filled with
+the corresponding value from expr in the same way as for set!.
+
+Example:
+
+    > (let ([a 1]
+            [b 2])
+        (set!-values (a b) (values b a))
+        (list a b))
+    '(2 1)
+
+
+
+More generally, the set!-values form is expanded to
+
+    (let-values ([(tmp-id ...) expr])
+      (set! id tmp-id) ...)
+
+which triggers further expansion if any id has a transformer binding to an
+assignment transformer.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

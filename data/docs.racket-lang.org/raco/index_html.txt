@@ -1,0 +1,174 @@
+▼  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+raco: Racket Command-Line Tools
+
+The raco program supports various Racket tasks from a command line. The first
+argument to raco is always a specific command name. For example, raco make
+starts a command to compile a Racket source module to bytecode format.
+
+The set of commands available through raco is extensible. Use raco help to get
+a complete list of available commands for your installation. This manual covers
+the commands that are available in a typical Racket installation.
+
+    1 raco make: Compiling Source to Bytecode
+
+      1.1 Bytecode Files
+
+      1.2 Dependency Files
+
+      1.3 API for Making Bytecode
+
+      1.4 API for Parallel-Build
+
+      1.5 Compilation Manager Hook for Syntax Transformers
+
+      1.6 Compiling to Raw Bytecode
+
+    2 raco exe: Creating Stand-Alone Executables
+
+      2.1 API for Creating Executables
+
+        2.1.1 Executable Creation Signature
+
+        2.1.2 Executable Creation Unit
+
+        2.1.3 Finding the name of the executable
+
+      2.2 Installation-Specific Launchers
+
+        2.2.1 Creating Launchers
+
+        2.2.2 Launcher Path and Platform Conventions
+
+        2.2.3 Launcher Configuration
+
+        2.2.4 Launcher Creation Signature
+
+        2.2.5 Launcher Creation Unit
+
+    3 raco distribute: Sharing Stand-Alone Executables
+
+      3.1 API for Distributing Executables
+
+      3.2 API for Bundling Distributions
+
+    4 raco pack: Packaging Library Collections
+
+      4.1 API for Packaging
+
+    5 raco planet: Automatic Package Distribution
+
+    6 raco setup: Installation Management
+
+      6.1 Running raco setup
+
+        6.1.1 Controlling raco setup with "info.rkt" Files
+
+      6.2 "info.rkt" File Format
+
+      6.3 API for Installation
+
+        6.3.1 raco setup Unit
+
+        6.3.2 Options Unit
+
+        6.3.3 Options Signature
+
+      6.4 API for Installing ".plt" Archives
+
+        6.4.1 Installing a Single ".plt" File
+
+          6.4.1.1 Non-GUI Installer
+
+          6.4.1.2 GUI Installer
+
+          6.4.1.3 GUI Unpacking Signature
+
+          6.4.1.4 GUI Unpacking Unit
+
+        6.4.2 Unpacking ".plt" Archives
+
+        6.4.3 Format of ".plt" Archives
+
+      6.5 API for Finding Installation Directories
+
+      6.6 API for Reading "info.rkt" Files
+
+      6.7 API for Relative Paths
+
+        6.7.1 Representing paths relative to "collects"
+
+        6.7.2 Displaying paths relative to a common root
+
+      6.8 API for Cross-References for Installed Manuals
+
+    7 raco decompile: Decompiling Bytecode
+
+      7.1 API for Decompiling
+
+      7.2 API for Parsing Bytecode
+
+      7.3 API for Marshaling Bytecode
+
+      7.4 Bytecode Representation
+
+        7.4.1 Prefix
+
+        7.4.2 Forms
+
+        7.4.3 Expressions
+
+        7.4.4 Syntax Objects
+
+    8 raco demod: Demodularizing Programs
+
+    9 raco ctool: Working with C Code
+
+      9.1 Compiling and Linking C Extensions
+
+        9.1.1 API for 3m Transformation
+
+      9.2 Embedding Modules via C
+
+      9.3 Compiling to Native Code via C
+
+      9.4 API for Raw Compilation
+
+        9.4.1 Bytecode Compilation
+
+        9.4.2 Compilation via C
+
+        9.4.3 Loading compiler support
+
+        9.4.4 Options for the Compiler
+
+        9.4.5 The Compiler as a Unit
+
+          9.4.5.1 Signatures
+
+          9.4.5.2 Main Compiler Unit
+
+          9.4.5.3 Options Unit
+
+          9.4.5.4 Compiler Inner Unit
+
+    10 Adding a raco Command
+
+      10.1 Command Argument Parsing
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

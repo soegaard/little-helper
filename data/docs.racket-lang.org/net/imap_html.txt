@@ -1,0 +1,496 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 9  IMAP: Reading Mail
+9.1  Connecting and Selecting Mailboxes
+9.2  Selected Mailbox State
+9.3  Manipulating Messages
+9.4  Querying and Changing (Other) Mailboxes
+9.5  IMAP Unit
+9.6  IMAP Signature
+On this page:
+9.1 Connecting and Selecting Mailboxes
+imap-connection?
+imap-connect
+imap-port-number
+imap-connect*
+imap-disconnect
+imap-force-disconnect
+imap-reselect
+imap-examine
+9.2 Selected Mailbox State
+imap-noop
+imap-poll
+imap-messages
+imap-recent
+imap-unseen
+imap-uidnext
+imap-uidvalidity
+imap-new?
+imap-reset-new!
+imap-get-expunges
+imap-pending-expunges?
+imap-get-updates
+imap-pending-updates?
+9.3 Manipulating Messages
+imap-get-messages
+imap-flag->symbol
+symbol->imap-flag
+imap-store
+imap-expunge
+9.4 Querying and Changing (Other) Mailboxes
+imap-copy
+imap-append
+imap-status
+imap-mailbox-exists?
+imap-create-mailbox
+imap-list-child-mailboxes
+imap-get-hierarchy-delimiter
+imap-mailbox-flags
+9.5 IMAP Unit
+imap@
+9.6 IMAP Signature
+imap^
+[...search manuals...]
+  top← prev  up  next → 
+
+9 IMAP: Reading Mail
+
+ (require net/imap)
+The net/imap module provides utilities for the client side of Internet Message
+Access Protocol version 4rev1 [RFC2060].
+
+9.1 Connecting and Selecting Mailboxes
+
+(imap-connection? v) → boolean?
+  v : any/c
+Return #t if v is a IMAP-connection value (which is opaque), #f otherwise.
+
+(imap-connect   server          
+                username        
+                password        
+                               imap-connection?
+                mailbox)   →   exact-nonnegative-integer?
+                               exact-nonnegative-integer?
+  server : string?
+  username : (or/c string? bytes?)
+  password : (or/c string? bytes?)
+  mailbox : (or/c string? bytes?)
+Establishes an IMAP connection to the given server using the given username and
+password, and selects the specified mailbox. The first result value reprsents
+the connection.
+
+The second and third return values indicate the total number of messages in the
+mailbox and the number of recent messages (i.e., messages received since the
+mailbox was last selected), respectively.
+
+See also imap-port-number.
+
+A user’s primary mailbox is always called "INBOX". (Capitalization doesn’t
+matter for that mailbox name.)
+
+Updated message-count and recent-count values are available through
+imap-messages and imap-recent. See also imap-new? and imap-reset-new!.
+
+(imap-port-number) → (integer-in 0 65535)
+(imap-port-number k) → void?
+  k : (integer-in 0 65535)
+A parameter that determines the server port number. The initial value is 143.
+
+(imap-connect*   in              
+                 out             
+                 username        
+                 password        
+                                imap-connection?
+                 mailbox)   →   exact-nonnegative-integer?
+                                exact-nonnegative-integer?
+  in : input-port?
+  out : output-port?
+  username : (or/c string? bytes?)
+  password : (or/c string? bytes?)
+  mailbox : (or/c string? bytes?)
+Like imap-connect, but given input and output ports (e.g., ports for an SSL
+session) instead of a server address.
+
+(imap-disconnect imap) → void?
+  imap : imap-connection?
+Closes an IMAP connection. The close may fail due to a communication error.
+
+(imap-force-disconnect imap) → void?
+  imap : imap-connection?
+Closes an IMAP connection forcefully (i.e., without send a close message to the
+server). A forced disconnect never fails.
+
+(imap-reselect imap mailbox)   →   exact-nonnegative-integer?
+                                   exact-nonnegative-integer?
+  imap : imap-connection?
+  mailbox : (or/c string? bytes?)
+De-selects the mailbox currently selected by the connection and selects the
+specified mailbox, returning the total and recent message counts for the new
+mailbox. Expunge and message-state information is removed.
+
+Do not use this procedure to poll a mailbox to see whether there are any new
+messages. Use imap-noop, imap-new?, and imap-reset-new! instead.
+
+(imap-examine imap mailbox)   →   exact-nonnegative-integer?
+                                  exact-nonnegative-integer?
+  imap : imap-connection?
+  mailbox : (or/c string? bytes?)
+Like imap-reselect, but the mailbox is selected as read-only.
+
+9.2 Selected Mailbox State
+
+(imap-noop imap)   →   exact-nonnegative-integer?
+                       exact-nonnegative-integer?
+  imap : imap-connection?
+Sends a “no-op” message to the server, typically to keep the session alive. As
+for many commands, the server may report message-state updates or expunges,
+which are recorded in imap.
+
+The return information is the same as for imap-reselect.
+
+(imap-poll imap) → void?
+  imap : imap-connection?
+Does not send a request to the server, but checks for asynchronous messages
+from the server that update the message count, to report expunges, etc.
+
+(imap-messages imap) → exact-nonnegative-integer?
+  imap : imap-connection?
+Returns the number of messages in the selected mailbox. The server can update
+this count during most any interaction.
+
+This operation does not communicate with the server. It merely reports the
+result of previous communication.
+
+(imap-recent imap) → exact-nonnegative-integer?
+  imap : imap-connection?
+Returns the number of “recent” messages in the currently selected mailbox, as
+most recently reported by the server. The server can update this count during
+most any interaction.
+
+This operation does not communicate with the server. It merely reports the
+result of previous communication.
+
+(imap-unseen imap) → (or/c exact-nonnegative-integer? false/c)
+  imap : imap-connection?
+Returns the number of “unseen” messages in the currently selected mailbox, as
+most recently reported by the server. The server can update this count during
+most any interaction. Old IMAP servers might not report this value, in which
+case the result is #f.
+
+This operation does not communicate with the server. It merely reports the
+result of previous communication.
+
+(imap-uidnext imap) → (or/c exact-nonnegative-integer? false/c)
+  imap : imap-connection?
+Returns the predicted next uid for a message in the currently selected mailbox,
+as most recently reported by the server. The server can update this count
+during most any interaction. Old IMAP servers might not report this value, in
+which case the result is #f.
+
+This operation does not communicate with the server. It merely reports the
+result of previous communication.
+
+(imap-uidvalidity imap)
+ → (or/c exact-nonnegative-integer? false/c)
+  imap : imap-connection?
+Returns an id number that changes when all uids become invalid. The server
+cannot update this number during a session. Old IMAP servers might not report
+this value, in which case the result is #f.
+
+This operation does not communicate with the server. It merely reports the
+result of previous communication.
+
+(imap-new? imap) → boolean?
+  imap : imap-connection?
+Returns #t if the server has reported an increase in the message count for the
+currently mailbox since the last call to imap-reset-new!. Selecting a mailbox
+implicitly calls imap-reset-new!.
+
+This operation does not communicate with the server. It merely reports the
+result of previous communication.
+
+(imap-reset-new! imap) → void?
+  imap : imap-connection?
+Resets the new flag for the session; see imap-new?. This operation does not
+communicate with the server.
+
+(imap-get-expunges imap) → (listof exact-nonnegative-integer?)
+  imap : imap-connection?
+Returns pending expunge notifications from the server for the selected mailbox
+in terms of message positions (not uids), and clears the pending notifications.
+The result list is sorted, ascending.
+
+This operation does not communicate with the server. It merely reports the
+result of previous communication.
+
+The server can notify the client of newly deleted messages during most other
+commands, but not asynchronously between commands. Furthermore, the server
+cannot report new deletions during imap-get-messages or imap-store operations.
+
+Before calling any IMAP operation that works in terms of message numbers,
+pending expunge notifications must be handled by calling imap-get-expunges.
+
+(imap-pending-expunges? imap) → boolean?
+  imap : imap-connection?
+Returns #f if imap-get-expunges would return an empty list, #t otherwise.
+
+(imap-get-updates imap)
+  →   (listof (cons/c exact-nonnegative-integer?
+                      (listof pair?)))
+  imap : imap-connection?
+Returns information must like imap-get-messages, but includes information
+reported asynchronously by the server (e.g., to notify a client with some other
+client changes a message attribute). Instead of reporting specific requested
+information for specific messages, the result is associates message positions
+to field-value association lists. The result list is sorted by message
+position, ascending.
+
+This operation does not communicate with the server. It merely reports the
+result of previous communication. It also clears the update information from
+the connection after reporting it.
+
+When a server reports information that supersedes old reported information for
+a message, or if the server reports that a message has been deleted, then old
+information for the message is dropped. Similarly, if imap-get-messages is used
+to explicitly obtain information, any redundant (or out-of-date) information is
+dropped.
+
+A client need not use imap-get-updates ever, but accumulated information for
+the connection consumes space.
+
+(imap-pending-updates? imap) → boolean?
+  imap : imap-connection?
+Returns #f if imap-get-updates would return an list, #t otherwise.
+
+9.3 Manipulating Messages
+
+(imap-get-messages imap msg-nums fields) → (listof list?)
+  imap : imap-connection?
+  msg-nums : (listof exact-nonnegative-integer?)
+                (listof (one-of/c 'uid
+   fields   :                     'header
+                                  'body
+                                  'flags))
+Downloads information for a set of messages. The msg-nums argument specifies a
+set of messages by their message positions (not their uids). The fields
+argument specifies the type of information to download for each message. The
+available fields are:
+
+  • 'uid — the value is an integer
+
+  • 'header — the value is a header (a string, but see net/head)
+
+  • 'body — the value is a byte string, with CRLF-separated lines
+
+  • 'flags — the value is a list of symbols that correspond to IMAP flags; see
+    imap-flag->symbol
+
+The return value is a list of entry items in parallel to msg-nums. Each entry
+is itself a list containing value items in parallel to fields.
+
+Pending expunges must be handled before calling this function; see
+imap-get-expunges.
+
+Example:
+
+    > (imap-get-message imap '(1 3 5) '(uid header))
+    '((107 #"From: larry@stooges.com ...") (110 #"From: moe@stooges.com ...")
+    (112 #"From: curly@stooges.com ..."))
+
+
+
+(imap-flag->symbol flag) → symbol?
+  flag : symbol?
+(symbol->imap-flag sym) → symbol?
+  sym : symbol?
+An IMAP flag is a symbol, but it is generally not a convenient one to use
+within a Racket program, because it usually starts with a backslash. The
+imap-flag->symbol and symbol->imap-flag procedures convert IMAP flags to
+convenient symbols and vice-versa:
+
+                   symbol           IMAP flag
+
+  message flags:   'seen            '|\Seen|
+
+                   'answered        '|\Answered|
+
+                   'flagged         '|\Flagged|
+
+                   'deleted         '|\Deleted|
+
+                   'draft           '|\Draft|
+
+                   'recent          '|\Recent|
+
+  mailbox flags:   'noinferiors     '|\Noinferiors|
+
+                   'noselect        '|\Noselect|
+
+                   'marked          '|\Marked|
+
+                   'unmarked        '|\Unmarked|
+
+                   'hasnochildren   '|\HasNoChildren|
+
+                   'haschildren     '|\HasChildren|
+
+
+The imap-flag->symbol and symbol->imap-flag functions act like the identity
+function when any other symbol is provided.
+
+(imap-store imap mode msg-nums imap-flags) → void?
+  imap : imap-connection?
+  mode : (one-of/c '+ '- '!)
+  msg-nums : (listof exact-nonnegative-integer?)
+  imap-flags : (listof symbol?)
+Sets flags for a set of messages. The mode argument specifies how flags are
+set:
+
+  • '+ — add the given flags to each message
+
+  • '- — remove the given flags from each message
+
+  • '! — set each message’s flags to the given set
+
+The msg-nums argument specifies a set of messages by their message positions
+(not their uids). The flags argument specifies the imap flags to add/remove/
+install.
+
+Pending expunges must be handled before calling this function; see
+imap-get-expunges. The server will not report back message-state changes (so
+they will not show up through imap-get-updates).
+
+Examples:
+
+    > (imap-store imap '+ '(1 2 3) (list (symbol->imap-flag 'deleted)))
+    ; marks the first three messages to be deleted
+    > (imap-expunge imap)
+    ; permanently removes the first three messages (and possibly
+    ; others) from the currently-selected mailbox
+
+
+(imap-expunge imap) → void?
+  imap : imap-connection?
+Purges every message currently marked with the '|\Deleted| flag from the
+mailbox.
+
+9.4 Querying and Changing (Other) Mailboxes
+
+(imap-copy imap msg-nums dest-mailbox) → void?
+  imap : imap-connection?
+  msg-nums : (listof exact-nonnegative-integer?)
+  dest-mailbox : (or/c string? bytes?)
+Copies the specified messages from the currently selected mailbox to the
+specified mailbox.
+
+Pending expunges must be handled before calling this function; see
+imap-get-expunges.
+
+(imap-append imap mailbox message) → void?
+  imap : imap-connection?
+  mailbox : string?
+  message : (or/c string? bytes?)
+Adds a new message (containing message) to the given mailbox.
+
+(imap-status imap mailbox statuses) → list?
+  imap : imap-connection?
+  mailbox : (or/c string? bytes?)
+  statuses : (listof symbol?)
+Requests information about a mailbox from the server, typically not the
+currently selected mailbox.
+
+The statuses list specifies the request, and the return value includes one
+value for each symbol in statuses. The allowed status symbols are:
+
+  • 'messages — number of messages
+
+  • 'recent — number of recent messages
+
+  • 'unseen — number of unseen messages
+
+  • 'uidnext — uid for next received message
+
+  • 'uidvalidity — id that changes when all uids are changed
+
+Use imap-messages to get the message count for the currently selected mailbox,
+etc. Use imap-new? and imap-reset-new! to detect when new messages are
+available in the currently selected mailbox.
+
+(imap-mailbox-exists? imap mailbox) → boolean?
+  imap : imap-connection?
+  mailbox : (or/c string? bytes?)
+Returns #t if mailbox exists, #f otherwise.
+
+(imap-create-mailbox imap mailbox) → void?
+  imap : imap-connection?
+  mailbox : (or/c string? bytes?)
+Creates mailbox. (It must not exist already.)
+
+(imap-list-child-mailboxes    imap         
+                              mailbox      
+                            [ delimiter])  
+ → (listof (list/c (listof symbol?) bytes?))
+  imap : imap-connection?
+  mailbox : (or/c string? bytes? false/c)
+   delimiter   :   (or/c string? bytes?)
+               =   (imap-get-hierarchy-delimiter)
+Returns information about sub-mailboxes of mailbox; if mailbox is #f,
+information about all top-level mailboxes is returned. The delimiter is used to
+parse mailbox names from the server to detect hierarchy.
+
+The return value is a list of mailbox-information lists. Each
+mailbox-information list contains two items:
+
+  • a list of imap flags for the mailbox
+
+  • the mailbox’s name
+
+(imap-get-hierarchy-delimiter imap) → bytes?
+  imap : imap-connection?
+Returns the server-specific string that is used as a separator in mailbox path
+names.
+
+(imap-mailbox-flags imap mailbox) → (listof symbol?)
+  imap : imap-connection?
+  mailbox : (or/c string? bytes?)
+Returns a list of IMAP flags for the given mailbox. See also imap-flag->symbol.
+
+9.5 IMAP Unit
+
+ (require net/imap-unit)
+
+imap@ : unit?
+Imports nothing, exports imap^.
+
+9.6 IMAP Signature
+
+ (require net/imap-sig)
+
+imap^ : signature
+
+Includes everything exported by the net/imap module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

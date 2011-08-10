@@ -1,0 +1,96 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 3  Built-In Datatypes
+ 3.1  Booleans
+ 3.2  Numbers
+ 3.3  Characters
+ 3.4  Strings (Unicode)
+ 3.5  Bytes and Byte Strings
+ 3.6  Symbols
+ 3.7  Keywords
+ 3.8  Pairs and Lists
+ 3.9  Vectors
+3.10  Hash Tables
+3.11  Boxes
+3.12  Void and Undefined
+[...search manuals...]
+  top← prev  up  next → 
+
+3.9 Vectors
+
+A vector is a fixed-length array of arbitrary values. Unlike a list, a vector
+supports constant-time access and update of its elements.
+
+A vector prints similar to a list—as a parenthesized sequence of its elements—
+but a vector is prefixed with # after ', or it uses vector if one of its
+elements cannot be expressed with quote.
+
+For a vector as an expression, an optional length can be supplied. Also, a
+vector as an expression implicitly quotes the forms for its content, which
+means that identifiers and parenthesized forms in a vector constant represent
+symbols and lists.
+
+            +Reading Vectors in The Racket Reference documents the fine points
+            of the syntax of vectors.
+
+Examples:
+
+    > #("a" "b" "c")
+    '#("a" "b" "c")
+
+    > #(name (that tune))
+    '#(name (that tune))
+
+    > (vector-ref #("a" "b" "c") 1)
+    "b"
+
+    > (vector-ref #(name (that tune)) 1)
+    '(that tune)
+
+
+
+Like strings, a vector is either mutable or immutable, and vectors written
+directly as expressions are immutable.
+
+Vector can be converted to lists and vice versa via list->vector and vector->
+list; such conversions are particularly useful in combination with predefined
+procedures on lists. When allocating extra lists seems too expensive, consider
+using looping forms like for/fold, which recognize vectors as well as lists.
+
+Example:
+
+    > (list->vector (map string-titlecase
+                         (vector->list #("three" "blind" "mice"))))
+    '#("Three" "Blind" "Mice")
+
+
+
+            +Vectors in The Racket Reference provides more on vectors and
+            vector procedures.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

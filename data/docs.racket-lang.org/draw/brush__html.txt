@@ -1,0 +1,182 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+get-color
+get-stipple
+get-gradient
+get-style
+set-color
+set-stipple
+set-style
+[...search manuals...]
+  top← prev  up  next → 
+
+brush% : class?
+  superclass: object%
+
+A brush is a drawing tool with a color and a style that is used for filling in
+areas, such as the interior of a rectangle or ellipse. In a monochrome
+destination, all non-white brushes are drawn as black.
+
+In addition to its color and style, a brush can have a stipple bitmap. Painting
+with a stipple brush is similar to calling draw-bitmap with the stipple bitmap
+in the filled region.
+
+As an alternative to a color, style, and stipple, a brush can have a gradient
+that is a linear-gradient% or radial-gradient%. When a brush has a gradient and
+the target for drawing is not monochrome, then other brush settings are
+ignored. With a gradient, for each point in a drawing destination, the gradient
+associates a color to the point based on starting and ending colors and
+starting and ending lines (for a linear gradient) or circles (for a radial
+gradient); a gradient-assigned color is applied for each point that is touched
+when drawing with the brush.
+
+A brush’s style is one of the following (but is ignored if the brush has a
+gradient and the target is not monochrome):
+
+  • 'transparent — Draws with no effect (on the interior of the drawn shape).
+
+  • 'solid — Draws using the brush’s color. If a monochrome stipple is
+    installed into the brush, black pixels from the stipple are transferred to
+    the destination using the brush’s color, and white pixels from the stipple
+    are not transferred.
+
+  • 'opaque — The same as 'solid for a color stipple. For a monochrome stipple,
+    white pixels from the stipple are transferred to the destination using the
+    destination’s background color.
+
+  • 'xor — The same as 'solid, accepted only for partial backward
+    compatibility.
+
+  • 'hilite — Draws with black and a 0.3 alpha.
+
+  • 'panel — The same as 'solid, accepted only for partial backward
+    compatibility.
+
+  • The following modes correspond to built-in stipples drawn in 'solid mode:
+
+      □ 'bdiagonal-hatch — diagonal lines, top-left to bottom-right
+
+      □ 'crossdiag-hatch — crossed diagonal lines
+
+      □ 'fdiagonal-hatch — diagonal lines, top-right to bottom-left
+
+      □ 'cross-hatch — crossed horizontal and vertical lines
+
+      □ 'horizontal-hatch — horizontal lines
+
+      □ 'vertical-hatch — vertical lines
+
+    However, when a specific stipple is installed into the brush, the above
+    modes are ignored and 'solid is used, instead.
+
+To draw outline shapes (such as unfilled boxes and ellipses), use the
+'transparent brush style.
+
+To avoid creating multiple brushes with the same characteristics, use the
+global brush-list% object the-brush-list, or provide a color and style to
+set-brush in dc<%>.
+
+(new brush%  [ [color color]                
+               [style style]                
+               [stipple stipple]            
+               [gradient gradient]])   →   (is-a?/c brush%)
+  color : (or/c string? (is-a?/c color%)) = "black"
+               (one-of/c 'transparent 'solid 'opaque
+                         'xor 'hilite 'panel
+   style   :             'bdiagonal-hatch 'crossdiag-hatch    =   'solid
+                         'fdiagonal-hatch 'cross-hatch
+                         'horizontal-hatch 'vertical-hatch)
+  stipple : (or/c #f (is-a?/c bitmap%)) = #f
+                  (or/c #f
+   gradient   :         (is-a?/c linear-gradient%)    =   #f
+                        (is-a?/c radial-gradient%))
+Creates a brush with the given color, style, stipple, and gradient. For the
+case that the color is specified using a name, see color-database<%> for
+information about color names; if the name is not known, the brush’s color is
+black.
+
+(send a-brush get-color) → (is-a?/c color%)
+Returns the brush’s color.
+
+(send a-brush get-stipple) → (or/c (is-a?/c bitmap%) #f)
+Gets the stipple bitmap, or #f if the brush has no stipple.
+
+                                  (or/c (is-a?/c linear-gradient%)
+(send a-brush get-gradient)   →         (is-a?/c radial-gradient%)
+                                        #f)
+Gets the gradient, or #f if the brush has no gradient.
+
+(send a-brush get-style)
+      (one-of/c 'transparent 'solid 'opaque
+                'xor 'hilite 'panel
+  →             'bdiagonal-hatch 'crossdiag-hatch
+                'fdiagonal-hatch 'cross-hatch
+                'horizontal-hatch 'vertical-hatch)
+Returns the brush’s style. See brush% for information about brush styles.
+
+(send a-brush set-color color) → void?
+  color : (is-a?/c color%)
+(send a-brush set-color color-name) → void?
+  color-name : string?
+(send a-brush set-color red green blue) → void?
+  red : (integer-in 0 255)
+  green : (integer-in 0 255)
+  blue : (integer-in 0 255)
+Sets the brush’s color. A brush cannot be modified if it was obtained from a
+brush-list% or while it is selected into a drawing context.
+
+For the case that the color is specified using a string, see color-database<%>
+for information about color names.
+
+(send a-brush set-stipple bitmap) → void?
+  bitmap : (or/c (is-a?/c bitmap%) #f)
+Sets or removes the stipple bitmap, where #f removes the stipple. See brush%
+for information about drawing with stipples.
+
+If bitmap is modified while is associated with a brush, the effect on the brush
+is unspecified. A brush cannot be modified if it was obtained from a
+brush-list% or while it is selected into a drawing context.
+
+(send a-brush set-style style) → void?
+               (one-of/c 'transparent 'solid 'opaque
+                         'xor 'hilite 'panel
+   style   :             'bdiagonal-hatch 'crossdiag-hatch
+                         'fdiagonal-hatch 'cross-hatch
+                         'horizontal-hatch 'vertical-hatch)
+Sets the brush’s style. See brush% for information about the possible styles.
+
+A brush cannot be modified if it was obtained from a brush-list% or while it is
+selected into a drawing context.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

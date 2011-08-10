@@ -1,0 +1,89 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+find-or-create-font
+[...search manuals...]
+  top← prev  up  next → 
+
+font-list% : class?
+  superclass: object%
+
+A font-list% object maintains a list of font% objects to avoid repeatedly
+creating fonts.
+
+A global font list, the-font-list, is created automatically.
+
+(new font-list%) → (is-a?/c font-list%)
+Creates an empty font list.
+
+(send a-font-list find-or-create-font    size               
+                                         family             
+                                         style              
+                                         weight             
+                                       [ underline?         
+                                         smoothing          
+                                         size-in-pixels?])  
+ → (is-a?/c font%)
+  size : (integer-in 1 255)
+   family   :   (one-of/c 'default 'decorative 'roman 'script
+                          'swiss 'modern 'symbol 'system)
+  style : (one-of/c 'normal 'italic 'slant)
+  weight : (one-of/c 'normal 'bold 'light)
+  underline? : any/c = #f
+   smoothing   :   (one-of/c 'default 'partly-smoothed 'smoothed 'unsmoothed)
+               =   'default
+  size-in-pixels? : any/c = #f
+(send a-font-list find-or-create-font    size               
+                                         face               
+                                         family             
+                                         style              
+                                         weight             
+                                       [ underline          
+                                         smoothing          
+                                         size-in-pixels?])  
+ → (is-a?/c font%)
+  size : (integer-in 1 255)
+  face : string?
+   family   :   (one-of/c 'default 'decorative 'roman 'script
+                          'swiss 'modern 'symbol 'system)
+  style : (one-of/c 'normal 'italic 'slant)
+  weight : (one-of/c 'normal 'bold 'light)
+  underline : any/c = #f
+   smoothing   :   (one-of/c 'default 'partly-smoothed 'smoothed 'unsmoothed)
+               =   'default
+  size-in-pixels? : any/c = #f
+Finds an existing font in the list or creates a new one (that is automatically
+added to the list). The arguments are the same as for creating a font%
+instance.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

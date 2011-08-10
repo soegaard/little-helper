@@ -1,0 +1,86 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+network-error
+exn->string
+try
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+10 Exceptions
+
+ (require unstable/exn)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(network-error s fmt v ...) → void
+  s : symbol?
+  fmt : string?
+  v : any/c
+Like error, but throws a exn:fail:network.
+
+(exn->string exn) → string?
+  exn : (or/c exn? any/c)
+Formats exn with (error-display-handler) as a string.
+
+            The subsequent bindings were added by Carl Eastlund <
+            cce@racket-lang.org>.
+
+(try expr ...+)
+Executes the first expression expr in the sequence, producing its result value
+(s) if it returns any. If it raises an exception instead, try continues with
+the next expr. Exceptions raised by intermediate expressions are reported to
+the current logger at the 'debug level before continuing. Exceptions raised by
+the final expression are not caught by try.
+
+Examples:
+
+    > (try (+ 1 2) (+ 3 4))
+    3
+
+    > (try (+ 'one 'two) (+ 3 4))
+    7
+
+    > (try (+ 'one 'two) (+ 'three 'four))
+    +: expects type <number> as 1st argument, given: 'three;
+
+    other arguments were: 'four
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

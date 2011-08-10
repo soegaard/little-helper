@@ -1,0 +1,83 @@
+►  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+▼ 1  Containers
+1.1  aligned-pasteboard%
+1.2  alignment<%>
+1.3  alignment-parent<%>
+1.4  stretchable-snip<%>
+1.5  horizontal-alignment%
+1.6  vertical-alignment%
+1.7  dllist<%>
+On this page:
+get-parent
+set-min-sizes
+align
+get-min-width
+get-min-height
+stretchable-width
+stretchable-height
+show/ hide
+show
+Inherited methods:
+from dllist<%>
+for-each
+map-to-list
+next
+prev
+[...search manuals...]
+  top← prev  up  next → 
+
+alignment<%> : interface?
+  implements:  dllist<%>
+(send an-alignment get-parent) → (is-a?/c alignment-parent<%>)
+The parent of the alignment in the tree.
+
+(send an-alignment set-min-sizes) → void?
+Tells the alignment that its sizes should be calculated.
+
+(send an-alignment align   x-offset        
+                           y-offset        
+                           width           
+                           height)    →   void?
+  x-offset : (and/c real? (not/c negative?))
+  y-offset : (and/c real? (not/c negative?))
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Tells itself to align its children on the pasteboard in the given rectangle
+defined by width, height and a top left corner point given as offsets into the
+pasteboards top left corner.
+
+(send an-alignment get-min-width)
+ → (and/c real? (not/c negative?))
+The minimum width this alignment must be.
+
+(send an-alignment get-min-height)
+ → (and/c real? (not/c negative?))
+The minimum height this alignment must be.
+
+(send an-alignment stretchable-width) → boolean?
+(send an-alignment stretchable-width value) → void?
+  value : boolean?
+Gets/sets the property of stretchability in the x dimension.
+
+(send an-alignment stretchable-height) → boolean?
+(send an-alignment stretchable-height value) → void?
+  value : boolean?
+Gets/sets the property of stretchability in the y dimension.
+
+(send an-alignment show/hide show?) → void?
+  show? : boolean?
+Tells the alignment to show or hide its children.
+
+(send an-alignment show show?) → void?
+  show? : boolean?
+Tells the alignment that its show state is the given value and it should show
+or hide its children accordingly.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

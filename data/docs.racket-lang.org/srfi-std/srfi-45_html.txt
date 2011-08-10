@@ -1,0 +1,646 @@
+Title
+
+SRFI 45: Primitives for Expressing Iterative Lazy Algorithms
+
+Author
+
+Andre' van Tonder
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access previous messages via the
+archive of the mailing list.
+
+  • Received: 2003/09/20
+  • Draft: 2003/09/23-2003/12/23
+  • Revised: 2003/12/20
+  • Revised: 2004/03/06
+  • Final: 2004/04/05
+  • Bug fix: 2004/08/04
+
+Abstract
+
+Lazy evaluation is traditionally simulated in Scheme using delay and force.
+However, these primitives are not powerful enough to express a large class of
+lazy algorithms that are iterative. Indeed, it is folklore in the Scheme
+community that typical iterative lazy algorithms written using delay and force
+will often require unbounded memory.
+
+Although varous modifications of delay and force had been proposed to resolve
+this problem (see e.g., the SRFI-40 discussion list ) they all fail some of the
+benchmarks provided below. To our knowledge, the current SRFI provides the
+first exhaustive solution to this problem.
+
+As motivation, we first explain how the usual laziness encoding using only
+delay and force will break the iterative behavior of typical algorithms that
+would have been properly tail-recursive in a true lazy language, causing the
+computation to require unbounded memory.
+
+The problem is then resolved by introducing a set of three operations:
+
+    {lazy, delay, force}
+
+which allow the programmer to succinctly express lazy algorithms while
+retaining bounded space behavior in cases that are properly tail-recursive. A
+general recipe for using these primitives is provided. An additional procedure
+{eager} is provided for the construction of eager promises in cases where
+efficiency is a concern.
+
+Although this SRFI redefines delay and force, the extension is conservative in
+the sense that the semantics of the subset {delay, force} in isolation (i.e.,
+as long as the program does not use lazy) agrees with that in R5RS. In other
+words, no program that uses the R5RS definitions of delay and force will break
+if those definition are replaced by the SRFI-45 definitions of delay and force.
+
+Rationale
+
+Wadler et al. in the paper How to add laziness to a strict language without
+even being odd [Wad98], provide a straightforward recipe for transforming
+arbitrary lazy data structures and algorithms into a strict language using
+delay and force.
+
+However, it is known (see e.g. the SRFI-40 discussion list) that this
+transformation can lead to programs that suffer from unbounded space
+consumption, even if the original lazy algorithm was properly tail-recursive.
+
+Example
+
+Consider the following procedure, written in a hypothetical lazy language with
+Scheme syntax:
+
+(define (stream-filter p? s)
+  (if (null? s) '()
+      (let ((h (car s))
+            (t (cdr s)))
+        (if (p? h)
+            (cons h (stream-filter p? t))
+            (stream-filter p? t)))))
+
+According to the tranformation proposed in [Wad98], this algorithm can be
+espressed as follows in Scheme:
+
+(define (stream-filter p? s)
+  (delay (force
+          (if (null? (force s)) (delay '())
+              (let ((h (car (force s)))
+                    (t (cdr (force s))))
+                (if (p? h)
+                    (delay (cons h (stream-filter p? t)))
+                    (stream-filter p? t)))))))
+
+The recipe, which we will modify below, is as follows:
+
+  • wrap all constructors (e.g., '(), cons) with delay,
+  • apply force to arguments of deconstructors (e.g., car, cdr and null?),
+  • wrap procedure bodies with (delay (force ...)).
+
+However, evaluating the following with a sufficiently value for large-number
+will cause a typical Scheme implementation to run out of memory, despite the
+fact that the original (lazy) algorithm was iterative, only needing tail calls
+to evaluate the first element of the result stream.
+
+(define (from n)
+  (delay (cons n (from (+ n 1)))))
+
+(define large-number 1000000000)
+
+(car (force (stream-filter (lambda (n) (= n large-number))
+                           (from 0))))
+
+Why the space leak occurs
+
+The problem occurring in the above stream-filter example can already be seen in
+the following simple infinite loop, expressed in our hypothetical lazy language
+as:
+
+(define (loop) (loop))
+
+which becomes, according to the [Wad98] transformation
+
+(define (loop) (delay (force (loop))))
+
+Taking the semantics of {delay, force} to be informally:
+
+  (force (delay expr)) = update promise : (delay expr)
+                           with value of expr
+                         return value in promise
+
+we get
+
+  (force (loop)) = update promise1 : (delay (force (loop)))
+                     with value of (force (loop))
+                   return value in promise1
+                 = update promise1 : (delay (force (loop)))
+                     with value of
+                       update promise2 : (delay (force (loop)))
+                         with value of (force (loop))
+                       return value in promise2
+                   return value in promise1
+                 = update promise1 : (delay (force (loop)))
+                     with value of
+                       update promise2 : (delay (force (loop)))
+                         with value of
+                            update promise3 : (delay (force (loop)))
+                              with value of (force (loop))
+                            return value in promise3
+                       return value in promise2
+                   return value in promise1
+                 = ...
+
+We see that an ever growing sequence of pending promises builds up until the
+heap is exhausted.
+
+Why the above is not call-by-need
+
+Expressing the above algorithm in terms of {delay, force} in fact does not
+correctly capture common notions of call-by-need evaluation semantics. For
+example, in a call-by-need language with naive graph reduction semantics, the
+above algorithm would run in bounded space since naive graph reduction is known
+to be tail-safe. For a good discussion of this issue, see e.g. R. Jones - Tail
+recursion without space leaks [Jon98].
+
+Our problem may be regarded as analogous to graph reduction, with promises
+corresponding to graph nodes and force corresponding to reduction. As described
+by Jones, one has to be careful with the order in which nodes are evaluated and
+overwritten to avoid space leaks. In our context this would correspond to the
+order in which promises are evaluated and overwritten when forced.
+
+In the above example, naive graph reduction would correspond to the promise at
+the root being overwritten at each step before the next iteration is evaluated,
+thus avoiding the need for a growing sequence of unfulfilled promises
+representing (unnecessary) future copy operations.
+
+The solution
+
+The accumulation of unnecessary promises in the above examples is a consequence
+of suspensions being forced in increasingly nested contexts. In order to
+correctly simulate naive graph reduction we should instead find a way of
+forcing tail suspensions iteratively, each time overwriting the previous
+result.
+
+A solution to this problem exists and is described (in a different context) in
+Compiling higher order languages into fully tail-recursive portable C - Feely
+et al. [Fee97]. This reference introduces a method widely known as the
+trampoline technique for evaluating tail contexts iteratively.
+
+Adapting the trampoline technique to the situation at hand, we introduce a new
+primitive lazy, which behaves like an "atomic" (delay (force ...)), and which
+will replace the combination (delay (force ...)) at procedure entry points. We
+also redefine delay and force as below:
+
+; type Promise a = lazy (Promise a) | eager a
+
+(define-syntax lazy
+  (syntax-rules ()
+    ((lazy exp)
+     (box (cons 'lazy (lambda () exp))))))
+
+(define (eager x)
+  (box (cons 'eager x)))
+
+(define-syntax delay
+  (syntax-rules ()
+    ((delay exp) (lazy (eager exp)))))
+
+(define (force promise)
+  (let ((content (unbox promise)))
+    (case (car content)
+      ((eager) (cdr content))
+      ((lazy)  (let* ((promise* ((cdr content)))
+                      (content  (unbox promise)))                      ; *
+                 (if (not (eqv? (car content) 'eager))                 ; *
+                     (begin (set-car! content (car (unbox promise*)))
+                            (set-cdr! content (cdr (unbox promise*)))
+                            (set-box! promise* content)))
+                 (force promise))))))
+
+(*) These two lines re-fetch and check the original promise in case
+    the first line of the let* caused it to be forced.  For an example
+    where this happens, see reentrancy test 3 below.
+
+(define (box x) (list x))
+(define unbox car)
+(define set-box! set-car!)
+
+Our example is then coded (see the full recipe below)
+
+  (define (loop) (lazy (loop)))
+
+When we now evaluate (force (loop)), the force procedure will execute a
+top-level loop which will iteratively evaluate and overwrite subsequent
+suspensions.
+
+In the language of [Fee97], the iterative loop in force plays the role of
+"dispatcher". The lazy form marks "control points" (procedure entry and return
+points). This technique is tail-safe because lazy procedures, instead of
+calling other lazy procedures directly, simply return a suspension representing
+a control point to be called upon the next iteration of the dispatcher loop in
+force. For more details, see [FMRW].
+
+Specification
+
+The following macros should be provided. The semantics, which is informally
+described here, should conform to that of the reference implementation below:
+
+  • (delay expression): Takes an expression of arbitrary type a and returns a
+    promise of type (Promise a) which at some point in the future may be asked
+    (by the force procedure) to evaluate the expression and deliver the
+    resulting value.
+  • (lazy expression): Takes an expression of type (Promise a) and returns a
+    promise of type (Promise a) which at some point in the future may be asked
+    (by the force procedure) to evaluate the expression and deliver the
+    resulting promise.
+
+The following procedures should be provided:
+
+  • (force expression): Takes an argument of type (Promise a) and returns a
+    value of type a as follows: If a value of type a has been computed for the
+    promise, this value is returned. Otherwise, the promise is first evaluated,
+    then overwritten by the obtained promise or value, and then force is again
+    applied (iteratively) to the promise.
+  • (eager expression): Takes an argument of type a and returns a value of type
+    Promise a. As opposed to delay, the argument is evaluated eagerly.
+    Semantically, writing (eager expression) is equivalent to writing
+
+        (let ((value expression)) (delay value)).
+
+    However, the former is more efficient since it does not require unnecessary
+    creation and evaluation of thunks. We also have the equivalence
+
+        (delay expression) = (lazy (eager expression))
+
+
+The following reduction rules may be helpful for reasoning about these
+primitives. However, they do not express the memoization and memory usage
+semantics specified above:
+
+  (force (delay expression)) -> expression
+  (force (lazy  expression)) -> (force expression)
+  (force (eager value))      -> value
+
+The typing can be succinctly expressed as follows:
+
+
+    type Promise a = lazy (Promise a) | eager a
+
+           expression  : a
+    ------------------------------
+    (eager expression) : Promise a
+
+           expression  : Promise a
+    ------------------------------
+    (lazy expression)  : Promise a
+
+           expression  : a
+    ------------------------------
+    (delay expression) : Promise a
+
+           expression  : Promise a
+    ------------------------------
+    (force expression) : a
+
+
+Although this SRFI specifies an extension to the semantics of force, the
+extension is conservative in the sense that the semantics of the subset {delay,
+force} in isolation (i.e., as long as the program does not use lazy) agrees
+with that in R5RS.
+
+Correct usage
+
+We now provide a general recipe for using the primitives
+
+    {lazy, delay, force}
+
+to express lazy algorithms in Scheme. The transformation is best described by
+way of an example: Consider again the stream-filter algorithm, expressed in a
+hypothetical lazy language as
+
+(define (stream-filter p? s)
+  (if (null? s) '()
+      (let ((h (car s))
+            (t (cdr s)))
+        (if (p? h)
+            (cons h (stream-filter p? t))
+            (stream-filter p? t)))))
+
+This algorithm can be espressed as follows in Scheme:
+
+(define (stream-filter p? s)
+  (lazy
+     (if (null? (force s)) (delay '())
+         (let ((h (car (force s)))
+               (t (cdr (force s))))
+           (if (p? h)
+               (delay (cons h (stream-filter p? t)))
+               (stream-filter p? t))))))
+
+In other words, we
+
+  • wrap all constructors (e.g., '(), cons) with delay,
+  • apply force to arguments of deconstructors (e.g., car, cdr and null?),
+  • wrap procedure bodies with (lazy ...).
+
+The only difference with the [Wad98] transformation described above is in
+replacing the combination (delay (force ...)) with (lazy ...) in the third
+rule.
+
+More examples are included in the reference implementation below.
+
+Implementation
+
+The reference implementation uses the macro mechanism of R5RS. It does not use
+any other SRFI or any library.
+
+A collection of benchmarks is provided. These check some special cases of the
+mechanism defined in this SRFI. To run them the user will need access to some
+way of inspecting the runtime memory usage of the algorithms, and a metric,
+left unspecified here, for deciding whether the memory usage is bounded. A leak
+benchmark is passed if the memory usage is bounded. Passing the tests does not
+mean a correct implementation.
+
+Reference implementation
+
+;=========================================================================
+; Boxes
+
+(define (box x) (list x))
+(define unbox car)
+(define set-box! set-car!)
+
+;=========================================================================
+; Primitives for lazy evaluation:
+
+(define-syntax lazy
+  (syntax-rules ()
+    ((lazy exp)
+     (box (cons 'lazy (lambda () exp))))))
+
+(define (eager x)
+  (box (cons 'eager x)))
+
+(define-syntax delay
+  (syntax-rules ()
+    ((delay exp) (lazy (eager exp)))))
+
+(define (force promise)
+  (let ((content (unbox promise)))
+    (case (car content)
+      ((eager) (cdr content))
+      ((lazy)  (let* ((promise* ((cdr content)))
+                      (content  (unbox promise)))                      ; *
+                 (if (not (eqv? (car content) 'eager))                 ; *
+                     (begin (set-car! content (car (unbox promise*)))
+                            (set-cdr! content (cdr (unbox promise*)))
+                            (set-box! promise* content)))
+                 (force promise))))))
+
+; (*) These two lines re-fetch and check the original promise in case
+;     the first line of the let* caused it to be forced.  For an example
+;     where this happens, see reentrancy test 3 below.
+
+;=========================================================================
+; TESTS AND BENCHMARKS:
+;=========================================================================
+
+;=========================================================================
+; Memoization test 1:
+
+(define s (delay (begin (display 'hello) 1)))
+
+(force s)
+(force s)
+               ;===> Should display 'hello once
+
+;=========================================================================
+; Memoization test 2:
+
+(let ((s (delay (begin (display 'bonjour) 2))))
+  (+ (force s) (force s)))
+
+               ;===> Should display 'bonjour once
+
+;=========================================================================
+; Memoization test 3: (pointed out by Alejandro Forero Cuervo)
+
+(define r (delay (begin (display 'hi) 1)))
+(define s (lazy r))
+(define t (lazy s))
+
+(force t)
+(force r)
+               ;===> Should display 'hi once
+
+;=========================================================================
+; Memoization test 4: Stream memoization
+
+(define (stream-drop s index)
+  (lazy
+   (if (zero? index)
+       s
+       (stream-drop (cdr (force s)) (- index 1)))))
+
+(define (ones)
+  (delay (begin
+           (display 'ho)
+           (cons 1 (ones)))))
+
+(define s (ones))
+
+(car (force (stream-drop s 4)))
+(car (force (stream-drop s 4)))
+
+               ;===> Should display 'ho five times
+
+;=========================================================================
+; Reentrancy test 1: from R5RS
+
+(define count 0)
+(define p
+  (delay (begin (set! count (+ count 1))
+                (if (> count x)
+                    count
+                    (force p)))))
+(define x 5)
+(force p)                     ;===>  6
+(set! x 10)
+(force p)                     ;===>  6
+
+
+;=========================================================================
+; Reentrancy test 2: from SRFI 40
+
+(define f
+  (let ((first? #t))
+    (delay
+      (if first?
+          (begin
+            (set! first? #f)
+            (force f))
+          'second))))
+
+(force f)                     ;===> 'second
+
+;=========================================================================
+; Reentrancy test 3: due to John Shutt
+
+(define q
+  (let ((count 5))
+    (define (get-count) count)
+    (define p (delay (if (<= count 0)
+                         count
+                         (begin (set! count (- count 1))
+                                (force p)
+                                (set! count (+ count 2))
+                                count))))
+    (list get-count p)))
+(define get-count (car q))
+(define p (cadr q))
+
+(get-count)  ; =>   5
+(force p)    ; =>   0
+(get-count)  ; =>   10
+
+;=========================================================================
+; Test leaks:  All the leak tests should run in bounded space.
+
+;=========================================================================
+; Leak test 1: Infinite loop in bounded space.
+
+(define (loop) (lazy (loop)))
+;(force (loop))                               ;==> bounded space
+
+;=========================================================================
+; Leak test 2: Pending memos should not accumulate
+;              in shared structures.
+
+(define s (loop))
+;(force s)                                    ;==> bounded space
+
+;=========================================================================
+; Leak test 3: Safely traversing infinite stream.
+
+(define (from n)
+  (delay (cons n (from (+ n 1)))))
+
+(define (traverse s)
+  (lazy (traverse (cdr (force s)))))
+
+;(force (traverse (from 0)))                  ;==> bounded space
+
+;=========================================================================
+; Leak test 4: Safely traversing infinite stream
+;              while pointer to head of result exists.
+
+(define s (traverse (from 0)))
+;(force s)                                    ;==> bounded space
+
+;=========================================================================
+; Convenient list deconstructor used below.
+
+(define-syntax match
+  (syntax-rules ()
+    ((match exp
+       (()      exp1)
+       ((h . t) exp2))
+     (let ((lst exp))
+       (cond ((null? lst) exp1)
+             ((pair? lst) (let ((h (car lst))
+                                (t (cdr lst)))
+                            exp2))
+             (else 'match-error))))))
+
+;========================================================================
+; Leak test 5: Naive stream-filter should run in bounded space.
+;              Simplest case.
+
+(define (stream-filter p? s)
+  (lazy (match (force s)
+          (()      (delay '()))
+          ((h . t) (if (p? h)
+                       (delay (cons h (stream-filter p? t)))
+                       (stream-filter p? t))))))
+
+;(force (stream-filter (lambda (n) (= n 10000000000))
+;                      (from 0)))
+                                             ;==> bounded space
+
+;========================================================================
+; Leak test 6: Another long traversal should run in bounded space.
+
+; The stream-ref procedure below does not strictly need to be lazy.
+; It is defined lazy for the purpose of testing safe compostion of
+; lazy procedures in the times3 benchmark below (previous
+; candidate solutions had failed this).
+
+(define (stream-ref s index)
+  (lazy
+   (match (force s)
+     (()      'error)
+     ((h . t) (if (zero? index)
+                  (delay h)
+                  (stream-ref t (- index 1)))))))
+
+; Check that evenness is correctly implemented - should terminate:
+
+(force (stream-ref (stream-filter zero? (from 0))
+                   0))                              ;==> 0
+
+(define s (stream-ref (from 0) 100000000))
+;(force s)                                          ;==> bounded space
+
+;======================================================================
+; Leak test 7: Infamous example from SRFI 40.
+
+(define (times3 n)
+  (stream-ref (stream-filter
+               (lambda (x) (zero? (modulo x n)))
+               (from 0))
+              3))
+
+(force (times3 7))
+;(force (times3 100000000))                        ;==> bounded space
+
+
+References
+
+[Wad98] Philip Wadler, Walid Taha, and David MacQueen. How to add laziness to a
+strict language, without even being odd, Workshop on Standard ML, Baltimore,
+September 1998
+
+[Jon92] Richard Jones. Tail recursion without space leaks, Journal of
+Functional Programming, 2(1):73-79, January 1992
+
+[Fee97] Marc Feeley, James S. Miller, Guillermo J. Rozas, Jason A. Wilson,
+Compiling Higher-Order Languages into Fully Tail-Recursive Portable C, Rapport
+technique 1078, d partement d'informatique et r.o., Universit  de Montr al, ao 
+t 1997.
+
+Copyright
+
+Copyright (C) Andre' van Tonder (2003). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Author: Andr  van Tonder
+
+Editor: Francisco Solsona
+Last modified: Tue Dec 30 11:21:21 CST 2003

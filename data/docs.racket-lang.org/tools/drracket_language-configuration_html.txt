@@ -1,0 +1,153 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drracket: language-configuration: get-languages
+drracket: language-configuration: add-language
+drracket: language-configuration: get-settings-preferences-symbol
+drracket: language-configuration: language-settings
+drracket: language-configuration: language-settings-settings
+drracket: language-configuration: language-settings-language
+drracket: language-configuration: language-settings?
+drracket: language-configuration: language-dialog
+drracket: language-configuration: fill-language-dialog
+[...search manuals...]
+  top← prev  up  next → 
+
+12 drracket:language-configuration
+
+(drracket:language-configuration:get-languages)
+ → (listof (is-a?/c drracket:language:language<%>))
+This can only be called after all of the tools initialization phases have
+completed.
+
+Returns the list of all of the languages installed in DrRacket.
+(drracket:language-configuration:add-language language) → void?
+  language : (and/c (is-a?/c drracket:language:language<%>) 
+drracket:language:object/c)
+This function can only be called in phase 2 (see Implementing DrRacket Plugins
+for details).
+
+Adds language to the languages offerend by DrRacket.
+(drracket:language-configuration:get-settings-preferences-symbol)
+ → symbol?
+Returns the symbol that is used to store the user’s language settings. Use as
+an argument to either preferences:get or preferences:set.
+(drracket:language-configuration:language-settings   language   
+                                                     settings)  
+ → drracket:language-configuration:language-settings?
+  language : (or/c (is-a?/c drracket:language:language<%>) 
+drracket:language:object/c)
+  settings : any/c
+This is the constructor for a record consisting of two elements, a language and
+its settings.
+
+The settings is a language-specific record that holds a value describing a
+parameterization of the language.
+
+It has two selectors,
+drracket:language-configuration:language-settings-language and
+drracket:language-configuration:language-settings-settings, and a predicate,
+drracket:language-configuration:language-settings?
+(drracket:language-configuration:language-settings-settings ls)
+ → any/c
+  ls : drracket:language-configuration:language-settings?
+Extracts the settings field of a language-settings.
+(drracket:language-configuration:language-settings-language ls)
+ → (or/c (is-a?/c drracket:language:language<%>) drracket:language:object/c)
+  ls : drracket:language-configuration:language-settings?
+Extracts the language field of a language-settings.
+(drracket:language-configuration:language-settings? val)
+ → boolean?
+  val : any/c
+Determines if the argument is a language-settings or not.
+(drracket:language-configuration:language-dialog  
+      show-welcome?                               
+      language-settings-to-show                   
+   [  parent])                                    
+ → (or/c false/c drracket:language-configuration:language-settings?)
+  show-welcome? : boolean?
+  language-settings-to-show : 
+drracket:language-configuration:language-settings?
+  parent : (or/c false/c (is-a?/c top-level-window<%>)) = #t
+Opens the language configuration dialog. See also
+drracket:language-configuration:fill-language-dialog.
+
+The show-welcome? argument determines if if a “Welcome to DrRacket” message and
+some natural language buttons are shown.
+
+The language-settings-to-show argument must be some default language settings
+that the dialog is initialized to. If unsure of a default, the currently set
+language in the user’s preferences can be obtained via:
+
+
+    (preferences:get (
+    drracket:language-configuration:get-settings-preferences-symbol))
+
+The parent argument is used as the parent to the dialog.
+
+The result if #f when the user cancells the dialog, and the selected language
+if they hit ok.
+(drracket:language-configuration:fill-language-dialog  
+         panel                                         
+         button-panel                                  
+         language-setting                              
+    [    re-center                                     
+         ok-handler])                                  
+      (-> (is-a?/c drracket:language:language<%>))
+  →   (-> any/c)
+      (-> any/c (is-a?/c mouse-event%) any)
+  panel : (is-a?/c vertical-panel%)
+  button-panel : (is-a?/c area-container<%>)
+  language-setting : drracket:language-configuration:language-settings?
+  re-center : (or/c false/c (is-a?/c top-level-window<%>)) = #f
+  ok-handler : (-> symbol? void?) = void
+This procedure accepts two parent panels and fills them with the contents of
+the language dialog. It is used to include language configuration controls in
+some larger context in another dialog.
+
+The panel argument is the main panel where the language controls will be
+placed. The function adds buttons to the button-panel to revert a language to
+its default settings and to show the details of a language.
+
+The language-setting is the default language to show in the dialog.
+
+The re-center argument is used when the Show Details button is clicked. If that
+argument is a top-level-window<%>, the Show Details callback will recenter the
+window each time it is clicked. Otherwise, the argument is not used.
+
+ok-handler is a function that is in charge of interfacing the OK button. It
+should accept a symbol message: 'enable and 'disable to toggle the button, and
+'execute to run the desired operation. (The language selection dialog also uses
+an internal 'enable-sync message.)
+
+The first two results of the function return a language object and a settings
+for that language, as chosen by the user using the dialog. The final function
+should be called when keystrokes are typed in the enclosing frame. It is used
+to implement the shortcuts that choose the two radio buttons in the language
+dialog.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

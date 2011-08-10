@@ -1,0 +1,61 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+version: add-spec
+version: version
+[...search manuals...]
+  top← prev  up  next → 
+
+32 Version
+
+(version:add-spec spec revision) → void?
+  spec : any/c
+  revision : any/c
+The two values are appended to the version string. write is used to transform
+them to strings. For example:
+
+(version:add-spec 's 1)
+
+in version 205 will make the version string be 205s1. The symbols 'f and 'd
+were used internally for framework and drscheme revisions in the past.
+(version:version) → string?
+This function returns a string describing the version of this application. See
+also version:add-spec.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

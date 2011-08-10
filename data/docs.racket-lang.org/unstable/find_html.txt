@@ -1,0 +1,131 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+find
+find-first
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+12 Find
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require unstable/find)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(find    pred                                   
+         x                                      
+       [ #:stop-on-found? stop-on-found?        
+         #:stop stop                            
+         #:get-children get-children])     →   list?
+  pred : (-> any/c any/c)
+  x : any/c
+  stop-on-found? : any/c = #f
+  stop : (or/c #f (-> any/c any/c)) = #f
+  get-children : (or/c #f (-> any/c (or/c #f list?))) = #f
+Returns a list of all values satisfying pred contained in x (possibly including
+x itself).
+
+If stop-on-found? is true, the children of values satisfying pred are not
+examined. If stop is a procedure, then the children of values for which stop
+returns true are not examined (but the values themselves are; stop is applied
+after pred). Only the current branch of the search is stopped, not the whole
+search.
+
+The search recurs through pairs, vectors, boxes, and the accessible fields of
+structures. If get-children is a procedure, it can override the default notion
+of a value’s children by returning a list (if it returns false, the default
+notion of children is used).
+
+No cycle detection is done, so find on a cyclic graph may diverge. To do cycle
+checking yourself, use stop and a mutable table.
+
+Examples:
+
+    > (find symbol? '((all work) and (no play)))
+    '(all work and no play)
+
+    > (find list? '#((all work) and (no play)) #:stop-on-found? #t)
+    '((all work) (no play))
+
+    > (find negative? 100
+            #:stop-on-found? #t
+            #:get-children (lambda (n) (list (- n 12))))
+    '(-8)
+
+    > (find symbol? (shared ([x (cons 'a x)]) x)
+            #:stop (let ([table (make-hasheq)])
+                     (lambda (x)
+                       (begin0 (hash-ref table x #f)
+                               (hash-set! table x #t)))))
+    '(a)
+
+
+
+(find-first    pred                               
+               x                                  
+             [ #:stop stop                        
+               #:get-children get-children        
+               #:default default])           →   any/c
+  pred : (-> any/c any/c)
+  x : any/c
+  stop : (or/c #f (-> any/c any/c)) = #f
+  get-children : (or/c #f (-> any/c (or/c #f list?))) = #f
+  default : any/c = (lambda () (error ....))
+Like find, but only returns the first match. If no matches are found, default
+is applied as a thunk if it is a procedure or returned otherwise.
+
+Examples:
+
+    > (find-first symbol? '((all work) and (no play)))
+    'all
+
+    > (find-first list? '#((all work) and (no play)))
+    '(all work)
+
+    > (find-first negative? 100
+                  #:get-children (lambda (n) (list (- n 12))))
+    -8
+
+    > (find-first symbol? (shared ([x (cons 'a x)]) x))
+    'a
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

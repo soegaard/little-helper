@@ -1,0 +1,79 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+► 5  Unification
+5.1  The Occurs Check
+On this page:
+5.1 The Occurs Check
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Unification
+
+When we say that a goal matches with a clause-head, we mean that the predicate
+and argument positions line up. Before making this comparison, Racklog
+dereferences all already bound logic variables. The resulting structures are
+then compared to see if they are recursively identical. Thus, 1 unifies with 1,
+and (list 1 2) with '(1 2); but 1 and 2 do not unify, and neither do '(1 2) and
+'(1 3).
+
+In general, there could be quite a few uninstantiated logic variables in the
+compared objects. Unification will then endeavor to find the most natural way
+of binding these variables so that we arrive at structurally identical objects.
+Thus, (list x 1), where x is an unbound logic variable, unifies with '(0 1),
+producing the binding [x 0].
+
+Unification is thus a goal, and Racklog makes the unification predicate
+available to the user as %=. Eg,
+
+    > (%which (x)
+        (%= (list x 1) '(0 1)))
+    '((x . 0))
+
+
+Racklog also provides the predicate %/=, the negation of %=. (%/= X Y) succeeds
+if and only if X does not unify with Y.
+
+Unification goals constitute the basic subgoals that all Racklog goals devolve
+to. A goal succeeds because all the eventual unification subgoals that it
+decomposes to in at least one of its subgoal-branching succeeded. It fails
+because every possible subgoal-branching was thwarted by the failure of a
+crucial unification subgoal.
+
+Going back to the example in Backtracking, the goal (%computer-literate
+'Penelope) succeeds because (a) it unified with (%computer-literate person);
+and then (b) with the binding [person . Penelope] in place, (%knows person
+'TeX) unified with (%knows 'Penelope 'TeX) and (%knows person 'Prolog) unified
+with (%knows 'Penelope 'Prolog).
+
+In contrast, the goal (%computer-literate 'Telemachus) fails because, with
+[person . Telemachus], the subgoals (%knows person 'Racket) and (%knows person
+'Prolog) have no facts they can unify with.
+
+5.1 The Occurs Check
+
+A robust unification algorithm uses the occurs check, which ensures that a
+logic variable isn’t bound to a structure that contains itself. Not performing
+the check can cause the unification to go into an infinite loop in some cases.
+On the other hand, performing the occurs check greatly increases the time taken
+by unification, even in cases that wouldn’t require the check.
+
+Racklog uses the global parameter use-occurs-check? to decide whether to use
+the occurs check. By default, this variable is #f, ie, Racklog disables the
+occurs check. To enable the check,
+
+    (use-occurs-check? #t)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

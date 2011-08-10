@@ -1,0 +1,81 @@
+[Go to first, previous, next page;   contents;   index]
+
+ 
+
+Introduction
+
+Programming languages should be designed not by piling feature on top of
+feature, but by removing the weaknesses and restrictions that make additional
+features appear necessary. Scheme demonstrates that a very small number of
+rules for forming expressions, with no restrictions on how they are composed,
+suffice to form a practical and efficient programming language that is flexible
+enough to support most of the major programming paradigms in use today.
+
+Scheme was one of the first programming languages to incorporate first class
+procedures as in the lambda calculus, thereby proving the usefulness of static
+scope rules and block structure in a dynamically typed language. Scheme was the
+first major dialect of Lisp to distinguish procedures from lambda expressions
+and symbols, to use a single lexical environment for all variables, and to
+evaluate the operator position of a procedure call in the same way as an
+operand position. By relying entirely on procedure calls to express iteration,
+Scheme emphasized the fact that tail-recursive procedure calls are essentially
+goto's that pass arguments. Scheme was the first widely used programming
+language to embrace first class escape procedures, from which all previously
+known sequential control structures can be synthesized. A subsequent version of
+Scheme introduced the concept of exact and inexact numbers, an extension of
+Common Lisp's generic arithmetic. More recently, Scheme became the first
+programming language to support hygienic macros, which permit the syntax of a
+block-structured language to be extended in a consistent and reliable manner.
+
+Background
+
+The first description of Scheme was written in 1975 [28]. A revised report [25]
+appeared in 1978, which described the evolution of the language as its MIT
+implementation was upgraded to support an innovative compiler [26]. Three
+distinct projects began in 1981 and 1982 to use variants of Scheme for courses
+at MIT, Yale, and Indiana University [21, 17, 10]. An introductory computer
+science textbook using Scheme was published in 1984 [1].
+
+As Scheme became more widespread, local dialects began to diverge until
+students and researchers occasionally found it difficult to understand code
+written at other sites. Fifteen representatives of the major implementations of
+Scheme therefore met in October 1984 to work toward a better and more widely
+accepted standard for Scheme. Their report [4] was published at MIT and Indiana
+University in the summer of 1985. Further revision took place in the spring of
+1986 [23], and in the spring of 1988 [6]. The present report reflects further
+revisions agreed upon in a meeting at Xerox PARC in June 1992.
+
+We intend this report to belong to the entire Scheme community, and so we grant
+permission to copy it in whole or in part without fee. In particular, we
+encourage implementors of Scheme to use this report as a starting point for
+manuals and other documentation, modifying it as necessary.
+
+Acknowledgements
+
+We would like to thank the following people for their help: Alan Bawden,
+Michael Blair, George Carrette, Andy Cromarty, Pavel Curtis, Jeff Dalton,
+Olivier Danvy, Ken Dickey, Bruce Duba, Marc Feeley, Andy Freeman, Richard
+Gabriel, Yekta Gu:rsel, Ken Haase, Robert Hieb, Paul Hudak, Morry Katz, Chris
+Lindblad, Mark Meyer, Jim Miller, Jim Philbin, John Ramsdell, Mike Shaff,
+Jonathan Shapiro, Julie Sussman, Perry Wagle, Daniel Weise, Henry Wu, and Ozan
+Yigit. We thank Carol Fessenden, Daniel Friedman, and Christopher Haynes for
+permission to use text from the Scheme 311 version 4 reference manual. We thank
+Texas Instruments, Inc. for permission to use text from the TI Scheme Language
+Reference Manual[30]. We gladly acknowledge the influence of manuals for MIT
+Scheme[17], T[22], Scheme 84[11],Common Lisp[27], and Algol 60[18].
+
+We also thank Betty Dexter for the extreme effort she put into setting this
+report in TEX, and Donald Knuth for designing the program that caused her
+troubles.
+
+The Artificial Intelligence Laboratory of the Massachusetts Institute of
+Technology, the Computer Science Department of Indiana University, the Computer
+and Information Sciences Department of the University of Oregon, and the NEC
+Research Institute supported the preparation of this report. Support for the
+MIT work was provided in part by the Advanced Research Projects Agency of the
+Department of Defense under Office of Naval Research contract N00014-80-C-0505.
+Support for the Indiana University work was provided by NSF grants NCS 83-04567
+and NCS 83-03325.
+
+[Go to first, previous, next page;   contents;   index]
+

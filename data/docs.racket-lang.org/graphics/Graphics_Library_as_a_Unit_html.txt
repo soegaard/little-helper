@@ -1,0 +1,61 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+► 13  Graphics Library as a Unit
+13.1  Signatures
+13.2  Unit with posn
+13.3  Unit without posn
+On this page:
+13.1 Signatures
+graphics^
+graphics: posn^
+13.2 Unit with posn
+graphics@
+13.3 Unit without posn
+graphics-posn-less@
+[...search manuals...]
+  top← prev  up  next → 
+
+13 Graphics Library as a Unit
+
+13.1 Signatures
+
+ (require graphics/graphics-sig)
+
+graphics^ : signature
+
+Includes all of the bindings defined earlier in this chapter, except the posn
+bindings of Position Operations.
+
+graphics:posn^ : signature
+
+Includes the posn bindings of Position Operations.
+
+13.2 Unit with posn
+
+ (require graphics/graphics-unit)
+
+graphics@ : unit?
+Imports mred^ and exports both graphics^ and graphics:posn^.
+
+13.3 Unit without posn
+
+ (require graphics/graphics-posn-less-unit)
+
+graphics-posn-less@ : unit?
+Imports mred^ and graphics:posn^ and exports graphics^.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

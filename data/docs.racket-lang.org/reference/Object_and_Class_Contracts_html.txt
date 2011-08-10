@@ -1,0 +1,297 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+On this page:
+class/ c
+absent
+->m
+->*m
+case->m
+->dm
+object/ c
+instanceof/ c
+object-contract
+mixin-contract
+make-mixin-contract
+is-a?/ c
+implementation?/ c
+subclass?/ c
+[...search manuals...]
+  top← prev  up  next → 
+
+5.7 Object and Class Contracts
+
+(class/c member-spec ...)
+ 
+member-spec   =   method-spec
+              |   (field field-spec ...)
+              |   (init field-spec ...)
+              |   (init-field field-spec ...)
+              |   (inherit method-spec ...)
+              |   (inherit-field field-spec ...)
+              |   (super method-spec ...)
+              |   (inner method-spec ...)
+              |   (override method-spec ...)
+              |   (augment method-spec ...)
+              |   (augride method-spec ...)
+              |   (absent absent-spec ...)
+                   
+method-spec   =   method-id
+              |   (method-id method-contract)
+                   
+ field-spec   =   field-id
+              |   (field-id contract-expr)
+                   
+absent-spec   =   method-id
+              |   (field field-id ...)
+Produces a contract for a class.
+
+There are two major categories of contracts listed in a class/c form: external
+and internal contracts. External contracts govern behavior when an object is
+instantiated from a class or when methods or fields are accessed via an object
+of that class. Internal contracts govern behavior when method or fields are
+accessed within the class hierarchy. This separation allows for stronger
+contracts for class clients and weaker contracts for subclasses.
+
+Method contracts must contain an additional initial argument which corresponds
+to the implicit this parameter of the method. This allows for contracts which
+discuss the state of the object when the method is called (or, for dependent
+contracts, in other parts of the contract). Alternative contract forms, such as
+->m, are provided as a shorthand for writing method contracts.
+
+Methods and fields listed in an absent clause must not be present in the class.
+
+The external contracts are as follows:
+
+  • A method contract without a tag describes the behavior of the
+    implementation of method-id on method sends to an object of the contracted
+    class. This contract will continue to be checked in subclasses until the
+    contracted class’s implementation is no longer the entry point for dynamic
+    dispatch.
+
+  • A field contract, tagged with field, describes the behavior of the value
+    contained in that field when accessed via an object of that class. Since
+    fields may be mutated, these contracts are checked on any external access
+    and/or mutation of the field.
+
+  • An initialization argument contract, tagged with init, describes the
+    expected behavior of the value paired with that name during class
+    instantiation. The same name can be provided more than once, in which case
+    the first such contract in the class/c form is applied to the first value
+    tagged with that name in the list of initialization arguments, and so on.
+
+  • The contracts listed in an init-field section are treated as if each
+    contract appeared in an init section and a field section.
+
+The internal contracts are as follows:
+
+  • A method contract, tagged with inherit, describes the behavior of the
+    method when invoked directly (i.e., via inherit) in any subclass of the
+    contracted class. This contract, like external method contracts, applies
+    until the contracted class’s method implementation is no longer the entry
+    point for dynamic dispatch.
+
+  • A field contract, tagged with inherit-field, describes the behavior of the
+    value contained in that field when accessed directly (i.e., via
+    inherit-field) in any subclass of the contracted class. Since fields may be
+    mutated, these contracts are checked on any access and/or mutation of the
+    field that occurs in such subclasses.
+
+  • A method contract, tagged with super, describes the behavior of method-id
+    when called by the super form in a subclass. This contract only affects
+    super calls in subclasses which call the contract class’s implementation of
+    method-id.
+
+  • A method contract, tagged with inner, describes the behavior the class
+    expects of an augmenting method in a subclass. This contract affects any
+    implementations of method-id in subclasses which can be called via inner
+    from the contracted class. This means a subclass which implements method-id
+    via augment or overment stop future subclasses from being affected by the
+    contract, since further extension cannot be reached via the contracted
+    class.
+
+  • A method contract, tagged with override, describes the behavior expected by
+    the contracted class for method-id when called directly (i.e. by the
+    application (method-id ...)). This form can only be used if overriding the
+    method in subclasses will change the entry point to the dynamic dispatch
+    chain (i.e., the method has never been augmentable).
+
+  • A method contract, tagged with either augment or augride, describes the
+    behavior provided by the contracted class for method-id when called
+    directly from subclasses. These forms can only be used if the method has
+    previously been augmentable, which means that no augmenting or overriding
+    implementation will change the entry point to the dynamic dispatch chain.
+    augment is used when subclasses can augment the method, and augride is used
+    when subclasses can override the current augmentation.
+
+(absent method-id ...)
+See class/c; use outside of a class/c form is a syntax error.
+
+(->m dom ... range)
+Similar to ->, except that the domain of the resulting contract contains one
+more element than the stated domain, where the first (implicit) argument is
+contracted with any/c. This contract is useful for writing simpler method
+contracts when no properties of this need to be checked.
+
+(->*m (mandatory-dom ...) (optional-dom ...) rest range)
+Similar to ->*, except that the mandatory domain of the resulting contract
+contains one more element than the stated domain, where the first (implicit)
+argument is contracted with any/c. This contract is useful for writing simpler
+method contracts when no properties of this need to be checked.
+
+(case->m (-> dom ... rest range) ...)
+Similar to case->, except that the mandatory domain of each case of the
+resulting contract contains one more element than the stated domain, where the
+first (implicit) argument is contracted with any/c. This contract is useful for
+writing simpler method contracts when no properties of this need to be checked.
+
+(->dm (mandatory-dependent-dom ...)
+      (optional-dependent-dom ...)
+      dependent-rest
+      pre-cond
+      dep-range)
+Similar to ->d, except that the mandatory domain of the resulting contract
+contains one more element than the stated domain, where the first (implicit)
+argument is contracted with any/c. In addition, this is appropriately bound in
+the body of the contract. This contract is useful for writing simpler method
+contracts when no properties of this need to be checked.
+
+(object/c member-spec ...)
+ 
+member-spec   =   method-spec
+              |   (field field-spec ...)
+                   
+method-spec   =   method-id
+              |   (method-id method-contract)
+                   
+ field-spec   =   field-id
+              |   (field-id contract-expr)
+Produces a contract for an object.
+
+Unlike the older form object-contract, but like class/c, arbitrary contract
+expressions are allowed. Also, method contracts for object/c follow those for
+class/c. An object wrapped with object/c behaves as if its class had been
+wrapped with the equivalent class/c contract.
+
+(instanceof/c class-contract) → contract?
+  class-contract : contract?
+Produces a contract for an object, where the object is an instance of a class
+that conforms to class-contract.
+
+(object-contract member-spec ...)
+ 
+            member-spec   =   (method-id method-contract)
+                          |   (field field-id contract-expr)
+                               
+        method-contract   =   (-> dom ... range)
+                          |   (->* (mandatory-dom ...)
+                                   (optional-dom ...)
+                                   rest
+                                   range)
+                          |   (->d (mandatory-dependent-dom ...)
+                                   (optional-dependent-dom ...)
+                                   dependent-rest
+                                   pre-cond
+                                   dep-range)
+                               
+                    dom   =   dom-expr
+                          |   keyword dom-expr
+                               
+                  range   =   range-expr
+                          |   (values range-expr ...)
+                          |   any
+                               
+          mandatory-dom   =   dom-expr
+                          |   keyword dom-expr
+                               
+           optional-dom   =   dom-expr
+                          |   keyword dom-expr
+                               
+                   rest   =  
+                          |   #:rest rest-expr
+                               
+mandatory-dependent-dom   =   [id dom-expr]
+                          |   keyword [id dom-expr]
+                               
+ optional-dependent-dom   =   [id dom-expr]
+                          |   keyword [id dom-expr]
+                               
+         dependent-rest   =  
+                          |   #:rest id rest-expr
+                               
+               pre-cond   =  
+                          |   #:pre-cond boolean-expr
+                               
+              dep-range   =   any
+                          |   [id range-expr] post-cond
+                          |   (values [id range-expr] ...) post-cond
+                               
+              post-cond   =  
+                          |   #:post-cond boolean-expr
+Produces a contract for an object.
+
+Each of the contracts for a method has the same semantics as the corresponding
+function contract, but the syntax of the method contract must be written
+directly in the body of the object-contract—much like the way that methods in
+class definitions use the same syntax as regular function definitions, but
+cannot be arbitrary procedures. Unlike the method contracts for class/c, the
+implicit this argument is not part of the contract. To allow for the use of
+this in dependent contracts, ->d contracts implicitly bind this to the object
+itself.
+
+mixin-contract : contract?
+A function contract that recognizes mixins. It guarantees that the input to the
+function is a class and the result of the function is a subclass of the input.
+
+(make-mixin-contract type ...) → contract?
+  type : (or/c class? interface?)
+Produces a function contract that guarantees the input to the function is a
+class that implements/subclasses each type, and that the result of the function
+is a subclass of the input.
+
+(is-a?/c type) → flat-contract?
+  type : (or/c class? interface?)
+Accepts a class or interface and returns a flat contract that recognizes
+objects that instantiate the class/interface.
+
+(implementation?/c interface) → flat-contract?
+  interface : interface?
+Returns a flat contract that recognizes classes that implement interface.
+
+(subclass?/c class) → flat-contract?
+  class : class?
+Returns a flat contract that recognizes classes that are subclasses of class.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

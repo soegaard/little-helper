@@ -1,0 +1,178 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+Inherited methods:
+from dc<%>
+cache-font-metrics-key
+clear
+copy
+draw-arc
+draw-bitmap
+draw-bitmap-section
+draw-ellipse
+draw-line
+draw-lines
+draw-path
+draw-point
+draw-polygon
+draw-rectangle
+draw-rounded-rectangle
+draw-spline
+draw-text
+end-doc
+end-page
+erase
+flush
+get-alpha
+get-background
+get-brush
+get-char-height
+get-char-width
+get-clipping-region
+get-device-scale
+get-font
+get-gl-context
+get-initial-matrix
+get-origin
+get-pen
+get-rotation
+get-scale
+get-size
+get-smoothing
+get-text-background
+get-text-extent
+get-text-foreground
+get-text-mode
+get-transformation
+glyph-exists?
+ok?
+resume-flush
+rotate
+scale
+set-alpha
+set-background
+set-brush
+set-clipping-rect
+set-clipping-region
+set-font
+set-initial-matrix
+set-origin
+set-pen
+set-rotation
+set-scale
+set-smoothing
+set-text-background
+set-text-foreground
+set-text-mode
+set-transformation
+start-doc
+start-page
+suspend-flush
+transform
+translate
+try-color
+[...search manuals...]
+  top← prev  up  next → 
+
+printer-dc% : class?
+  superclass: object%
+
+  extends:  dc<%>
+A printer-dc% object is a printer device context. A newly created printer-dc%
+object obtains orientation (portrait versus landscape) and scaling information
+from the current ps-setup% object, as determined by the current-ps-setup
+parameter. This information can be configured by the user through a dialog
+shown by get-page-setup-from-user.
+
+Be sure to use the following methods to start/end drawing:
+
+  • start-doc
+
+  • start-page
+
+  • end-page
+
+  • end-doc
+
+Attempts to use a drawing method outside of an active page raises an exception.
+
+See also post-script-dc%.
+
+When a printer-dc% object is created, the user gets platform-specific modal
+dialogs for configuring the output. If the user cancels the dialog, the ok?
+method of the object returns #f.
+
+(new printer-dc% [[parent parent]]) → (is-a?/c printer-dc%)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%) false/c)
+            =   #f
+If parent is not #f, it is used as the parent window of the configuration
+dialog.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

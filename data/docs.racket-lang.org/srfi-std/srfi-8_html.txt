@@ -1,0 +1,148 @@
+Title
+
+SRFI 8: receive: Binding to multiple values
+
+Author
+
+John David Stone
+
+Department of Mathematics and Computer Science, Grinnell College, Grinnell,
+Iowa 50112, email.
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access the discussion via the
+archive of the mailing list.
+
+  • Received: 1999/05/27
+  • Draft: 1999/07/01-1999/08/30
+  • Final: 1999/08/30
+
+Related SRFIs
+
+The syntax proposed in this SRFI is used in the reference implementation of
+SRFI-1, ``List library.''
+
+Abstract
+
+The only mechanism that R^5RS provides for binding identifiers to the values of
+a multiple-valued expression is the primitive call-with-values. This SRFI
+proposes a more concise, more readable syntax for creating such bindings.
+
+Rationale
+
+Although R^5RS supports multiple-valued expressions, it provides only the
+essential procedures values and call-with-values. It is evident that the
+authors expected Scheme programmers to define other constructs in terms of
+these, abstracting common patterns of use.
+
+One such pattern consists in binding an identifier to each of the values of a
+multiple-valued expression and then evaluating an expression in the scope of
+the bindings. As an instance of this pattern, consider the following excerpt
+from a quicksort procedure:
+
+
+(call-with-values
+  (lambda ()
+    (partition (precedes pivot) others))
+  (lambda (fore aft)
+    (append (qsort fore) (cons pivot (qsort aft)))))
+
+
+Here partition is a multiple-valued procedure that takes two arguments, a
+predicate and a list, and returns two lists, one comprising the list elements
+that satisfy the predicate, the other those that do not. The purpose of the
+expression shown is to partition the list others, sort each of the sublists,
+and recombine the results into a sorted list.
+
+For our purposes, the important step is the binding of the identifiers fore and
+aft to the values returned by partition. Expressing the construction and use of
+these bindings with the call-by-values primitive is cumbersome: One must
+explicitly embed the expression that provides the values for the bindings in a
+parameterless procedure, and one must explicitly embed the expression to be
+evaluated in the scope of those bindings in another procedure, writing as its
+parameters the identifiers that are to be bound to the values received.
+
+These embeddings are boilerplate, exposing the underlying binding mechanism but
+not revealing anything relevant to the particular program in which it occurs.
+So the use of a syntactic abstraction that exposes only the interesting parts
+-- the identifiers to be bound, the multiple-valued expression that supplies
+the values, and the body of the receiving procedure -- makes the code more
+concise and more readable:
+
+
+(receive (fore aft) (partition (precedes pivot) others)
+  (append (qsort fore) (cons pivot (qsort aft))))
+
+
+The advantages are similar to those of a let-expression over a procedure call
+with a lambda-expression as its operator. In both cases, cleanly separating a
+``header'' in which the bindings are established from a ``body'' in which they
+are used makes it easier to follow the code.
+
+Specification
+
+(receive <formals> <expression> <body>)     library syntax
+
+<Formals>, <expression>, and <body> are as described in R^5RS. Specifically,
+<formals> can have any of three forms:
+
+  • (<variable[1]> ... <variable[n]>): The environment in which the
+    receive-expression is evaluated is extended by binding <variable[1]>, ...,
+    <variable[n]> to fresh locations. The <expression> is evaluated, and its
+    values are stored into those locations. (It is an error if <expression>
+    does not have exactly n values.)
+
+  • <variable>: The environment in which the receive-expression is evaluated is
+    extended by binding <variable> to a fresh location. The <expression> is
+    evaluated, its values are converted into a newly allocated list, and the
+    list is stored in the location bound to <variable>.
+
+  • (<variable[1]> ... <variable[n]> . <variable[n + 1]>): The environment in
+    which the receive-expression is evaluated is extended by binding <variable
+    [1]>, ..., <variable[n + 1]> to fresh locations. The <expression> is
+    evaluated. Its first n values are stored into the locations bound to
+    <variable[1]> ... <variable[n]>. Any remaining values are converted into a
+    newly allocated list, which is stored into the location bound to <variable
+    [n + 1]>. (It is an error if <expression> does not have at least n values.)
+
+In any case, the expressions in <body> are evaluated sequentially in the
+extended environment. The results of the last expression in the body are the
+values of the receive-expression.
+
+Reference implementation
+
+
+(define-syntax receive
+  (syntax-rules ()
+    ((receive formals expression body ...)
+     (call-with-values (lambda () expression)
+                       (lambda formals body ...)))))
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Copyright (C) John David Stone (1999). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Mike Sperber

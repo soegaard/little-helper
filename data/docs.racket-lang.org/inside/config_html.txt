@@ -1,0 +1,238 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+[...search manuals...]
+  top← prev  up  next → 
+
+9 Parameterizations
+
+A parameterization is a set of parameter values. Each thread has its own
+initial parameterization, which is extended functionally and superseded by
+parameterizations that are attached to a particular continuation mark.
+
+Parameterization information is stored in a Scheme_Config record. For the
+currently executing thread, scheme_current_config returns the current
+parameterization.
+
+To obtain parameter values, a Scheme_Config is combined with the current
+threads Scheme_Thread_Cell_Table, as stored in the thread record’s cell_values
+field.
+
+Parameter values for built-in parameters are obtained and modified (for the
+current thread) using scheme_get_param and scheme_set_param. Each parameter is
+stored as a Scheme_Object * value, and the built-in parameters are accessed
+through the following indices:
+
+  • MZCONFIG_ENV — current-namespace (use scheme_get_env)
+
+  • MZCONFIG_INPUT_PORT — current-input-port
+
+  • MZCONFIG_OUTPUT_PORT — current-output-port
+
+  • MZCONFIG_ERROR_PORT — current-error-port
+
+  • MZCONFIG_ERROR_DISPLAY_HANDLER — error-display-handler
+
+  • MZCONFIG_ERROR_PRINT_VALUE_HANDLER — error-value->string-handler
+
+  • MZCONFIG_EXIT_HANDLER — exit-handler
+
+  • MZCONFIG_INIT_EXN_HANDLER — uncaught-exception-handler
+
+  • MZCONFIG_EVAL_HANDLER — current-eval
+
+  • MZCONFIG_LOAD_HANDLER — current-load
+
+  • MZCONFIG_PRINT_HANDLER — current-print
+
+  • MZCONFIG_PROMPT_READ_HANDLER — current-prompt-read
+
+  • MZCONFIG_CAN_READ_GRAPH — read-accept-graph
+
+  • MZCONFIG_CAN_READ_COMPILED — read-accept-compiled
+
+  • MZCONFIG_CAN_READ_BOX — read-accept-box
+
+  • MZCONFIG_CAN_READ_PIPE_QUOTE — read-accept-bar-quote
+
+  • MZCONFIG_PRINT_GRAPH — print-graph
+
+  • MZCONFIG_PRINT_STRUCT — print-struct
+
+  • MZCONFIG_PRINT_BOX — print-box
+
+  • MZCONFIG_CASE_SENS — read-case-sensitive
+
+  • MZCONFIG_SQUARE_BRACKETS_ARE_PARENS — read-square-brackets-as-parens
+
+  • MZCONFIG_CURLY_BRACES_ARE_PARENS — read-curly-braces-as-parens
+
+  • MZCONFIG_ERROR_PRINT_WIDTH — error-print-width
+
+  • MZCONFIG_ALLOW_SET_UNDEFINED — allow-compile-set!-undefined
+
+  • MZCONFIG_CUSTODIAN — current-custodian
+
+  • MZCONFIG_USE_COMPILED_KIND — use-compiled-file-paths
+
+  • MZCONFIG_LOAD_DIRECTORY — current-load-relative-directory
+
+  • MZCONFIG_COLLECTION_PATHS — current-library-collection-paths
+
+  • MZCONFIG_PORT_PRINT_HANDLER — global-port-print-handler
+
+  • MZCONFIG_LOAD_EXTENSION_HANDLER — current-load-extension
+
+To get or set a parameter value for a thread other than the current one, use
+scheme_get_thread_param and scheme_set_thread_param, each of which takes a
+Scheme_Thread_Cell_Table to use in resolving or setting a parameter value.
+
+When installing a new parameter with scheme_set_param, no check is performed on
+the supplied value to ensure that it is a legal value for the parameter; this
+is the responsibility of the caller of scheme_set_param. Note that Boolean
+parameters should only be set to the values #t and #f.
+
+New primitive parameter indices are created with scheme_new_param and
+implemented with scheme_make_parameter and scheme_param_config.
+
+Scheme_Object*   scheme_get_param ( Scheme_Config* config,
+
+                                    int param_id)
+
+Gets the current value (for the current thread) of the parameter specified by
+param_id.
+
+Scheme_Object*   scheme_set_param ( Scheme_Config* config,
+
+                                    int param_id,
+
+                                    Scheme_Object* v)
+
+Sets the current value (for the current thread) of the parameter specified by
+param_id.
+
+Scheme_Object*
+
+scheme_get_thread_param ( Scheme_Config* config,
+
+                          Scheme_Thread_Cell_Table* cells,
+
+                          int param_id)
+
+Like scheme_get_param, but using an arbitrary thread’s cell-value table.
+
+Scheme_Object*
+
+scheme_set_thread_param ( Scheme_Config* config,
+
+                          Scheme_Thread_Cell_Table* cells,
+
+                          int param_id,
+
+                          Scheme_Object* v)
+
+Like scheme_set_param, but using an arbitrary thread’s cell-value table.
+
+Scheme_Object*   scheme_extend_config ( Scheme_Config* base,
+
+                                        int param_id,
+
+                                        Scheme_Object* v)
+
+Creates and returns a parameterization that extends base with a new value v (in
+all threads) for the parameter param_id. Use scheme_install_config to make this
+configuration active in the current thread.
+
+void   scheme_install_config ( Scheme_Config* config)
+
+Adjusts the current thread’s continuation marks to make config the current
+parameterization. Typically, this function is called after
+scheme_push_continuation_frame to establish a new continuation frame, and then
+scheme_pop_continuation_frame is called later to remove the frame (and thus the
+parameterization).
+
+Scheme_Thread_Cell_Table*
+
+scheme_inherit_cells ( Scheme_Thread_Cell_Table* cells)
+
+Creates a new thread-cell-value table, copying values for preserved thread
+cells from cells.
+
+int   scheme_new_param ( )
+
+Allocates a new primitive parameter index. This function must be called before
+scheme_basic_env, so it is only available to embedding applications (i.e., not
+extensions).
+
+Scheme_Object*   scheme_register_parameter ( Scheme_Prim* function,
+
+                                             char* name,
+
+                                             int exnid)
+
+Use this function instead of the other primitive-constructing functions, like
+scheme_make_prim, to create a primitive parameter procedure. See also
+scheme_param_config, below. This function is only available to embedding
+applications (i.e., not extensions).
+
+Scheme_Object*   scheme_param_config ( char* name,
+
+                                       Scheme_Object* param,
+
+                                       int argc,
+
+                                       Scheme_Object** argv,
+
+                                       int arity,
+
+                                       Scheme_Prim* check,
+
+                                       char* expected,
+
+                                       int isbool)
+
+Call this procedure in a primitive parameter procedure to implement the work of
+getting or setting the parameter. The name argument should be the parameter
+procedure name; it is used to report errors. The param argument is a fixnum
+corresponding to the primitive parameter index returned by scheme_new_param.
+The argc and argv arguments should be the un-touched and un-tested arguments
+that were passed to the primitive parameter. Argument-checking is performed
+within scheme_param_config using arity, check, expected, and isbool:
+
+  • If arity is non-negative, potential parameter values must be able to accept
+    the specified number of arguments. The check and expected arguments should
+    be NULL.
+
+  • If check is not NULL, it is called to check a potential parameter value.
+    The arguments passed to check are always 1 and an array that contains the
+    potential parameter value. If isbool is 0 and check returns scheme_false,
+    then a type error is reported using name and expected. If isbool is 1, then
+    a type error is reported only when check returns NULL and any non-NULL
+    return value is used as the actual value to be stored for the parameter.
+
+  • Otherwise, isbool should be 1. A potential procedure argument is then
+    treated as a Boolean value.
+
+This function is only available to embedding applications (i.e., not
+extensions).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

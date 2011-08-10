@@ -1,0 +1,408 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+allow-scroll-to-last
+allow-tab-exit
+call-as-primary-owner
+force-display-focus
+get-editor
+get-line-count
+horizontal-inset
+lazy-refresh
+on-char
+on-event
+on-focus
+on-paint
+on-size
+scroll-to
+scroll-with-bottom-base
+set-editor
+set-line-count
+vertical-inset
+wheel-step
+Inherited methods:
+from canvas<%>
+accept-tab-focus
+flush
+get-canvas-background
+get-dc
+min-client-height
+min-client-width
+on-tab-in
+resume-flush
+set-canvas-background
+set-resize-corner
+suspend-flush
+warp-pointer
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-move
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+[...search manuals...]
+  top← prev  up  next → 
+
+editor-canvas% : class?
+  superclass: object%
+
+  extends:  canvas<%>
+An editor-canvas% object manages and displays a text% or pasteboard% object.
+
+(new editor-canvas%    [parent parent]                            
+                     [ [editor editor]                            
+                       [style style]                              
+                       [scrolls-per-page scrolls-per-page]        
+                       [label label]                              
+                       [wheel-step wheel-step]                    
+                       [line-count line-count]                    
+                       [horizontal-inset horizontal-inset]        
+                       [vertical-inset vertical-inset]            
+                       [enabled enabled]                          
+                       [vert-margin vert-margin]                  
+                       [horiz-margin horiz-margin]                
+                       [min-width min-width]                      
+                       [min-height min-height]                    
+                       [stretchable-width stretchable-width]      
+                       [stretchable-height stretchable-height]])  
+ → (is-a?/c editor-canvas%)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+   editor   :   (or/c (or/c (is-a?/c text%) (is-a?/c pasteboard%)) false/c)
+            =   #f
+               (listof (one-of/c 'no-border 'control-border 'combo
+                                 'no-hscroll 'no-vscroll
+   style   :                     'hide-hscroll 'hide-vscroll
+                                 'auto-vscroll 'auto-hscroll
+                                 'resize-corner 'deleted 'transparent))
+           =   null
+  scrolls-per-page : (integer-in 1 10000) = 100
+  label : (or/c label-string? false/c) = #f
+  wheel-step : (or/c (integer-in 1 10000) false/c) = 3
+  line-count : (or/c (integer-in 1 1000) false/c) = #f
+  horizontal-inset : (integer-in 0 1000) = 5
+  vertical-inset : (integer-in 0 1000) = 5
+  enabled : any/c = #t
+  vert-margin : (integer-in 0 1000) = 0
+  horiz-margin : (integer-in 0 1000) = 0
+  min-width : (integer-in 0 10000) = graphical-minimum-width
+  min-height : (integer-in 0 10000) = graphical-minimum-height
+  stretchable-width : any/c = #t
+  stretchable-height : any/c = #t
+If a canvas is initialized with #f for editor, install an editor later with
+set-editor.
+
+The style list can contain the following flags:
+
+  • 'no-border — omits a border around the canvas
+
+  • 'control-border — gives the canvas a border that is like a text-field%
+    control
+
+  • 'combo — gives the canvas a combo button that is like a combo-field%
+    control; this style is intended for use with 'control-border,
+    'hide-hscroll, and 'hide-vscroll
+
+  • 'no-hscroll — disallows horizontal scrolling and hides the horizontal
+    scrollbar
+
+  • 'no-vscroll — disallows vertical scrolling and hides the vertical scrollbar
+
+  • 'hide-hscroll — allows horizontal scrolling, but hides the horizontal
+    scrollbar
+
+  • 'hide-vscroll — allows vertical scrolling, but hides the vertical scrollbar
+
+  • 'auto-hscroll — automatically hides the horizontal scrollbar when unneeded
+    (unless 'no-hscroll or 'hide-hscroll is specified)
+
+  • 'auto-vscroll — automatically hides the vertical scrollbar when unneeded
+    (unless 'no-vscroll or 'hide-vscroll is specified)
+
+  • 'resize-corner — leaves room for a resize control at the canvas’s bottom
+    right when only one scrollbar is visible
+
+  • 'deleted — creates the canvas as initially hidden and without affecting
+    parent’s geometry; the canvas can be made active later by calling parent’s
+    add-child method
+
+  • 'transparent — the canvas is “erased” before an update using its parent
+    window’s background; see canvas<%> for information on the interaction of
+    'transparent and offscreen buffering
+
+While vertical scrolling of text editors is based on lines, horizontal
+scrolling and pasteboard vertical scrolling is based on a fixed number of steps
+per horizontal page. The scrolls-per-page argument sets this value.
+
+If provided, the wheel-step argument is passed on to the wheel-step method. The
+default wheel step can be overridden globally though the 'GRacket:wheelStep
+preference; see Preferences.
+
+If line-count is not #f, it is passed on to the set-line-count method.
+
+If horizontal-inset is not 5, it is passed on to the horizontal-inset method.
+Similarly, if vertical-inset is not 5, it is passed on to the vertical-inset
+method.
+
+For information about the enabled argument, see window<%>. For information
+about the horiz-margin and vert-margin arguments, see subarea<%>. For
+information about the min-width, min-height, stretchable-width, and
+stretchable-height arguments, see area<%>.
+
+(send an-editor-canvas allow-scroll-to-last) → boolean?
+(send an-editor-canvas allow-scroll-to-last on?) → void?
+  on? : any/c
+Enables or disables last-line scrolling, or gets the current enable state. If
+last-line scrolling is enabled, then an editor displayed in this canvas can be
+scrolled so that the last line of text is at the top of the canvas (or bottom
+of the canvas when bottom-based scrolling is enabled; see
+scroll-with-bottom-base). By default, an editor can only be scrolled until the
+last line is at the bottom (or top) of the canvas.
+
+(send an-editor-canvas allow-tab-exit) → boolean?
+(send an-editor-canvas allow-tab-exit on?) → void?
+  on? : any/c
+Gets or sets whether tab-exit is enabled for the editor canvas. When tab-exit
+is enabled, the user can move the keyboard focus out of the editor using the
+Tab and arrow keys, invoke the default button using the Enter/Return key, or
+invoke a dialog’s close action with Escape. By default, tab-exit is disabled.
+
+When tab-exit is enabled for an editor canvas, Tab and Enter keyboard events
+are consumed by a frame’s default on-traverse-char method; in addition, a
+dialog’s default method consumes Escape key events. Otherwise, on-traverse-char
+allows the keyboard events to be propagated to the canvas.
+
+(send an-editor-canvas call-as-primary-owner f) → any
+  f : (-> any)
+Calls a thunk and returns the value. While the thunk is being called, if the
+canvas has an editor, the editor’s get-admin method returns the administrator
+for this canvas. This method is only useful when an editor is displayed in
+multiple canvases.
+
+(send an-editor-canvas force-display-focus) → boolean?
+(send an-editor-canvas force-display-focus on?) → void?
+  on? : any/c
+Enables or disables force-focus mode. In force-focus mode, the caret or
+selection of the editor displayed in this canvas is drawn even when the canvas
+does not have the keyboard focus.
+
+(send an-editor-canvas get-editor)
+ → (or/c (or/c (is-a?/c text%) (is-a?/c pasteboard%)) false/c)
+Returns the editor currently displayed by this canvas, or #f if the canvas does
+not have an editor.
+
+(send an-editor-canvas get-line-count)
+ → (or/c (integer-in 1 1000) false/c)
+Returns a line count installed with set-line-count, or #f if no minimum line
+count is set.
+
+(send an-editor-canvas horizontal-inset)
+ → (integer-in 1 10000)
+(send an-editor-canvas horizontal-inset step) → void?
+  step : (integer-in 1 10000)
+Gets or sets the number of pixels within the canvas reserved to the left and
+right of editor content. The default is 5.
+
+(send an-editor-canvas lazy-refresh) → boolean?
+(send an-editor-canvas lazy-refresh on?) → void?
+  on? : any/c
+Enables or disables lazy-refresh mode, or gets the current enable state. In
+lazy-refresh mode, the canvas’s refresh method is called when the window needs
+to be updated, rather than on-paint. By default, an editor-canvas% object is
+not in lazy-refresh mode.
+
+(send an-editor-canvas on-char event) → void?
+  event : (is-a?/c key-event%)
+Overrides on-char in canvas<%>.
+Handles 'wheel-up and 'wheel-down events by scrolling vertically. Otherwise,
+passes the event to the canvas’s editor, if any, by calling its on-char method.
+
+See also get-editor.
+
+(send an-editor-canvas on-event event) → void?
+  event : (is-a?/c mouse-event%)
+Overrides on-event in canvas<%>.
+Passes the event to the canvas’s editor, if any, by calling its on-event
+method.
+
+See also get-editor.
+
+(send an-editor-canvas on-focus on?) → void?
+  on? : any/c
+Overrides on-focus in window<%>.
+Enables or disables the caret in the display’s editor, if there is one.
+
+(send an-editor-canvas on-paint) → void?
+Overrides on-paint in canvas<%>.
+Repaints the editor, or clears the canvas if no editor is being displayed.
+
+This method is called after clearing the margin around the editor, unless the
+canvas is created with the 'transparent style, but the editor area is not
+automatically cleared. In other words, editor-canvas% update by default is like
+canvas% update with the 'no-autoclear style, except that the margin around the
+editor area is always cleared.
+
+(send an-editor-canvas on-size   width          
+                                 height)   →   void?
+  width : (integer-in 0 10000)
+  height : (integer-in 0 10000)
+Overrides on-size in window<%>.
+If the canvas is displaying an editor, its on-display-size method is called.
+
+(send an-editor-canvas scroll-to    localx          
+                                    localy          
+                                    w               
+                                    h               
+                                    refresh?        
+                                  [ bias])     →   boolean?
+  localx : real?
+  localy : real?
+  w : (and/c real? (not/c negative?))
+  h : (and/c real? (not/c negative?))
+  refresh? : any/c
+  bias : (one-of/c 'start 'end 'none) = 'none
+Requests scrolling so that the given region in the currently displayed editor
+is made visible.
+
+The localx, localy, w, and h arguments specify a region of the editor to be
+made visible by the scroll (in editor coordinates).
+
+If refresh? is not #f, then the editor is updated immediately after a
+successful scroll.
+
+The bias argument is one of:
+
+  • 'start — if the range doesn’t fit in the visible area, show the top-left
+    region
+
+  • 'none — no special scrolling instructions
+
+  • 'end — if the range doesn’t fit in the visible area, show the bottom-right
+    region
+
+The return value is #t if the display is scrolled, #f if not (either because
+the requested region is already visible, because the display has zero size, or
+because the editor is currently printing).
+
+(send an-editor-canvas scroll-with-bottom-base) → boolean?
+(send an-editor-canvas scroll-with-bottom-base on?) → void?
+  on? : any/c
+Enables or disables bottom-base scrolling, or gets the current enable state. If
+bottom-base scrolling is on, then scroll positions are determined by line
+boundaries aligned with the bottom of the viewable area (rather than with the
+top of the viewable area). If last-line scrolling is also enabled (see
+allow-scroll-to-last), then the editor is bottom-aligned in the display area
+even when the editor does not fill the viewable area.
+
+(send an-editor-canvas set-editor    edit             
+                                   [ redraw?])   →   void?
+  edit : (or/c (or/c (is-a?/c text%) (is-a?/c pasteboard%)) false/c)
+  redraw? : any/c = #t
+Sets the editor that is displayed by the canvas, releasing the current editor
+(if any). If the new editor already has an administrator that is not associated
+with an editor-canvas%, then the new editor is not installed into the canvas.
+
+If redraw? is #f, then the editor is not immediately drawn; in this case,
+something must force a redraw later (e.g., a call to the on-paint method).
+
+If the canvas has a line count installed with set-line-count, the canvas’s
+minimum height is adjusted.
+
+(send an-editor-canvas set-line-count count) → void?
+  count : (or/c (integer-in 1 1000) false/c)
+Sets the canvas’s graphical minimum height to display a particular number of
+lines of text. The line height is determined by measuring the difference
+between the top and bottom of a displayed editor’s first line. The minimum
+height is not changed until the canvas gets an editor. When the canvas’s editor
+is changed, the minimum height is recalculated.
+
+If the line count is set to #f, then the canvas’s graphical minimum height is
+restored to its original value.
+
+(send an-editor-canvas vertical-inset) → (integer-in 1 10000)
+(send an-editor-canvas vertical-inset step) → void?
+  step : (integer-in 1 10000)
+Gets or sets the number of pixels within the canvas reserved above and below
+editor content. The default is 5.
+
+(send an-editor-canvas wheel-step)
+ → (or/c (integer-in 1 10000) false/c)
+(send an-editor-canvas wheel-step step) → void?
+  step : (or/c (integer-in 1 10000) false/c)
+Gets or sets the number of vertical scroll steps taken for one click of the
+mouse wheel via a 'wheel-up or 'wheel-down key-event%. A #f value disables
+special handling for wheel events (i.e., wheel events are passed on to the
+canvas’s editor).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

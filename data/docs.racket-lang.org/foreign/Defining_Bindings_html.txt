@@ -1,0 +1,104 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 5  Derived Utilities
+ 5.1  Safe Homogenous Vectors
+ 5.2  Safe C Vectors
+ 5.3  Tagged C Pointer Types
+ 5.4  Defining Bindings
+ 5.5  Allocation and Finalization
+ 5.6  Atomic Execution
+ 5.7  Speculatively Atomic Execution
+ 5.8  Objective-C FFI
+ 5.9  File Security-Guard Checks
+5.10  Windows API Helpers
+On this page:
+define-ffi-definer
+make-not-available
+provide-protected
+[...search manuals...]
+  top← prev  up  next → 
+
+5.4 Defining Bindings
+
+ (require ffi/unsafe/define)
+
+(define-ffi-definer define-id ffi-lib-expr
+  option ...)
+ 
+option   =   #:provide provide-id
+         |   #:define core-define-id
+         |   #:default-make-fail default-make-fail-expr
+Binds define-id as a definition form to extract bindings from the library
+produced by ffi-lib-expr. The syntax of define-id is
+
+    (define-id id type-expr
+      bind-option ...)
+     
+    bind-option   =   #:c-id c-id
+                  |   #:wrap wrap-expr
+                  |   #:make-fail make-fail-expr
+                  |   #:fail fail-expr
+
+A define-id form binds id by extracting a binding with the name c-id from the
+library produced by ffi-lib-expr, where c-id defaults to id. The other options
+support further wrapping and configuration:
+
+  • Before the extracted result is bound as id, it is passed to the result of
+    wrap-expr, which defaults to values. Expressions such as (allocator delete)
+    or (deallocator) are useful as wrap-exprs.
+
+  • The #:make-fail and #:fail options are mutually exclusive; if
+    make-fail-expr is provided, it is applied to 'id to obtain the last
+    argument to get-ffi-obj; if fail-expr is provided, it is supplied directly
+    as the last argument to get-ffi-obj. The make-not-available function is
+    useful as make-fail-expr to cause a use of id to report an error when it is
+    applied if c-id was not found in the foreign library.
+
+If provide-id is provided to define-ffi-definer, then define-id also provides
+its binding using provide-id. The provide-protected form is usually a good
+choice for provide-id.
+
+If core-define-id is provided to define-ffi-definer, then code-define-id is
+used in place of define in the expansion of define-id for each binding.
+
+If default-make-fail-expr is provided to define-ffi-definer, it serves as the
+default #:make-fail value for define-id.
+
+For example,
+
+    (define-ffi-definer define-gtk gtk-lib)
+
+binds define-gtk to extract FFI bindings from gtk-lib, so that gtk_rc_parse
+could be bound as
+
+    (define-gtk gtk_rc_parse (_fun _path -> _void))
+
+If gtk_rc_parse is not found, then define-gtk reports an error immediately. If
+define-gtk is instead defined with
+
+    (define-ffi-definer define-gtk gtk-lib
+       #:default-make-fail make-not-available)
+
+then if gtk_rc_parse is not found in gtk-lib, an error is reported only when
+gtk_rc_parse is called.
+
+(make-not-available name) → (#:rest list? -> any/c)
+  name : symbol?
+Returns a procedure that takes any number of arguments and reports an error
+message from name. This function is intended for using with #:make-fail or
+#:default-make-fail in define-ffi-definer
+
+(provide-protected provide-spec ...)
+Equivalent to (provide (protect-out provide-spec ...)). The provide-protected
+identifier is useful with #:provide in define-ffi-definer.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

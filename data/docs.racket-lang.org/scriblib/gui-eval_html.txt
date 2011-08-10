@@ -1,0 +1,93 @@
+▼  Scriblib: Extra Scribble Libraries
+1  Examples Using the GUI Toolbox
+2  Figures
+3  Bibliographies
+4  Bib Te X Bibliographies
+5  Footnotes
+6  Conditional Content
+On this page:
+gui-interaction
+gui-interaction-eval
+gui-interaction-eval-show
+gui-racketblock+ eval
+gui-racketmod+ eval
+gui-def+ int
+gui-defs+ int
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Examples Using the GUI Toolbox
+
+ (require scriblib/gui-eval)
+The scriblib/gui-eval library support example evaluations that use racket/gui
+facilities (as opposed to just racket/draw) to generate text and image results.
+
+The trick is that racket/gui is not generally available when rendering
+documentation, because it requires a GUI context. Text and image output is
+rendered to an image file when the MREVAL environment variable is set, so run
+the enclosing document once with the environment varibale to generate the
+images. Future runs (with the environment variable unset) use the generated
+image.
+
+(gui-interaction datum ...)
+(gui-interaction
+ #:eval+opts the-eval get-predicate? get-render
+             get-get-width get-get-height
+ datum ...)
+(gui-interaction-eval datum ...)
+(gui-interaction-eval
+ #:eval+opts the-eval get-predicate? get-render
+             get-get-width get-get-height
+ datum ...)
+(gui-interaction-eval-show datum ...)
+(gui-interaction-eval-show
+ #:eval+opts the-eval get-predicate? get-render
+             get-get-width get-get-height
+ datum ...)
+(gui-racketblock+eval datum ...)
+(gui-racketblock+eval
+ #:eval+opts the-eval get-predicate? get-render
+             get-get-width get-get-height
+ datum ...)
+(gui-racketmod+eval datum ...)
+(gui-racketmod+eval
+ #:eval+opts the-eval get-predicate? get-render
+             get-get-width get-get-height
+ datum ...)
+(gui-def+int datum ...)
+(gui-def+int
+ #:eval+opts the-eval get-predicate? get-render
+             get-get-width get-get-height
+ datum ...)
+(gui-defs+int datum ...)
+(gui-defs+int
+ #:eval+opts the-eval get-predicate? get-render
+             get-get-width get-get-height
+ datum ...)
+The first option of each of the above is like interaction, etc., but actually
+evaluating the forms only when the MREVAL environment variable is set, and then
+in an evaluator that is initialized with racket/gui/base and slideshow.
+
+The second option of each allows you to specify your own evaluator via the
+the-eval argument and then to specify four thunks that return functions for
+finding and rendering graphical objects:
+
+  • get-predicate? : (-> (-> any/c boolean?)) Determines if a value is a
+    graphical object (and thus handled by the other operations)
+
+  • get-render : (-> (-> any/c (is-a?/c dc<%>) number? number? void?)) Draws a
+    graphical object (only called if the predicate returned #t; the first
+    argument will be the value for which the predicate holds).
+
+  • get-get-width : (-> (-> any/c number?)) Gets the width of a graphical
+    object (only called if the predicate returned #t; the first argument will
+    be the value for which the predicate holds).
+
+  • get-get-height : (-> (-> any/c number?)) Gets the height of a graphical
+    object (only called if the predicate returned #t; the first argument will
+    be the value for which the predicate holds).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

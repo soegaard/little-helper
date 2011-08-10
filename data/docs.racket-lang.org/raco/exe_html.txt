@@ -1,0 +1,798 @@
+▼  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+► 2  raco exe: Creating Stand-Alone Executables
+2.1  API for Creating Executables
+2.2  Installation-Specific Launchers
+On this page:
+2.1 API for Creating Executables
+create-embedding-executable
+make-embedding-executable
+write-module-bundle
+embedding-executable-is-directory?
+embedding-executable-is-actually-directory?
+embedding-executable-put-file-extension+ style+ filters
+embedding-executable-add-suffix
+2.1.1 Executable Creation Signature
+compiler: embed^
+2.1.2 Executable Creation Unit
+compiler: embed@
+2.1.3 Finding the name of the executable
+find-exe
+2.2 Installation-Specific Launchers
+2.2.1 Creating Launchers
+make-gracket-launcher
+make-racket-launcher
+make-gracket-program-launcher
+make-racket-program-launcher
+install-gracket-program-launcher
+install-racket-program-launcher
+make-mred-launcher
+make-mred-program-launcher
+install-mred-program-launcher
+make-mzscheme-launcher
+make-mzscheme-program-launcher
+install-mzscheme-program-launcher
+2.2.2 Launcher Path and Platform Conventions
+gracket-program-launcher-path
+racket-program-launcher-path
+gracket-launcher-is-directory?
+racket-launcher-is-directory?
+gracket-launcher-is-actually-directory?
+racket-launcher-is-actually-directory?
+gracket-launcher-add-suffix
+racket-launcher-add-suffix
+gracket-launcher-put-file-extension+ style+ filters
+racket-launcher-put-file-extension+ style+ filters
+mred-program-launcher-path
+mred-launcher-is-directory?
+mred-launcher-is-actually-directory?
+mred-launcher-add-suffix
+mred-launcher-put-file-extension+ style+ filters
+mzscheme-program-launcher-path
+mzscheme-launcher-is-directory?
+mzscheme-launcher-is-actually-directory?
+mzscheme-launcher-add-suffix
+mzscheme-launcher-put-file-extension+ style+ filters
+2.2.3 Launcher Configuration
+gracket-launcher-up-to-date?
+racket-launcher-up-to-date?
+build-aux-from-path
+current-launcher-variant
+available-gracket-variants
+available-racket-variants
+mred-launcher-up-to-date?
+mzscheme-launcher-up-to-date?
+available-mred-variants
+available-mzscheme-variants
+2.2.4 Launcher Creation Signature
+launcher^
+2.2.5 Launcher Creation Unit
+launcher@
+[...search manuals...]
+  top← prev  up  next → 
+
+2 raco exe: Creating Stand-Alone Executables
+
+            Use a smaller base language to achieve a faster startup time such
+            as #lang racket/base instead of #lang racket rather than relying on
+            raco exe.
+
+Compiled code produced by raco make relies on Racket executables to provide
+run-time support to the compiled code. However, raco exe can package code
+together with its run-time support to form an executable, and raco distribute
+can package the executable into a distribution that works on other machines.
+Running an executable produced by raco exe will not improve performance over
+raco make.
+
+The raco exe command embeds a module, from source or byte code, into a copy of
+the racket executable. (On Unix, the embedding executable is actually a copy of
+a wrapper executable.) The created executable invokes the embedded module on
+startup. The --gui flag causes the program to be embedded in a copy of the
+gracket executable. If the embedded module refers to other modules via require,
+then the other modules are also included in the embedding executable.
+
+For example, the command
+
+  raco exe --gui hello.rkt
+
+produces either "hello.exe" (Windows), "hello.app" (Mac OS X), or "hello"
+(Unix), which runs the same as running the "hello.rkt" module in gracket.
+
+Library modules or other files that are referenced dynamically—through eval,
+load, or dynamic-require—are not automatically embedded into the created
+executable. Such modules can be explicitly included using the --lib flag to
+raco exe. Alternately, use define-runtime-path to embed references to the
+run-time files in the executable; the files are then copied and packaged
+together with the executable when creating a distribution (as described in raco
+distribute: Sharing Stand-Alone Executables).
+
+Modules that are implemented directly by extensions—i.e., extensions that are
+automatically loaded from (build-path "compiled" "native"
+(system-library-subpath)) to satisfy a require—are treated like other run-time
+files: a generated executable uses them from their original location, and they
+are copied and packaged together when creating a distribution.
+
+The raco exe command works only with module-based programs. The compiler/embed
+library provides a more general interface to the embedding mechanism.
+
+A stand-alone executable is “stand-alone” in the sense that you can run it
+without starting racket, gracket, or DrRacket. However, the executable depends
+on Racket shared libraries, and possibly other run-time files declared via
+define-runtime-path. The executable can be packaged with support libraries to
+create a distribution using raco distribute, as described in raco distribute:
+Sharing Stand-Alone Executables.
+
+2.1 API for Creating Executables
+
+ (require compiler/embed)
+The compiler/embed library provides a function to embed Racket code into a copy
+of Racket or GRacket, thus creating a stand-alone Racket executable. To package
+the executable into a distribution that is independent of your Racket
+installation, use assemble-distribution from compiler/distribute.
+
+Embedding walks the module dependency graph to find all modules needed by some
+initial set of top-level modules, compiling them if needed, and combining them
+into a “module bundle.” In addition to the module code, the bundle extends the
+module name resolver, so that modules can be required with their original
+names, and they will be retrieved from the bundle instead of the filesystem.
+
+The create-embedding-executable function combines the bundle with an executable
+(Racket or GRacket). The write-module-bundle function prints the bundle to the
+current output port, instead; this stream can be loaded directly by a running
+program, as long as the read-accept-compiled parameter is true.
+
+(create-embedding-executable                          
+     dest                                             
+   [ #:modules mod-list                               
+     #:configure-via-first-module? config-via-first?  
+     #:literal-files literal-files                    
+     #:literal-expression literal-sexp                
+     #:literal-expressions literal-sexps              
+     #:cmdline cmdline                                
+     #:gracket? gracket?                              
+     #:mred? mred?                                    
+     #:variant variant                                
+     #:aux aux                                        
+     #:collects-path collects-path                    
+     #:collects-dest collects-dest                    
+     #:launcher? launcher?                            
+     #:verbose? verbose?                              
+     #:expand-namespace expand-namespace              
+     #:compiler compile-proc                          
+     #:src-filter src-filter                          
+     #:on-extension ext-proc                          
+     #:get-extra-imports extras-proc])                
+ → void?
+  dest : path-string?
+   mod-list   :   (listof (list/c (or/c symbol? #t #f)          =   null
+                                  (or/c path? module-path?)))
+  config-via-first? : any/c = #f
+  literal-files : (listof path-string?) = null
+  literal-sexp : any/c = #f
+                                   (if literal-sexp
+   literal-sexps   :   list?   =       (list literal-sexp)
+                                       null)
+  cmdline : (listof string?) = null
+  gracket? : any/c = #f
+  mred? : any/c = #f
+  variant : (or/c 'cgc '3m) = (system-type 'gc)
+  aux : (listof (cons/c symbol? any/c)) = null
+                       (or/c #f
+   collects-path   :         path-string?             =   #f
+                             (listof path-string?))
+  collects-dest : (or/c #f path-string?) = #f
+  launcher? : any/c = #f
+  verbose? : any/c = #f
+  expand-namespace : namespace? = (current-namespace)
+   compile-proc   :   (any/c . -> . compiled-expression?)
+                      (lambda (e)
+                  =     (parameterize ([current-namespace
+                                        expand-namespace])
+                          (compile e)))
+  src-filter : (path? . -> . any) = (lambda (p) #t)
+  ext-proc : (or/c #f (path-string? boolean? . -> . any)) = #f
+   extras-proc   :   (path? compiled-module-expression?
+                      . -> . (listof module-path?))
+                 =   (lambda (p m) null)
+Copies the Racket (if gracket? and mred? are #f) or GRacket (otherwise) binary,
+embedding code into the copied executable to be loaded on startup. On Unix, the
+binary is actually a wrapper executable that execs the original; see also the
+'original-exe? tag for aux.
+
+The embedding executable is written to dest, which is overwritten if it exists
+already (as a file or directory).
+
+The embedded code consists of module declarations followed by additional
+(arbitrary) code. When a module is embedded, every module that it imports is
+also embedded. Library modules are embedded so that they are accessible via
+their lib paths in the initial namespace except as specified in mod-list, other
+modules (accessed via local paths and absolute paths) are embedded with a
+generated prefix, so that they are not directly accessible.
+
+The #:modules argument mod-list designates modules to be embedded, as described
+below. The #:literal-files and #:literal-expressions arguments specify literal
+code to be copied into the executable: the content of each file in
+literal-files is copied in order (with no intervening space), followed by each
+element of literal-sexps. The literal-files files or literal-sexps list can
+contain compiled bytecode, and it’s possible that the content of the
+literal-files files only parse when concatenated; the files and expression are
+not compiled or inspected in any way during the embedding process. Beware that
+the initial namespace contains no bindings; use compiled expressions to
+bootstrap the namespace. If literal-sexp is #f, no literal expression is
+included in the executable. The #:literal-expression (singular) argument is for
+backward compatibility.
+
+If the #:configure-via-first-module? argument is specified as true, then the
+language of the first module in mod-list is used to configure the run-time
+environment before the expressions added by #:literal-files and
+#:literal-expressions are evaluated. See also Language Run-Time Configuration.
+
+The #:cmdline argument cmdline contains command-line strings that are prefixed
+onto any actual command-line arguments that are provided to the embedding
+executable. A command-line argument that evaluates an expression or loads a
+file will be executed after the embedded code is loaded.
+
+Each element of the #:modules argument mod-list is a two-item list, where the
+first item is a prefix for the module name, and the second item is a module
+path datum (that’s in the format understood by the default module name
+resolver). The prefix can be a symbol, #f to indicate no prefix, or #t to
+indicate an auto-generated prefix. For example,
+
+    '((#f "m.rkt"))
+
+embeds the module m from the file "m.rkt", without prefixing the name of the
+module; the literal-sexpr argument to go with the above might be '(require m).
+
+Modules are normally compiled before they are embedded into the target
+executable; see also #:compiler and #:src-filter below. When a module declares
+run-time paths via define-runtime-path, the generated executable records the
+path (for use both by immediate execution and for creating a distribution that
+contains the executable).
+
+If collects-dest is a path instead of #f, then instead of embedding
+collection-based modules into the executable, the modules (in compiled form,
+only) are copied into collections in the collects-dest directory.
+
+The optional #:aux argument is an association list for platform-specific
+options (i.e., it is a list of pairs where the first element of the pair is a
+key symbol and the second element is the value for that key). See also
+build-aux-from-path. The currently supported keys are as follows:
+
+  • 'icns (Mac OS X) : An icon file path (suffix ".icns") to use for the
+    executable’s desktop icon.
+
+  • 'ico (Windows) : An icon file path (suffix ".ico") to use for the
+    executable’s desktop icon; the executable will have 16x16, 32x32, and 48x48
+    icons at 4-bit, 8-bit, and 32-bit (RGBA) depths; the icons are copied and
+    generated from any 16x16, 32x32, and 48x48 icons in the ".ico" file.
+
+  • 'creator (Mac OS X) : Provides a 4-character string to use as the
+    application signature.
+
+  • 'file-types (Mac OS X) : Provides a list of association lists, one for each
+    type of file handled by the application; each association is a two-element
+    list, where the first (key) element is a string recognized by Finder, and
+    the second element is a plist value (see xml/plist). See
+    "drracket.filetypes" in the "drracket" collection for an example.
+
+  • 'uti-exports (Mac OS X) : Provides a list of association lists, one for
+    each Uniform Type Identifier (UTI) exported by the executable; each
+    association is a two-element list, where the first (key) element is a
+    string recognized in a UTI declaration, and the second element is a plist
+    value (see xml/plist). See "drracket.utiexports" in the "drracket"
+    collection for an example.
+
+  • 'resource-files (Mac OS X) : extra files to copy into the "Resources"
+    directory of the generated executable.
+
+  • 'framework-root (Mac OS X) : A string to prefix the executable’s path to
+    the Racket and GRacket frameworks (including a separating slash); note that
+    when the prefix starts "@executable_path/" works for a Racket-based
+    application, the corresponding prefix start for a GRacket-based application
+    is "@executable_path/../../../"; if #f is supplied, the executable’s
+    framework path is left as-is, otherwise the original executable’s path to a
+    framework is converted to an absolute path if it was relative.
+
+  • 'dll-dir (Windows) : A string/path to a directory that contains Racket DLLs
+    needed by the executable, such as "racket‹version›.dll", or a boolean; a
+    path can be relative to the executable; if #f is supplied, the path is left
+    as-is; if #t is supplied, the path is dropped (so that the DLLs must be in
+    the system directory or the user’s PATH); if no value is supplied the
+    original executable’s path to DLLs is converted to an absolute path if it
+    was relative.
+
+  • 'subsystem (Windows) : A symbol, either 'console for a console application
+    or 'windows for a consoleless application; the default is 'console for a
+    Racket-based application and 'windows for a GRacket-based application; see
+    also 'single-instance?, below.
+
+  • 'single-instance? (Windows) : A boolean for GRacket-based apps; the default
+    is #t, which means that the app looks for instances of itself on startup
+    and merely brings the other instance to the front; #f means that multiple
+    instances are expected.
+
+  • 'forget-exe? (Windows, Mac OS X) : A boolean; #t for a launcher (see
+    launcher? below) does not preserve the original executable name for (
+    find-system-path 'exec-file); the main consequence is that library
+    collections will be found relative to the launcher instead of the original
+    executable.
+
+  • 'original-exe? (Unix) : A boolean; #t means that the embedding uses the
+    original Racket or GRacket executable, instead of a wrapper binary that
+    execs the original; the default is #f.
+
+  • 'relative? (Unix, Windows, Mac OS X): A boolean; #t means that, to the
+    degree that the generated executable must refer to another, it can use a
+    relative path (so the executables can be moved together, but not
+    separately); a #f value (the default) means that absolute paths should be
+    used (so the generated executable can be moved).
+
+If the #:collects-path argument is #f, then the created executable maintains
+its built-in (relative) path to the main "collects" directory—which will be the
+result of (find-system-path 'collects-dir) when the executable is run—plus a
+potential list of other directories for finding library collections—which are
+used to initialize the current-library-collection-paths list in combination
+with PLTCOLLECTS environment variable. Otherwise, the argument specifies a
+replacement; it must be either a path, string, or non-empty list of paths and
+strings. In the last case, the first path or string specifies the main
+collection directory, and the rest are additional directories for the
+collection search path (placed, in order, after the user-specific "collects"
+directory, but before the main "collects" directory; then the search list is
+combined with PLTCOLLECTS, if it is defined).
+
+If the #:launcher? argument is #t, then no modules should be null,
+literal-files should be null, literal-sexp should be #f, and the platform
+should be Windows or Mac OS X. The embedding executable is created in such a
+way that (find-system-path 'exec-file) produces the source Racket or GRacket
+path instead of the embedding executable (but the result of (find-system-path
+'run-file) is still the embedding executable).
+
+The #:variant argument indicates which variant of the original binary to use
+for embedding. The default is (system-type 'gc); see also
+current-launcher-variant.
+
+The #:compiler argument is used to compile the source of modules to be included
+in the executable (when a compiled form is not already available). It should
+accept a single argument that is a syntax object for a module form. The default
+procedure uses compile parameterized to set the current namespace to
+expand-namespace.
+
+The #:expand-namespace argument selects a namespace for expanding extra modules
+(and for compiling using the default compile-proc). Extra-module expansion is
+needed to detect run-time path declarations in included modules, so that the
+path resolutions can be directed to the current locations (and, ultimately,
+redirected to copies in a distribution).
+
+The #:src-filter src-filter argument takes a path and returns true if the
+corresponding file source should be included in the embedding executable in
+source form (instead of compiled form), #f otherwise. The default returns #f
+for all paths. Beware that the current output port may be redirected to the
+result executable when the filter procedure is called. Each path given to
+src-filter corresponds to the actual file name (e.g., ".ss"/".rkt" conversions
+have been applied as needed to refer to the existing file).
+
+If the #:on-extension argument is a procedure, the procedure is called when the
+traversal of module dependencies arrives at an extension (i.e., a DLL or shared
+object). The default, #f, causes a reference to a single-module extension (in
+its current location) to be embedded into the executable. The procedure is
+called with two arguments: a path for the extension, and a #f (for historical
+reasons).
+
+The #:get-extra-imports extras-proc argument takes a source pathname and
+compiled module for each module to be included in the executable. It returns a
+list of quoted module paths (absolute, as opposed to relative to the module)
+for extra modules to be included in the executable in addition to the modules
+that the source module requires. For example, these modules might correspond to
+reader extensions needed to parse a module that will be included as source, as
+long as the reader is referenced through an absolute module path. Each path
+given to extras-proc corresponds to the actual file name (e.g., ".ss"/".rkt"
+conversions have been applied as needed to refer to the existing file).
+
+(make-embedding-executable    dest                 
+                              mred?                
+                              verbose?             
+                              mod-list             
+                              literal-files        
+                              literal-sexp         
+                              cmdline              
+                            [ aux                  
+                              launcher?            
+                              variant])       →   void?
+  dest : path-string?
+  mred? : any/c
+  verbose? : any/c
+   mod-list   :   (listof (list/c (or/c symbol? (one-of/c #t #f))
+                                  module-path?))
+  literal-files : (listof path-string?)
+  literal-sexp : any/c
+  cmdline : (listof string?)
+  aux : (listof (cons/c symbol? any/c)) = null
+  launcher? : any/c = #f
+  variant : (one-of/c 'cgc '3m) = (system-type 'gc)
+Old (keywordless) interface to create-embedding-executable.
+
+(write-module-bundle   verbose?             
+                       mod-list             
+                       literal-files        
+                       literal-sexp)   →   void?
+  verbose? : any/c
+   mod-list   :   (listof (list/c (or/c symbol? (one-of/c #t #f))
+                                  module-path?))
+  literal-files : (listof path-string?)
+  literal-sexp : any/c
+Like make-embedding-executable, but the module bundle is written to the current
+output port instead of being embedded into an executable. The output of this
+function can be read to load and instantiate mod-list and its dependencies,
+adjust the module name resolver to find the newly loaded modules, evaluate the
+forms included from literal-files, and finally evaluate literal-sexpr. The
+read-accept-compiled parameter must be true to read the stream.
+
+(embedding-executable-is-directory? mred?) → boolean
+  mred? : any/c
+Indicates whether Racket/GRacket executables for the current platform
+correspond to directories from the user’s perspective. The result is currently
+#f for all platforms.
+
+(embedding-executable-is-actually-directory? mred?) → boolean?
+  mred? : any/c
+Indicates whether Racket/GRacket executables for the current platform actually
+correspond to directories. The result is #t on Mac OS X when mred? is #t, #f
+otherwise.
+
+(embedding-executable-put-file-extension+style+filters mred?)
+      (or/c string? false/c)
+  →   (listof (one-of/c 'packages 'enter-packages))
+      (listof (list/c string? string?))
+  mred? : any/c
+Returns three values suitable for use as the extension, style, and filters
+arguments to put-file, respectively.
+
+If Racket/GRacket launchers for the current platform were directories form the
+user’s perspective, the style result is suitable for use with get-directory,
+and the extension result may be a string indicating a required extension for
+the directory name.
+
+(embedding-executable-add-suffix   path          
+                                   mred?)   →   path-string?
+  path : path-string?
+  mred? : any/c
+Adds a suitable executable suffix, if it’s not present already.
+
+2.1.1 Executable Creation Signature
+
+ (require compiler/embed-sig)
+
+compiler:embed^ : signature
+Includes the identifiers provided by compiler/embed.
+
+2.1.2 Executable Creation Unit
+
+ (require compiler/embed-unit)
+
+compiler:embed@ : unit?
+A unit that imports nothing and exports compiler:embed^.
+
+2.1.3 Finding the name of the executable
+
+ (require compiler/find-exe)
+
+(find-exe gracket? [variant]) → path?
+  gracket? : boolean?
+  variant : (or/c 'cgc '3m) = (system-type 'gc)
+Finds the path to the racket (or gracket) executable.
+
+2.2 Installation-Specific Launchers
+
+ (require launcher/launcher)
+
+The launcher/launcher library provides functions for creating launchers, which
+are similar to stand-alone executables, but sometimes smaller because they
+depend permanently on the local Racket installation. In the case of Unix, in
+particular, a launcher is simply a shell script. The raco exe command provides
+no direct support for creating launchers.
+
+2.2.1 Creating Launchers
+
+(make-gracket-launcher args dest [aux]) → void?
+  args : (listof string?)
+  dest : path-string?
+  aux : (listof (cons/c symbol? any/c)) = null
+Creates the launcher dest, which starts GRacket with the command-line arguments
+specified as strings in args. Extra arguments passed to the launcher at
+run-time are appended (modulo special Unix/X flag handling, as described below)
+to this list and passed on to GRacket. If dest exists already, as either a file
+or directory, it is replaced.
+
+The optional aux argument is an association list for platform-specific options
+(i.e., it is a list of pairs where the first element of the pair is a key
+symbol and the second element is the value for that key). See also
+build-aux-from-path. See create-embedding-executable for a list that applies to
+both stand-alone executables and launchers on Windows and Mac OS X GRacket; the
+following additional associations apply to launchers:
+
+  • 'independent? (Windows) — a boolean; #t creates an old-style launcher that
+    is independent of the MzRacket or GRacket binary, like setup-plt.exe. No
+    other aux associations are used for an old-style launcher.
+
+  • 'exe-name (Mac OS X, 'script-3m or 'script-cgc variant) — provides the base
+    name for a '3m-/'cgc-variant launcher, which the script will call ignoring
+    args. If this name is not provided, the script will go through the GRacket
+    executable as usual.
+
+  • 'relative? (all platforms) — a boolean, where #t means that the generated
+    launcher should find the base GRacket executable through a relative path.
+
+For Unix/X, the script created by make-mred-launcher detects and handles X
+Windows flags specially when they appear as the initial arguments to the
+script. Instead of appending these arguments to the end of args, they are
+spliced in after any X Windows flags already listed listed in args. The
+remaining arguments (i.e., all script flags and arguments after the last X
+Windows flag or argument) are then appended after the spliced args.
+
+(make-racket-launcher args dest [aux]) → void?
+  args : (listof string?)
+  dest : path-string?
+  aux : (listof (cons/c symbol? any/c)) = null
+Like make-gracket-launcher, but for starting Racket. On Mac OS X, the 'exe-name
+aux association is ignored.
+
+(make-gracket-program-launcher   file              
+                                 collection        
+                                 dest)        →   void?
+  file : string?
+  collection : string?
+  dest : path-string?
+Calls make-gracket-launcher with arguments that start the GRacket program
+implemented by file in collection: (list "-l-" (string-append collection "/"
+file)). The aux argument to make-gracket-launcher is generated by stripping the
+suffix (if any) from file, adding it to the path of collection, and passing the
+result to build-aux-from-path.
+
+(make-racket-program-launcher   file              
+                                collection        
+                                dest)        →   void?
+  file : string?
+  collection : string?
+  dest : path-string?
+Like make-gracket-program-launcher, but for make-racket-launcher.
+
+(install-gracket-program-launcher   file              
+                                    collection        
+                                    name)        →   void?
+  file : string?
+  collection : string?
+  name : string?
+Same as
+
+    (make-gracket-program-launcher
+     file collection
+     (gracket-program-launcher-path name))
+
+(install-racket-program-launcher   file              
+                                   collection        
+                                   name)        →   void?
+  file : string?
+  collection : string?
+  name : string?
+Same as
+
+    (make-racket-program-launcher
+     file collection
+     (racket-program-launcher-path name))
+
+(make-mred-launcher args dest [aux]) → void?
+  args : (listof string?)
+  dest : path-string?
+  aux : (listof (cons/c symbol? any/c)) = null
+(make-mred-program-launcher   file              
+                              collection        
+                              dest)        →   void?
+  file : string?
+  collection : string?
+  dest : path-string?
+(install-mred-program-launcher   file              
+                                 collection        
+                                 name)        →   void?
+  file : string?
+  collection : string?
+  name : string?
+Backward-compatible version of make-gracket-launcher, etc., that adds "-I"
+"scheme/gui/init" to the start of the command-line arguments.
+
+(make-mzscheme-launcher args dest [aux]) → void?
+  args : (listof string?)
+  dest : path-string?
+  aux : (listof (cons/c symbol? any/c)) = null
+(make-mzscheme-program-launcher   file              
+                                  collection        
+                                  dest)        →   void?
+  file : string?
+  collection : string?
+  dest : path-string?
+(install-mzscheme-program-launcher   file              
+                                     collection        
+                                     name)        →   void?
+  file : string?
+  collection : string?
+  name : string?
+Backward-compatible version of make-racket-launcher, etc., that adds "-I"
+"scheme/init" to the start of the command-line arguments.
+
+2.2.2 Launcher Path and Platform Conventions
+
+(gracket-program-launcher-path name) → path?
+  name : string?
+Returns a pathname for an executable in the Racket installation called
+something like name. For Windows, the ".exe" suffix is automatically appended
+to name. For Unix, name is changed to lowercase, whitespace is changed to -,
+and the path includes the "bin" subdirectory of the Racket installation. For
+Mac OS X, the ".app" suffix is appended to name.
+
+(racket-program-launcher-path name) → path?
+  name : string?
+Returns the same path as (gracket-program-launcher-path name) for Unix and
+Windows. For Mac OS X, the result is the same as for Unix.
+
+(gracket-launcher-is-directory?) → boolean?
+Returns #t if GRacket launchers for the current platform are directories from
+the user’s perspective. For all currently supported platforms, the result is #
+f.
+
+(racket-launcher-is-directory?) → boolean?
+Like gracket-launcher-is-directory?, but for Racket launchers.
+
+(gracket-launcher-is-actually-directory?) → boolean?
+Returns #t if GRacket launchers for the current platform are implemented as
+directories from the filesystem’s perspective. The result is #t for Mac OS X, #
+f for all other platforms.
+
+(racket-launcher-is-actually-directory?) → boolean?
+Like gracket-launcher-is-actuall-directory?, but for Racket launchers. The
+result is #f for all platforms.
+
+(gracket-launcher-add-suffix path-string?) → path?
+  path-string? : path
+Returns a path with a suitable executable suffix added, if it’s not present
+already.
+
+(racket-launcher-add-suffix path-string?) → path?
+  path-string? : path
+Like gracket-launcher-add-suffix, but for Racket launchers.
+
+(gracket-launcher-put-file-extension+style+filters)
+      (or/c string? false/c)
+  →   (listof (one-of/c 'packages 'enter-packages))
+      (listof (list/c string? string?))
+Returns three values suitable for use as the extension, style, and filters
+arguments to put-file, respectively.
+
+If GRacket launchers for the current platform were directories form the user’s
+perspective, the style result is suitable for use with get-directory, and the
+extension result may be a string indicating a required extension for the
+directory name.
+
+(racket-launcher-put-file-extension+style+filters)
+      (or/c string? false/c)
+  →   (listof (one-of/c 'packages 'enter-packages))
+      (listof (list/c string? string?))
+Like gracket-launcher-get-file-extension+style+filters, but for Racket
+launchers.
+
+(mred-program-launcher-path name) → path?
+  name : string?
+(mred-launcher-is-directory?) → boolean?
+(mred-launcher-is-actually-directory?) → boolean?
+(mred-launcher-add-suffix path-string?) → path?
+  path-string? : path
+(mred-launcher-put-file-extension+style+filters)
+      (or/c string? false/c)
+  →   (listof (one-of/c 'packages 'enter-packages))
+      (listof (list/c string? string?))
+Backward-compatible aliases for gracket-program-launcher-path, etc.
+
+(mzscheme-program-launcher-path name) → path?
+  name : string?
+(mzscheme-launcher-is-directory?) → boolean?
+(mzscheme-launcher-is-actually-directory?) → boolean?
+(mzscheme-launcher-add-suffix path-string?) → path?
+  path-string? : path
+(mzscheme-launcher-put-file-extension+style+filters)
+      (or/c string? false/c)
+  →   (listof (one-of/c 'packages 'enter-packages))
+      (listof (list/c string? string?))
+Backward-compatible aliases for racket-program-launcher-path, etc.
+
+2.2.3 Launcher Configuration
+
+(gracket-launcher-up-to-date? dest aux) → boolean?
+  dest : path-string?
+  aux : (listof (cons/c symbol? any/c))
+Returns #t if the GRacket launcher dest does not need to be updated, assuming
+that dest is a launcher and its arguments have not changed.
+
+(racket-launcher-up-to-date? dest aux) → boolean?
+  dest : path-string?
+  aux : (listof (cons/c symbol? any/c))
+Analogous to gracket-launcher-up-to-date?, but for a Racket launcher.
+
+(build-aux-from-path path) → (listof (cons/c symbol? any/c))
+  path : path-string?
+Creates an association list suitable for use with make-gracket-launcher or
+create-embedding-executable. It builds associations by adding to path suffixes,
+such as ".icns", and checking whether such a file exists.
+
+The recognized suffixes are as follows:
+
+  • ".icns" → 'icns file for use on Mac OS X
+
+  • ".ico" → 'ico file for use on Windows
+
+  • ".lch" → 'independent? as #t (the file content is ignored) for use on
+    Windows
+
+  • ".creator" → 'creator as the initial four characters in the file for use on
+    Mac OS X
+
+  • ".filetypes" → 'file-types as read content (a single S-expression), and
+    'resource-files as a list constructed by finding "CFBundleTypeIconFile"
+    entries in 'file-types (and filtering duplicates); for use on Mac OS X
+
+  • ".utiexports" → 'uti-exports as read content (a single S-expression); for
+    use on Mac OS X
+
+(current-launcher-variant) → symbol?
+(current-launcher-variant variant) → void?
+  variant : symbol?
+A parameter that indicates a variant of Racket or GRacket to use for launcher
+creation and for generating launcher names. The default is the result of (
+system-type 'gc). On Unix and Windows, the possibilities are 'cgc and '3m. On
+Mac OS X, the 'script-3m and 'script-cgc variants are also available for
+GRacket launchers.
+
+(available-gracket-variants) → (listof symbol?)
+Returns a list of symbols corresponding to available variants of GRacket in the
+current Racket installation. The list normally includes at least one of '3m or
+'cgc— whichever is the result of (system-type 'gc)—and may include the other,
+as well as 'script-3m and/or 'script-cgc on Mac OS X.
+
+(available-racket-variants) → (listof symbol?)
+Returns a list of symbols corresponding to available variants of Racket in the
+current Racket installation. The list normally includes at least one of '3m or
+'cgc—whichever is the result of (system-type 'gc)—and may include the other.
+
+(mred-launcher-up-to-date? dest aux) → boolean?
+  dest : path-string?
+  aux : (listof (cons/c symbol? any/c))
+(mzscheme-launcher-up-to-date? dest aux) → boolean?
+  dest : path-string?
+  aux : (listof (cons/c symbol? any/c))
+(available-mred-variants) → (listof symbol?)
+(available-mzscheme-variants) → (listof symbol?)
+Backward-compatible aliases for gracket-launcher-up-to-date?, etc.
+
+2.2.4 Launcher Creation Signature
+
+ (require launcher/launcher-sig)
+
+launcher^ : signature
+Includes the identifiers provided by launcher/launcher.
+
+2.2.5 Launcher Creation Unit
+
+ (require launcher/launcher-unit)
+
+launcher@ : unit?
+A unit that imports nothing and exports launcher^.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

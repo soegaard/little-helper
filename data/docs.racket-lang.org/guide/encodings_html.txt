@@ -1,0 +1,66 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 8  Input and Output
+8.1  Varieties of Ports
+8.2  Default Ports
+8.3  Reading and Writing Racket Data
+8.4  Datatypes and Serialization
+8.5  Bytes, Characters, and Encodings
+8.6  I/ O Patterns
+[...search manuals...]
+  top← prev  up  next → 
+
+8.5 Bytes, Characters, and Encodings
+
+Functions like read-line, read, display, and write all work in terms of
+characters (which correspond to Unicode scalar values). Conceptually, they are
+implemented in terms of read-char and write-char.
+
+More primitively, ports read and write bytes, instead of characters. The
+functions read-byte and write-byte read and write raw bytes. Other functions,
+such as read-bytes-line, build on top of byte operations instead of character
+operations.
+
+In fact, the read-char and write-char functions are conceptually implemented in
+terms of read-byte and write-byte. When a single byte’s value is less than 128,
+then it corresponds to an ASCII character. Any other byte is treated as part of
+a UTF-8 sequence, where UTF-8 is a particular standard way of encoding Unicode
+scalar values in bytes (which has the nice property that ASCII characters are
+encoded as themselves). Thus, a single read-char may call read-byte multiple
+times, and a single write-char may generate multiple output bytes.
+
+The read-char and write-char operations always use a UTF-8 encoding. If you
+have a text stream that uses a different encoding, or if you want to generate a
+text stream in a different encoding, use reencode-input-port or
+reencode-output-port. The reencode-input-port function converts an input stream
+from an encoding that you specify into a UTF-8 stream; that way, read-char sees
+UTF-8 encodings, even though the original used a different encoding. Beware,
+however, that read-byte also sees the re-encoded data, instead of the original
+byte stream.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

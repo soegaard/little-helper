@@ -1,0 +1,350 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+can-close?
+can-exit?
+center
+get-edit-target-object
+get-edit-target-window
+get-eventspace
+get-focus-object
+get-focus-window
+move
+on-activate
+on-close
+on-exit
+on-message
+on-traverse-char
+on-system-menu-char
+resize
+show
+Inherited methods:
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-focus
+on-move
+on-size
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from area-container<%>
+add-child
+after-new-child
+begin-container-sequence
+border
+change-children
+container-flow-modified
+container-size
+delete-child
+end-container-sequence
+get-alignment
+get-children
+place-children
+reflow-container
+set-alignment
+spacing
+[...search manuals...]
+  top← prev  up  next → 
+
+top-level-window<%> : interface?
+  implements:  area-container-window<%>
+A top-level window is either a frame% or dialog% object.
+
+(send a-top-level-window can-close?) → boolean?
+Refine this method with augment.
+Called just before the window might be closed (e.g., by the window manager). If
+#f is returned, the window is not closed, otherwise on-close is called and the
+window is closed (i.e., the window is hidden, like calling show with #f).
+
+This method is not called by show.
+
+(send a-top-level-window can-exit?) → boolean?
+Specification: Called before on-exit to check whether an exit is allowed. See
+on-exit for more information.
+
+Default implementation: Calls can-close? and returns the result.
+
+(send a-top-level-window center [direction]) → void?
+  direction : (one-of/c 'horizontal 'vertical 'both) = 'both
+Centers the window on the screen if it has no parent. If it has a parent, the
+window is centered with respect to its parent’s location.
+
+If direction is 'horizontal, the window is centered horizontally. If direction
+is 'vertical, the window is centered vertically. If direction is 'both, the
+window is centered in both directions.
+
+(send a-top-level-window get-edit-target-object)
+ → (or/c (or/c (is-a?/c window<%>) (is-a?/c editor<%>)) false/c)
+Like get-edit-target-window, but if an editor canvas had the focus and it also
+displays an editor, the editor is returned instead of the canvas. Further, if
+the editor’s focus is delegated to an embedded editor, the embedded editor is
+returned.
+
+See also get-focus-object.
+
+(send a-top-level-window get-edit-target-window)
+ → (or/c (is-a?/c window<%>) false/c)
+Returns the window that most recently had the keyboard focus, either the
+top-level window or one of its currently-shown children. If neither the window
+nor any of its currently-shown children has even owned the keyboard focus, #f
+is returned.
+
+See also get-focus-window and get-edit-target-object.
+
+(send a-top-level-window get-eventspace) → eventspace?
+Returns the window’s eventspace.
+
+(send a-top-level-window get-focus-object)
+ → (or/c (or/c (is-a?/c window<%>) (is-a?/c editor<%>)) false/c)
+Like get-focus-window, but if an editor canvas has the focus and it also
+displays an editor, the editor is returned instead of the canvas. Further, if
+the editor’s focus is delegated to an embedded editor, the embedded editor is
+returned.
+
+See also get-edit-target-object.
+
+(send a-top-level-window get-focus-window)
+ → (or/c (is-a?/c window<%>) false/c)
+Returns the window that has the keyboard focus, either the top-level window or
+one of its children. If neither the window nor any of its children has the
+focus, #f is returned.
+
+See also get-edit-target-window and get-focus-object.
+
+(send a-top-level-window move x y) → void?
+  x : (integer-in -10000 10000)
+  y : (integer-in -10000 10000)
+Moves the window to the given position on the screen.
+
+A window’s position can be changed by the user dragging the window, and such
+changes do not go through this method; use on-move to monitor position changes.
+
+(send a-top-level-window on-activate active?) → void?
+  active? : any/c
+Called when a window is activated or deactivated. A top-level window is
+activated when the keyboard focus moves from outside the window to the window
+or one of its children. It is deactivated when the focus moves back out of the
+window. On Mac OS X, a child of a floating frames can have the focus instead of
+a child of the active non-floating frame; in other words, floating frames act
+as an extension of the active non-frame for keyboard focus.
+
+The method’s argument is #t when the window is activated, #f when it is
+deactivated.
+
+(send a-top-level-window on-close) → void?
+Refine this method with augment.
+Called just before the window is closed (e.g., by the window manager). This
+method is not called by show.
+
+See also can-close?.
+
+(send a-top-level-window on-exit) → void?
+Specification: Called by the default application quit handler (as determined by
+the application-quit-handler parameter) when the operating system requests that
+the application shut down (e.g., when the Quit menu item is selected in the
+main application menu on Mac OS X). In that case, this method is called for the
+most recently active top-level window in the initial eventspace, but only if
+the window’s can-exit? method first returns true.
+
+Default implementation: Calls on-close and then show to hide the window.
+
+(send a-top-level-window on-message message) → any/c
+  message : any/c
+Specification: A generic message method, usually called by
+send-message-to-window.
+
+If the method is invoked by send-message-to-window, then it is invoked in the
+thread where send-message-to-window was called (which is possibly not the
+handler thread of the window’s eventspace).
+
+Default implementation: Returns #<void>.
+
+(send a-top-level-window on-traverse-char event) → boolean?
+  event : (is-a?/c key-event%)
+Specification: Attempts to handle the given keyboard event as a navigation
+event, such as a Tab key event that moves the keyboard focus. If the event is
+handled, #t is returned, otherwise #f is returned.
+
+Default implementation: The following rules determine, in order, whether and
+how event is handled:
+
+  • 
+    If the window that currently owns the focus specifically handles the event,
+    then #f is returned. The following describes window types and the keyboard
+    events they specifically handle:
+      □ editor-canvas% — tab-exit is disabled (see allow-tab-exit): all
+        keyboard events, except alphanumeric key events when the Meta (Unix) or
+        Alt (Windows) key is pressed; when tab-exit is enabled: all keyboard
+        events except Tab, Enter, Escape, and alphanumeric Meta/Alt events.
+
+      □ canvas% — when tab-focus is disabled (see accept-tab-focus): all
+        keyboard events, except alphanumeric key events when the Meta (Unix) or
+        Alt (Windows) key is pressed; when tab-focus is enabled: no key events
+
+      □ text-field%, 'single style — arrow key events and alphanumeric key
+        events when the Meta (Unix) or Alt (Windows) key is not pressed (and
+        all alphanumeric events on Mac OS X)
+
+      □ text-field%, 'multiple style — all keyboard events, except alphanumeric
+        key events when the Meta (Unix) or Alt (Windows) key is pressed
+
+      □ choice% — arrow key events and alphanumeric key events when the Meta
+        (Unix) or Alt (Windows) key is not pressed
+
+      □ list-box% — arrow key events and alphanumeric key events when the Meta
+        (Unix) or Alt (Windows) key is not pressed
+
+  • If event is a Tab or arrow key event, the keyboard focus is moved within
+    the window and #t is returned. Across platforms, the types of windows that
+    accept the keyboard focus via navigation may vary, but text-field% windows
+    always accept the focus, and message%, gauge%, and panel% windows never
+    accept the focus.
+
+  • If event is a Space key event and the window that currently owns the focus
+    is a button%, check-box%, or radio-box% object, the event is handled in the
+    same way as a click on the control and #t is returned.
+
+  • If event is an Enter key event and the current top-level window contains a
+    border button, the button’s callback is invoked and #t is returned. (The
+    'border style for a button% object indicates to the user that pressing
+    Enter is the same as clicking the button.) If the window does not contain a
+    border button, #t is returned if the window with the current focus is not a
+    text field or editor canvas.
+
+  • In a dialog, if event is an Escape key event, the event is handled the same
+    as a click on the dialog’s close box (i.e., the dialog’s can-close? and
+    on-close methods are called, and the dialog is hidden) and #t is returned.
+
+  • If event is an alphanumeric key event and the current top-level window
+    contains a control with a mnemonic matching the key (which is installed via
+    a label that contains &; see get-label for more information), then the
+    keyboard focus is moved to the matching control. Furthermore, if the
+    matching control is a button%, check-box%, or radio-box% button, the
+    keyboard event is handled in the same way as a click on the control.
+
+  • Otherwise, #f is returned.
+
+(send a-top-level-window on-system-menu-char event) → boolean?
+  event : (is-a?/c key-event%)
+Checks whether the given event pops open the system menu in the top-left corner
+of the window (Windows only). If the window’s system menu is opened, #t is
+returned, otherwise #f is returned.
+
+(send a-top-level-window resize   width          
+                                  height)   →   void?
+  width : (integer-in 0 10000)
+  height : (integer-in 0 10000)
+Sets the size of the window (in pixels), but only if the given size is larger
+than the window’s minimum size.
+
+A window’s size can be changed by the user, and such changes do not go through
+this method; use on-size to monitor size changes.
+
+(send a-top-level-window show show) → void?
+  show : any/c
+If the window is already shown, it is moved front of other top-level windows.
+If the window is iconized (frames only), it is deiconized.
+
+See also show in window<%>.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

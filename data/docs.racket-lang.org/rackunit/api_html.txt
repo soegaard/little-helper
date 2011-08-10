@@ -1,0 +1,1042 @@
+▼  Rack Unit: Unit Testing
+1  Quick Start Guide for Rack Unit
+2  The Philosophy of Rack Unit
+3  Rack Unit API
+4  Testing Utilities
+5  Rack Unit Internals and Extension API
+6  Release Notes
+7  Acknowlegements
+   Index
+► 3  Rack Unit API
+3.1  Overview of Rack Unit
+3.2  Checks
+3.3  Compound Testing Forms
+3.4  Test Control Flow
+3.5  Miscellaneous Utilities
+3.6  User Interfaces
+On this page:
+3.1 Overview of Rack Unit
+3.2 Checks
+check-eq?
+check-not-eq?
+check-eqv?
+check-not-eqv?
+check-equal?
+check-not-equal?
+check-pred
+check-=
+check-true
+check-false
+check-not-false
+check-exn
+check-not-exn
+check-regexp-match
+check
+fail
+3.2.1 Augmenting Information on Check Failure
+check-info
+make-check-name
+make-check-params
+make-check-location
+make-check-expression
+make-check-message
+make-check-actual
+make-check-expected
+with-check-info*
+with-check-info
+3.2.2 Custom Checks
+define-simple-check
+define-binary-check
+define-check
+fail-check
+3.3 Compound Testing Forms
+3.3.1 Test Cases
+test-begin
+test-case
+test-case?
+3.3.1.1 Shortcuts for Defining Test Cases
+test-check
+test-pred
+test-equal?
+test-eq?
+test-eqv?
+test-=
+test-true
+test-false
+test-not-false
+test-exn
+test-not-exn
+3.3.2 Test Suites
+test-suite
+make-test-suite
+test-suite?
+3.3.2.1 Utilities for Defining Test Suites
+define-test-suite
+define/ provide-test-suite
+3.4 Test Control Flow
+before
+after
+around
+delay-test
+3.5 Miscellaneous Utilities
+require/ expose
+3.6 User Interfaces
+3.6.1 Textual User Interface
+run-tests
+3.6.2 Graphical User Interface
+test/ gui
+make-gui-runner
+[...search manuals...]
+  top← prev  up  next → 
+
+3 RackUnit API
+
+ (require rackunit)
+
+3.1 Overview of RackUnit
+
+There are three basic concepts in RackUnit:
+
+  • A check is the basic unit of a test. As the name suggests, it checks some
+    condition is true.
+
+  • A test case is a group of checks that form one conceptual unit. If any
+    check within the case fails, the entire case fails.
+
+  • A test suite is a group of test cases and test suites that has a name.
+
+3.2 Checks
+
+Checks are the basic building block of RackUnit. A check checks some condition.
+If the condition holds the check evaluates to (void). If the condition doesn’t
+hold the check raises an instance of exn:test:check with information detailing
+the failure.
+
+Although checks are implemented as macros, which is necessary to grab source
+location, they are conceptually functions. This means, for instance, checks
+always evaluate their arguments. You can use check as first class functions,
+though you will lose precision in the reported source locations if you do so.
+
+The following are the basic checks RackUnit provides. You can create your own
+checks using define-check.
+
+(check-eq? v1 v2 [message]) → void?
+  v1 : any
+  v2 : any
+  message : string? = ""
+(check-not-eq? v1 v2 [message]) → void?
+  v1 : any
+  v2 : any
+  message : string? = ""
+(check-eqv? v1 v2 [message]) → void?
+  v1 : any
+  v2 : any
+  message : string? = ""
+(check-not-eqv? v1 v2 [message]) → void?
+  v1 : any
+  v2 : any
+  message : string? = ""
+(check-equal? v1 v2 [message]) → void?
+  v1 : any
+  v2 : any
+  message : string? = ""
+(check-not-equal? v1 v2 [message]) → void?
+  v1 : any
+  v2 : any
+  message : string? = ""
+Checks that v1 is equal (or not equal) to v2, using eq?, eqv?, or equal?,
+respectively. The optional message is included in the output if the check
+fails.
+
+For example, the following checks all fail:
+
+    > (check-eq? (list 1) (list 1) "allocated data not eq?")
+    --------------------
+
+    FAILURE
+
+    name:       check-eq?
+
+    location:   (eval 2 0 2 1)
+
+    expression: (check-eq? (list 1) (list 1))
+
+    message:    "allocated data not eq?"
+
+    actual:     (1)
+
+    expected:   (1)
+
+    Check failure
+
+    --------------------
+
+    > (check-not-eq? 1 1 "fixnums are eq?")
+    --------------------
+
+    FAILURE
+
+    name:       check-not-eq?
+
+    location:   (eval 3 0 3 1)
+
+    expression: (check-not-eq? 1 1)
+
+    params:     (1 1)
+
+    message:    "fixnums are eq?"
+
+    Check failure
+
+    --------------------
+
+    > (check-eqv? 1 1.0 "not eqv?")
+    --------------------
+
+    FAILURE
+
+    name:       check-eqv?
+
+    location:   (eval 4 0 4 1)
+
+    expression: (check-eqv? 1 1.0)
+
+    message:    "not eqv?"
+
+    actual:     1
+
+    expected:   1.0
+
+    Check failure
+
+    --------------------
+
+    > (check-not-eqv? 1 1 "integers are eqv?")
+    --------------------
+
+    FAILURE
+
+    name:       check-not-eqv?
+
+    location:   (eval 5 0 5 1)
+
+    expression: (check-not-eqv? 1 1)
+
+    params:     (1 1)
+
+    message:    "integers are eqv?"
+
+    Check failure
+
+    --------------------
+
+    > (check-equal? 1 1.0 "not equal?")
+    --------------------
+
+    FAILURE
+
+    name:       check-equal?
+
+    location:   (eval 6 0 6 1)
+
+    expression: (check-equal? 1 1.0)
+
+    message:    "not equal?"
+
+    actual:     1
+
+    expected:   1.0
+
+    Check failure
+
+    --------------------
+
+    > (check-not-equal? (list 1) (list 1) "equal?")
+    --------------------
+
+    FAILURE
+
+    name:       check-not-equal?
+
+    location:   (eval 7 0 7 1)
+
+    expression: (check-not-equal? (list 1) (list 1))
+
+    params:     ((1) (1))
+
+    message:    "equal?"
+
+    Check failure
+
+    --------------------
+
+
+(check-pred pred v [message]) → void?
+  pred : (-> any any)
+  v : any
+  message : string? = ""
+Checks that pred returns a value that is not #f when applied to v. The optional
+message is included in the output if the check fails. The value returned by a
+successful check is the value returned by pred.
+
+For example, the following check passes:
+
+    > (check-pred string? "I work")
+
+The following check fails:
+
+    > (check-pred number? "I fail")
+    --------------------
+
+    FAILURE
+
+    name:       check-pred
+
+    location:   (eval 9 0 9 1)
+
+    expression: (check-pred number? "I fail")
+
+    params:     (#<procedure:number?> "I fail")
+
+    Check failure
+
+    --------------------
+
+
+(check-= v1 v2 epsilon [message]) → void?
+  v1 : any
+  v2 : any
+  epsilon : number?
+  message : string? = ""
+Checks that v1 and v2 are within epsilon of one another. The optional message
+is included in the output if the check fails.
+
+For example, the following check passes:
+
+    > (check-= 1.0 1.01 0.02 "I work")
+
+The following check fails:
+
+    > (check-= 1.0 1.01 0.005 "I fail")
+    --------------------
+
+    FAILURE
+
+    name:       check-=
+
+    location:   (eval 11 0 11 1)
+
+    expression: (check-= 1.0 1.01 0.005)
+
+    params:     (1.0 1.01 0.005)
+
+    message:    "I fail"
+
+    Check failure
+
+    --------------------
+
+
+(check-true v [message]) → void?
+  v : any
+  message : string? = ""
+(check-false v [message]) → void?
+  v : any
+  message : string? = ""
+(check-not-false v [message]) → void?
+  v : any
+  message : string? = ""
+Checks that v is #t, is #f, or is not #f, respectively. The optional message is
+included in the output if the check fails.
+
+For example, the following checks all fail:
+
+    > (check-true 1)
+    --------------------
+
+    FAILURE
+
+    name:       check-true
+
+    location:   (eval 12 0 12 1)
+
+    expression: (check-true 1)
+
+    params:     (1)
+
+    Check failure
+
+    --------------------
+
+    > (check-false 1)
+    --------------------
+
+    FAILURE
+
+    name:       check-false
+
+    location:   (eval 13 0 13 1)
+
+    expression: (check-false 1)
+
+    params:     (1)
+
+    Check failure
+
+    --------------------
+
+    > (check-not-false #f)
+    --------------------
+
+    FAILURE
+
+    name:       check-not-false
+
+    location:   (eval 14 0 14 1)
+
+    expression: (check-not-false #f)
+
+    params:     (#f)
+
+    Check failure
+
+    --------------------
+
+
+(check-exn exn-predicate thunk [message]) → void?
+  exn-predicate : (or/c (-> any boolean?) regexp?)
+  thunk : (-> any)
+  message : string? = ""
+Checks that thunk raises an exception and that either exn-predicate returns #t
+if it is a function, or that it matches the message in the exception if
+exn-predicate is a regexp. In the latter case, the exception raised must be an
+exn:fail?. The optional message is included in the output if the check fails. A
+common error is to use an expression instead of a function of no arguments for
+thunk. Remember that checks are conceptually functions.
+
+For example, the following checks succeed:
+
+    > (check-exn
+       exn:fail?
+       (lambda ()
+         (raise (make-exn:fail "Hi there"
+                               (current-continuation-marks)))))
+    > (check-exn
+       exn:fail?
+       (lambda ()
+         (error 'hi "there")))
+
+The following check fails:
+
+    > (check-exn exn:fail?
+                 (lambda ()
+                   (break-thread (current-thread))))
+    --------------------
+
+    ERROR
+
+    user break
+
+    === context ===
+
+    /var/tmp/racket/collects/rackunit/private/check.rkt:198:4
+
+    /var/tmp/racket/collects/rackunit/private/check.rkt:55:0:
+    top-level-check-around
+
+    /var/tmp/racket/collects/racket/private/more-scheme.rkt:151:2:
+    call-with-break-parameterization
+
+    /var/tmp/racket/collects/racket/sandbox.rkt:727:9: loop
+
+    --------------------
+
+
+The following example is a common mistake. The call to error is not within a
+lambda, so it bypasses check-exn entirely.
+
+    ; Forgot to wrap the expression in a thunk. Don't do this!
+    > (check-exn exn:fail?
+                 (error 'hi "there"))
+    hi: there
+
+
+(check-not-exn thunk [message]) → void?
+  thunk : (-> any)
+  message : string? = ""
+Checks that thunk does not raise any exceptions. The optional message is
+included in the output if the check fails.
+
+    > (check-not-exn (λ () 1))
+    > (check-not-exn (λ () (car '())))
+    --------------------
+
+    FAILURE
+
+    message:    "Exception raised"
+
+    exception-me"car: expects argument of type <pair>; given '()"
+
+    exception:  #(struct:exn:fail:contract "car: expects argument of type
+    <pair>; given '()" #<continuation-mark-set>)
+
+    name:       check-not-exn
+
+    location:   (eval 20 0 20 1)
+
+    expression: (check-not-exn (λ () (car (quote ()))))
+
+    params:     (#<procedure:temp79>)
+
+    Check failure
+
+    --------------------
+
+    > (check-not-exn (λ () (/ 1 0)) "don't divide by 0")
+    --------------------
+
+    FAILURE
+
+    exception-me"/: division by zero"
+
+    exception:  #(struct:exn:fail:contract:divide-by-zero "/: division by zero"
+    #<continuation-mark-set>)
+
+    name:       check-not-exn
+
+    location:   (eval 21 0 21 1)
+
+    expression: (check-not-exn (λ () (/ 1 0)))
+
+    params:     (#<procedure:temp82>)
+
+    message:    "don't divide by 0"
+
+    Check failure
+
+    --------------------
+
+
+(check-regexp-match regexp string) → void?
+  regexp : regexp?
+  string : string?
+Checks that regexp matches the string.
+
+For example, the following check succeeds:
+
+    > (check-regexp-match "a+bba" "aaaaaabba")
+
+The following check fails:
+
+    > (check-regexp-match "a+bba" "aaaabbba")
+    --------------------
+
+    FAILURE
+
+    name:       check-regexp-match
+
+    location:   (eval 23 0 23 1)
+
+    expression: (check-regexp-match "a+bba" "aaaabbba")
+
+    params:     ("a+bba" "aaaabbba")
+
+    Check failure
+
+    --------------------
+
+
+(check op v1 v2 [message]) → void?
+  op : (-> any any any)
+  v1 : any
+  v2 : any
+  message : string? = ""
+The most generic check. Succeeds if op applied to v1 and v2 is not #f,
+otherwise raises an exception of type exn:test:check. The optional message is
+included in the output if the check fails.
+
+For example, the following check succeeds:
+
+    > (check < 2 3)
+
+The following check fails:
+
+    > (check memq 'pine '(apple orange pear))
+    --------------------
+
+    FAILURE
+
+    name:       check
+
+    location:   (eval 25 0 25 1)
+
+    expression: (check memq (quote pine) (quote (apple orange pear)))
+
+    params:     (#<procedure:memq> pine (apple orange pear))
+
+    Check failure
+
+    --------------------
+
+
+(fail [message]) → void?
+  message : string? = ""
+This check fails unconditionally. Good for creating test stubs that you intend
+to fill out later. The optional message is included in the output.
+
+3.2.1 Augmenting Information on Check Failure
+
+When a check fails it stores information including the name of the check, the
+location and message (if available), the expression the check is called with,
+and the parameters to the check. Additional information can be stored by using
+the with-check-info* function, and the with-check-info macro.
+
+(struct   check-info (name value)
+          #:extra-constructor-name make-check-info)
+  name : symbol?
+  value : any
+A check-info structure stores information associated with the context of
+execution of a check.
+
+The are several predefined functions that create check information structures
+with predefined names. This avoids misspelling errors:
+
+(make-check-name name) → check-info?
+  name : string?
+(make-check-params params) → check-info?
+  params : (listof any)
+(make-check-location loc) → check-info?
+   loc   :   (list/c any (or/c number? #f) (or/c number? #f)
+                         (or/c number? #f) (or/c number? #f))
+(make-check-expression msg) → check-info?
+  msg : any
+(make-check-message msg) → check-info?
+  msg : string?
+(make-check-actual param) → check-info?
+  param : any
+(make-check-expected param) → check-info?
+  param : any
+
+(with-check-info* info thunk) → any
+  info : (listof check-info?)
+  thunk : (-> any)
+Stores the given info on the check-info stack for the duration (the dynamic
+extent) of the execution of thunk
+
+    > (with-check-info*
+       (list (make-check-info 'time (current-seconds)))
+       (lambda () (check = 1 2)))
+    --------------------
+
+    FAILURE
+
+    name:       check
+
+    location:   (eval 26 0 26 1)
+
+    expression: (check = 1 2)
+
+    params:     (#<procedure:=> 1 2)
+
+    time:       1312391066
+
+    Check failure
+
+    --------------------
+
+
+When this check fails the message
+
+time: <current-seconds-at-time-of-running-check>
+
+
+is printed along with the usual information on an check failure.
+
+(with-check-info ((name val) ...) body ...)
+The with-check-info macro stores the given information in the check information
+stack for the duration of the execution of the body expressions. Name is a
+quoted symbol and val is any value.
+
+    > (for-each
+       (lambda (elt)
+         (with-check-info
+          (('current-element elt))
+          (check-pred odd? elt)))
+       (list 1 3 5 7 8))
+    --------------------
+
+    FAILURE
+
+    name:       check-pred
+
+    location:   (eval 27 0 27 1)
+
+    expression: (check-pred odd? elt)
+
+    params:     (#<procedure:odd?> 8)
+
+    current-elem8
+
+    Check failure
+
+    --------------------
+
+
+When this test fails the message
+
+current-element: 8
+
+
+is displayed along with the usual information on an check failure.
+
+3.2.2 Custom Checks
+
+Custom checks can be defined using define-check and its variants. To
+effectively use these macros it is useful to understand a few details about a
+check’s evaluation model.
+
+Firstly, a check should be considered a function, even though most uses are
+actually macros. In particular, checks always evaluate their arguments exactly
+once before executing any expressions in the body of the checks. Hence if you
+wish to write checks that evaluate user defined code that code must be wrapped
+in a thunk (a function of no arguments) by the user. The predefined check-exn
+is an example of this type of check.
+
+It is also useful to understand how the check information stack operates. The
+stack is stored in a parameter and the with-check-info forms evaluate to calls
+to parameterize. For this reason simple checks (see below) cannot usefully
+contain calls to with-check-info to report additional information. All checks
+created using define-simple-check or define-check grab some information by
+default: the name of the checks and the values of the parameters. Additionally
+the macro forms of checks grab location information and the expressions passed
+as parameters.
+
+(define-simple-check (name param ...) expr ...)
+The define-simple-check macro constructs a check called name that takes the
+params and an optional message as arguments and evaluates the exprs. The check
+fails if the result of the exprs is #f. Otherwise the check succeeds. Note that
+simple checks cannot report extra information using with-check-info.
+
+For example, the following code defines a check check-odd?
+
+    > (define-simple-check (check-odd? number)
+        (odd? number))
+
+We can use these checks in the usual way:
+
+    > (check-odd? 3)
+    > (check-odd? 2)
+    --------------------
+
+    FAILURE
+
+    name:       check-odd?
+
+    location:   (eval 30 0 30 1)
+
+    expression: (check-odd? 2)
+
+    params:     (2)
+
+    Check failure
+
+    --------------------
+
+
+(define-binary-check (name pred actual expected))
+(define-binary-check (name actual expected) expr ...)
+The define-binary-check macro constructs a check that tests a binary predicate.
+It’s benefit over define-simple-check is in better reporting on check failure.
+The first form of the macro accepts a binary predicate and tests if the
+predicate holds for the given values. The second form tests if expr non-false.
+
+Here’s the first form, where we use a predefined predicate to construct a
+binary check:
+
+    > (define-binary-check (check-char=? char=? actual expected))
+
+In use:
+
+    > (check-char=? (read-char (open-input-string "a")) #\a)
+
+If the expression is more complicated the second form should be used. For
+example, below we define a binary check that tests a number if within 0.01 of
+the expected value:
+
+    > (define-binary-check (check-in-tolerance actual expected)
+        (< (abs (- actual expected)) 0.01))
+
+(define-check (name param ...) expr ...)
+The define-check macro acts in exactly the same way as define-simple-check,
+except the check only fails if the macro fail-check is called in the body of
+the check. This allows more flexible checks, and in particular more flexible
+reporting options.
+
+(fail-check)
+The fail-check macro raises an exn:test:check with the contents of the check
+information stack.
+
+3.3 Compound Testing Forms
+
+3.3.1 Test Cases
+
+As programs increase in complexity the unit of testing grows beyond a single
+check. For example, it may be the case that if one check fails it doesn’t make
+sense to run another. To solve this problem compound testing forms can be used
+to group expressions. If any expression in a group fails (by raising an
+exception) the remaining expressions will not be evaluated.
+
+(test-begin expr ...)
+A test-begin form groups the exprs into a single unit. If any expr fails the
+following ones are not evaluated.
+
+For example, in the following code the world is not destroyed as the preceding
+check fails:
+
+    (test-begin
+      (check-eq? 'a 'b)
+      ; This line won't be run
+      (destroy-the-world))
+
+(test-case name expr ...)
+Like a test-begin except a name is associated with the group of exprs. The name
+will be reported if the test fails.
+
+Here’s the above example rewritten to use test-case so the test can be named.
+
+    (test-case
+      "Example test"
+      (check-eq? 'a 'b)
+      ; This line won't be run
+      (destroy-the-world))
+
+(test-case? obj) → boolean?
+  obj : any
+True if obj is a test case, and false otherwise.
+
+3.3.1.1 Shortcuts for Defining Test Cases
+
+(test-check name operator v1 v2) → void?
+  name : string?
+  operator : (-> any/c any/c any/c)
+  v1 : any/c
+  v2 : any/c
+(test-pred name pred v) → void?
+  name : string?
+  pred : (-> any/c any/c)
+  v : any/c
+(test-equal? name v1 v2) → (void?)
+  name : string?
+  v1 : any/c
+  v2 : any/c
+(test-eq? name v1 v2) → void?
+  name : string?
+  v1 : any/c
+  v2 : any/c
+(test-eqv? name v1 v2) → void?
+  name : string?
+  v1 : any/c
+  v2 : any/c
+(test-= name v1 v2 epsilon) → void?
+  name : string?
+  v1 : real?
+  v2 : real?
+  epsilon : real?
+(test-true name v) → void?
+  name : string?
+  v : any/c
+(test-false name v) → void?
+  name : string?
+  v : any/c
+(test-not-false name v) → void?
+  name : string?
+  v : any/c
+(test-exn name pred thunk) → void?
+  name : string?
+  pred : (-> exn? any/c)
+  thunk : (-> any)
+(test-not-exn name thunk) → void?
+  name : string?
+  thunk : (-> any)
+Creates a test case with the given name that performs the corresponding check.
+For example,
+
+    (test-equal? "Fruit test" "apple" "pear")
+
+is equivalent to
+
+
+    (test-case "Fruit test" (check-equal? "apple" "pear"))
+
+3.3.2 Test Suites
+
+Test cases can themselves be grouped into test suites. A test suite can contain
+both test cases and test suites. Unlike a check or test case, a test suite is
+not immediately run. Instead use one of the functions described in User
+Interfaces or Programmatically Running Tests and Inspecting Results.
+
+(test-suite name-expr maybe-before maybe-after test ...)
+ 
+maybe-before   =  
+               |   #:before before-thunk
+                    
+ maybe-after   =  
+               |   #:after after-thunk
+ 
+   name-expr    :   string?
+Constructs a test suite with the given name and tests. The tests may be test
+cases, constructed using test-begin or test-case, or other test suites.
+
+The before-thunk and after-thunk are optional thunks (functions with no
+argument). They are run before and after the tests are run, respectively.
+
+Unlike a check or test case, a test suite is not immediately run. Instead use
+one of the functions described in User Interfaces or Programmatically Running
+Tests and Inspecting Results.
+
+For example, here is a test suite that displays Before before any tests are
+run, and After when the tests have finished.
+
+    (test-suite
+      "An example suite"
+      #:before (lambda () (display "Before"))
+      #:after  (lambda () (display "After"))
+      (test-case
+        "An example test"
+        (check-eq? 1 1))
+      (test-suite "A nested test suite"
+        (test-case "Another test"
+          (check-< 1 2))))
+
+(make-test-suite    name                         
+                    tests                        
+                  [ #:before before-thunk        
+                    #:after after-thunk])   →   test-suite?
+  name : string?
+  tests : (listof (or/c test-case? test-suite?))
+  before-thunk : (-> any) = void
+  after-thunk : (-> any) = void
+Constructs a test suite with the given name containing the given tests. Unlike
+the test-suite form, the tests are represented as a list of test values.
+
+(test-suite? obj) → boolean?
+  obj : any
+True if obj is a test suite, and false otherwise
+
+3.3.2.1 Utilities for Defining Test Suites
+
+There are some macros that simplify the common cases of defining test suites:
+
+(define-test-suite name test ...)
+The define-test-suite form creates a test suite with the given name (converted
+to a string) and tests, and binds it to the same name.
+
+For example, this code creates a binding for the name example-suite as well as
+creating a test suite with the name "example-suite":
+
+    (define-test-suite example-suite
+      (check = 1 1))
+
+(define/provide-test-suite name test ...)
+This for is just like define-test-suite, and in addition it provides the test
+suite.
+
+3.4 Test Control Flow
+
+The before, after, and around macros allow you to specify code that is always
+run before, after, or around expressions in a test case.
+
+(before before-expr expr1 expr2 ...)
+Whenever control enters the scope execute the before-expr before executing
+expr-1, and expr-2 ...
+
+(after expr-1 expr-2 ... after-expr)
+Whenever control exits the scope execute the after-expr after executing expr-1,
+and expr-2 ... The after-expr is executed even if control exits via an
+exception or other means.
+
+(around before-expr expr-1 expr-2 ... after-expr)
+Whenever control enters the scope execute the before-expr before executing
+expr-1 expr-2 ..., and execute after-expr whenever control leaves the scope.
+
+Example:
+
+The test below checks that the file test.dat contains the string "foo". The
+before action writes to this file. The after action deletes it.
+
+    (around
+      (with-output-to-file "test.dat"
+         (lambda ()
+           (write "foo")))
+      (with-input-from-file "test.dat"
+        (lambda ()
+          (check-equal? "foo" (read))))
+      (delete-file "test.dat"))
+
+(delay-test test1 test2 ...)
+This somewhat curious macro evaluates the given tests in a context where
+current-test-case-around is parameterized to test-suite-test-case-around. This
+has been useful in testing RackUnit. It might be useful for you if you create
+test cases that create test cases.
+
+3.5 Miscellaneous Utilities
+
+The require/expose macro allows you to access bindings that a module does not
+provide. It is useful for testing the private functions of modules.
+
+(require/expose module (id ...))
+Requires id from module into the current module. It doesn’t matter if the
+source module provides the bindings or not; require/expose can still get at
+them.
+
+Note that require/expose can be a bit fragile, especially when mixed with
+compiled code. Use at your own risk!
+
+This example gets make-failure-test, which is defined in a RackUnit test:
+
+    (require/expose rackunit/private/check-test (make-failure-test))
+
+3.6 User Interfaces
+
+RackUnit provides a textual and a graphical user interface
+
+3.6.1 Textual User Interface
+
+ (require rackunit/text-ui)
+
+The textual UI is in the rackunit/text-ui module. It is run via the run-tests
+function.
+
+(run-tests test [verbosity]) → natural-number/c
+  test : (or/c test-case? test-suite?)
+  verbosity : (symbols 'quiet 'normal 'verbose) = 'normal
+The given test is run and the result of running it output to the
+current-output-port. The output is compatable with the (X)Emacs next-error
+command (as used, for example, by (X)Emacs’s compile function)
+
+The optional verbosity is one of 'quiet, 'normal, or 'verbose. Quiet output
+displays only the number of successes, failures, and errors. Normal reporting
+suppresses some extraneous check information (such as the expression). Verbose
+reports all information.
+
+run-tests returns the number of unsuccessful tests.
+
+3.6.2 Graphical User Interface
+
+ (require rackunit/gui)
+
+RackUnit also provides a GUI test runner, available from the rackunit/gui
+module.
+
+(test/gui test ...) → any
+  test : (or/c test-case? test-suite?)
+Creates a new RackUnit GUI window and runs each test. The GUI is updated as
+tests complete.
+
+(make-gui-runner) → (-> (or/c test-case? test-suite?) ... any)
+Creates a new RackUnit GUI window and returns a procedure that, when applied,
+runs the given tests and displays the results in the GUI.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

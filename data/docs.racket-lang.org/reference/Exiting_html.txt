@@ -1,0 +1,69 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 9  Control Flow
+9.1  Multiple Values
+9.2  Exceptions
+9.3  Delayed Evaluation
+9.4  Continuations
+9.5  Continuation Marks
+9.6  Breaks
+9.7  Exiting
+On this page:
+exit
+exit-handler
+executable-yield-handler
+[...search manuals...]
+  top← prev  up  next → 
+
+9.7 Exiting
+
+(exit [v]) → any
+  v : any/c = #t
+Passes v to the current exit handler. If the exit handler does not escape or
+terminate the thread, #<void> is returned.
+
+(exit-handler) → (any/c . -> . any)
+(exit-handler proc) → void?
+  proc : (any/c . -> . any)
+A parameter that determines the current exit handler. The exit handler is
+called by exit.
+
+The default exit handler in the Racket executable takes any argument and shuts
+down the OS-level Racket process. The argument is used as the OS-level exit
+code if it is an exact integer between 1 and 255 (which normally means
+“failure”); otherwise, the exit code is 0, (which normally means “success”).
+
+(executable-yield-handler) → ((integer-in 0 255) . -> . any)
+(executable-yield-handler proc) → void?
+  proc : ((integer-in 0 255) . -> . any)
+A parameter that determines a procedure to be called as the Racket process is
+about to exit normally. The procedure associated with this parameter is not
+call when exit (or, more precisely, the default exit handler) is used to exit
+early. The argument to the handler is the status code that is returned to the
+system on exit. The default executable-yield handler simply returns #<void>.
+
+The scheme/gui/base library sets this parameter to wait until all frames are
+closed, timers stopped, and queued events handled in the main eventspace. See
+scheme/gui/base for more information.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

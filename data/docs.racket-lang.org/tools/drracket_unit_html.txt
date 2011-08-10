@@ -1,0 +1,686 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drracket: unit: tab<%>
+break-callback
+can-close?
+disable-evaluation
+enable-evaluation
+get-breakables
+get-defs
+get-directory
+get-enabled
+get-frame
+get-ints
+is-current-tab?
+is-running?
+on-close
+reset-offer-kill
+set-breakables
+drracket: unit: tab%
+clear-annotations
+drracket: unit: program-editor-mixin
+after-delete
+after-insert
+drracket: unit: interactions-canvas%
+drracket: unit: frame%
+add-show-menu-items
+break-callback
+change-to-file
+edit-menu: between-select-all-and-find
+execute-callback
+file-menu: between-open-and-revert
+file-menu: between-print-and-close
+file-menu: between-save-as-and-print
+file-menu: print-string
+file-menu: save-as-string
+file-menu: save-string
+get-break-button
+get-button-panel
+get-canvas
+get-canvas%
+get-definitions/ interactions-panel-parent
+get-editor
+get-editor%
+get-execute-button
+get-text-to-search
+make-searchable
+on-close
+on-size
+still-untouched?
+update-save-button
+update-save-message
+update-shown
+drracket: unit: frame<%>
+get-language-menu
+ensure-defs-shown
+ensure-rep-hidden
+ensure-rep-shown
+get-current-tab
+get-tab-filename
+get-tab-count
+open-in-new-tab
+close-current-tab
+get-definitions-canvas
+get-definitions-text
+get-insert-menu
+get-interactions-canvas
+get-interactions-text
+get-tabs
+on-tab-change
+register-capability-menu-item
+register-toolbar-button
+register-toolbar-buttons
+unregister-toolbar-button
+drracket: unit: definitions-text%
+set-filename
+set-modified
+drracket: unit: definitions-text<%>
+after-set-next-settings
+begin-metadata-changes
+end-metadata-changes
+get-next-settings
+get-tab
+set-needs-execution-message
+set-next-settings
+drracket: unit: definitions-canvas%
+drracket: unit: get-program-editor-mixin
+drracket: unit: add-to-program-editor-mixin
+drracket: unit: open-drscheme-window
+drracket: unit: add-search-help-desk-menu-item
+[...search manuals...]
+  top← prev  up  next → 
+
+10 drracket:unit
+
+drracket:unit:tab<%> : interface?
+  implements:  drracket:rep:context<%>
+
+
+    (send a-drracket:unit:tab break-callback) → void?
+    Specification: This method is called when the break button is clicked and
+    this tab is the active tab.
+
+    Default implementation: By default, breaks any evaluation that may be
+    happening at this point.
+
+    (send a-drracket:unit:tab can-close?) → boolean?
+    Refine this method with augment.
+    Specification: This method is called to determine if it is okay to close
+    this tab.
+
+    Default implementation: Calls the definitions text’s and interactions
+    text’s can-close? method.
+
+    (send a-drracket:unit:tab disable-evaluation) → void?
+    Overrides disable-evaluation in drracket:rep:context<%>.
+    Disables the Run button, and the Run menu item and locks the interactions
+    window, and the definitions window.
+
+    (send a-drracket:unit:tab enable-evaluation) → void?
+    Overrides enable-evaluation in drracket:rep:context<%>.
+    Enables the Run button, and the Run menu item and unlocks (via the lock
+    method) the interactions window and the definitions window.
+
+    (send a-drracket:unit:tab get-breakables)
+      →   (or/c thread? false/c)
+          (or/c custodian? false/c)
+    Overrides get-breakables in drracket:rep:context<%>.
+
+    (send a-drracket:unit:tab get-defs)
+     → (is-a?/c drracket:unit:definitions-text<%>)
+    This text is initially the top half of the DrRacket window and contains the
+    users program.
+
+    This text defaults to a text% object, but if you change drracket:get/
+    extend:extend-definitions-text procedure, it will use the extended class to
+    create the text.
+
+    (send a-drracket:unit:tab get-directory)
+     → (or/c string? false/c)
+    Overrides get-directory in drracket:rep:context<%>.
+    This is the directory that the file is saved in, or the directory DrRacket
+    started up in, if the file has not been saved.
+
+    (send a-drracket:unit:tab get-enabled) → boolean?
+    Indicates if evaluation is currently enabled in this tab. Evaluation is
+    typically disabled when some evaluation is already running (in another
+    thread).
+
+    (send a-drracket:unit:tab get-frame)
+     → (is-a?/c drracket:unit:frame%)
+    Returns the frame that this tab is inside.
+
+    (send a-drracket:unit:tab get-ints)
+     → (is-a?/c drracket:rep:text%)
+    This text is initially the bottom half of the DrRacket window and contains
+    the users interactions with the REPL.
+
+    This text defaults to a drracket:rep:text% object, but if you use the
+    drracket:get/extend:extend-interactions-text procedure, it will use the
+    extended class to create the text.
+
+    (send a-drracket:unit:tab is-current-tab?) → boolean?
+    Indicates if this tab is the currently active tab.
+
+    (send a-drracket:unit:tab is-running?) → boolean?
+    Indicates if the running message in the bottom right of DrRacket’s frame
+    should be “running” or “not running” when this frame is active.
+
+    (send a-drracket:unit:tab on-close) → void?
+    Refine this method with augment.
+    Specification: This method is called when the tab is closed.
+
+    Default implementation: Calls the definitions text’s on-close and
+    interactions text’s on-close methods.
+
+    (send a-drracket:unit:tab reset-offer-kill) → void?
+    Overrides reset-offer-kill in drracket:rep:context<%>.
+
+    (send a-drracket:unit:tab set-breakables   thread            
+                                               custodian)   →   void?
+      thread : (or/c thread? false/c)
+      custodian : (or/c custodian? false/c)
+    Overrides set-breakables in drracket:rep:context<%>.
+
+drracket:unit:tab% : class?
+  superclass: object%
+
+  extends:  drracket:unit:tab<%>
+The base class that implements the tab’s functionality.
+
+    (make-object drracket:unit:tab%)
+     → (is-a?/c drracket:unit:tab%)
+
+    (send a-drracket:unit:tab clear-annotations) → void?
+    Overrides clear-annotations in drracket:rep:context<%>.
+    Clears any error highlighting.
+
+drracket:unit:program-editor-mixin : (class? . -> . class?)
+  argument extends/implements:  text%
+                                editor:basic<%>
+This mixes in the ability to reset the highlighting for error message when the
+user modifies the buffer. Use it for editors that have program text where
+errors can occur.
+
+
+    (send a-drracket:unit:program-editor after-delete   start  
+                                                        len)   
+     → void?
+      start : number
+      len : number
+    Overrides after-delete in text%.
+    Calls the super method.
+
+    Resets an error highlighting.
+
+    (send a-drracket:unit:program-editor after-insert   start  
+                                                        len)   
+     → void?
+      start : number
+      len : number
+    Overrides after-insert in text%.
+    Calls the super method.
+
+    Resets an error highlighting.
+
+drracket:unit:interactions-canvas% : class?
+  superclass: canvas:wide-snip%
+
+
+
+    (new drracket:unit:interactions-canvas% ...superclass-args...)
+     → (is-a?/c drracket:unit:interactions-canvas%)
+    Passes all arguments to super-init.
+
+drracket:unit:frame% : class?
+  superclass: (drracket:frame:basics-mixin (drracket:frame:mixin
+frame:searchable%))
+
+  extends:  drracket:unit:frame<%>
+This frame inserts the Racket and Language menus into the menu bar as it is
+initialized.
+
+
+    (new drracket:unit:frame% ...superclass-args...)
+     → (is-a?/c drracket:unit:frame%)
+    Passes all arguments to super-init.
+
+    (new drracket:unit:frame%) → (is-a?/c drracket:unit:frame%)
+    Passes all arguments to super-init.
+
+    (send a-drracket:unit:frame add-show-menu-items show-menu)
+     → void?
+      show-menu : (is-a?/c menu%)
+    Overrides <method not found>.
+    Adds the “Show Definitions”, “Show Interactions” and “Show Contour” menu
+    items.
+
+    (send a-drracket:unit:frame break-callback) → void?
+    Specification: This method is called when the user clicks on the break
+    button or chooses the break menu item.
+
+    Default implementation: Breaks the user’s evaluation started by the Run
+    button (or possibly a queued callback in the user’s eventspace).
+
+    (send a-drracket:unit:frame change-to-file file) → void?
+      file : string?
+    Loads this file into this already created frame. In normal DrRacket use,
+    this method is only called if this is the first frame opened and no editing
+    has occurred. It should be safe to call this at anytime, however.
+
+    (send a-drracket:unit:frame edit-menu:between-select-all-and-find)
+     → void?
+    Overrides edit-menu:between-select-all-and-find in frame:standard-menus<%>.
+    Adds the "Split" and "Collapse" menu items.
+
+    (send a-drracket:unit:frame execute-callback) → void?
+    Specification: This method is called when the user clicks on the Run button
+    or chooses the Run menu item.
+
+    Default implementation: It calls ensure-rep-shown and then it calls
+    do-many-text-evals passing in the result of get-interactions-text and its
+    entire range, unless the first two characters are #! in which case, it
+    skips the first line.
+
+    (send a-drracket:unit:frame file-menu:between-open-and-revert)
+     → void?
+    Overrides file-menu:between-open-and-revert in drracket:frame:basics-mixin.
+    Calls the super method and adds a separator-menu-item% to the menu.
+
+    (send a-drracket:unit:frame file-menu:between-print-and-close)
+     → void?
+    Overrides file-menu:between-print-and-close in drracket:frame:basics-mixin.
+    Adds a menu item for printing the interactions.
+
+    (send a-drracket:unit:frame file-menu:between-save-as-and-print)
+     → void?
+    Overrides file-menu:between-save-as-and-print in frame:standard-menus<%>.
+    Adds a submenu that contains various save options:
+      □ save definitions as text
+
+      □ save interactions
+
+      □ save interactions as
+
+      □ save interactions as text
+
+    and adds a separator item.
+
+    (send a-drracket:unit:frame file-menu:print-string) → void?
+    Overrides file-menu:print-string in frame:standard-menus<%>.
+    returns "Definitions"
+
+    (send a-drracket:unit:frame file-menu:save-as-string) → void?
+    Overrides file-menu:save-as-string in frame:standard-menus<%>.
+    Returns "Definitions".
+
+    (send a-drracket:unit:frame file-menu:save-string) → void?
+    Overrides file-menu:save-string in frame:standard-menus<%>.
+    Returns "Definitions".
+
+    (send a-drracket:unit:frame get-break-button)
+     → (is-a?/c button%)
+    Returns the break button. Mostly used for test suites.
+
+    (send a-drracket:unit:frame get-button-panel)
+     → (is-a?/c horizontal-panel%)
+    This panel goes along the top of the DrRacket window and has buttons for
+    important actions the user frequently executes.
+
+    A tool can add a button to this panel to make some new functionality easily
+    accessible to the user.
+
+    See also mrlib’s switchable-button%.
+
+    (send a-drracket:unit:frame get-canvas)
+     → (is-a?/c editor-canvas%)
+    Overrides get-canvas in frame:editor<%>.
+    Returns the result of get-definitions-canvas.
+
+    (send a-drracket:unit:frame get-canvas%) → (is-a?/c canvas%)
+    Overrides get-canvas% in frame:editor<%>.
+    Returns the result of drracket:get/extend:get-definitions-canvas.
+
+    (send a-drracket:unit:frame get-definitions/interactions-panel-parent)
+     → (is-a?/c vertical-panel%)
+    (send a-drracket:unit:frame get-definitions/interactions-panel-parent)
+     → void?
+    Specification: This method is provided so that tools can add area-container
+    <%>s to the DrRacket frame. Override this method so that it returns a child
+    of the super-classes’s result and insert new children in between.
+
+    Default implementation: First case:
+
+    Returns the result of get-area-container
+
+    Second case:
+
+    (send a-drracket:unit:frame get-editor) → (is-a?/c editor<%>)
+    Overrides get-editor in frame:editor<%>.
+    Returns the result of get-definitions-text.
+
+    (send a-drracket:unit:frame get-editor%) → (is-a?/c editor<%>)
+    Overrides get-editor% in frame:editor<%>.
+    Returns the result of drracket:get/extend:get-definitions-text.
+
+    (send a-drracket:unit:frame get-execute-button)
+     → (is-a?/c button%)
+    Returns the Run button. Mostly used for test suites.
+
+    (send a-drracket:unit:frame get-text-to-search)
+     → (is-a?/c text:searching%)
+    Overrides get-text-to-search in frame:searchable-text-mixin.
+    returns the text that is active in the last canvas passed to
+    make-searchable
+
+    (send a-drracket:unit:frame make-searchable canvas) → void?
+      canvas : (is-a?/c drracket:unit:interactions-canvas%)
+    stores the canvas, until get-text-to-search is called.
+
+    (send a-drracket:unit:frame on-close) → void?
+    Overrides on-close in frame:standard-menus<%>.
+    Sends the result of get-interactions-text the shutdown and on-close
+    methods.
+
+    Calls the super method.
+
+    (send a-drracket:unit:frame on-size) → void?
+    Overrides on-size in window<%>.
+    Updates the preferences for the window width and height so next time a
+    DrRacket window is opened, it will be this width and height.
+
+    (send a-drracket:unit:frame still-untouched?) → boolean?
+    Specification: determines if the definitions window has not been modified.
+    Used in conjunction with change-to-file.
+
+    Default implementation: Returns #t if the buffer is empty, it has not been
+    saved and it is unmodified.
+
+    (send a-drracket:unit:frame update-save-button modified?)
+     → void?
+      modified? : any/c
+    This method hides or shows the save button, based on the modified?
+    argument.
+
+    If the save button has not been created yet, it remembers the modified?
+    argument as an initial visibility for the save button.
+
+    This method is called by the set-modified method.
+
+    (send a-drracket:unit:frame update-save-message name) → void?
+      name : string?
+    Updates the save message on the DrRacket frame. This method is called by
+    the set-filename method.
+
+    (send a-drracket:unit:frame update-shown) → void?
+    Overrides <method not found>.
+    Updates the interactions, definitions, and contour menu items based on the
+    contents of the windows.
+
+drracket:unit:frame<%> : interface?
+
+
+    (send a-drracket:unit:frame get-language-menu)
+     → (is-a?/c menu%)
+    Returns the language-specific menu. This menu is called the Racket menu in
+    the Racket language but is, in general, controlled by the
+    'drscheme:language-menu-title capability (see
+    drracket:language:register-capability for details on capabilities).
+
+    (send a-drracket:unit:frame ensure-defs-shown) → void?
+    Ensures that the definitions window is visible.
+
+    (send a-drracket:unit:frame ensure-rep-hidden) → void?
+    Makes sure the rep is hidden (by making the definitions window visible).
+
+    (send a-drracket:unit:frame ensure-rep-shown) → void?
+    Shows the interactions window
+
+    (send a-drracket:unit:frame get-current-tab)
+     → (is-a?/c drracket:unit:tab<%>)
+    Returns the currently active tab.
+
+    (send a-drracket:unit:frame get-tab-filename i) → string?
+      i : (<=/c 0 (get-tab-count))
+    Returns a string naming the file in the ith tab or, if the file is not
+    saved, something like “Untitled”.
+
+    (send a-drracket:unit:frame get-tab-count)
+     → exact-positive-integer?
+    Returns the number of open tabs in the frame.
+
+    (send a-drracket:unit:frame open-in-new-tab filename) → void?
+      filename : (or/c path-string? #f)
+    Opens a new tab in this frame. If filename is a path-string?, It loads that
+    file in the definitions window of the new tab.
+
+    (send a-drracket:unit:frame close-current-tab) → void?
+    Closes the current tab, making some other tab visible. If there is only one
+    tab open, this method does nothing.
+
+    (send a-drracket:unit:frame get-definitions-canvas)
+     → (is-a?/c drracket:unit:definitions-canvas%)
+    This canvas is the canvas containing the get-definitions-text. It is
+    initially the top half of the DrRacket window.
+
+    This canvas defaults to a drracket:unit:definitions-canvas% object, but if
+    you change the drracket:get/extend:extend-definitions-canvas procedure, it
+    will use the class in the parameter to create the canvas.
+
+    (send a-drracket:unit:frame get-definitions-text)
+     → (is-a?/c drracket:unit:definitions-text%)
+    Calls result of get-current-tab’s get-defs method.
+
+    (send a-drracket:unit:frame get-insert-menu) → (is-a?/c menu%)
+    Specification: Returns the Insert menu.
+
+    (send a-drracket:unit:frame get-interactions-canvas)
+     → (instanceof (derivedfrom drracket:unit:interactions-canvas%))
+    This canvas is the canvas containing the get-interactions-text. It is
+    initially the bottom half of the DrRacket window.
+
+    This canvas defaults to a drracket:unit:interactions-canvas% object, but if
+    you use the drracket:get/extend:extend-interactions-canvas procedure, it
+    will use the extended class to create the canvas.
+
+    (send a-drracket:unit:frame get-interactions-text)
+     → (is-a?/c drracket:rep:text%)
+    Calls result of get-current-tab’s get-ints method.
+
+    (send a-drracket:unit:frame get-tabs)
+     → (listof (is-a?/c drracket:unit:tab<%>))
+    Returns the list of tabs in this frame.
+
+    (send a-drracket:unit:frame on-tab-change   from-tab        
+                                                to-tab)    →   void?
+      from-tab : (is-a?/c drracket:unit:tab<%>)
+      to-tab : (is-a?/c drracket:unit:tab<%>)
+    Refine this method with augment.
+    Specification: Called after a new tab becomes the selected tab in the
+    frame.
+
+    Default implementation: The from-tab argument is the previously selected
+    tab, and the to-tab argument is the newly selected tab.
+
+    (send a-drracket:unit:frame register-capability-menu-item  
+                      key                                      
+                      menu)                                    
+     → void?
+      key : symbol
+      menu : (is-a? menu%)
+    Registers the menu item that was most recently added as being controlled by
+    the capability key. This means that the (boolean) value of the capability
+    determines if the menu item is present in the menu (the capability is
+    checked when the menus are cliked on).
+
+    This assumes that the menu items in this menu are not moved around, except
+    by the this capability. If they are, things can go funny (i.e., no good
+    checks are in place).
+
+    Note that the capability must be registered separately, via
+    drracket:language:register-capability.
+
+    (send a-drracket:unit:frame register-toolbar-button tb) → void?
+      tb : (is-a?/c switchable-button%)
+    Registers the toolbar button tb. This is required so that the toolbar
+    buttons properly switch orientation when the toolbar’s position is moved.
+
+    (send a-drracket:unit:frame register-toolbar-buttons tbs)
+     → void?
+      tbs : (listof (is-a?/c switchable-button%))
+    Simultaneously registers the toolbar buttons tbs. This is required so that
+    the toolbar buttons properly switch orientation when the toolbar’s position
+    is moved.
+
+    (send a-drracket:unit:frame unregister-toolbar-button tb)
+     → void?
+      tb : (is-a?/c switchable-button%)
+    Unregisters the toolbar button tb. Use this method to ensure that the
+    button is not referenced by this frame and thus can be gc’d.
+
+drracket:unit:definitions-text% : class?
+  superclass: (drracket:rep:drs-bindings-keymap-mixin (
+drracket:unit:program-editor-mixin (scheme:text-mixin text:info%)))
+
+  extends:  drracket:unit:definitions-text<%>
+
+
+    (new drracket:unit:definitions-text%)
+     → (is-a?/c drracket:unit:definitions-text%)
+    Passes all arguments to super-init.
+
+    (send a-drracket:unit:definitions-text set-filename) → void?
+    Overrides <method not found>.
+    Calls update-save-message.
+
+    (send a-drracket:unit:definitions-text set-modified) → void?
+    Overrides <method not found>.
+    Calls update-save-button.
+
+drracket:unit:definitions-text<%> : interface?
+This interface is implemented by the definitions text.
+
+
+    (send a-drracket:unit:definitions-text after-set-next-settings
+     language-settings)
+     → void?
+      language-settings : language-settings
+    Refine this method with augment.
+    Specification: Called when the next settings changes. See also
+    get-next-settings.
+
+    Default implementation:
+
+    (send a-drracket:unit:definitions-text begin-metadata-changes)
+     → void?
+    Augment this method to be notified when DrRacket is changing the buffer to
+    insert metadata. The metadata is only inserted during saving, so tools that
+    track changes to DrRacket will need to ignore changes that occur after this
+    method is called, and before end-metadata-changes is called.
+
+    A call to begin-metadata-changes will always be followed with a call to
+    end-metadata-changes (ie, the calls cannot be nested).
+
+    (send a-drracket:unit:definitions-text end-metadata-changes)
+     → void?
+    Called when the changes to insert metadata are done, and the editor is back
+    to its state at the time of the call to begin-metadata-changes.
+
+    A call to begin-metadata-changes will always be followed with a call to
+    end-metadata-changes (ie, the calls cannot be nested).
+
+    (send a-drracket:unit:definitions-text get-next-settings)
+     → language-settings
+    This method returns the language-settings that will be used when the user
+    next clicks Run in this DrRacket window.
+
+    (send a-drracket:unit:definitions-text get-tab)
+     → (is-a?/c drracket:unit:tab%)
+    Returns the editor’s enclosing tab.
+
+    (send a-drracket:unit:definitions-text set-needs-execution-message msg)
+     → void?
+      msg : string?
+    Specification: This method, when called, puts this DrRacket window in a
+    state such that interactions submitted to the REPL will trigger a yellow
+    warning message. The state is reset when the program is next Run.
+
+    Default implementation: Records msg and uses it the next time the user
+    submits an interaction (unless the Runs first).
+
+    (send a-drracket:unit:definitions-text set-next-settings  
+             language-settings                                
+        [    update-prefs?])                                  
+     → void?
+      language-settings : language-settings
+      update-prefs? : any/c = #t
+    Changes the language settings for this window. If update-prefs? is a true
+    value, the preference is changed, which affects newly created windows.
+
+    See also after-set-next-settings and get-next-settings.
+
+drracket:unit:definitions-canvas% : class?
+  superclass: editor-canvas%
+
+Initializes the visibility of the save button.
+
+(drracket:unit:get-program-editor-mixin)
+ → ((subclass?/c text%) . -> . (subclass?/c text%))
+Returns a mixin that must be mixed in to any text% object that might contain
+program text (and thus can be in the source field of some syntax object).
+
+See also drracket:unit:add-to-program-editor-mixin.
+(drracket:unit:add-to-program-editor-mixin mixin) → void?
+  mixin : ((subclass?/c text%) . -> . (subclass?/c text%))
+This function can only be called in phase 1 (see Implementing DrRacket Plugins
+for details).
+
+Adds mixin to the result of drracket:unit:get-program-editor-mixin.
+(drracket:unit:open-drscheme-window)
+ → (is-a?/c drracket:unit:frame%)
+(drracket:unit:open-drscheme-window filename)
+ → (is-a?/c drracket:unit:frame%)
+  filename : (or/c string? false/c)
+Opens a DrRacket frame that displays filename, or nothing if filename is #f or
+not supplied.
+(drracket:unit:add-search-help-desk-menu-item    text             
+                                                 menu             
+                                                 position         
+                                               [ add-sep])   →   void?
+  text : (is-a?/c text%)
+  menu : (is-a?/c menu-item-container<%>)
+  position : exact-nonnegative-integer?
+  add-sep : (-> any) = void
+Adds a menu item to menu that searches in Help Desk for the word around
+position in text.
+
+If there is only whitespace around position, then no menu-item%s are added, and
+add-sep is not called. If there is something to be added, then add-sep is
+called before the menu item is created.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

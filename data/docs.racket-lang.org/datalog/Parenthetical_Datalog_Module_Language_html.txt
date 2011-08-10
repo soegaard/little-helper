@@ -1,0 +1,48 @@
+▼  Datalog: Deductive Database Programming
+1  Datalog Module Language
+2  Tutorial
+3  Parenthetical Datalog Module Language
+4  Racket Interoperability
+5  Acknowledgments
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Parenthetical Datalog Module Language
+
+ #lang datalog/sexp
+
+The semantics of this language is the same as the normal Datalog language,
+except it uses the parenthetical syntax described in Racket Interoperability.
+
+All identifiers in racket/base are available for use as predicate symbols or
+constant values. Top-level identifiers and datums are not otherwise allowed in
+the program. The program may contain require expressions.
+
+The following is a program:
+
+    #lang datalog/sexp
+     
+    (! (edge a b))
+    (! (edge b c))
+    (! (edge c d))
+    (! (edge d a))
+    (! (:- (path X Y)
+           (edge X Y)))
+    (! (:- (path X Y)
+           (edge X Z)
+           (path Z Y)))
+    (? (path X Y))
+
+This is also a program:
+
+    #lang datalog/sexp
+    (require racket/math)
+     
+    (? (sqr 4 :- X))
+
+The Parenthetical Datalog REPL accepts new statements that are executed as if
+they were in the original program text, except require is not allowed.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

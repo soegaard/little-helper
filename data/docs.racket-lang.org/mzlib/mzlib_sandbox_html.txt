@@ -1,0 +1,130 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+make-evaluator
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/sandbox)
+
+The mzlib/sandbox library mostly re-exports racket/sandbox, but it provides a
+slightly different make-evaluator function.
+
+The library re-exports the following bindings:
+
+    sandbox-init-hook
+    sandbox-reader
+    sandbox-input
+    sandbox-output
+    sandbox-error-output
+    sandbox-propagate-breaks
+    sandbox-coverage-enabled
+    sandbox-namespace-specs
+    sandbox-override-collection-paths
+    sandbox-security-guard
+    sandbox-path-permissions
+    sandbox-network-guard
+    sandbox-make-inspector
+    sandbox-eval-limits
+    kill-evaluator
+    break-evaluator
+    set-eval-limits
+    put-input
+    get-output
+    get-error-output
+    get-uncovered-expressions
+    call-with-limits
+    with-limits
+    exn:fail:resource?
+    exn:fail:resource-resource
+
+(make-evaluator   language                  
+                  requires                  
+                  input-program ...)   →   (any/c . -> . any)
+                  (or/c module-path?
+                        (one-of/c 'r5rs 'beginner 'beginner-abbr
+   language   :                   'intermediate 'intermediate-lambda 'advanced)
+                        (list/c (one-of/c 'special) symbol?)
+                        (list/c (one-of/c 'special) symbol?)
+                        (cons/c (one-of/c 'begin) list?))
+   requires   :   (or/c (cons/c 'begin list?)
+                        (listof (or/c module-path? path?)))
+  input-program : any/c
+(make-evaluator module-decl) → (any/c . -> . any)
+  module-decl : (or/c syntax? pair?)
+Like make-evaluator or make-module-evaluator, but with several differences:
+
+  • The language argument can be one of a fixed set of symbols: 'r5rs, etc.
+    They are converted by adding a (list 'special ....) wrapper.
+
+  • If requires starts with 'begin, then each element in the remainder of the
+    list is effectively evaluated as a prefix to the program. Otherwise, it
+    corresponds to the #:requires argument of make-evaluator.
+
+  • For each of language and requires that starts with 'begin, the expressions
+    are inspected to find top-level require forms (using symbolic equality to
+    detect require), and the required modules are added to the #:allow list for
+    make-evaluator.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

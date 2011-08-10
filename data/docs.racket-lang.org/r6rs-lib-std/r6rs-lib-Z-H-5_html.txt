@@ -1,0 +1,56 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 4
+
+Sorting
+
+This chapter describes the (rnrs sorting (6))library for sorting lists and
+vectors.
+
+(list-sort proc list)    procedure 
+(vector-sort proc vector)    procedure 
+
+Proc should accept any two elements of list or vector, and should not have any
+side effects. Proc should return a true value when its first argument is
+strictly less than its second, and #f otherwise.
+
+The list-sort and vector-sort procedures perform a stable sort of list or
+vector in ascending order according to proc, without changing list or vector in
+any way. The list-sort procedure returns a list, and vector-sort returns a
+vector. The results may be eq? to the argument when the argument is already
+sorted, and the result of list-sort may share structure with a tail of the
+original list. The sorting algorithm performs O(n lg n) calls to proc where n
+is the length of list or vector, and all arguments passed to proc are elements
+of the list or vector being sorted, but the pairing of arguments and the
+sequencing of calls to proc are not specified. If multiple returns occur from
+list-sort or vector-sort, the return values returned by earlier returns are not
+mutated.
+
+(list-sort < ’(3 5 2 1))         ⇒ (1 2 3 5)
+(vector-sort < ’#(3 5 2 1))         ⇒ #(1 2 3 5)
+
+Implementation responsibilities: The implementation must check the restrictions
+on proc to the extent performed by applying it as described. An implementation
+may check whether proc is an appropriate argument before applying it.
+
+(vector-sort! proc vector)    procedure 
+
+Proc should accept any two elements of the vector, and should not have any side
+effects. Proc should return a true value when its first argument is strictly
+less than its second, and #f otherwise. The vector-sort! procedure
+destructively sorts vector in ascending order according to proc. The sorting
+algorithm performs O(n^2) calls to proc where n is the length of vector, and
+all arguments passed to proc are elements of the vector being sorted, but the
+pairing of arguments and the sequencing of calls to proc are not specified. The
+sorting algorithm may be unstable. The procedure returns unspecified values.
+
+(define v (vector 3 5 2 1))
+(vector-sort! v)         ⇒ unspecified
+v         ⇒ #(1 2 3 5)
+
+Implementation responsibilities: The implementation must check the restrictions
+on proc to the extent performed by applying it as described. An implementation
+may check whether proc is an appropriate argument before applying it.
+
+                        [Go to first, previous, next page;   contents;   index]
+

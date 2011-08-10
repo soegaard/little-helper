@@ -1,0 +1,63 @@
+▼  PLane T: Automatic Package Distribution
+1  Using PLane T
+2  The PLane T Search Order
+3  The raco planet Command-Line Tool
+4  The planet Language
+5  Utility Libraries
+6  Developing Packages for PLane T
+► 2  The PLane T Search Order
+2.1  Previous Linkage
+2.2  Acceptable Local Package
+2.3  Acceptable Remote Package
+2.4  Cached Installation Archive
+On this page:
+2.1 Previous Linkage
+2.2 Acceptable Local Package
+2.3 Acceptable Remote Package
+2.4 Cached Installation Archive
+[...search manuals...]
+  top← prev  up  next → 
+
+2 The PLaneT Search Order
+
+PLaneT has four strategies it uses in order to match a request with an
+appropriate package that.
+
+2.1 Previous Linkage
+
+Whenever a file requires a package via PLaneT and that requirement is
+satisfied, the system makes a note of exactly which package satisfied that
+requirement and from then on always uses that exact same package, even if a
+newer version is available. This is done to prevent "magic upgrades" in which a
+program stops working after installation because an unrelated package was
+installed. Such connections are called links and are stored in a user-specific
+table called the linkage table.
+
+2.2 Acceptable Local Package
+
+If the PLaneT client doesn’t have any previous linkage information, it checks
+its list of already-installed PLaneT packages for one that meets the
+requirement, and uses it if available. Both PLaneT-installed packages and
+packages established through a development link (see Development Links) are
+checked simultaneously at this stage.
+
+2.3 Acceptable Remote Package
+
+If there is no acceptable local package, the PLaneT client sends a request to
+the PLaneT server for a new package that would satisfy the requirement. The
+server then finds the newest matching package and sends it back to the client,
+which then installs it and uses it to satisfy the original requirement.
+
+2.4 Cached Installation Archive
+
+If the remote server cannot be contacted (or fails in any way to deliver an
+acceptable package), the PLaneT client consults the uninstalled-packages cache,
+a cache of all previously-downloaded packages, even those that are not
+currently installed. Racket users who frequently upgrade their installations
+may have many packages downloaded but not installed at any given time; this
+step is intended to ensure that these users can still run programs even if they
+temporarily lose network connection.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

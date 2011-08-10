@@ -1,0 +1,41 @@
+►  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+▼ 1  Containers
+1.1  aligned-pasteboard%
+1.2  alignment<%>
+1.3  alignment-parent<%>
+1.4  stretchable-snip<%>
+1.5  horizontal-alignment%
+1.6  vertical-alignment%
+1.7  dllist<%>
+On this page:
+get-pasteboard
+add-child
+delete-child
+is-shown?
+[...search manuals...]
+  top← prev  up  next → 
+
+alignment-parent<%> : interface?
+(send an-alignment-parent get-pasteboard)
+ → (is-a?/c pasteboard%)
+The pasteboard that this alignment is being displayed to.
+
+(send an-alignment-parent add-child child) → void?
+  child : (is-a?/c alignment<%>)
+Add the given alignment as a child after the existing child.
+
+(send an-alignment-parent delete-child child) → void?
+  child : (is-a?/c alignment<%>)
+Deletes a child from the alignments.
+
+(send an-alignment-parent is-shown?) → boolean?
+True if the alignment is being shown (accounting for its parent being shown).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

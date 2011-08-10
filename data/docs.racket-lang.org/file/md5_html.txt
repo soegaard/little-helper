@@ -1,0 +1,42 @@
+▼  File: Racket File Format Libraries
+1  Convertible: Data-Conversion Protocol
+2  gzip Compression and File Creation
+3  gzip Decompression
+4  zip File Creation
+5  tar File Creation
+6  MD5 Message Digest
+7  SHA1 Message Digest
+8  GIF File Writing
+9  Windows Registry
+   Bibliography
+   Index
+On this page:
+md5
+[...search manuals...]
+  top← prev  up  next → 
+
+6 MD5 Message Digest
+
+ (require file/md5)
+
+(md5 in [hex-encode?]) → bytes?
+  in : (or/c input-port? bytes? string?)
+  hex-encode? : boolean? = #t
+If hex-encode? is #t, produces a byte string containing 32 hexadecimal digits
+(lowercase) that is the MD5 hash of the given input stream or byte string.
+Otherwise produces the 16 byte long byte string that is the MD5 hash of the
+given input stream or byte string.
+
+Examples:
+
+    > (md5 #"abc")
+    #"900150983cd24fb0d6963f7d28e17f72"
+
+    > (md5 #"abc" #f)
+    #"\220\1P\230<\322O\260\326\226?}(\341\177r"
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

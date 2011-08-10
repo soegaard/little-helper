@@ -1,0 +1,52 @@
+►  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+▼ 2  Controls
+2.1  embedded-text-button%
+2.2  embedded-button%
+2.3  embedded-toggle-button%
+2.4  embedded-message%
+2.5  vline%
+2.6  hline%
+Inherited methods:
+from alignment<%>
+align
+get-min-height
+get-min-width
+get-parent
+set-min-sizes
+show
+show/ hide
+stretchable-height
+stretchable-width
+from dllist<%>
+for-each
+map-to-list
+next
+prev
+[...search manuals...]
+  top← prev  up  next → 
+
+embedded-button% : class?
+  superclass: snip-wrapper%
+
+  extends:  alignment<%>
+A clickable button with a bitmap label.
+
+(new embedded-button%   [images images]       
+                        [callback callback])  
+ → (is-a?/c embedded-button%)
+  images : (cons/c path-string? path-string?)
+  callback : ((is-a?/c button-snip%) (is-a?/c event%) . -> . void?)
+The images argument is a pair filenames to be load as the button-label image,
+where the first is the image for when the button is at rest, and the second is
+the image for the button while its pressed.
+
+The callback is called when the button is clicked.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

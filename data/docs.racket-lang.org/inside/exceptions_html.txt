@@ -1,0 +1,588 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+► 7  Exceptions and Escape Continuations
+7.1  Temporarily Catching Error Escapes
+7.2  Enabling and Disabling Breaks
+7.3  Exception Functions
+On this page:
+7.1 Temporarily Catching Error Escapes
+7.2 Enabling and Disabling Breaks
+7.3 Exception Functions
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Exceptions and Escape Continuations
+
+When Racket encounters an error, it raises an exception. The default exception
+handler invokes the error display handler and then the error escape handler.
+The default error escape handler escapes via a primitive error escape, which is
+implemented by calling scheme_longjmp(*scheme_current_thread->error_buf).
+
+An embedding program should install a fresh buffer into scheme_current_thread->
+error_buf and call scheme_setjmp(*scheme_current_thread->error_buf) before any
+top-level entry into Racket evaluation to catch primitive error escapes. When
+the new buffer goes out of scope, restore the original in
+scheme_current_thread->error_buf. The macro scheme_error_buf is a shorthand for
+*scheme_current_thread->error_buf.
+
+  mz_jmp_buf * volatile save, fresh;
+
+  ...
+
+  save = scheme_current_thread->error_buf;
+
+  scheme_current_thread->error_buf = &fresh;
+
+  if (scheme_setjmp(scheme_error_buf)) {
+
+    /* There was an error */
+
+    ...
+
+  } else {
+
+    v = scheme_eval_string(s, env);
+
+  }
+
+  scheme_current_thread->error_buf = save;
+
+  ...
+
+
+3m: when scheme_setjmp is used, the enclosing context must provide a
+local-variable registration record via MZ_GC_DECL_REG. Use MZ_GC_DECL_REG(0) if
+the context has no local variables to register. Unfortunately, when using
+--xform with raco ctool instead of MZ_GC_DECL_REG, etc., you may need to
+declare a dummy pointer and use it after scheme_setjmp to ensure that a
+local-variable registration is generated.
+
+New primitive procedures can raise a generic exception by calling
+scheme_signal_error. The arguments for scheme_signal_error are roughly the same
+as for the standard C function printf. A specific primitive exception can be
+raised by calling scheme_raise_exn.
+
+Full continuations are implemented in Racket by copying the C stack and using
+scheme_setjmp and scheme_longjmp. As long a C/C++ application invokes Racket
+evaluation through the top-level evaluation functions (scheme_eval,
+scheme_apply, etc., as opposed to _scheme_apply, _scheme_eval_compiled, etc.),
+the code is protected against any unusual behavior from Racket evaluations
+(such as returning twice from a function) because continuation invocations are
+confined to jumps within a single top-level evaluation. However, escape
+continuation jumps are still allowed; as explained in the following
+sub-section, special care must be taken in extension that is sensitive to
+escapes.
+
+7.1 Temporarily Catching Error Escapes
+
+When implementing new primitive procedure, it is sometimes useful to catch and
+handle errors that occur in evaluating subexpressions. One way to do this is
+the following: save scheme_current_thread->error_buf to a temporary variable,
+set scheme_current_thread->error_buf to the address of a stack-allocated
+mz_jmp_buf, invoke scheme_setjmp(scheme_error_buf), perform the function’s
+work, and then restore scheme_current_thread->error_buf before returning a
+value. (3m: A stack-allocated mz_jmp_buf instance need not be registered with
+the garbage collector, and a heap-allocated mz_jmp_buf should be allocated as
+atomic.)
+
+However, beware that a prompt abort or the invocation of an escaping
+continuation looks like a primitive error escape. In that case, the special
+indicator flag scheme_jumping_to_continuation is non-zero (instead of its
+normal zero value); this situation is only visible when implementing a new
+primitive procedure. When scheme_jumping_to_continuation is non-zero, honor the
+escape request by chaining to the previously saved error buffer; otherwise,
+call scheme_clear_escape.
+
+  mz_jmp_buf * volatile save, fresh;
+
+  save = scheme_current_thread->error_buf;
+
+  scheme_current_thread->error_buf = &fresh;
+
+  if (scheme_setjmp(scheme_error_buf)) {
+
+    /* There was an error or continuation invocation */
+
+    if (scheme_jumping_to_continuation) {
+
+      /* It was a continuation jump */
+
+      scheme_longjmp(*save, 1);
+
+      /* To block the jump, instead: scheme_clear_escape(); */
+
+    } else {
+
+      /* It was a primitive error escape */
+
+    }
+
+  } else {
+
+    scheme_eval_string("x", scheme_env);
+
+  }
+
+  scheme_current_thread->error_buf = save;
+
+
+This solution works fine as long as the procedure implementation only calls
+top-level evaluation functions (scheme_eval, scheme_apply, etc., as opposed to
+_scheme_apply, _scheme_eval_compiled, etc.). Otherwise, use scheme_dynamic_wind
+to protect your code against full continuation jumps in the same way that
+dynamic-wind is used in Racket.
+
+The above solution simply traps the escape; it doesn’t report the reason that
+the escape occurred. To catch exceptions and obtain information about the
+exception, the simplest route is to mix Racket code with C-implemented thunks.
+The code below can be used to catch exceptions in a variety of situations. It
+implements the function _apply_catch_exceptions, which catches exceptions
+during the application of a thunk. (This code is in "collects/mzscheme/examples
+/catch.c" in the distribution.)
+
+  static Scheme_Object *exn_catching_apply, *exn_p, *exn_message;
+
+  
+
+  static void init_exn_catching_apply()
+
+  {
+
+    if (!exn_catching_apply) {
+
+      char *e =
+
+        "(lambda (thunk) "
+
+          "(with-handlers ([void (lambda (exn) (cons #f exn))]) "
+
+            "(cons #t (thunk))))";
+
+      /* make sure we have a namespace with the standard bindings: */
+
+      Scheme_Env *env = (Scheme_Env *)scheme_make_namespace(0, NULL);
+
+  
+
+      scheme_register_extension_global(&exn_catching_apply,
+
+                                       sizeof(Scheme_Object *));
+
+      scheme_register_extension_global(&exn_p,
+
+                                       sizeof(Scheme_Object *));
+
+      scheme_register_extension_global(&exn_message,
+
+                                       sizeof(Scheme_Object *));
+
+  
+
+      exn_catching_apply = scheme_eval_string(e, env);
+
+      exn_p = scheme_lookup_global(scheme_intern_symbol("exn?"), env);
+
+      exn_message
+
+        = scheme_lookup_global(scheme_intern_symbol("exn-message"),
+
+                               env);
+
+    }
+
+  }
+
+  
+
+  /* This function applies a thunk, returning the Racket value if
+
+     there's no exception, otherwise returning NULL and setting *exn
+
+     to the raised value (usually an exn structure). */
+
+  Scheme_Object *_apply_thunk_catch_exceptions(Scheme_Object *f,
+
+                                               Scheme_Object **exn)
+
+  {
+
+    Scheme_Object *v;
+
+  
+
+    init_exn_catching_apply();
+
+  
+
+    v = _scheme_apply(exn_catching_apply, 1, &f);
+
+    /* v is a pair: (cons #t value) or (cons #f exn) */
+
+  
+
+    if (SCHEME_TRUEP(SCHEME_CAR(v)))
+
+      return SCHEME_CDR(v);
+
+    else {
+
+      *exn = SCHEME_CDR(v);
+
+      return NULL;
+
+    }
+
+  }
+
+  
+
+  Scheme_Object *extract_exn_message(Scheme_Object *v)
+
+  {
+
+    init_exn_catching_apply();
+
+  
+
+    if (SCHEME_TRUEP(_scheme_apply(exn_p, 1, &v)))
+
+      return _scheme_apply(exn_message, 1, &v);
+
+    else
+
+      return NULL; /* Not an exn structure */
+
+  }
+
+
+In the following example, the above code is used to catch exceptions that occur
+during while evaluating source code from a string.
+
+  static Scheme_Object *do_eval(void *s, int noargc,
+
+                                Scheme_Object **noargv)
+
+  {
+
+    return scheme_eval_string((char *)s,
+
+                              scheme_get_env(scheme_config));
+
+  }
+
+  
+
+  static Scheme_Object *eval_string_or_get_exn_message(char *s)
+
+  {
+
+    Scheme_Object *v, *exn;
+
+  
+
+    v = scheme_make_closed_prim(do_eval, s);
+
+    v = _apply_thunk_catch_exceptions(v, &exn);
+
+    /* Got a value? */
+
+    if (v)
+
+      return v;
+
+  
+
+    v = extract_exn_message(exn);
+
+    /* Got an exn? */
+
+    if (v)
+
+      return v;
+
+  
+
+    /* `raise' was called on some arbitrary value */
+
+    return exn;
+
+  }
+
+
+7.2 Enabling and Disabling Breaks
+
+When embedding Racket, asynchronous break exceptions are disabled by default.
+Call scheme_set_can_break (which is the same as calling the Racket function
+break-enabled) to enable or disable breaks. To enable or disable breaks during
+the dynamic extent of another evaluation (where you would use
+with-break-parameterization in Racket), use scheme_push_break_enable before and
+scheme_pop_break_enable after, instead.
+
+7.3 Exception Functions
+
+void   scheme_signal_error ( char* msg,
+
+                             ... ...)
+
+Raises a generic primitive exception. The parameters are roughly as for printf,
+but with the following format directives:
+
+  • %c : a Unicode character (of type mzchar)
+
+  • %d : an integer
+
+  • %gd : a long integer
+
+  • %ld : a intptr_t integer
+
+  • %f : a floating-point double
+
+  • %s : a nul-terminated char string
+
+  • %5 : a nul-terminated mzchar string
+
+  • %S : a Racket symbol (a Scheme_Object*)
+
+  • %t : a char string with a intptr_t size (two arguments), possibly
+    containing a non-terminating nul byte, and possibly without a
+    nul-terminator
+
+  • %u : a mzchar string with a intptr_t size (two arguments), possibly
+    containing a non-terminating nul character, and possibly without a
+    nul-terminator
+
+  • %T : a Racket string (a Scheme_Object*)
+
+  • %q : a string, truncated to 253 characters, with ellipses printed if the
+    string is truncated
+
+  • %Q : a Racket string (a Scheme_Object*), truncated to 253 characters, with
+    ellipses printed if the string is truncated
+
+  • %V : a Racket value (a Scheme_Object*), truncated according to the current
+    error print width.
+
+  • %e : an errno value, to be printed as a text message.
+
+  • %E : a platform-specific error value, to be printed as a text message.
+
+  • %Z : a potential platform-specific error value and a char string; if the
+    string is non-NULL, then the error value is ignored, otherwise the error
+    value is used as for %E.
+
+  • %% : a percent sign
+
+The arguments following the format string must include no more than 25 strings
+and Racket values, 25 integers, and 25 floating-point numbers. (This
+restriction simplifies the implementation with precise garbage collection.)
+
+void   scheme_raise_exn ( int exnid,
+
+                          ... ...)
+
+Raises a specific primitive exception. The exnid argument specifies the
+exception to be raised. If an instance of that exception has n fields, then the
+next n-2 arguments are values for those fields (skipping the message and
+debug-info fields). The remaining arguments start with an error string and
+proceed roughly as for printf; see scheme_signal_error above for more details.
+
+Exception ids are #defined using the same names as in Racket, but prefixed with
+“MZ”, all letters are capitalized, and all “:’s’, “-”s, and “/”s are replaced
+with underscores. For example, MZEXN_FAIL_FILESYSTEM is the exception id for a
+filesystem exception.
+
+void   scheme_warning ( char* msg,
+
+                        ... ...)
+
+Signals a warning. The parameters are roughly as for printf; see
+scheme_signal_error above for more details.
+
+void   scheme_wrong_count ( char* name,
+
+                            int minc,
+
+                            int maxc,
+
+                            int argc,
+
+                            Scheme_Object** argv)
+
+This function is automatically invoked when the wrong number of arguments are
+given to a primitive procedure. It signals that the wrong number of parameters
+was received and escapes (like scheme_signal_error). The name argument is the
+name of the procedure that was given the wrong number of arguments; minc is the
+minimum number of expected arguments; maxc is the maximum number of expected
+arguments, or -1 if there is no maximum; argc and argv contain all of the
+received arguments.
+
+void   scheme_wrong_type ( char* name,
+
+                           char* expected,
+
+                           int which,
+
+                           int argc,
+
+                           Scheme_Object** argv)
+
+Signals that an argument of the wrong type was received, and escapes (like
+scheme_signal_error). The name argument is the name of the procedure that was
+given the wrong type of argument; expected is the name of the expected type;
+which is the offending argument in the argv array; argc and argv contain all of
+the received arguments. If the original argc and argv are not available,
+provide -1 for which and a pointer to the bad value in argv; argc is ignored in
+this case.
+
+void   scheme_wrong_return_arity ( char* name,
+
+                                   int expected,
+
+                                   int got,
+
+                                   Scheme_Object** argv,
+
+                                   const char* detail)
+
+Signals that the wrong number of values were returned to a multiple-values
+context. The expected argument indicates how many values were expected, got
+indicates the number received, and argv are the received values. The detail
+string can be NULL or it can contain a printf-style string (with additional
+arguments) to describe the context of the error; see scheme_signal_error above
+for more details about the printf-style string.
+
+void   scheme_unbound_global ( char* name)
+
+Signals an unbound-variable error, where name is the name of the variable.
+
+char*   scheme_make_provided_string ( Scheme_Object* o,
+
+                                      int count,
+
+                                      int* len)
+
+Converts a Racket value into a string for the purposes of reporting an error
+message. The count argument specifies how many Racket values total will appear
+in the error message (so the string for this value can be scaled
+appropriately). If len is not NULL, it is filled with the length of the
+returned string.
+
+char*   scheme_make_args_string ( char* s,
+
+                                  int which,
+
+                                  int argc,
+
+                                  Scheme_Object** argv,
+
+                                  intptr_t* len)
+
+Converts an array of Racket values into a byte string, skipping the array
+element indicated by which. This function is used to specify the “other”
+arguments to a function when one argument is bad (thus giving the user more
+information about the state of the program when the error occurred). If len is
+not NULL, it is filled with the length of the returned string.
+
+void   scheme_check_proc_arity ( char* where,
+
+                                 int a,
+
+                                 int which,
+
+                                 int argc,
+
+                                 Scheme_Object** argv)
+
+Checks the whichth argument in argv to make sure it is a procedure that can
+take a arguments. If there is an error, the where, which, argc, and argv
+arguments are passed on to scheme_wrong_type. As in scheme_wrong_type, which
+can be -1, in which case *argv is checked.
+
+Scheme_Object*   scheme_dynamic_wind ( Pre_Post_Proc pre,
+
+                                       Action_Proc action,
+
+                                       Pre_Post_Proc post,
+
+                                       Action_Proc jmp_handler,
+
+                                       void* data)
+
+Evaluates calls the function action to get a value for the scheme_dynamic_wind
+call. The Pre_Post_Proc and Action_Proc types are not actually defined; instead
+the types are inlined as if they were defined as follows:
+
+  typedef void (*Pre_Post_Proc)(void *data);
+
+  typedef Scheme_Object* (*Action_Proc)(void *data);
+
+
+The functions pre and post are invoked when jumping into and out of action,
+respectively.
+
+The function jmp_handler is called when an error is signaled (or an escaping
+continuation is invoked) during the call to action; if jmp_handler returns
+NULL, then the error is passed on to the next error handler, otherwise the
+return value is used as the return value for the scheme_dynamic_wind call.
+
+The pointer data can be anything; it is passed along in calls to action, pre,
+post, and jmp_handler.
+
+void   scheme_clear_escape ( )
+
+Clears the “jumping to escape continuation” flag associated with a thread. Call
+this function when blocking escape continuation hops (see the first example in
+Temporarily Catching Error Escapes).
+
+void   scheme_set_can_break ( int on)
+
+Enables or disables breaks in the same way as calling break-enabled.
+
+void   scheme_push_break_enable ( Scheme_Cont_Frame_Data* cframe,
+
+                                  int on,
+
+                                  int pre_check)
+
+Use this function with scheme_pop_break_enable to enable or disable breaks in
+the same way as with-break-parameterization; this function writes to cframe to
+initialize it, and scheme_pop_break_enable reads from cframe. If pre_check is
+non-zero and breaks are currently enabled, any pending break exception is
+raised.
+
+void   scheme_pop_break_enable ( Scheme_Cont_Frame_Data* cframe,
+
+                                 int post_check)
+
+Use this function with scheme_push_break_enable. If post_check is non-zero and
+breaks are enabled after restoring the previous state, then any pending break
+exception is raised.
+
+Scheme_Object*
+
+scheme_current_continuation_marks ( Scheme_Object* prompt_tag)
+
+Like current-continuation-marks. Passing NULL as prompt_tag is the same as
+providing the default continuation prompt tag.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

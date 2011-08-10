@@ -1,0 +1,80 @@
+▼  The Typed Racket Reference
+ 1  Type Reference
+ 2  Special Form Reference
+ 3  Libraries Provided With Typed Racket
+ 4  Utilities
+ 5  Typed Racket Syntax Without Type Checking
+ 6  Typed Regions
+ 7  Optimization in Typed Racket
+ 8  Legacy Forms
+ 9  Compatibility Languages
+10  Experimental Features
+On this page:
+assert
+with-asserts
+defined?
+index?
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Utilities
+
+Typed Racket provides some additional utility functions to facilitate typed
+programming.
+
+(assert v) → A
+  v : (U #f A)
+(assert v p?) → B
+  v : A
+  p? : (A -> Any : B)
+Verifies that the argument satisfies the constraint. If no predicate is
+provided, simply checks that the value is not #f.
+
+Examples:
+
+    > (define: x : (U #f String) (number->string 7))
+    > x
+    - : (U String False)
+
+    "7"
+
+    > (assert x)
+    - : String
+
+    "7"
+
+    > (define: y : (U String Symbol) "hello")
+    > y
+    - : (U Symbol String)
+
+    "hello"
+
+    > (assert y string?)
+    - : String
+
+    "hello"
+
+    > (assert y boolean?)
+    Assertion failed
+
+
+
+(with-asserts ([id maybe-pred] ...) body ...+)
+ 
+ maybe-pred   =  
+              |   predicate
+Guard the body with assertions. If any of the assertions fail, the program
+errors. These assertions behave like assert.
+
+(defined? v) → boolean?
+  v : any/c
+A predicate for determining if v is not #<undefined>.
+
+(index? v) → boolean?
+  v : any/c
+A predicate for the Index type.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

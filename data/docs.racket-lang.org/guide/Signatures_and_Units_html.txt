@@ -1,0 +1,139 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 14  Units (Components)
+14.1  Signatures and Units
+14.2  Invoking Units
+14.3  Linking Units
+14.4  First-Class Units
+14.5  Whole-module Signatures and Units
+14.6  Contracts for Units
+14.7  unit versus module
+[...search manuals...]
+  top← prev  up  next → 
+
+14.1 Signatures and Units
+
+The interface of a unit is described in terms of signatures. Each signature is
+defined (normally within a module) using define-signature. For example, the
+following signature, placed in a "toy-factory-sig.rkt" file, describes the
+exports of a component that implements a toy factory:
+
+            By convention, signature names with ^.
+
+        "toy-factory-sig.rkt"
+
+            #lang racket
+             
+            (define-signature toy-factory^
+              (build-toys  ; (integer? -> (listof toy?))
+               repaint     ; (toy? symbol? -> toy?)
+               toy?        ; (any/c -> boolean?)
+               toy-color)) ; (toy? -> symbol?)
+             
+            (provide toy-factory^)
+
+An implementation of the toy-factory^ signature is written using define-unit
+with an export clause that names toy-factory^:
+
+            By convention, unit names with @.
+
+        "simple-factory-unit.rkt"
+
+            #lang racket
+             
+            (require "toy-factory-sig.rkt")
+             
+            (define-unit simple-factory@
+              (import)
+              (export toy-factory^)
+             
+              (printf "Factory started.\n")
+             
+              (define-struct toy (color) #:transparent)
+             
+              (define (build-toys n)
+                (for/list ([i (in-range n)])
+                  (make-toy 'blue)))
+             
+              (define (repaint t col)
+                (make-toy col)))
+             
+            (provide simple-factory@)
+
+The toy-factory^ signature also could be referenced by a unit that needs a toy
+factory to implement something else. In that case, toy-factory^ would be named
+in an import clause. For example, a toy store would get toys from a toy
+factory. (Suppose, for the sake of an example with interesting features, that
+the store is willing to sell only toys in a particular color.)
+
+        "toy-store-sig.rkt"
+
+            #lang racket
+             
+            (define-signature toy-store^
+              (store-color     ; (-> symbol?)
+               stock!          ; (integer? -> void?)
+               get-inventory)) ; (-> (listof toy?))
+             
+            (provide toy-store^)
+
+        "toy-store-unit.rkt"
+
+            #lang racket
+             
+            (require "toy-store-sig.rkt"
+                     "toy-factory-sig.rkt")
+             
+            (define-unit toy-store@
+              (import toy-factory^)
+              (export toy-store^)
+             
+              (define inventory null)
+             
+              (define (store-color) 'green)
+             
+              (define (maybe-repaint t)
+                (if (eq? (toy-color t) (store-color))
+                    t
+                    (repaint t (store-color))))
+             
+              (define (stock! n)
+                (set! inventory
+                      (append inventory
+                              (map maybe-repaint
+                                   (build-toys n)))))
+             
+              (define (get-inventory) inventory))
+             
+            (provide toy-store@)
+
+Note that "toy-store-unit.rkt" imports "toy-factory-sig.rkt", but not
+"simple-factory-unit.rkt". Consequently, the toy-store@ unit relies only on the
+specification of a toy factory, not on a specific implementation.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

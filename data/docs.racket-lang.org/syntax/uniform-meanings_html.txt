@@ -1,0 +1,153 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+► 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+▼ 8.2  Examples
+8.2.1  Modules and reusable syntax classes
+8.2.2  Optional keyword arguments
+8.2.3  Variants with uniform meanings
+8.2.4  Variants with varied meanings
+8.2.5  More keyword arguments
+8.2.6  Contracts on macro sub-expressions
+[...search manuals...]
+  top← prev  up  next → 
+
+8.2.3 Variants with uniform meanings
+
+Syntax classes not only validate syntax, they also extract some measure of
+meaning from it. From the perspective of meaning, there are essentially two
+kinds of syntax class. In the first, all of the syntax class’s variants have
+the same kind of meaning. In the second, variants may have different kinds of
+meaning.In other words, some syntax classes’ meanings are products and others’
+meanings are sums. This section discusses the first kind, syntax classes with
+uniform meanings. The next section discusses Variants with varied meanings.
+
+If all of a syntax class’s variants express the same kind of information, that
+information can be cleanly represented via attributes, and it can be concisely
+processed using ellipses.
+
+One example of a syntax class with uniform meaning: the init-decl syntax of the
+class macro. Here is the specification of init-decl:
+
+      init-decl   =   id
+                  |   (maybe-renamed)
+                  |   (maybe-renamed default-expr)
+                       
+  maybe-renamed   =   id
+                  |   (internal-id external-id)
+
+The init-decl syntax class has three variants, plus an auxiliary syntax class
+that has two variants of its own. But all forms of init-decl ultimately carry
+just three pieces of information: an internal name, an external name, and a
+default configuration of some sort. The simpler syntactic variants are just
+abbreviations for the full information.
+
+The three pieces of information determine the syntax class’s attributes. It is
+useful to declare the attributes explicitly using the #:attributes keyword; the
+declaration acts both as in-code documentation and as a check on the variants.
+
+    (define-syntax-class init-decl
+      #:attributes (internal external default)
+      __)
+
+Next we fill in the syntactic variants, deferring the computation of the
+attributes:
+
+    (define-syntax-class init-decl
+      #:attributes (internal external default)
+      (pattern ???:id
+               __)
+      (pattern (???:maybe-renamed)
+               __)
+      (pattern (???:maybe-renamed ???:expr)
+               __))
+
+We perform a similar analysis of maybe-renamed:
+
+    (define-syntax-class maybe-renamed
+      #:attributes (internal external)
+      (pattern ???:id
+               __)
+      (pattern (???:id ???:id)
+               __))
+
+Here’s one straightforward way of matching syntactic structure with attributes
+for maybe-renamed:
+
+    (define-syntax-class maybe-renamed
+      #:attributes (internal external)
+      (pattern internal:id
+               #:with external #'internal)
+      (pattern (internal:id external:id)))
+
+Given that definition of maybe-renamed, we can fill in most of the definition
+of init-decl:
+
+    (define-syntax-class init-decl
+      #:attributes (internal external default)
+      (pattern internal:id
+               #:with external #:internal
+               #:with default ???)
+      (pattern (mr:maybe-renamed)
+               #:with internal #'mr.internal
+               #:with external #'mr.external
+               #:with default ???)
+      (pattern (mr:maybe-renamed default0:expr)
+               #:with internal #'mr.internal
+               #:with external #'mr.external
+               #:with default ???))
+
+At this point we realize we have not decided on a representation for the
+default configuration. In fact, it is an example of syntax with varied meanings
+(aka sum or disjoint union). The following section discusses representation
+options in greater detail; for the sake of completeness, we present one of them
+here.
+
+There are two kinds of default configuration. One indicates that the
+initialization argument is optional, with a default value computed from the
+given expression. The other indicates that the initialization argument is
+mandatory. We represent the variants as a (syntax) list containing the default
+expression and as the empty (syntax) list, respectively. More precisely:
+
+    (define-syntax-class init-decl
+      #:attributes (internal external default)
+      (pattern internal:id
+               #:with external #:internal
+               #:with default #'())
+      (pattern (mr:maybe-renamed)
+               #:with internal #'mr.internal
+               #:with external #'mr.external
+               #:with default #'())
+      (pattern (mr:maybe-renamed default0:expr)
+               #:with internal #'mr.internal
+               #:with external #'mr.external
+               #:with default #'(default0)))
+
+Another way to look at this aspect of syntax class design is as the algebraic
+factoring of sums-of-products (concrete syntax variants) into products-of-sums
+(attributes and abstract syntax variants). The advantages of the latter form
+are the “dot” notation for data extraction, avoiding or reducing additional
+case analysis, and the ability to concisely manipulate sequences using
+ellipses.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

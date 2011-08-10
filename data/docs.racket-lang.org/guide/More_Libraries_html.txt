@@ -1,0 +1,100 @@
+▼  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 21  More Libraries
+21.1  Graphics and GUIs
+21.2  The Web Server
+21.3  Using Foreign Libraries
+21.4  And More
+On this page:
+21.1 Graphics and GUIs
+21.2 The Web Server
+21.3 Using Foreign Libraries
+21.4 And More
+[...search manuals...]
+  top← prev  up  next → 
+
+21 More Libraries
+
+This guide covers only the Racket language and libraries that are documented in
+The Racket Reference. The Racket distribution includes many additional
+libraries.
+
+21.1 Graphics and GUIs
+
+Racket provides many libraries for graphics and graphical user interfaces
+(GUIs):
+
+  • The racket/draw library provides basic drawing tools, including drawing
+    contexts such as bitmaps and PostScript files.
+
+    See The Racket Drawing Toolkit for more information.
+
+  • The racket/gui library provides GUI widgets such as windows, buttons,
+    checkboxes, and text fields. The library also includes a sophisticated and
+    extensible text editor.
+
+    See The Racket Graphical Interface Toolkit for more information.
+
+  • The slideshow/pict library provides a more functional abstraction layer
+    over racket/draw. This layer is especially useful for creating slide
+    presentations with Slideshow, but it is also useful for creating images for
+    Scribble documents or other drawing tasks. Pictures created with the
+    slideshow/pict library can be rendered to any drawing context.
+
+    See Slideshow: Figure and Presentation Tools for more information.
+
+  • The 2htdp/image library is similar to slideshow/pict. It is more
+    streamlined for pedagogical use, but also slightly more specific to screen
+    and bitmap drawing.
+
+    See 2htdp/image for more information.
+
+  • The sgl library provides OpenGL for 3-D graphics. The context for rendering
+    OpenGL can be a window or bitmap created with racket/gui.
+
+    See GL: 3-D Graphics for more information.
+
+21.2 The Web Server
+
+Web Applications in Racket describes the Racket web server, which supports
+servlets implemented in Racket.
+
+21.3 Using Foreign Libraries
+
+The Racket Foreign Interface describes tools for using Racket to access
+libraries that are normally used by C programs.
+
+21.4 And More
+
+Racket Documentation lists documentation for many other installed libraries.
+Run raco docs to find documentation for libraries that are installed on your
+system and specific to your user account.
+
+PLaneT offers even more downloadable packages contributed by Racketeers.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

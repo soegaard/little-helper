@@ -1,0 +1,170 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Procedures
+
+A primitive procedure is a Racket-callable procedure that is implemented in C.
+Primitive procedures are created in Racket with the function
+scheme_make_prim_w_arity, which takes a C function pointer, the name of the
+primitive, and information about the number of Racket arguments that it takes;
+it returns a Racket procedure value.
+
+The C function implementing the procedure must take two arguments: an integer
+that specifies the number of arguments passed to the procedure, and an array of
+Scheme_Object* arguments. The number of arguments passed to the function will
+be checked using the arity information. (The arity information provided to
+scheme_make_prim_w_arity is also used for the Racket arity procedure.) The
+procedure implementation is not allowed to mutate the input array of arguments;
+as an exception, the procedure can mutate the array if it is the same a the
+result of scheme_current_argument_stack. The procedure may mutate the arguments
+themselves when appropriate (e.g., a fill in a vector argument).
+
+The function scheme_make_prim_closure_w_arity is similar to
+scheme_make_prim_w_arity, but it takes an additional count and Scheme_Object*
+array that is copied into the created procedure; the procedure is passed back
+to the C function when the closure is invoked. In this way, closure-like data
+from the C world can be associated with the primitive procedure.
+
+The function scheme_make_closed_prim_w_arity is similar to
+scheme_make_prim_closure_w_arity, but it uses an older calling convention for
+passing closure data.
+
+To work well with Scheme threads, a C function that performs substantial or
+unbounded work should occasionally call SCHEME_USE_FUEL; see Allowing Thread
+Switches for details.
+
+Scheme_Object*   scheme_make_prim_w_arity ( Scheme_Prim* prim,
+
+                                            char* name,
+
+                                            int mina,
+
+                                            int maxa)
+
+Creates a primitive procedure value, given the C function pointer prim. The
+form of prim is defined by:
+
+  typedef Scheme_Object *(Scheme_Prim)(int argc,
+
+                                       Scheme_Object **argv);
+
+
+The value mina should be the minimum number of arguments that must be supplied
+to the procedure. The value maxa should be the maximum number of arguments that
+can be supplied to the procedure, or -1 if the procedure can take arbitrarily
+many arguments. The mina and maxa values are used for automatically checking
+the argument count before the primitive is invoked, and also for the Racket 
+arity procedure. The name argument is used to report application arity errors
+at run-time.
+
+Scheme_Object*   scheme_make_folding_prim ( Scheme_Prim* prim,
+
+                                            char* name,
+
+                                            int mina,
+
+                                            int maxa,
+
+                                            short folding)
+
+Like scheme_make_prim_w_arity, but if folding is non-zero, the compiler assumes
+that an application of the procedure to constant values can be folded to a
+constant. For example, +, zero?, and string-length are folding primitives, but
+display and cons are not.
+
+Scheme_Object*   scheme_make_prim ( Scheme_Prim* prim)
+
+Same as scheme_make_prim_w_arity, but the arity (0, -1) and the name “UNKNOWN”
+is assumed. This function is provided for backward compatibility only.
+
+Scheme_Object*
+
+scheme_make_prim_closure_w_arity ( Scheme_Prim_Closure_Proc* prim,
+
+                                   int c,
+
+                                   Scheme_Object* vals,
+
+                                   char* name,
+
+                                   int mina,
+
+                                   int maxa)
+
+Creates a primitive procedure value that includes the c values in vals; when
+the C function prim is invoked, the generated primitive is passed as the last
+parameter. The form of prim is defined by:
+
+  typedef
+
+  Scheme_Object *(Scheme_Prim_Closure_Proc)(int argc,
+
+                                            Scheme_Object **argv,
+
+                                            Scheme_Object *prim);
+
+
+The macro SCHEME_PRIM_CLOSURE_ELS takes a primitive-closure object and returns
+an array with the same length and content as vals. (3m: see Cooperating with 3m
+for a caution about SCHEME_PRIM_CLOSURE_ELS.)
+
+Scheme_Object*
+
+scheme_make_closed_prim_w_arity ( Scheme_Closed_Prim* prim,
+
+                                  void* data,
+
+                                  char* name,
+
+                                  int mina,
+
+                                  int maxa)
+
+Creates an old-style primitive procedure value; when the C function prim is
+invoked, data is passed as the first parameter. The form of prim is defined by:
+
+  typedef
+
+  Scheme_Object *(Scheme_Closed_Prim)(void *data, int argc,
+
+                                      Scheme_Object **argv);
+
+
+Scheme_Object*   scheme_make_closed_prim ( Scheme_Closed_Prim* prim,
+
+                                           void* data)
+
+Creates a closed primitive procedure value without arity information. This
+function is provided for backward compatibility only.
+
+Scheme_Object**   scheme_current_argument_stack ( )
+
+Returns a pointer to an internal stack for argument passing. When the argument
+array passed to a procedure corresponds to the current argument stack address,
+the procedure is allowed to modify the array. In particular, it might clear out
+pointers in the argument array to allow the arguments to be reclaimed by the
+memory manager (if they are not otherwise accessible).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

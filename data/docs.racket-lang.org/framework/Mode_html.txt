@@ -1,0 +1,637 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+mode: surrogate-text<%>
+on-enable-surrogate
+on-disable-surrogate
+mode: surrogate-text%
+on-change
+on-char
+on-default-char
+on-default-event
+on-display-size
+on-edit-sequence
+on-event
+on-focus
+on-load-file
+on-local-char
+on-local-event
+on-new-box
+on-new-image-snip
+on-paint
+on-save-file
+on-snip-modified
+on-change-style
+on-delete
+on-insert
+on-new-string-snip
+on-new-tab-snip
+on-set-size-constraint
+after-change-style
+after-delete
+after-insert
+after-set-position
+after-set-size-constraint
+after-edit-sequence
+after-load-file
+after-save-file
+can-change-style?
+can-delete?
+can-insert?
+can-set-size-constraint?
+can-do-edit-operation?
+can-load-file?
+can-save-file?
+put-file
+mode: host-text<%>
+get-surrogate
+set-surrogate
+mode: host-text-mixin
+on-change
+on-char
+on-default-char
+on-default-event
+on-display-size
+on-edit-sequence
+on-event
+on-focus
+on-load-file
+on-local-char
+on-local-event
+on-new-box
+on-new-image-snip
+on-paint
+on-save-file
+on-snip-modified
+on-change-style
+on-delete
+on-insert
+on-new-string-snip
+on-new-tab-snip
+on-set-size-constraint
+after-change-style
+after-delete
+after-insert
+after-set-position
+after-set-size-constraint
+after-edit-sequence
+after-load-file
+after-save-file
+can-change-style?
+can-delete?
+can-insert?
+can-set-size-constraint?
+can-do-edit-operation?
+can-load-file?
+can-save-file?
+put-file
+[...search manuals...]
+  top← prev  up  next → 
+
+21 Mode
+
+mode:surrogate-text<%> : interface?
+
+
+    (send a-mode:surrogate-text on-enable-surrogate) → any
+    Called by set-surrogate to notify the surrogate that it has just become
+    active.
+    (send a-mode:surrogate-text on-disable-surrogate) → any
+    Called by set-surrogate to notify the surrogate that it has just been
+    disabled.
+
+mode:surrogate-text% : class?
+  superclass: object%
+
+  extends:  mode:surrogate-text<%>
+
+
+    (send a-mode:surrogate-text on-change   orig               
+                                            call-inner)   →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-char   orig              
+                                          call-super        
+                                          event)       →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      event : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-default-char   orig              
+                                                  call-super        
+                                                  event)       →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      event : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-default-event   orig              
+                                                   call-super        
+                                                   event)       →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      event : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-display-size   orig               
+                                                  call-inner)   →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-edit-sequence   orig               
+                                                   call-inner)   →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-event   orig              
+                                           call-super        
+                                           event)       →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      event : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-focus   orig              
+                                           call-super        
+                                           on?)         →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      on? : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-load-file   orig              
+                                               call-inner        
+                                               filename          
+                                               format)      →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      filename : any/c
+      format : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-local-char   orig              
+                                                call-super        
+                                                event)       →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      event : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-local-event   orig              
+                                                 call-super        
+                                                 event)       →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      event : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-new-box   orig              
+                                             call-super        
+                                             type)        →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      type : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-new-image-snip   orig            
+                                                    call-super      
+                                                    filename        
+                                                    kind            
+                                                    relative-path?  
+                                                    inline?)        
+     → any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      filename : any/c
+      kind : any/c
+      relative-path? : any/c
+      inline? : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-paint   orig               
+                                           call-super         
+                                           before?            
+                                           dc                 
+                                           left               
+                                           top                
+                                           right              
+                                           bottom             
+                                           dx                 
+                                           dy                 
+                                           draw-caret)   →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      before? : any/c
+      dc : any/c
+      left : any/c
+      top : any/c
+      right : any/c
+      bottom : any/c
+      dx : any/c
+      dy : any/c
+      draw-caret : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-save-file   orig              
+                                               call-inner        
+                                               filename          
+                                               format)      →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      filename : any/c
+      format : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-snip-modified   orig              
+                                                   call-inner        
+                                                   snip              
+                                                   modified?)   →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      snip : any/c
+      modified? : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-change-style   orig              
+                                                  call-inner        
+                                                  start             
+                                                  len)         →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      start : any/c
+      len : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-delete   orig              
+                                            call-inner        
+                                            start             
+                                            len)         →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      start : any/c
+      len : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-insert   orig              
+                                            call-inner        
+                                            start             
+                                            len)         →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      start : any/c
+      len : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-new-string-snip   orig         
+                                                     call-super)  
+     → any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-new-tab-snip   orig               
+                                                  call-super)   →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text on-set-size-constraint   orig         
+                                                         call-inner)  
+     → any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text after-change-style   orig        
+                                                     call-inner  
+                                                     start       
+                                                     len)        
+     → any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      start : any/c
+      len : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text after-delete   orig              
+                                               call-inner        
+                                               start             
+                                               len)         →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      start : any/c
+      len : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text after-insert   orig              
+                                               call-inner        
+                                               start             
+                                               len)         →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      start : any/c
+      len : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text after-set-position   orig         
+                                                     call-inner)  
+     → any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text after-set-size-constraint  
+              orig                                         
+              call-inner)                                  
+     → any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text after-edit-sequence   orig         
+                                                      call-inner)  
+     → any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text after-load-file   orig              
+                                                  call-inner        
+                                                  success?)    →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      success? : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text after-save-file   orig              
+                                                  call-inner        
+                                                  success?)    →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      success? : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text can-change-style?   orig              
+                                                    call-inner        
+                                                    start             
+                                                    len)         →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      start : any/c
+      len : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text can-delete?   orig              
+                                              call-inner        
+                                              start             
+                                              len)         →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      start : any/c
+      len : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text can-insert?   orig              
+                                              call-inner        
+                                              start             
+                                              len)         →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      start : any/c
+      len : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text can-set-size-constraint?  
+              orig                                        
+              call-inner)                                 
+     → any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text can-do-edit-operation?   orig        
+                                                         call-super  
+                                                         op)         
+     → any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      op : any/c
+    (send a-mode:surrogate-text can-do-edit-operation?   orig         
+                                                         call-super   
+                                                         op           
+                                                         recursive?)  
+     → any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      op : any/c
+      recursive? : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text can-load-file?   orig              
+                                                 call-inner        
+                                                 filename          
+                                                 format)      →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      filename : any/c
+      format : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text can-save-file?   orig              
+                                                 call-inner        
+                                                 filename          
+                                                 format)      →   any
+      orig : (is-a?/ctext%)
+      call-inner : (->any)
+      filename : any/c
+      format : any/c
+    Returns the result of invoking call-super.
+    (send a-mode:surrogate-text put-file   orig                 
+                                           call-super           
+                                           directory            
+                                           default-name)   →   any
+      orig : (is-a?/ctext%)
+      call-super : (->any)
+      directory : any/c
+      default-name : any/c
+    Returns the result of invoking call-super.
+
+mode:host-text<%> : interface?
+
+
+    (send a-mode:host-text get-surrogate)
+     → (or/c false/c (is-a?/c mode:surrogate-text<%>))
+    Returns the currently active surrogate.
+    (send a-mode:host-text set-surrogate surrogate) → void?
+      surrogate : (or/c false/c (is-a?/c mode:surrogate-text<%>))
+    Sets the current surrogate to surrogate.
+
+mode:host-text-mixin : (class? . -> . class?)
+  result implements:  mode:host-text<%>
+
+
+    (send a-mode:host-text on-change) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-char event) → any
+      event : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-default-char event) → any
+      event : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-default-event event) → any
+      event : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-display-size) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-edit-sequence) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-event event) → any
+      event : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-focus on?) → any
+      on? : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-load-file   filename        
+                                          format)    →   any
+      filename : any/c
+      format : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-local-char event) → any
+      event : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-local-event event) → any
+      event : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-new-box type) → any
+      type : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-new-image-snip   filename              
+                                               kind                  
+                                               relative-path?        
+                                               inline?)         →   any
+      filename : any/c
+      kind : any/c
+      relative-path? : any/c
+      inline? : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-paint   before?            
+                                      dc                 
+                                      left               
+                                      top                
+                                      right              
+                                      bottom             
+                                      dx                 
+                                      dy                 
+                                      draw-caret)   →   any
+      before? : any/c
+      dc : any/c
+      left : any/c
+      top : any/c
+      right : any/c
+      bottom : any/c
+      dx : any/c
+      dy : any/c
+      draw-caret : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-save-file   filename        
+                                          format)    →   any
+      filename : any/c
+      format : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-snip-modified   snip              
+                                              modified?)   →   any
+      snip : any/c
+      modified? : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-change-style   start        
+                                             len)    →   any
+      start : any/c
+      len : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-delete start len) → any
+      start : any/c
+      len : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-insert start len) → any
+      start : any/c
+      len : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-new-string-snip) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-new-tab-snip) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text on-set-size-constraint) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text after-change-style   start        
+                                                len)    →   any
+      start : any/c
+      len : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text after-delete   start        
+                                          len)    →   any
+      start : any/c
+      len : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text after-insert   start        
+                                          len)    →   any
+      start : any/c
+      len : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text after-set-position) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text after-set-size-constraint) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text after-edit-sequence) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text after-load-file success?) → any
+      success? : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text after-save-file success?) → any
+      success? : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text can-change-style?   start        
+                                               len)    →   any
+      start : any/c
+      len : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text can-delete?   start        
+                                         len)    →   any
+      start : any/c
+      len : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text can-insert?   start        
+                                         len)    →   any
+      start : any/c
+      len : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text can-set-size-constraint?) → any
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text can-do-edit-operation? op) → any
+      op : any/c
+    (send a-mode:host-text can-do-edit-operation?   op                 
+                                                    recursive?)   →   any
+      op : any/c
+      recursive? : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text can-load-file?   filename        
+                                            format)    →   any
+      filename : any/c
+      format : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text can-save-file?   filename        
+                                            format)    →   any
+      filename : any/c
+      format : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+    (send a-mode:host-text put-file   directory            
+                                      default-name)   →   any
+      directory : any/c
+      default-name : any/c
+    Delegates to the result of get-surrogate if it is not #f.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

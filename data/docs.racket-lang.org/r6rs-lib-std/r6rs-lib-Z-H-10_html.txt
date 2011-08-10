@@ -1,0 +1,25 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 9
+
+File system
+
+This chapter describes the (rnrs files (6))library for operations on the file
+system. This library, in addition to the procedures described here, also
+exports the I/O condition types described in section 8.1.
+
+(file-exists? filename)    procedure 
+
+Filename must be a file name (see section 8.2.1). The file-exists? procedure
+returns #t if the named file exists at the time the procedure is called, #f
+otherwise.
+
+(delete-file filename)    procedure 
+
+Filename must be a file name (see section 8.2.1). The delete-file procedure
+deletes the named file if it exists and can be deleted, and returns unspecified
+values. If the file does not exist or cannot be deleted, an exception with
+condition type &i/o-filename is raised.
+
+                        [Go to first, previous, next page;   contents;   index]
+

@@ -1,0 +1,627 @@
+▼  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 8  Pattern Matching
+8.1  Additional Matching Forms
+8.2  Extending match
+8.3  Library Extensions
+On this page:
+match
+8.1 Additional Matching Forms
+match*
+match-lambda
+match-lambda*
+match-lambda**
+match-let
+match-let*
+match-letrec
+match-define
+exn: misc: match?
+8.2 Extending match
+define-match-expander
+match-equality-test
+match/ derived
+match*/ derived
+8.3 Library Extensions
+struct*
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Pattern Matching
+
+            +Pattern Matching in The Racket Guide introduces pattern matching.
+
+The match form and related forms support general pattern matching on Racket
+values. See also Regular Expressions for information on regular-expression
+matching on strings, bytes, and streams.
+
+ (require racket/match)
+The bindings documented in this section are provided by the racket/match and
+racket libraries, but not racket/base.
+
+(match val-expr clause ...)
+ 
+clause   =   [pat body ...+]
+         |   [pat (=> id) body ...+]
+Finds the first pat that matches the result of val-expr, and evaluates the
+corresponding bodys with bindings introduced by pat (if any). The last body in
+the matching clause is evaluated in tail position with respect to the match
+expression.
+
+To find a match, the clauses are tried in order. If no clause matches, then the
+exn:misc:match? exception is raised.
+
+An optional (=> id) between a pat and the bodys is bound to a failure procedure
+of zero arguments. If this procedure is invoked, it escapes back to the pattern
+matching expression, and resumes the matching process as if the pattern had
+failed to match. The bodys must not mutate the object being matched before
+calling the failure procedure, otherwise the behavior of matching is
+unpredictable.
+
+The grammar of pat is as follows, where non-italicized identifiers are
+recognized symbolically (i.e., not by binding).
+
+pat       ::=   id                             match anything, bind identifier
+
+           |    (var id)                       match anything, bind identifier
+
+           |    _                              match anything
+
+           |    literal                        match literal
+
+           |    (quote datum)                  match equal? value
+
+           |    (list lvp ...)                 match sequence of lvps
+
+           |    (list-rest lvp ... pat)        match lvps consed onto a pat
+
+           |    (list-no-order pat ...)        match pats in any order
+
+           |    (list-no-order pat ... lvp)    match pats in any order
+
+           |    (vector lvp ...)               match vector of pats
+
+           |    (hash-table (pat pat) ...)     match hash table
+
+           |    (hash-table (pat pat) ...+     match hash table
+                ooo)
+
+           |    (cons pat pat)                 match pair of pats
+
+           |    (mcons pat pat)                match mutable pair of pats
+
+           |    (box pat)                      match boxed pat
+
+           |    (struct-id pat ...)            match struct-id instance
+
+           |    (struct struct-id (pat ...))   match struct-id instance
+
+           |    (regexp rx-expr)               match string
+
+           |    (regexp rx-expr pat)           match string, result with pat
+
+           |    (pregexp px-expr)              match string
+
+           |    (pregexp px-expr pat)          match string, result with pat
+
+           |    (and pat ...)                  match when all pats match
+
+           |    (or pat ...)                   match when any pat match
+
+           |    (not pat ...)                  match when no pat matches
+
+           |    (app expr pat)                 match (expr value) to pat
+
+           |    (? expr pat ...)               match if (expr value) and pats
+
+           |    (quasiquote qp)                match a quasipattern
+
+           |    derived-pattern                match using extension
+
+literal   ::=   #t                             match true
+
+           |    #f                             match false
+
+           |    string                         match equal? string
+
+           |    bytes                          match equal? byte string
+
+           |    number                         match equal? number
+
+           |    char                           match equal? character
+
+           |    keyword                        match equal? keyword
+
+           |    regexp                         match equal? regexp literal
+
+           |    pregexp                        match equal? pregexp literal
+
+lvp       ::=   pat ooo                        greedily match pat instances
+
+           |    pat                            match pat
+
+qp        ::=   literal                        match literal
+
+           |    id                             match symbol
+
+           |    (qp ...)                       match sequences of qps
+
+           |    (qp ... . qp)                  match qps ending qp
+
+           |    (qp ooo . qp)                  match qps beginning with
+                                               repeated qp
+
+           |    #(qp ...)                      match vector of qps
+
+           |    #&qp                           match boxed qp
+
+           |    ,pat                           match pat
+
+           |    ,@(list lvp ...)               match lvps, spliced
+
+           |    ,@(list-rest lvp ... pat)      match lvps plus pat, spliced
+
+           |    ,@'qp                          match list-matching qp, spliced
+
+ooo       ::=   ...                            zero or more; ... is literal
+
+           |    ___                            zero or more
+
+           |    ..k                            k or more
+
+           |    __k                            k or more
+
+
+In more detail, patterns match as follows:
+
+  • id (excluding the reserved names _, ..., .._, ..k, and ..k for non-negative
+    integers k) or (var id) — matches anything, and binds id to the matching
+    values. If an id is used multiple times within a pattern, the corresponding
+    matches must be the same according to (match-equality-test), except that
+    instances of an id in different or and not sub-patterns are independent.
+
+    Examples:
+
+        > (match '(1 2 3)
+            [(list a b a) (list a b)]
+            [(list a b c) (list c b a)])
+        '(3 2 1)
+
+        > (match '(1 '(x y z) 1)
+            [(list a b a) (list a b)]
+            [(list a b c) (list c b a)])
+        '(1 '(x y z))
+
+
+  • _ — matches anything, without binding any identifiers.
+
+    Example:
+
+        > (match '(1 2 3)
+            [(list _ _ a) a])
+        3
+
+
+  • #t, #f, string, bytes, number, char, or (quote datum) — matches an equal?
+    constant.
+
+    Example:
+
+        > (match "yes"
+            ["no" #f]
+            ["yes" #t])
+        #t
+
+
+  • (list lvp ...) — matches a list of elements. In the case of (list pat ...),
+    the pattern matches a list with as many element as pats, and each element
+    must match the corresponding pat. In the more general case, each lvp
+    corresponds to a “spliced” list of greedy matches.
+
+    For spliced lists, ... and ___ are aliases for zero or more matches. The
+    ..k and __k forms are also aliases, specifying k or more matches. Pattern
+    variables that precede these splicing operators are bound to lists of
+    matching forms.
+
+    Examples:
+
+        > (match '(1 2 3)
+            [(list a b c) (list c b a)])
+        '(3 2 1)
+
+        > (match '(1 2 3)
+            [(list 1 a ...) a])
+        '(2 3)
+
+        > (match '(1 2 3)
+            [(list 1 a ..3) a]
+            [_ 'else])
+        'else
+
+        > (match '(1 2 3 4)
+            [(list 1 a ..3) a]
+            [_ 'else])
+        '(2 3 4)
+
+        > (match '(1 2 3 4 5)
+            [(list 1 a ..3 5) a]
+            [_ 'else])
+        '(2 3 4)
+
+        > (match '(1 (2) (2) (2) 5)
+            [(list 1 (list a) ..3 5) a]
+            [_ 'else])
+        '(2 2 2)
+
+
+  • (list-rest lvp ... pat) — similar to a list pattern, but the final pat
+    matches the “rest” of the list after the last lvp. In fact, the matched
+    value can be a non-list chain of pairs (i.e., an “improper list”) if pat
+    matches non-list values.
+
+    Examples:
+
+        > (match '(1 2 3 . 4)
+            [(list-rest a b c d) d])
+        4
+
+        > (match '(1 2 3 . 4)
+            [(list-rest a ... d) (list a d)])
+        '((1 2 3) 4)
+
+
+  • (list-no-order pat ...) — similar to a list pattern, but the elements to
+    match each pat can appear in the list in any order.
+
+    Example:
+
+        > (match '(1 2 3)
+            [(list-no-order 3 2 x) x])
+        1
+
+
+  • (list-no-order pat ... lvp) — generalizes list-no-order to allow a pattern
+    that matches multiple list elements that are interspersed in any order with
+    matches for the other patterns.
+
+    Example:
+
+        > (match '(1 2 3 4 5 6)
+            [(list-no-order 6 2 y ...) y])
+        '(1 3 4 5)
+
+
+  • (vector lvp ...) — like a list pattern, but matching a vector.
+
+    Example:
+
+        > (match #(1 (2) (2) (2) 5)
+            [(vector 1 (list a) ..3 5) a])
+        '(2 2 2)
+
+
+  • (hash-table (pat pat) ...) — similar to list-no-order, but matching against
+    hash table’s key–value pairs.
+
+    Example:
+
+        > (match #hash(("a" . 1) ("b" . 2))
+            [(hash-table ("b" b) ("a" a)) (list b a)])
+        '(2 1)
+
+
+  • (hash-table (pat pat) ...+ ooo) — Generalizes hash-table to support a final
+    repeating pattern.
+
+    Example:
+
+        > (match #hash(("a" . 1) ("b" . 2))
+            [(hash-table (key val) ...) key])
+        '("a" "b")
+
+
+  • (cons pat1 pat2) — matches a pair value.
+
+    Example:
+
+        > (match (cons 1 2)
+            [(cons a b) (+ a b)])
+        3
+
+
+  • (mcons pat1 pat2) — matches a mutable pair value.
+
+    Example:
+
+        > (match (mcons 1 2)
+            [(cons a b) 'immutable]
+            [(mcons a b) 'mutable])
+        'mutable
+
+
+  • (box pat) — matches a boxed value.
+
+    Example:
+
+        > (match #&1
+            [(box a) a])
+        1
+
+
+  • (struct-id pat ...) or (struct struct-id (pat ...)) — matches an instance
+    of a structure type named struct-id, where each field in the instance
+    matches the corresponding pat. See also struct*.
+
+    Usually, struct-id is defined with struct. More generally, struct-id must
+    be bound to expansion-time information for a structure type (see Structure
+    Type Transformer Binding), where the information includes at least a
+    predicate binding and field accessor bindings corresponding to the number
+    of field pats. In particular, a module import or a unit import with a
+    signature containing a struct declaration can provide the structure type
+    information.
+
+    Examples:
+
+        (define-struct tree (val left right))
+        > (match (make-tree 0 (make-tree 1 #f #f) #f)
+            [(tree a (tree b  _ _) _) (list a b)])
+        '(0 1)
+
+
+  • (struct struct-id _) — matches any instance of struct-id, without regard to
+    contents of the fields of the instance.
+
+  • (regexp rx-expr) — matches a string that matches the regexp pattern
+    produced by rx-expr; see Regular Expressions for more information about
+    regexps.
+
+    Examples:
+
+        > (match "apple"
+            [(regexp #rx"p+") 'yes]
+            [_ 'no])
+        'yes
+
+        > (match "banana"
+            [(regexp #rx"p+") 'yes]
+            [_ 'no])
+        'no
+
+
+  • (regexp rx-expr pat) — extends the regexp form to further constrain the
+    match where the result of regexp-match is matched against pat.
+
+    Examples:
+
+        > (match "apple"
+            [(regexp #rx"p+(.)" (list _ "l")) 'yes]
+            [_ 'no])
+        'yes
+
+        > (match "append"
+            [(regexp #rx"p+(.)" (list _ "l")) 'yes]
+            [_ 'no])
+        'no
+
+
+  • (pregexp rx-expr) or (regexp rx-expr pat) — like the regexp patterns, but
+    if rx-expr produces a string, it is converted to a pattern using pregexp
+    instead of regexp.
+
+  • (and pat ...) — matches if all of the pats match. This pattern is often
+    used as (and id pat) to bind id to the entire value that matches pat.
+
+    Example:
+
+        > (match '(1 (2 3) 4)
+           [(list _ (and a (list _ ...)) _) a])
+        '(2 3)
+
+
+  • (or pat ...) — matches if any of the pats match. Beware: the result
+    expression can be duplicated once for each pat! Identifiers in pat are
+    bound only in the corresponding copy of the result expression; in a module
+    context, if the result expression refers to a binding, then all pats must
+    include the binding.
+
+    Example:
+
+        > (match '(1 2)
+           [(or (list a 1) (list a 2)) a])
+        1
+
+
+  • (not pat ...) — matches when none of the pats match, and binds no
+    identifiers.
+
+    Examples:
+
+        > (match '(1 2 3)
+           [(list (not 4) ...) 'yes]
+           [_ 'no])
+        'yes
+
+        > (match '(1 4 3)
+           [(list (not 4) ...) 'yes]
+           [_ 'no])
+        'no
+
+
+  • (app expr pat) — applies expr to the value to be matched; the result of the
+    application is matched againt pat.
+
+    Example:
+
+        > (match '(1 2)
+           [(app length 2) 'yes])
+        'yes
+
+
+  • (? expr pat ...) — applies expr to the value to be matched, and checks
+    whether the result is a true value; the additional pats must also match
+    (i.e., ? combines a predicate application and an and pattern).
+
+    Example:
+
+        > (match '(1 3 5)
+           [(list (? odd?) ...) 'yes])
+        'yes
+
+
+  • (quasiquote qp) — introduces a quasipattern, in which identifiers match
+    symbols. Like the quasiquote expression form, unquote and unquote-splicing
+    escape back to normal patterns.
+
+    Example:
+
+        > (match '(1 2 3)
+            [`(1 ,a ,(? odd? b)) (list a b)])
+        '(2 3)
+
+
+  • derived-pattern — matches a pattern defined by a macro extension via
+    define-match-expander.
+
+8.1 Additional Matching Forms
+
+(match* (val-expr ...+) clause* ...)
+ 
+clause*   =   [(pat ...+) body ...+]
+          |   [(pat ...+) (=> id) body ...+]
+Matches a sequence of values against each clause in order, matching only when
+all patterns in a clause match. Each clause must have the same number of
+patterns as the number of val-exprs.
+
+Example:
+
+    > (match* (1 2 3)
+       [(_ (? number?) x) (add1 x)])
+    4
+
+
+
+(match-lambda clause ...)
+Equivalent to (lambda (id) (match id clause ...)).
+
+(match-lambda* clause ...)
+Equivalent to (lambda lst (match lst clause ...)).
+
+(match-lambda** clause* ...)
+Equivalent to (lambda (args ...) (match* (args ...) clause* ...)), where the
+number of args ... is computed from the number of patterns appearing in each of
+the clause*.
+
+(match-let ([pat expr] ...) body ...+)
+Generalizes let to support pattern bindings. Each expr is matched against its
+corresponding pat (the match must succeed), and the bindings that pat
+introduces are visible in the bodys.
+
+Example:
+
+    > (match-let ([(list a b) '(1 2)]
+                  [(vector x ...) #(1 2 3 4)])
+        (list b a x))
+    '(2 1 (1 2 3 4))
+
+
+
+(match-let* ([pat expr] ...) body ...+)
+Like match-let, but generalizes let*, so that the bindings of each pat are
+available in each subsequent expr.
+
+Example:
+
+    > (match-let* ([(list a b) '(#(1 2 3 4) 2)]
+                   [(vector x ...) a])
+        x)
+    '(1 2 3 4)
+
+
+
+(match-letrec ([pat expr] ...) body ...+)
+Like match-let, but generalizes letrec.
+
+(match-define pat expr)
+Defines the names bound by pat to the values produced by matching against the
+result of expr.
+
+Examples:
+
+    > (match-define (list a b) '(1 2))
+    > b
+    2
+
+
+
+(exn:misc:match? v) → boolean?
+  v : any/c
+A predicate for the exception raised in the case of a match failure.
+
+8.2 Extending match
+
+(define-match-expander id proc-expr)
+(define-match-expander id proc-expr proc-expr)
+Binds id to a match expander.
+
+The first proc-expr sub-expression must evaluate to a transformer that produces
+a pat for match. Whenever id appears as the beginning of a pattern, this
+transformer is given, at expansion time, a syntax object corresponding to the
+entire pattern (including id). The pattern is replaced with the result of the
+transformer.
+
+A transformer produced by a second proc-expr sub-expression is used when id is
+used in an expression context. Using the second proc-expr, id can be given
+meaning both inside and outside patterns.
+
+(match-equality-test) → (any/c any/c . -> . any)
+(match-equality-test comp-proc) → void?
+  comp-proc : (any/c any/c . -> . any)
+A parameter that determines the comparison procedure used to check whether
+multiple uses of an identifier match the “same” value. The default is equal?.
+
+(match/derived val-expr original-datum clause ...)
+(match*/derived (val-expr ...) original-datum clause* ...)
+Like match and match* respectively, but includes a sub-expression to be used as
+the source for all syntax errors within the form. For example, match-lambda
+expands to match/derived so that errors in the body of the form are reported in
+terms of match-lambda instead of match.
+
+8.3 Library Extensions
+
+(struct* struct-id ([field pat] ...))
+A match pattern form that matches an instance of a structure type named
+struct-id, where the field field in the instance matches the corresponding pat.
+
+Any field of struct-id may be omitted, and such fields can occur in any order.
+
+Examples:
+
+    (define-struct tree (val left right))
+    > (match (make-tree 0 (make-tree 1 #f #f) #f)
+        [(struct* tree ([val a]
+                        [left (struct* tree ([right #f] [val b]))]))
+         (list a b)])
+    '(0 1)
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

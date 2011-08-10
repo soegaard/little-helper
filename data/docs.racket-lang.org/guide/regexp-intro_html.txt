@@ -1,0 +1,94 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 9  Regular Expressions
+ 9.1  Writing Regexp Patterns
+ 9.2  Matching Regexp Patterns
+ 9.3  Basic Assertions
+ 9.4  Characters and Character Classes
+ 9.5  Quantifiers
+ 9.6  Clusters
+ 9.7  Alternation
+ 9.8  Backtracking
+ 9.9  Looking Ahead and Behind
+9.10  An Extended Example
+[...search manuals...]
+  top← prev  up  next → 
+
+9.1 Writing Regexp Patterns
+
+A string or byte string can be used directly as a regexp pattern, or it can be
+prefixed with #rx to form a literal regexp value. For example, #rx"abc" is a
+string-based regexp value, and #rx#"abc" is a byte string-based regexp value.
+Alternately, a string or byte string can be prefixed with #px, as in #px"abc",
+for a slightly extended syntax of patterns within the string.
+
+Most of the characters in a regexp pattern are meant to match occurrences of
+themselves in the text string. Thus, the pattern #rx"abc" matches a string that
+contains the characters a, b, and c in succession. Other characters act as 
+metacharacters, and some character sequences act as metasequences. That is,
+they specify something other than their literal selves. For example, in the
+pattern #rx"a.c", the characters a and c stand for themselves, but the
+metacharacter . can match any character. Therefore, the pattern #rx"a.c"
+matches an a, any character, and c in succession.
+
+            When we want a literal \ inside a Racket string or regexp literal,
+            we must escape it so that it shows up in the string at all. Racket
+            strings use \ as the escape character, so we end up with two \s:
+            one Racket-string \ to escape the regexp \, which then escapes the
+            .. Another character that would need escaping inside a Racket
+            string is ".
+
+If we needed to match the character . itself, we can escape it by precede it
+with a \. The character sequence \. is thus a metasequence, since it doesn’t
+match itself but rather just .. So, to match a, ., and c in succession, we use
+the regexp pattern #rx"a\\.c"; the double \ is an artifact of Racket strings,
+not the regexp pattern itself.
+
+The regexp function takes a string or byte string and produces a regexp value.
+Use regexp when you construct a pattern to be matched against multiple strings,
+since a pattern is compiled to a regexp value before it can be used in a match.
+The pregexp function is like regexp, but using the extended syntax. Regexp
+values as literals with #rx or #px are compiled once and for all when they are
+read.
+
+The regexp-quote function takes an arbitrary string and returns a string for a
+pattern that matches exactly the original string. In particular, characters in
+the input string that could serve as regexp metacharacters are escaped with a
+backslash, so that they safely match only themselves.
+
+    > (regexp-quote "cons")
+    "cons"
+
+    > (regexp-quote "list?")
+    "list\\?"
+
+
+The regexp-quote function is useful when building a composite regexp from a mix
+of regexp strings and verbatim strings.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

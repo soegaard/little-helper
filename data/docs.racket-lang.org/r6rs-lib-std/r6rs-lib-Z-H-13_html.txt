@@ -1,0 +1,871 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 12
+
+syntax-case
+
+The (rnrs syntax-case (6))library provides support for writing low-level macros
+in a high-level style, with automatic syntax checking, input destructuring,
+output restructuring, maintenance of lexical scoping and referential
+transparency (hygiene), and support for controlled identifier capture.
+
+12.1  Hygiene
+
+Barendregt’s hygiene condition [1] for the lambda calculus is an informal
+notion that requires the free variables of an expression N that is to be
+substituted into another expression M not to be captured by bindings in M when
+such capture is not intended. Kohlbecker, et al [9] propose a corresponding
+hygiene condition for macro expansion that applies in all situations where
+capturing is not explicit: “Generated identifiers that become binding instances
+in the completely expanded program must only bind variables that are generated
+at the same transcription step”. In the terminology of this document, the
+“generated identifiers” are those introduced by a transformer rather than those
+present in the form passed to the transformer, and a “macro transcription step”
+corresponds to a single call by the expander to a transformer. Also, the
+hygiene condition applies to all introduced bindings rather than to introduced
+variable bindings alone.
+
+This leaves open what happens to an introduced identifier that appears outside
+the scope of a binding introduced by the same call. Such an identifier refers
+to the lexical binding in effect where it appears (within a syntax <template>;
+see section 12.4) inside the transformer body or one of the helpers it calls.
+This is essentially the referential transparency property described by Clinger
+and Rees [3]. Thus, the hygiene condition can be restated as follows:
+
+    A binding for an identifier introduced into the output of a transformer
+    call from the expander must capture only references to the identifier
+    introduced into the output of the same transformer call. A reference to an
+    identifier introduced into the output of a transformer refers to the
+    closest enclosing binding for the introduced identifier or, if it appears
+    outside of any enclosing binding for the introduced identifier, the closest
+    enclosing lexical binding where the identifier appears (within a syntax
+    <template>) inside the transformer body or one of the helpers it calls.
+
+Explicit captures are handled via datum->syntax; see section 12.6.
+
+Operationally, the expander can maintain hygiene with the help of marks and
+substitutions. Marks are applied selectively by the expander to the output of
+each transformer it invokes, and substitutions are applied to the portions of
+each binding form that are supposed to be within the scope of the bound
+identifiers. Marks are used to distinguish like-named identifiers that are
+introduced at different times (either present in the source or introduced into
+the output of a particular transformer call), and substitutions are used to map
+identifiers to their expand-time values.
+
+Each time the expander encounters a macro use, it applies an antimark to the
+input form, invokes the associated transformer, then applies a fresh mark to
+the output. Marks and antimarks cancel, so the portions of the input that
+appear in the output are effectively left unmarked, while the portions of the
+output that are introduced are marked with the fresh mark.
+
+Each time the expander encounters a binding form it creates a set of
+substitutions, each mapping one of the (possibly marked) bound identifiers to
+information about the binding. (For a lambda expression, the expander might map
+each bound identifier to a representation of the formal parameter in the output
+of the expander. For a let-syntax form, the expander might map each bound
+identifier to the associated transformer.) These substitutions are applied to
+the portions of the input form in which the binding is supposed to be visible.
+
+Marks and substitutions together form a wrap that is layered on the form being
+processed by the expander and pushed down toward the leaves as necessary. A
+wrapped form is referred to as a wrapped syntax object. Ultimately, the wrap
+may rest on a leaf that represents an identifier, in which case the wrapped
+syntax object is also referred to as an identifier. An identifier contains a
+name along with the wrap. (Names are typically represented by symbols.)
+
+When a substitution is created to map an identifier to an expand-time value,
+the substitution records the name of the identifier and the set of marks that
+have been applied to that identifier, along with the associated expand-time
+value. The expander resolves identifier references by looking for the latest
+matching substitution to be applied to the identifier, i.e., the outermost
+substitution in the wrap whose name and marks match the name and marks recorded
+in the substitution. The name matches if it is the same name (if using symbols,
+then by eq?), and the marks match if the marks recorded with the substitution
+are the same as those that appear below the substitution in the wrap, i.e.,
+those that were applied before the substitution. Marks applied after a
+substitution, i.e., appear over the substitution in the wrap, are not relevant
+and are ignored.
+
+An algebra that defines how marks and substitutions work more precisely is
+given in section 2.4 of Oscar Waddell’s PhD thesis [13].
+
+12.2  Syntax objects
+
+A syntax object is a representation of a Scheme form that contains contextual
+information about the form in addition to its structure. This contextual
+information is used by the expander to maintain lexical scoping and may also be
+used by an implementation to maintain source-object correlation [6].
+
+A syntax object may be wrapped, as described in section 12.1. It may also be
+unwrapped, fully or partially, i.e., consist of list and vector structure with
+wrapped syntax objects or nonsymbol values at the leaves. More formally, a
+syntax object is:
+
+  • a pair of syntax objects,
+
+  • a vector of syntax objects,
+
+  • a nonpair, nonvector, nonsymbol value, or
+
+  • a wrapped syntax object.
+
+The distinction between the terms “syntax object” and “wrapped syntax object”
+is important. For example, when invoked by the expander, a transformer
+(section 12.3) must accept a wrapped syntax object but may return any syntax
+object, including an unwrapped syntax object.
+
+Syntax objects representing identifiers are always wrapped and are distinct
+from other types of values. Wrapped syntax objects that are not identifiers may
+or may not be distinct from other types of values.
+
+12.3  Transformers
+
+In define-syntax (report section on “Syntax definitions”), let-syntax, and
+letrec-syntax forms (report section on “Binding constructs for syntactic
+keywords”), a binding for a syntactic keyword is an expression that evaluates
+to a transformer.
+
+A transformer is a transformation procedure or a variable transformer. A
+transformation procedure is a procedure that must accept one argument, a
+wrapped syntax object (section 12.2) representing the input, and return a
+syntax object (section 12.2) representing the output. The transformer is called
+by the expander whenever a reference to a keyword with which it has been
+associated is found. If the keyword appears in the car of a list-structured
+input form, the transformer receives the entire list-structured form, and its
+output replaces the entire form. Except with variable transformers (see below),
+if the keyword is found in any other definition or expression context, the
+transformer receives a wrapped syntax object representing just the keyword
+reference, and its output replaces just the reference. Except with variable
+transformers, an exception with condition type &syntax is raised if the keyword
+appears on the left-hand side of a set! expression.
+
+(make-variable-transformer proc)    procedure 
+
+Proc should accept one argument, a wrapped syntax object, and return a syntax
+object.
+
+The make-variable-transformer procedure creates a variable transformer. A
+variable transformer is like an ordinary transformer except that, if a keyword
+associated with a variable transformer appears on the left-hand side of a set!
+expression, an exception is not raised. Instead, proc is called with a wrapped
+syntax object representing the entire set! expression as its argument, and its
+return value replaces the entire set! expression.
+
+Implementation responsibilities: The implementation must check the restrictions
+on proc only to the extent performed by applying it as described. An
+implementation may check whether proc is an appropriate argument before
+applying it.
+
+12.4  Parsing input and producing output
+
+Transformers can destructure their input with syntax-case and rebuild their
+output with syntax.
+
+(syntax-case <expression> (<literal> ...)    syntax 
+   <syntax-case clause> ...)
+_    auxiliary syntax 
+...    auxiliary syntax 
+
+Syntax: Each <literal> must be an identifier. Each <syntax-case clause> must
+take one of the following two forms.
+
+(<pattern> <output expression>)
+(<pattern> <fender> <output expression>)
+
+<Fender> and <output expression> must be <expression>s.
+
+A <pattern> is an identifier, constant, or one of the following.
+
+(<pattern> ...)
+(<pattern> <pattern> ... . <pattern>)
+(<pattern> ... <pattern> <ellipsis> <pattern> ...)
+(<pattern> ... <pattern> <ellipsis> <pattern> ... . <pattern>)
+#(<pattern> ...)
+#(<pattern> ... <pattern> <ellipsis> <pattern> ...)
+
+An <ellipsis> is the identifier “...” (three periods).
+
+An identifier appearing within a <pattern> may be an underscore ( _ ), a
+literal identifier listed in the list of literals (<literal> ...), or an
+ellipsis ( ... ). All other identifiers appearing within a <pattern> are
+pattern variables. It is a syntax violation if an ellipsis or underscore
+appears in (<literal> ...).
+
+_ and ... are the same as in the (rnrs base (6)) library.
+
+Pattern variables match arbitrary input subforms and are used to refer to
+elements of the input. It is a syntax violation if the same pattern variable
+appears more than once in a <pattern>.
+
+Underscores also match arbitrary input subforms but are not pattern variables
+and so cannot be used to refer to those elements. Multiple underscores may
+appear in a <pattern>.
+
+A literal identifier matches an input subform if and only if the input subform
+is an identifier and either both its occurrence in the input expression and its
+occurrence in the list of literals have the same lexical binding, or the two
+identifiers have the same name and both have no lexical binding.
+
+A subpattern followed by an ellipsis can match zero or more elements of the
+input.
+
+More formally, an input form F matches a pattern P if and only if one of the
+following holds:
+
+  • P is an underscore ( _ ).
+
+  • P is a pattern variable.
+
+  • P is a literal identifier and F is an equivalent identifier in the sense of
+    free-identifier=? (section 12.5).
+
+  • P is of the form (P[1] ... P[n]) and F is a list of n elements that match P
+    [1] through P[n].
+
+  • P is of the form (P[1] ... P[n] . P[x]) and F is a list or improper list of
+    n or more elements whose first n elements match P[1] through P[n] and whose
+    nth cdr matches P[x].
+
+  • P is of the form (P[1] ... P[k] P[e] <ellipsis> P[m+1] ... P[n]), where
+    <ellipsis> is the identifier ... and F is a proper list of n elements whose
+    first k elements match P[1] through P[k], whose next m - k elements each
+    match P[e], and whose remaining n - m elements match P[m+1] through P[n].
+
+  • P is of the form (P[1] ... P[k] P[e] <ellipsis> P[m+1] ... P[n] . P[x]),
+    where <ellipsis> is the identifier ... and F is a list or improper list of
+    n elements whose first k elements match P[1] through P[k], whose next m - k
+    elements each match P[e], whose next n - m elements match P[m+1] through P[
+    n], and whose nth and final cdr matches P[x].
+
+  • P is of the form #(P[1] ... P[n]) and F is a vector of n elements that
+    match P[1] through P[n].
+
+  • P is of the form #(P[1] ... P[k] P[e] <ellipsis> P[m+1] ... P[n]), where
+    <ellipsis> is the identifier ... and F is a vector of n or more elements
+    whose first k elements match P[1] through P[k], whose next m - k elements
+    each match P[e], and whose remaining n - m elements match P[m+1] through P[
+    n].
+
+  • P is a pattern datum (any nonlist, nonvector, nonsymbol datum) and F is
+    equal to P in the sense of the equal? procedure.
+
+Semantics: A syntax-case expression first evaluates <expression>. It then
+attempts to match the <pattern> from the first <syntax-case clause> against the
+resulting value, which is unwrapped as necessary to perform the match. If the
+pattern matches the value and no <fender> is present, <output expression> is
+evaluated and its value returned as the value of the syntax-case expression. If
+the pattern does not match the value, syntax-case tries the second <syntax-case
+clause>, then the third, and so on. It is a syntax violation if the value does
+not match any of the patterns.
+
+If the optional <fender> is present, it serves as an additional constraint on
+acceptance of a clause. If the <pattern> of a given <syntax-case clause>
+matches the input value, the corresponding <fender> is evaluated. If <fender>
+evaluates to a true value, the clause is accepted; otherwise, the clause is
+rejected as if the pattern had failed to match the value. Fenders are logically
+a part of the matching process, i.e., they specify additional matching
+constraints beyond the basic structure of the input.
+
+Pattern variables contained within a clause’s <pattern> are bound to the
+corresponding pieces of the input value within the clause’s <fender> (if
+present) and <output expression>. Pattern variables can be referenced only
+within syntax expressions (see below). Pattern variables occupy the same name
+space as program variables and keywords.
+
+If the syntax-case form is in tail context, the <output expression>s are also
+in tail position.
+
+(syntax <template>)    syntax 
+
+    Note:   #’<template> is equivalent to (syntax <template>).
+
+A syntax expression is similar to a quote expression except that (1) the values
+of pattern variables appearing within <template> are inserted into <template>,
+(2) contextual information associated both with the input and with the template
+is retained in the output to support lexical scoping, and (3) the value of a
+syntax expression is a syntax object.
+
+A <template> is a pattern variable, an identifier that is not a pattern
+variable, a pattern datum, or one of the following.
+
+(<subtemplate> ...)
+(<subtemplate> ... . <template>)
+#(<subtemplate> ...)
+
+A <subtemplate> is a <template> followed by zero or more ellipses.
+
+The value of a syntax form is a copy of <template> in which the pattern
+variables appearing within the template are replaced with the input subforms to
+which they are bound. Pattern data and identifiers that are not pattern
+variables or ellipses are copied directly into the output. A subtemplate
+followed by an ellipsis expands into zero or more occurrences of the
+subtemplate. Pattern variables that occur in subpatterns followed by one or
+more ellipses may occur only in subtemplates that are followed by (at least) as
+many ellipses. These pattern variables are replaced in the output by the input
+subforms to which they are bound, distributed as specified. If a pattern
+variable is followed by more ellipses in the subtemplate than in the associated
+subpattern, the input form is replicated as necessary. The subtemplate must
+contain at least one pattern variable from a subpattern followed by an
+ellipsis, and for at least one such pattern variable, the subtemplate must be
+followed by exactly as many ellipses as the subpattern in which the pattern
+variable appears. (Otherwise, the expander would not be able to determine how
+many times the subform should be repeated in the output.) It is a syntax
+violation if the constraints of this paragraph are not met.
+
+A template of the form (<ellipsis> <template>) is identical to <template>,
+except that ellipses within the template have no special meaning. That is, any
+ellipses contained within <template> are treated as ordinary identifiers. In
+particular, the template (... ...) produces a single ellipsis. This allows
+macro uses to expand into forms containing ellipses.
+
+The output produced by syntax is wrapped or unwrapped according to the
+following rules.
+
+  • the copy of (<t[1]> . <t[2]>) is a pair if <t[1]> or <t[2]> contain any
+    pattern variables,
+
+  • the copy of (<t> <ellipsis>) is a list if <t> contains any pattern
+    variables,
+
+  • the copy of #(<t[1]> ... <t[n]>) is a vector if any of <t[1]>, ..., <t[n]>
+    contain any pattern variables, and
+
+  • the copy of any portion of <t> not containing any pattern variables is a
+    wrapped syntax object.
+
+The input subforms inserted in place of the pattern variables are wrapped if
+and only if the corresponding input subforms are wrapped.
+
+The following definitions of or illustrate syntax-case and syntax. The second
+is equivalent to the first but uses the #’ prefix instead of the full syntax
+form.
+
+(define-syntax or
+  (lambda (x)
+    (syntax-case x ()
+      [(_) (syntax #f)]
+      [(_ e) (syntax e)]
+      [(_ e1 e2 e3 ...)
+       (syntax (let ([t e1])
+                 (if t t (or e2 e3 ...))))])))
+
+(define-syntax or
+  (lambda (x)
+    (syntax-case x ()
+      [(_) #’#f]
+      [(_ e) #’e]
+      [(_ e1 e2 e3 ...)
+       #’(let ([t e1])
+           (if t t (or e2 e3 ...)))])))
+
+The examples below define identifier macros, macro uses supporting keyword
+references that do not necessarily appear in the first position of a
+list-structured form. The second example uses make-variable-transformer to
+handle the case where the keyword appears on the left-hand side of a set!
+expression.
+
+(define p (cons 4 5))
+(define-syntax p.car
+  (lambda (x)
+    (syntax-case x ()
+      [(_ . rest) #’((car p) . rest)]
+      [_  #’(car p)])))
+p.car         ⇒ 4
+(set! p.car 15)         ⇒  &syntax exception
+
+(define p (cons 4 5))
+(define-syntax p.car
+  (make-variable-transformer
+    (lambda (x)
+      (syntax-case x (set!)
+        [(set! _ e) #’(set-car! p e)]
+        [(_ . rest) #’((car p) . rest)]
+        [_  #’(car p)]))))
+(set! p.car 15)
+p.car                   ⇒ 15
+p                       ⇒ (15 5)
+
+12.5  Identifier predicates
+
+(identifier? obj)    procedure 
+
+Returns #t if obj is an identifier, i.e., a syntax object representing an
+identifier, and #f otherwise.
+
+The identifier? procedure is often used within a fender to verify that certain
+subforms of an input form are identifiers, as in the definition of rec, which
+creates self-contained recursive objects, below.
+
+(define-syntax rec
+  (lambda (x)
+    (syntax-case x ()
+      [(_ x e)
+       (identifier? #’x)
+       #’(letrec ([x e]) x)])))
+
+(map (rec fact
+       (lambda (n)
+         (if (= n 0)                 
+             1
+             (* n (fact (- n 1))))))
+     ’(1 2 3 4 5)) 
+                ⇒ (1 2 6 24 120)
+ 
+(rec 5 (lambda (x) x))         ⇒  &syntax exception
+
+The procedures bound-identifier=? and free-identifier=? each take two
+identifier arguments and return #t if their arguments are equivalent and #f
+otherwise. These predicates are used to compare identifiers according to their
+intended use as free references or bound identifiers in a given context.
+
+(bound-identifier=? id[1] id[2])    procedure 
+
+Id[1] and id[2] must be identifiers. The procedure bound-identifier=? returns #
+t if a binding for one would capture a reference to the other in the output of
+the transformer, assuming that the reference appears within the scope of the
+binding, and #f otherwise. In general, two identifiers are bound-identifier=?
+only if both are present in the original program or both are introduced by the
+same transformer application (perhaps implicitly—see datum->syntax).
+Operationally, two identifiers are considered equivalent by bound-identifier=?
+if and only if they have the same name and same marks (section 12.1).
+
+The bound-identifier=? procedure can be used for detecting duplicate
+identifiers in a binding construct or for other preprocessing of a binding
+construct that requires detecting instances of the bound identifiers.
+
+(free-identifier=? id[1] id[2])    procedure 
+
+Id[1] and id[2] must be identifiers. The free-identifier=? procedure returns #t
+if and only if the two identifiers would resolve to the same binding if both
+were to appear in the output of a transformer outside of any bindings inserted
+by the transformer. (If neither of two like-named identifiers resolves to a
+binding, i.e., both are unbound, they are considered to resolve to the same
+binding.) Operationally, two identifiers are considered equivalent by
+free-identifier=? if and only the topmost matching substitution for each maps
+to the same binding (section 12.1) or the identifiers have the same name and no
+matching substitution.
+
+The syntax-case and syntax-rules forms internally use free-identifier=? to
+compare identifiers listed in the literals list against input identifiers.
+
+(let ([fred 17])
+  (define-syntax a
+    (lambda (x)
+      (syntax-case x ()
+        [(_ id) #’(b id fred)])))
+  (define-syntax b
+    (lambda (x)
+      (syntax-case x ()
+        [(_ id1 id2)
+         #‘(list
+             #,(free-identifier=? #’id1 #’id2)
+             #,(bound-identifier=? #’id1 #’id2))])))
+  (a fred))         ⇒ (#t #f)
+
+The following definition of unnamed let uses bound-identifier=? to detect
+duplicate identifiers.
+
+(define-syntax let
+  (lambda (x)
+    (define unique-ids?
+      (lambda (ls)
+        (or (null? ls)
+            (and (let notmem?
+                        ([x (car ls)] [ls (cdr ls)])
+                   (or (null? ls)
+                       (and (not (bound-identifier=?
+                                   x (car ls)))
+                            (notmem? x (cdr ls)))))
+                 (unique-ids? (cdr ls))))))
+    (syntax-case x ()
+      [(_ ((i v) ...) e1 e2 ...)
+       (unique-ids? #’(i ...))
+       #’((lambda (i ...) e1 e2 ...) v ...)])))
+
+The argument #’(i ...) to unique-ids? is guaranteed to be a list by the rules
+given in the description of syntax above.
+
+With this definition of let:
+
+(let ([a 3] [a 4]) (+ a a)) 
+                ⇒  &syntax exception
+
+However,
+
+(let-syntax
+  ([dolet (lambda (x)
+            (syntax-case x ()
+              [(_ b)
+               #’(let ([a 3] [b 4]) (+ a b))]))])
+  (dolet a)) 
+                ⇒ 7
+
+since the identifier a introduced by dolet and the identifier a extracted from
+the input form are not bound-identifier=?.
+
+The following definition of case is equivalent to the one in section 12.4.
+Rather than including else in the literals list as before, this version
+explicitly tests for else using free-identifier=?.
+
+(define-syntax case
+  (lambda (x)
+    (syntax-case x ()
+      [(_ e0 [(k ...) e1 e2 ...] ...
+              [else-key else-e1 else-e2 ...])
+       (and (identifier? #’else-key)
+            (free-identifier=? #’else-key #’else))
+       #’(let ([t e0])
+           (cond
+             [(memv t ’(k ...)) e1 e2 ...]
+             ...
+             [else else-e1 else-e2 ...]))]
+      [(_ e0 [(ka ...) e1a e2a ...]
+              [(kb ...) e1b e2b ...] ...)
+       #’(let ([t e0])
+           (cond
+             [(memv t ’(ka ...)) e1a e2a ...]
+             [(memv t ’(kb ...)) e1b e2b ...]
+             ...))])))
+
+With either definition of case, else is not recognized as an auxiliary keyword
+if an enclosing lexical binding for else exists. For example,
+
+(let ([else #f])
+  (case 0 [else (write "oops")])) 
+                ⇒  &syntax exception
+
+since else is bound lexically and is therefore not the same else that appears
+in the definition of case.
+
+12.6  Syntax-object and datum conversions
+
+(syntax->datum syntax-object)    procedure 
+
+Strips all syntactic information from a syntax object and returns the
+corresponding Scheme datum.
+
+Identifiers stripped in this manner are converted to their symbolic names,
+which can then be compared with eq?. Thus, a predicate symbolic-identifier=?
+might be defined as follows.
+
+(define symbolic-identifier=?
+  (lambda (x y)
+    (eq? (syntax->datum x)
+         (syntax->datum y))))
+
+(datum->syntax template-id datum)    procedure 
+
+Template-id must be a template identifier and datum should be a datum value.
+The datum->syntax procedure returns a syntax-object representation of datum
+that contains the same contextual information as template-id, with the effect
+that the syntax object behaves as if it were introduced into the code when
+template-id was introduced.
+
+The datum->syntax procedure allows a transformer to “bend” lexical scoping
+rules by creating implicit identifiers that behave as if they were present in
+the input form, thus permitting the definition of macros that introduce visible
+bindings for or references to identifiers that do not appear explicitly in the
+input form. For example, the following defines a loop expression that uses this
+controlled form of identifier capture to bind the variable break to an escape
+procedure within the loop body. (The derived with-syntax form is like let but
+binds pattern variables—see section 12.8.)
+
+(define-syntax loop
+  (lambda (x)
+    (syntax-case x ()
+      [(k e ...)
+       (with-syntax
+           ([break (datum->syntax #’k ’break)])
+         #’(call-with-current-continuation
+             (lambda (break)
+               (let f () e ... (f)))))])))
+
+(let ((n 3) (ls ’()))
+  (loop
+    (if (= n 0) (break ls))
+    (set! ls (cons ’a ls))
+    (set! n (- n 1)))) 
+                ⇒ (a a a)
+
+Were loop to be defined as
+
+(define-syntax loop
+  (lambda (x)
+    (syntax-case x ()
+      [(_ e ...)
+       #’(call-with-current-continuation
+           (lambda (break)
+             (let f () e ... (f))))])))
+
+the variable break would not be visible in e ....
+
+The datum argument datum may also represent an arbitrary Scheme form, as
+demonstrated by the following definition of include.
+
+(define-syntax include
+  (lambda (x)
+    (define read-file
+      (lambda (fn k)
+        (let ([p (open-file-input-port fn)])
+          (let f ([x (get-datum p)])
+            (if (eof-object? x)
+                (begin (close-port p) ’())
+                (cons (datum->syntax k x)
+                      (f (get-datum p))))))))
+    (syntax-case x ()
+      [(k filename)
+       (let ([fn (syntax->datum #’filename)])
+         (with-syntax ([(exp ...)
+                        (read-file fn #’k)])
+           #’(begin exp ...)))])))
+
+(include "filename") expands into a begin expression containing the forms found
+in the file named by "filename". For example, if the file flib.ss contains
+(define f (lambda (x) (g (* x x)))), and the file glib.ss contains (define g
+(lambda (x) (+ x x))), the expression
+
+(let ()
+  (include "flib.ss")
+  (include "glib.ss")
+  (f 5))
+
+evaluates to 50.
+
+The definition of include uses datum->syntax to convert the objects read from
+the file into syntax objects in the proper lexical context, so that identifier
+references and definitions within those expressions are scoped where the
+include form appears.
+
+Using datum->syntax, it is even possible to break hygiene entirely and write
+macros in the style of old Lisp macros. The lisp-transformer procedure defined
+below creates a transformer that converts its input into a datum, calls the
+programmer’s procedure on this datum, and converts the result back into a
+syntax object scoped where the original macro use appeared.
+
+(define lisp-transformer
+  (lambda (p)
+    (lambda (x)
+      (syntax-case x ()
+        [(kwd . rest)
+         (datum->syntax #’kwd
+           (p (syntax->datum x)))]))))
+
+12.7  Generating lists of temporaries
+
+Transformers can introduce a fixed number of identifiers into their output
+simply by naming each identifier. In some cases, however, the number of
+identifiers to be introduced depends upon some characteristic of the input
+expression. A straightforward definition of letrec, for example, requires as
+many temporary identifiers as there are binding pairs in the input expression.
+The procedure generate-temporaries is used to construct lists of temporary
+identifiers.
+
+(generate-temporaries l)    procedure 
+
+L must be be a list or syntax object representing a list-structured form; its
+contents are not important. The number of temporaries generated is the number
+of elements in l. Each temporary is guaranteed to be unique, i.e., different
+from all other identifiers.
+
+A definition of letrec equivalent to the one using syntax-rules given in report
+appendix on “Sample definitions for derived forms” is shown below.
+
+(define-syntax letrec
+  (lambda (x)
+    (syntax-case x ()
+      ((_ ((i e) ...) b1 b2 ...)
+       (with-syntax
+           (((t ...) (generate-temporaries #’(i ...))))
+         #’(let ((i <undefined>) ...)
+             (let ((t e) ...)
+               (set! i t) ...
+               (let () b1 b2 ...))))))))
+
+This version uses generate-temporaries instead of recursively defined helper to
+generate the necessary temporaries.
+
+12.8  Derived forms and procedures
+
+The forms and procedures described in this section can be defined in terms of
+the forms and procedures described in earlier sections of this chapter.
+
+(with-syntax ((<pattern> <expression>) ...) <body>)    syntax 
+
+The with-syntax form is used to bind pattern variables, just as let is used to
+bind variables. This allows a transformer to construct its output in separate
+pieces, then put the pieces together.
+
+Each <pattern> is identical in form to a syntax-case pattern. The value of each
+<expression> is computed and destructured according to the corresponding
+<pattern>, and pattern variables within the <pattern> are bound as with
+syntax-case to the corresponding portions of the value within <body>.
+
+The with-syntax form may be defined in terms of syntax-case as follows.
+
+(define-syntax with-syntax
+  (lambda (x)
+    (syntax-case x ()
+      ((_ ((p e0) ...) e1 e2 ...)
+       (syntax (syntax-case (list e0 ...) ()
+                 ((p ...) (let () e1 e2 ...))))))))
+
+The following definition of cond demonstrates the use of with-syntax to support
+transformers that employ recursion internally to construct their output. It
+handles all cond clause variations and takes care to produce one-armed if
+expressions where appropriate.
+
+(define-syntax cond
+  (lambda (x)
+    (syntax-case x ()
+      [(_ c1 c2 ...)
+       (let f ([c1 #’c1] [c2* #’(c2 ...)])
+         (syntax-case c2* ()
+           [()
+            (syntax-case c1 (else =>)
+              [(else e1 e2 ...) #’(begin e1 e2 ...)]
+              [(e0) #’e0]
+              [(e0 => e1)
+               #’(let ([t e0]) (if t (e1 t)))]
+              [(e0 e1 e2 ...)
+               #’(if e0 (begin e1 e2 ...))])]
+           [(c2 c3 ...)
+            (with-syntax ([rest (f #’c2 #’(c3 ...))])
+              (syntax-case c1 (=>)
+                [(e0) #’(let ([t e0]) (if t t rest))]
+                [(e0 => e1)
+                 #’(let ([t e0]) (if t (e1 t) rest))]
+                [(e0 e1 e2 ...)
+                 #’(if e0 
+                        (begin e1 e2 ...)
+                        rest)]))]))])))
+
+(quasisyntax <template>)    syntax 
+unsyntax    auxiliary syntax 
+unsyntax-splicing    auxiliary syntax 
+
+The quasisyntax form is similar to syntax, but it allows parts of the quoted
+text to be evaluated, in a manner similar to the operation of quasiquote
+(report section on “Quasiquotation”).
+
+Within a quasisyntax template, subforms of unsyntax and unsyntax-splicing forms
+are evaluated, and everything else is treated as ordinary template material, as
+with syntax. The value of each unsyntax subform is inserted into the output in
+place of the unsyntax form, while the value of each unsyntax-splicing subform
+is spliced into the surrounding list or vector structure. Uses of unsyntax and
+unsyntax-splicing are valid only within quasisyntax expressions.
+
+A quasisyntax expression may be nested, with each quasisyntax introducing a new
+level of syntax quotation and each unsyntax or unsyntax-splicing taking away a
+level of quotation. An expression nested within n quasisyntax expressions must
+be within n unsyntax or unsyntax-splicing expressions to be evaluated.
+
+As noted in report section on “Abbreviations”, #‘<template> is equivalent to
+(quasisyntax <template>), #,<template> is equivalent to (unsyntax <template>),
+and #,@<template> is equivalent to (unsyntax-splicing <template>).
+
+The quasisyntax keyword can be used in place of with-syntax in many cases. For
+example, the definition of case shown under the description of with-syntax
+above can be rewritten using quasisyntax as follows.
+
+(define-syntax case
+  (lambda (x)
+    (syntax-case x ()
+      [(_ e c1 c2 ...)
+       #‘(let ([t e])
+           #,(let f ([c1 #’c1] [cmore #’(c2 ...)])
+               (if (null? cmore)
+                   (syntax-case c1 (else)
+                     [(else e1 e2 ...)
+                      #’(begin e1 e2 ...)]
+                     [((k ...) e1 e2 ...)
+                      #’(if (memv t ’(k ...))
+                            (begin e1 e2 ...))])
+                   (syntax-case c1 ()
+                     [((k ...) e1 e2 ...)
+                      #‘(if (memv t ’(k ...))
+                            (begin e1 e2 ...)
+                            #,(f (car cmore)
+                                  (cdr cmore)))]))))])))
+
+Uses of unsyntax and unsyntax-splicing with zero or more than one subform are
+valid only in splicing (list or vector) contexts. (unsyntax template ...) is
+equivalent to (unsyntax template) ..., and (unsyntax-splicing template ...) is
+equivalent to (unsyntax-splicing template) .... These forms are primarily
+useful as intermediate forms in the output of the quasisyntax expander.
+
+    Note:   Uses of unsyntax and unsyntax-splicing with zero or more than one
+    subform enable certain idioms [2], such as #,@#,@, which has the effect of
+    a doubly indirect splicing when used within a doubly nested and doubly
+    evaluated quasisyntax expression, as with the nested quasiquote examples
+    shown in section on “Quasiquotation”.
+
+    Note:   Any syntax-rules form can be expressed with syntax-case by making
+    the lambda expression and syntax expressions explicit, and syntax-rules may
+    be defined in terms of syntax-case as follows.
+
+    (define-syntax syntax-rules
+      (lambda (x)
+        (syntax-case x ()
+          [(_ (lit ...) [(k . p) t] ...)
+           (for-all identifier? #’(lit ... k ...))
+           #’(lambda (x)
+               (syntax-case x (lit ...)
+                 [(_ . p) #’t] ...))])))
+
+    Note:   The identifier-syntax form of the base library (see report
+    section on “Macro transformers”) may be defined in terms of syntax-case,
+    syntax, and make-variable-transformer as follows.
+
+    (define-syntax identifier-syntax
+      (syntax-rules (set!)
+        [(_ e)
+         (lambda (x)
+           (syntax-case x ()
+             [id (identifier? #’id) #’e]
+             [(_ x (... ...)) #’(e x (... ...))]))]
+        [(_ (id exp1) ((set! var val) exp2))
+         (and (identifier? #’id) (identifier? #’var))
+         (make-variable-transformer
+           (lambda (x)
+             (syntax-case x (set!)
+               [(set! var val) #’exp2]
+               [(id x (... ...)) #’(exp1 x (... ...))]
+               [id (identifier? #’id) #’exp1])))]))
+
+12.9  Syntax violations
+
+(syntax-violation who message form)    procedure 
+(syntax-violation who message form subform)    procedure 
+
+Who must be #f or a string or a symbol. Message must be a string. Form must be
+a syntax object or a datum value. Subform must be a syntax object or a datum
+value. The syntax-violation procedure raises an exception, reporting a syntax
+violation. Who should describe the macro transformer that detected the
+exception. The message argument should describe the violation. Form should be
+the erroneous source syntax object or a datum value representing a form. The
+optional subform argument should be a syntax object or datum value representing
+a form that more precisely locates the violation.
+
+If who is #f, syntax-violation attempts to infer an appropriate value for the
+condition object (see below) as follows: When form is either an identifier or a
+list-structured syntax object containing an identifier as its first element,
+then the inferred value is the identifier’s symbol. Otherwise, no value for who
+is provided as part of the condition object.
+
+The condition object provided with the exception (see chapter 7) has the
+following condition types:
+
+  • If who is not #f or can be inferred, the condition has condition type &who,
+    with who as the value of its field. In that case, who should identify the
+    procedure or entity that detected the exception. If it is #f, the condition
+    does not have condition type &who.
+
+  • The condition has condition type &message, with message as the value of its
+    field.
+
+  • The condition has condition type &syntax with form and subform as the value
+    of its fields. If subform is not provided, the value of the subform field
+    is #f.
+
+                        [Go to first, previous, next page;   contents;   index]
+

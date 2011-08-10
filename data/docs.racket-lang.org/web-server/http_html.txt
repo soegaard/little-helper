@@ -1,0 +1,536 @@
+▼  Web Applications in Racket
+1  Running Web Servlets
+2  Stateful Servlets
+3  Stateless Servlets
+4  HTTP: Hypertext Transfer Protocol
+5  URL-Based Dispatch
+6  Formlets: Functional Form Abstraction
+7  Templates: Separation of View
+8  Page: Short-hand for Common Patterns
+9  Troubleshooting and Tips
+   Index
+► 4  HTTP: Hypertext Transfer Protocol
+4.1  Requests
+4.2  Bindings
+4.3  Responses
+4.4  Placing Cookies
+4.5  Extracting Cookies
+4.6  Redirect
+4.7  Basic Authentication
+4.8  Digest Authentication
+4.9  X-expression Support
+On this page:
+4.1 Requests
+header
+headers-assq
+headers-assq*
+binding
+binding: form
+binding: file
+bindings-assq
+request
+request-bindings/ raw
+4.2 Bindings
+request-bindings
+request-headers
+extract-binding/ single
+extract-bindings
+exists-binding?
+4.3 Responses
+response
+response/ full
+TEXT/ HTML-MIME-TYPE
+4.4 Placing Cookies
+make-cookie
+cookie->header
+4.5 Extracting Cookies
+client-cookie
+request-cookies
+4.6 Redirect
+redirect-to
+redirection-status?
+permanently
+temporarily
+see-other
+4.7 Basic Authentication
+make-basic-auth-header
+request->basic-credentials
+4.8 Digest Authentication
+make-digest-auth-header
+request->digest-credentials
+username*realm->password/ c
+username*realm->digest-HA1/ c
+password->digest-HA1
+make-check-digest-credentials
+4.9 X-expression Support
+response/ xexpr
+[...search manuals...]
+  top← prev  up  next → 
+
+4 HTTP: Hypertext Transfer Protocol
+
+ (require web-server/http)
+
+The Web Server implements many HTTP libraries that are provided by this module.
+
+4.1 Requests
+
+ (require web-server/http/request-structs)
+
+(struct   header (field value)
+          #:extra-constructor-name make-header)
+  field : bytes?
+  value : bytes?
+Represents a header of field to value.
+
+(headers-assq id heads) → (or/c false/c header?)
+  id : bytes?
+  heads : (listof header?)
+Returns the header with a field equal to id from heads or #f.
+
+(headers-assq* id heads) → (or/c false/c header?)
+  id : bytes?
+  heads : (listof header?)
+Returns the header with a field case-insensitively equal to id from heads or #
+f.
+
+You almost always want to use this, rather than headers-assq because Web
+browsers may send headers with arbitrary casing.
+
+(struct   binding (id)
+          #:extra-constructor-name make-binding)
+  id : bytes?
+Represents a binding of id.
+
+(struct   binding:form binding (value)
+          #:extra-constructor-name make-binding:form)
+  value : bytes?
+Represents a form binding of id to value.
+
+(struct   binding:file binding (filename headers content)
+          #:extra-constructor-name make-binding:file)
+  filename : bytes?
+  headers : (listof header?)
+  content : bytes?
+Represents the uploading of the file filename with the id id and the content
+content, where headers are the additional headers from the MIME envelope the
+file was in. (For example, the #"Content-Type" header may be included by some
+browsers.)
+
+(bindings-assq id binds) → (or/c false/c binding?)
+  id : bytes?
+  binds : (listof binding?)
+Returns the binding with an id equal to id from binds or #f.
+
+(struct   request    ( method
+                       uri
+                       headers/raw
+                       bindings/raw-promise
+                       post-data/raw
+                       host-ip
+                       host-port
+                       client-ip)
+          #:extra-constructor-name make-request)
+  method : bytes?
+  uri : url?
+  headers/raw : (listof header?)
+  bindings/raw-promise : (promise/c (listof binding?))
+  post-data/raw : (or/c false/c bytes?)
+  host-ip : string?
+  host-port : number?
+  client-ip : string?
+An HTTP method request to uri from client-ip to the server at host-ip:host-port
+with headers/raw headers, bindings/raw GET and POST queries and post-data/raw
+POST data.
+
+You are unlikely to need to construct a request struct.
+
+(request-bindings/raw r) → (listof binding?)
+  r : request?
+Forces (request-bindings/raw-promise r).
+
+Here is an example typical of what you will find in many applications:
+
+    (define (get-number req)
+      (match
+        (bindings-assq
+          #"number"
+          (request-bindings/raw req))
+        [(? binding:form? b)
+         (string->number
+          (bytes->string/utf-8
+           (binding:form-value b)))]
+        [_
+         (get-number (request-number))]))
+
+4.2 Bindings
+
+ (require web-server/http/bindings)
+These functions, while convenient, could introduce subtle bugs into your
+application. Examples: that they are case-insensitive could introduce a bug; if
+the data submitted is not in UTF-8 format, then the conversion to a string will
+fail; if an attacker submits a form field as if it were a file, when it is not,
+then the request-bindings will hold a bytes? object and your program will
+error; and, for file uploads you lose the filename. Therefore, we recommend
+against their use, but they are provided for compatibility with old code.
+
+(request-bindings req)
+  →   (listof (or/c (cons/c symbol? string?)
+                    (cons/c symbol? bytes?)))
+  req : request?
+Translates the request-bindings/raw of req by interpreting bytes? as string?s,
+except in the case of binding:file bindings, which are left as is. Ids are then
+translated into lowercase symbols.
+
+(request-headers req) → (listof (cons/c symbol? string?))
+  req : request?
+Translates the request-headers/raw of req by interpreting bytes? as string?s.
+Ids are then translated into lowercase symbols.
+
+(extract-binding/single id binds) → string?
+  id : symbol?
+  binds : (listof (cons/c symbol? string?))
+Returns the single binding associated with id in the a-list binds if there is
+exactly one binding. Otherwise raises exn:fail.
+
+(extract-bindings id binds) → (listof string?)
+  id : symbol?
+  binds : (listof (cons/c symbol? string?))
+Returns a list of all the bindings of id in the a-list binds.
+
+(exists-binding? id binds) → boolean?
+  id : symbol?
+  binds : (listof (cons/c symbol? string))
+Returns #t if binds contains a binding for id. Otherwise, #f.
+
+Here is an example typical of what you will find in many applications:
+
+    (define (get-number req)
+      (string->number
+       (extract-binding/single
+        'number
+        (request-bindings req))))
+
+4.3 Responses
+
+ (require web-server/http/response-structs)
+
+(struct response (code message seconds mime headers output))
+  code : number?
+  message : bytes?
+  seconds : number?
+  mime : bytes?
+  headers : (listof header?)
+  output : (output-port? . -> . void)
+An HTTP response where output produces the body. code is the response code,
+message the message, seconds the generation time, mime the MIME type of the
+file, and headers are the headers. If headers does not include Date,
+Last-Modified, Server, or Content-Type headers, then the server will
+automatically add them. The server will always replace your Connection header
+if it needs to ensure the connection will be closed. (Typically with an HTTP/
+1.0 client.)
+
+Example:
+
+    (response
+     301 #"Moved Permanently"
+     (current-seconds) TEXT/HTML-MIME-TYPE
+     (list (make-header #"Location"
+                        #"http://racket-lang.org/downloads"))
+     (λ (op) (write-bytes #"Moved" op)))
+
+(response/full   code           
+                 message        
+                 seconds        
+                 mime           
+                 headers        
+                 body)     →   response?
+  code : number?
+  message : bytes?
+  seconds : number?
+  mime : bytes?
+  headers : (listof header?)
+  body : (listof bytes?)
+A constructor for responses where body is the response body.
+
+Example:
+
+    (response/full
+     301 #"Moved Permanently"
+     (current-seconds) TEXT/HTML-MIME-TYPE
+     (list (make-header #"Location"
+                        #"http://racket-lang.org/downloads"))
+     (list #"<html><body><p>"
+           #"Please go to <a href=\""
+           #"http://racket-lang.org/downloads"
+           #"\">here</a> instead."
+           #"</p></body></html>"))
+
+TEXT/HTML-MIME-TYPE : bytes?
+Equivalent to #"text/html; charset=utf-8".
+
+Warning: If you include a Content-Length header in a response that is
+inaccurate, there will be an error in transmission that the server will not
+catch.
+
+4.4 Placing Cookies
+
+ (require web-server/http/cookie)
+This module provides functions to create cookies and responses that set them.
+
+(make-cookie    name                       
+                value                      
+              [ #:comment comment          
+                #:domain domain            
+                #:max-age max-age          
+                #:path path                
+                #:secure? secure?])   →   cookie?
+  name : cookie-name?
+  value : cookie-value?
+  comment : (or/c false/c string?) = #f
+  domain : (or/c false/c valid-domain?) = #f
+  max-age : (or/c false/c exact-nonnegative-integer?) = #f
+  path : (or/c false/c string?) = #f
+  secure? : (or/c false/c boolean?) = #f
+Constructs a cookie with the appropriate fields.
+
+(cookie->header c) → header?
+  c : cookie?
+Constructs a header that sets the cookie.
+
+Examples:
+
+    (define time-cookie
+      (make-cookie "time" (number->string (current-seconds))))
+    (define id-cookie
+      (make-cookie "id" "joseph" #:secure? #t))
+     
+    (redirect-to
+     "http://localhost/logged-in"
+     see-other
+     #:headers
+     (map cookie->header
+          (list time-cookie id-cookie)))
+     
+    (send/suspend
+     (lambda (k-url)
+       (response/xexpr
+        #:cookies (list time-cookie id-cookie)
+        `(html (head (title "Cookie Example"))
+               (body (h1 "You're cookie'd!"))))))
+
+Warning: When using cookies, make sure you follow the advice of the MIT Cookie
+Eaters, or you will be susceptible to dangerous attacks.
+
+4.5 Extracting Cookies
+
+ (require web-server/http/cookie-parse)
+
+(struct   client-cookie (name value domain path)
+          #:extra-constructor-name make-client-cookie)
+  name : string?
+  value : string?
+  domain : (or/c false/c valid-domain?)
+  path : (or/c false/c string?)
+While server cookies are represented with cookie?s, cookies that come from the
+client are represented with a client-cookie structure.
+
+(request-cookies req) → (listof client-cookie?)
+  req : request?
+Extracts the cookies from req’s headers.
+
+Examples:
+
+    (define (start req)
+      (define cookies (request-cookies req))
+      (define id-cookie
+        (findf (lambda (c)
+                 (string=? "id" (client-cookie-name c)))
+               cookies))
+      (if id-cookie
+          (hello (client-cookie-value id-cookie))
+          (redirect-to
+           (url->string (request-uri req))
+           see-other
+           #:headers
+           (list
+            (cookie->header (make-cookie "id" "joseph"))))))
+     
+     (define (hello who)
+       (response/xexpr
+        `(html (head (title "Hello!"))
+               (body
+                (h1 "Hello "
+                    ,who)))))
+
+4.6 Redirect
+
+ (require web-server/http/redirect)
+
+(redirect-to    uri                        
+              [ perm/temp                  
+                #:headers headers])   →   response?
+  uri : non-empty-string/c
+  perm/temp : redirection-status? = temporarily
+  headers : (listof header?) = (list)
+Generates an HTTP response that redirects the browser to uri, while including
+the headers in the response.
+
+Example: (redirect-to "http://www.add-three-numbers.com" permanently)
+
+(redirection-status? v) → boolean?
+  v : any/c
+Determines if v is one of the following values.
+
+permanently : redirection-status?
+A redirection-status? for permanent redirections.
+
+temporarily : redirection-status?
+A redirection-status? for temporary redirections.
+
+see-other : redirection-status?
+A redirection-status? for "see-other" redirections.
+
+4.7 Basic Authentication
+
+ (require web-server/http/basic-auth)
+An implementation of HTTP Basic Authentication.
+
+(make-basic-auth-header realm) → header?
+  realm : string?
+Returns a header that instructs the Web browser to request a username and
+password from the client using Basic authentication with realm as the realm.
+
+(request->basic-credentials req)
+ → (or/c false/c (cons/c bytes? bytes?))
+  req : request?
+Returns a pair of the username and password from the authentication header in
+req if they are present, or #f.
+
+Example:
+
+    #lang web-server/insta
+     
+    (define (start req)
+      (match (request->basic-credentials req)
+        [(cons user pass)
+         (response/xexpr
+          `(html (head (title "Basic Auth Test"))
+                 (body (h1 "User: " ,(bytes->string/utf-8 user))
+                       (h1 "Pass: " ,(bytes->string/utf-8 pass)))))]
+        [else
+         (response
+          401 #"Unauthorized" (current-seconds) TEXT/HTML-MIME-TYPE
+          (list
+           (make-basic-auth-header
+            (format "Basic Auth Test: ~a" (gensym))))
+          void)]))
+
+4.8 Digest Authentication
+
+ (require web-server/http/digest-auth)
+An implementation of HTTP Digest Authentication.
+
+(make-digest-auth-header   realm              
+                           private-key        
+                           opaque)       →   header?
+  realm : string?
+  private-key : string?
+  opaque : string?
+Returns a header that instructs the Web browser to request a username and
+password from the client using Digest authentication with realm as the realm,
+private-key as the server’s contribution to the nonce, and opaque as the opaque
+data passed through the client.
+
+(request->digest-credentials req)
+ → (or/c false/c (listof (cons/c symbol? string?)))
+  req : request?
+Returns the Digest credentials from req (if they appear) as an association
+list.
+
+username*realm->password/c : contract?
+Used to look up the password for a user is a realm.
+
+Equivalent to (-> string? string? string?).
+
+username*realm->digest-HA1/c : contract?
+Used to compute the user’s secret hash.
+
+Equivalent to (-> string? string? bytes?).
+
+(password->digest-HA1 lookup-password)
+ → username*realm->digest-HA1/c
+  lookup-password : username*realm->password/c
+Uses lookup-password to find the password, then computes the secret hash of it.
+
+(make-check-digest-credentials lookup-HA1)
+ → (string? (listof (cons/c symbol? string?)) . -> . boolean?)
+  lookup-HA1 : username*realm->digest-HA1/c
+Constructs a function that checks whether particular Digest credentials (the
+second argument of the returned function) are correct given the HTTP method
+provided as the first argument and the secret hash computed by lookup-HA1.
+
+This is will result in an exception if the Digest credentials are missing
+portions.
+
+Example:
+
+    #lang web-server/insta
+    (require racket/pretty)
+     
+    (define private-key "private-key")
+    (define opaque "opaque")
+     
+    (define (start req)
+      (match (request->digest-credentials req)
+        [#f
+         (response
+          401 #"Unauthorized" (current-seconds) TEXT/HTML-MIME-TYPE
+          (list (make-digest-auth-header
+                 (format "Digest Auth Test: ~a" (gensym))
+                 private-key opaque))
+          void)]
+        [alist
+         (define check
+           (make-check-digest-credentials
+            (password->digest-HA1 (lambda (username realm) "pass"))))
+         (define pass?
+           (check "GET" alist))
+         (response/xexpr
+          `(html (head (title "Digest Auth Test"))
+                 (body
+                  (h1 ,(if pass? "Pass!" "No Pass!"))
+                  (pre ,(pretty-format alist)))))]))
+
+4.9 X-expression Support
+
+ (require web-server/http/xexpr)
+
+(response/xexpr    xexpr                        
+                 [ #:code code                  
+                   #:message message            
+                   #:seconds seconds            
+                   #:mime-type mime-type        
+                   #:headers headers            
+                   #:cookies cookies            
+                   #:preamble preamble])   →   response?
+  xexpr : xexpr/c
+  code : number? = 200
+  message : bytes? = #"Okay"
+  seconds : number? = (current-seconds)
+  mime-type : bytes? = TEXT/HTML-MIME-TYPE
+  headers : (listof header?) = empty
+  cookies : (listof cookie?) = empty
+  preamble : bytes? = #""
+Equivalent to
+
+    (response/full
+     code message seconds mime-type
+     (append headers (map cookie->header cookies))
+     (list preamble (string->bytes/utf-8 (xexpr->string xexpr))))
+
+This is a viable function to pass to set-any->response!.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

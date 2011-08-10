@@ -1,0 +1,127 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+► 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+▼ 8.2  Examples
+8.2.1  Modules and reusable syntax classes
+8.2.2  Optional keyword arguments
+8.2.3  Variants with uniform meanings
+8.2.4  Variants with varied meanings
+8.2.5  More keyword arguments
+8.2.6  Contracts on macro sub-expressions
+► 8.2.4  Variants with varied meanings
+8.2.4.1  Syntactic normalization
+8.2.4.2  Non-syntax-valued attributes
+On this page:
+8.2.4.1 Syntactic normalization
+8.2.4.2 Non-syntax-valued attributes
+[...search manuals...]
+  top← prev  up  next → 
+
+8.2.4 Variants with varied meanings
+
+As explained in the previous section, the meaning of a syntax class can be
+uniform, or it can be varied; that is, different instances of the syntax class
+can carry different kinds of information. This section discusses the latter
+kind of syntax class.
+
+A good example of a syntax class with varied meanings is the for-clause of the
+for family of special forms.
+
+  for-clause   =   [id seq-expr]
+               |   [(id ...) seq-expr]
+               |   #:when guard-expr
+
+The first two variants carry the same kind of information; both consist of
+identifiers to bind and a sequence expression. The third variant, however,
+means something totally different: a condition that determines whether to
+continue the current iteration of the loop, plus a change in scoping for
+subsequent seq-exprs. The information of a for-clause must be represented in a
+way that a client macro can do further case analysis to distinguish the “bind
+variables from a sequence” case from the “skip or continue this iteration and
+enter a new scope” case.
+
+This section discusses two ways of representing varied kinds of information.
+
+8.2.4.1 Syntactic normalization
+
+One approach is based on the observation that the syntactic variants already
+constitute a representation of the information they carry. So why not adapt
+that representation, removing redundancies and eliminating simplifying the
+syntax to make subsequent re-parsing trivial.
+
+    (define-splicing-syntax-class for-clause
+      #:attribute (norm)
+      (pattern [var:id seq:expr]
+               #:with norm #'[(var) seq])
+      (pattern [(var:id ...) seq:expr]
+               #:with norm #'[(var ...) seq])
+      (pattern (~seq #:when guard:expr)
+               #:with norm #'[#:when guard]))
+
+First, note that since the #:when variant consists of two separate terms, we
+define for-clause as a splicing syntax class. Second, that kind of irregularity
+is just the sort of thing we’d like to remove so we don’t have to deal with it
+again later. Thus we represent the normalized syntax as a single term beginning
+with either a sequence of identifiers (the first two cases) or the keyword
+#:when (the third case). The two normalized cases are easy to process and easy
+to tell apart. We have also taken the opportunity to desugar the first case
+into the second.
+
+A normalized syntactic representation is most useful when the subsequent case
+analysis is performed by syntax-parse or a similar form.
+
+8.2.4.2 Non-syntax-valued attributes
+
+When the information carried by the syntax is destined for complicated
+processing by Racket code, it is often better to parse it into an intermediate
+representation using idiomatic Racket data structures, such as lists, hashes,
+structs, and even objects.
+
+Thus far we have only used syntax pattern variables and the #:with keyword to
+bind attribues, and the values of the attributes have always been syntax. To
+bind attributes to values other than syntax, use the #:attr keyword.
+
+    ; A ForClause is either
+    ;  - (bind-clause (listof identifier) syntax)
+    ;  - (when-clause syntax)
+    (struct bind-clause (vars seq-expr))
+    (struct when-clause (guard))
+     
+    (define-splicing-syntax-class for-clause
+      #:attributes (ast)
+      (pattern [var:id seq:expr]
+               #:attr ast (bind-clause (list #'var) #'seq))
+      (pattern [(var:id ...) seq:expr]
+               #:attr ast (bind-clause (syntax->list #'(var ...))
+                                       #'seq))
+      (pattern (~seq #:when guard:expr)
+               #:attr ast (when-clause #'guard)))
+
+Be careful! If we had used #:with instead of #:attr, the #f would have been
+coerced to a syntax object before being matched against the pattern default.
+
+Attributes with non-syntax values cannot be used in syntax templates. Use the
+attribute form to get the value of an attribute.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

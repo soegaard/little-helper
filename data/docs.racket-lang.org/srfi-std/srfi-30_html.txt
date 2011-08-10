@@ -1,0 +1,148 @@
+Title
+
+SRFI 30: Nested Multi-line Comments
+
+Author
+
+Martin Gasbichler
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. It will remain in draft until
+2002-04-06, or as amended. to provide input on this SRFI, please mail to
+srfi-30@srfi.schemers.org. See instructions here to subscribe to the list. You
+can access previous messages via the archive of the mailing list. You can
+access post-finalization messages via the archive of the mailing list.
+
+  • Draft: 2002/04/12-2002/06/10
+  • Revised: 2002/06/05
+  • Final: 2002/08/07
+
+Related SRFIs
+
+SRFI 22 defines a multi line comment that may only appear at the beginning of a
+file.
+
+SRFI 10 proposes the notation
+
+ "#" <discriminator> <other-char>*
+
+for further SRFIs that introduce values which may be read and written.
+
+Abstract
+
+This SRFI extends R5RS by possibly nested, multi-line comments. Multi-line
+comments start with #| and end with |#.
+
+Rationale
+
+Multi-line comments are common to many programming languages. They provide a
+convenient mean for adding blocks of text inside a program and support
+development by fading out incomplete code or alternative implementations.
+
+The syntax #| ... |# was chosen because it is already widely used (Chez Scheme,
+Chicken, Gambit-C, Kawa, MIT Scheme, MzScheme and RScheme) and since it fits
+smoothly with R5RS. Nested comments are an important feature for incrementally
+commenting out code.
+
+Specification
+
+This SRFI extends the specification of comments -- R5RS section 2.2 -- as
+follows:
+
+The sequence #| indicates the start of a multi-line comment. The multi-line
+comment continues until |# appears. If the closing |# is omitted, an error is
+signaled. Multi-line comments are visible to Scheme as a single whitespace.
+Multi-line comments may be nested: Every #| within the comment starts a new
+multi-line comment, which has to be terminated by a matching |#.
+
+This SRFI furthermore extends the production for <comment> in the specification
+of lexical structure -- R5RS section 7.1.1 -- to:
+
+    <comment> ---> ; <all subsequent characters up to a line break>
+            |         #| <comment-text> (<comment> <comment-text>)* |#
+
+    <comment-text> ---> <character sequence not containing #| or |#>
+
+
+
+<delimiter> and #
+
+The SRFI does not extend the specification of <delimiter> from R5RS section
+7.1.1. It is therefore required to separate tokens which require implicit
+termination (identifiers, numbers, characters, and dot) from multi-line
+comments by a <delimiter> from R5RS.
+
+Rationale An extension of the <delimiter> to #| would be incompatible with
+existing implementations which allow # as legal character within identifiers.
+
+Implementation
+
+The following procedure skip-comment deletes a leading multi-line comment from
+the current input port. Its optional argument specifies whether the caller has
+already removed leading characters of the comment from the current input port.
+The symbol start means that the caller has removed nothing, read-sharp means
+that it has removed a sharp and finally read-bar indicates that the caller has
+removed #|.
+
+(define (skip-comment! . maybe-start-state)
+  (let lp ((state (if (null? maybe-start-state) 'start (car maybe-start-state)))
+           (nested-level 0))
+    (define (next-char)
+      (let ((c (read-char)))
+        (if (eof-object? c)
+            (error "EOF inside block comment -- #| missing a closing |#")
+            c)))
+
+    (case state
+      ((start) (case (next-char)
+                 ((#\|) (lp 'read-bar nested-level))
+                 ((#\#) (lp 'read-sharp nested-level))
+                 (else (lp 'start nested-level))))
+      ((read-bar) (case (next-char)
+                    ((#\#) (if (> nested-level 1)
+                               (lp 'start (- nested-level 1))))
+                    (else (lp 'start nested-level))))
+      ((read-sharp) (case (next-char)
+                      ((#\|) (lp 'start (+ nested-level 1)))
+                      (else (lp 'start nested-level)))))))
+
+
+A SRFI 22 script to remove nested multi-line comments is available at http://
+srfi.schemers.org/srfi-30/remove-srfi30-comments-script.scm. The script will
+read a Scheme program containing nested multi-line comments from standard input
+and emit the same programs with the comments removed to standard output. The
+script mimics the Scheme 48 reader and uses the error procedure from SRFI 23.
+
+A number of Scheme implemenations already support this SRFI: Chez Scheme,
+Chicken, Gambit-C, Kawa, MIT Scheme, MzScheme and RScheme. Bigloo supports
+multi-line comments via #!/!#. Among the major Scheme implementations, Scheme
+48 and Guile do not support this SRFI yet.
+
+Copyright
+
+Copyright (C) Martin Gasbichler (2002). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Mike Sperber
+Last modified: Sun Sep 1 17:14:55 MST 2002

@@ -1,0 +1,128 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drracket: get/ extend: extend-tab
+drracket: get/ extend: extend-interactions-text
+drracket: get/ extend: get-interactions-text
+drracket: get/ extend: extend-definitions-text
+drracket: get/ extend: get-definitions-text
+drracket: get/ extend: extend-interactions-canvas
+drracket: get/ extend: get-interactions-canvas
+drracket: get/ extend: extend-definitions-canvas
+drracket: get/ extend: get-definitions-canvas
+drracket: get/ extend: extend-unit-frame
+drracket: get/ extend: get-unit-frame
+[...search manuals...]
+  top← prev  up  next → 
+
+9 drracket:get/extend
+
+(drracket:get/extend:extend-tab mixin) → void?
+  mixin : (make-mixin-contract drracket:unit:tab<%>)
+(drracket:get/extend:extend-tab   mixin           
+                                  before?)   →   void?
+  mixin : (make-mixin-contract drracket:unit:tab<%>)
+  before? : boolean?
+This class implements the tabs in DrRacket. One is created for each tab in a
+frame (each frame always has at least one tab, even if the tab bar is not
+shown)
+
+The argument, before, controls if the mixin is applied before or after already
+installed mixins. If unsupplied, this is the same as supplying #t.
+(drracket:get/extend:extend-interactions-text mixin) → void?
+  mixin : (make-mixin-contract drracket:rep:text<%>)
+(drracket:get/extend:extend-interactions-text   mixin           
+                                                before?)   →   void?
+  mixin : (make-mixin-contract drracket:rep:text<%>)
+  before? : boolean?
+This text is used in the bottom window of DrRacket frames.
+
+The argument, before, controls if the mixin is applied before or after already
+installed mixins. If unsupplied, this is the same as supplying #t.
+(drracket:get/extend:get-interactions-text)
+ → (implementation?/c drracket:rep:text<%>)
+Once this function is called, drracket:get/extend:extend-interactions-text
+raises an error, disallowing any more extensions.
+(drracket:get/extend:extend-definitions-text mixin) → void?
+  mixin : (make-mixin-contract drracket:unit:definitions-text<%>)
+(drracket:get/extend:extend-definitions-text   mixin           
+                                               before?)   →   void?
+  mixin : (make-mixin-contract drracket:unit:definitions-text<%>)
+  before? : boolean?
+This text is used in the top window of DrRacket frames.
+
+The argument, before, controls if the mixin is applied before or after already
+installed mixins. If unsupplied, this is the same as supplying #f.
+(drracket:get/extend:get-definitions-text)
+ → (implementation?/c drracket:unit:definitions-text<%>)
+Once this function is called, drracket:get/extend:extend-definitions-text
+raises an error, disallowing any more extensions.
+(drracket:get/extend:extend-interactions-canvas mixin) → void?
+  mixin : (make-mixin-contract drracket:unit:interactions-canvas%)
+(drracket:get/extend:extend-interactions-canvas   mixin     
+                                                  before?)  
+ → void?
+  mixin : (make-mixin-contract drracket:unit:interactions-canvas%)
+  before? : boolean?
+This canvas is used in the bottom window of DrRacket frames.
+
+The argument, before, controls if the mixin is applied before or after already
+installed mixins. If unsupplied, this is the same as supplying #f.
+(drracket:get/extend:get-interactions-canvas)
+ → (subclass?/c drracket:unit:interactions-canvas%)
+Once this function is called, drracket:get/extend:extend-interactions-canvas
+raises an error, disallowing any more extensions.
+(drracket:get/extend:extend-definitions-canvas mixin) → void?
+  mixin : (make-mixin-contract drracket:unit:definitions-canvas%)
+(drracket:get/extend:extend-definitions-canvas   mixin           
+                                                 before?)   →   void?
+  mixin : (make-mixin-contract drracket:unit:definitions-canvas%)
+  before? : boolean?
+This canvas is used in the top window of DrRacket frames.
+
+The argument, before, controls if the mixin is applied before or after already
+installed mixins. If unsupplied, this is the same as supplying #f.
+(drracket:get/extend:get-definitions-canvas)
+ → (subclass?/c drracket:unit:definitions-canvas%)
+Once this function is called, drracket:get/extend:extend-definitions-canvas
+raises an error, disallowing any more extensions.
+(drracket:get/extend:extend-unit-frame mixin) → void?
+  mixin : (make-mixin-contract drracket:unit:frame%)
+(drracket:get/extend:extend-unit-frame   mixin           
+                                         before?)   →   void?
+  mixin : (make-mixin-contract drracket:unit:frame%)
+  before? : boolean?
+This is the frame that implements the main DrRacket window.
+
+The argument, before, controls if the mixin is applied before or after already
+installed mixins. If unsupplied, this is the same as supplying #f.
+(drracket:get/extend:get-unit-frame)
+ → (subclass?/c drracket:unit:frame%)
+Once this function is called, drracket:get/extend:extend-unit-frame raises an
+error, disallowing any more extensions.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

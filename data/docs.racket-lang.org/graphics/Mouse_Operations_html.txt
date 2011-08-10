@@ -1,0 +1,78 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+On this page:
+get-mouse-click
+ready-mouse-click
+ready-mouse-release
+query-mouse-posn
+mouse-click-posn
+left-mouse-click?
+middle-mouse-click?
+right-mouse-click?
+[...search manuals...]
+  top← prev  up  next → 
+
+10 Mouse Operations
+
+The graphics library contains functions that determine where the mouse is, if
+there are any clicks, etc. The functions get-mouse-click and ready-mouse-click
+first return a “mouse-click descriptor,” and then other functions take the
+descriptor and return the mouse’s position, which button was pushed, etc. Mouse
+clicks are buffered and returned in the same order in which they occurred.
+Thus, the descriptors returned by get-mouse-click and ready-mouse-click may be
+from clicks that occurred long before these functions were called.
+
+(get-mouse-click viewport) → mouse-click?
+  viewport : viewport?
+Returns the next mouse click in viewport, waiting for a click if necessary.
+
+(ready-mouse-click viewport) → (or/c mouse-click? false/c)
+  viewport : viewport?
+Returns either a mouse click descriptor or #f if none is available. Unlike
+get-mouse-click, ready-mouse-click always returns immediately.
+
+(ready-mouse-release viewport) → (or/c mouse-click? false/c)
+  viewport : viewport?
+Returns either a click descriptor from a mouse-release (button-up) event or #f
+if none is available.
+
+(query-mouse-posn viewport) → (or/c posn? false/c)
+  viewport : viewport?
+Returns either the position of the mouse cursor within viewport or else #f if
+the cursor is currently outside viewport.
+
+(mouse-click-posn mouse-click) → posn?
+  mouse-click : mouse-click?
+Returns the position of the pixel within a viewport where a given mouse click
+occurred.
+
+(left-mouse-click? mouse-click) → boolean?
+  mouse-click : mouse-click?
+Returns #t if the mouse click occurred with the left mouse button, #f
+otherwise.
+
+(middle-mouse-click? mouse-click) → boolean?
+  mouse-click : mouse-click?
+Returns #t if the mouse click occurred with the middle mouse button, #f
+otherwise.
+
+(right-mouse-click? mouse-click) → boolean?
+  mouse-click : mouse-click?
+Returns #t if the mouse click occurred with the right mouse button, #f
+otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

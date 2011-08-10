@@ -1,0 +1,56 @@
+►  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+▼ 1  Containers
+1.1  aligned-pasteboard%
+1.2  alignment<%>
+1.3  alignment-parent<%>
+1.4  stretchable-snip<%>
+1.5  horizontal-alignment%
+1.6  vertical-alignment%
+1.7  dllist<%>
+Inherited methods:
+from alignment-parent<%>
+add-child
+delete-child
+get-pasteboard
+is-shown?
+from alignment<%>
+align
+get-min-height
+get-min-width
+get-parent
+set-min-sizes
+show
+show/ hide
+stretchable-height
+stretchable-width
+from dllist<%>
+for-each
+map-to-list
+next
+prev
+[...search manuals...]
+  top← prev  up  next → 
+
+vertical-alignment% : class?
+  superclass: dllist<%>
+
+  extends:  alignment<%>
+            alignment-parent<%>
+(new vertical-alignment%    [parent parent]  
+                          [ [show? show?]    
+                            [after after]])  
+ → (is-a?/c vertical-alignment%)
+  parent : (is-a?/c alignment-parent<%>)
+  show? : boolean? = #t
+  after : (or/c (is-a?/c alignment<%>) false/c) = #f
+Inserts a new vertical-alignment container into parent—optionally after a given
+container also in parent. The new container can be initially shown or hidden.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

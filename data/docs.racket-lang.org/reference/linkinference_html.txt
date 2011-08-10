@@ -1,0 +1,155 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 6  Units
+ 6.1  Creating Units
+ 6.2  Invoking Units
+ 6.3  Linking Units and Creating Compound Units
+ 6.4  Inferred Linking
+ 6.5  Generating A Unit from Context
+ 6.6  Structural Matching
+ 6.7  Extending the Syntax of Signatures
+ 6.8  Unit Utilities
+ 6.9  Unit Contracts
+6.10  Single-Unit Modules
+6.11  Single-Signature Modules
+6.12  Transformer Helpers
+On this page:
+define-unit
+compound-unit/ infer
+define-compound-unit
+define-compound-unit/ infer
+define-unit-binding
+invoke-unit/ infer
+define-values/ invoke-unit/ infer
+[...search manuals...]
+  top← prev  up  next → 
+
+6.4 Inferred Linking
+
+(define-unit unit-id
+  (import tagged-sig-spec ...)
+  (export tagged-sig-spec ...)
+  init-depends-decl
+  unit-body-expr-or-defn
+  ...)
+Binds unit-id to both a unit and static information about the unit.
+
+Evaluating a reference to a unit-id bound by define-unit produces a unit, just
+like evaluating an id bound by (define id (unit ...)). In addition, however,
+unit-id can be used in compound-unit/infer. See unit for information on
+tagged-sig-spec, init-depends-decl, and unit-body-expr-or-defn.
+
+(compound-unit/infer
+  (import tagged-infer-link-import ...)
+  (export tagged-infer-link-export ...)
+  (link infer-linkage-decl ...))
+ 
+tagged-infer-link-import   =   tagged-sig-id
+                           |   (link-id : tagged-sig-id)
+                                
+tagged-infer-link-export   =   (tag id infer-link-export)
+                           |   infer-link-export
+                                
+       infer-link-export   =   link-id
+                           |   sig-id
+                                
+      infer-linkage-decl   =   ((link-binding ...) unit-id
+                                                   tagged-link-id ...)
+                           |   unit-id
+Like compound-unit. Syntactically, the difference between compound-unit and
+compound-unit/infer is that the unit-expr for a linked unit is replaced with a
+unit-id, where a unit-id is bound by define-unit (or one of the other
+unit-binding forms that we introduce later in this section). Furthermore, an
+import can name just a sig-id without locally binding a link-id, and an export
+can be based on a sig-id instead of a link-id, and a declaration in the link
+clause can be simply a unit-id with no specified exports or imports.
+
+The compound-unit/infer form expands to compound-unit by adding sig-ids as
+needed to the import clause, by replacing sig-ids in the export clause by
+link-ids, and by completing the declarations of the link clause. This
+completion is based on static information associated with each unit-id. Links
+and exports can be inferred when all signatures exported by the linked units
+are distinct from each other and from all imported signatures, and when all
+imported signatures are distinct. Two signatures are distinct only if they
+share no ancestor through extends.
+
+The long form of a link declaration can be used to resolve ambiguity by giving
+names to some of a unit’s exports and supplying specific bindings for some of a
+unit’s imports. The long form need not name all of a unit’s exports or supply
+all of a unit’s imports if the remaining parts can be inferred.
+
+Like compound-unit, the compound-unit/infer form produces a (compound) unit
+without statically binding information about the result unit’s imports and
+exports. That is, compound-unit/infer consumes static information, but it does
+not generate it. Two additional forms, define-compound-unit and
+define-compound-unit/infer, generate static information (where the former does
+not consume static information).
+
+(define-compound-unit id
+  (import link-binding ...)
+  (export tagged-link-id ...)
+  (link linkage-decl ...))
+Like compound-unit, but binds static information about the compound unit like
+define-unit.
+
+(define-compound-unit/infer id
+  (import link-binding ...)
+  (export tagged-infer-link-export ...)
+  (link infer-linkage-decl ...))
+Like compound-unit/infer, but binds static information about the compound unit
+like define-unit.
+
+(define-unit-binding unit-id
+  unit-expr
+  (import tagged-sig-spec ...+)
+  (export tagged-sig-spec ...+)
+  init-depends-decl)
+Like define-unit, but the unit implementation is determined from an existing
+unit produced by unit-expr. The imports and exports of the unit produced by
+unit-expr must be consistent with the declared imports and exports, otherwise
+the exn:fail:contract exception is raised when the define-unit-binding form is
+evaluated.
+
+(invoke-unit/infer unit-spec)
+ 
+unit-spec   =   unit-id
+            |   (link link-unit-id ...)
+Like invoke-unit, but uses static information associated with unit-id to infer
+which imports must be assembled from the current context. If given a link form
+containing multiple link-unit-ids, then the units are first linked via
+define-compound-unit/infer.
+
+(define-values/invoke-unit/infer maybe-exports unit-spec)
+ 
+maybe-exports   =  
+                |   (export tagged-sig-spec ...)
+                     
+    unit-spec   =   unit-id
+                |   (link link-unit-id ...)
+Like define-values/invoke-unit, but uses static information associated with
+unit-id to infer which imports must be assembled from the current context and
+which exports should be bound by the definition. If given a link form
+containing multiple link-unit-ids, then the units are first linked via
+define-compound-unit/infer.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

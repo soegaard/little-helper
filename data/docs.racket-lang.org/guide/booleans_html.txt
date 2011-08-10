@@ -1,0 +1,73 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 3  Built-In Datatypes
+ 3.1  Booleans
+ 3.2  Numbers
+ 3.3  Characters
+ 3.4  Strings (Unicode)
+ 3.5  Bytes and Byte Strings
+ 3.6  Symbols
+ 3.7  Keywords
+ 3.8  Pairs and Lists
+ 3.9  Vectors
+3.10  Hash Tables
+3.11  Boxes
+3.12  Void and Undefined
+[...search manuals...]
+  top← prev  up  next → 
+
+3.1 Booleans
+
+Racket has two distinguished constants to represent boolean values: #t for true
+and #f for false. Uppercase #T and #F are parsed as the same values, but the
+lowercase forms are preferred.
+
+The boolean? procedure recognizes the two boolean constants. In the result of a
+test expression for if, cond, and, or, etc., however, any value other than #f
+counts as true.
+
+Examples:
+
+    > (= 2 (+ 1 1))
+    #t
+
+    > (boolean? #t)
+    #t
+
+    > (boolean? #f)
+    #t
+
+    > (boolean? "no")
+    #f
+
+    > (if "no" 1 0)
+    1
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,74 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+▼ 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+On this page:
+syntax-class-attributes
+syntax-class-arity
+syntax-class-keywords
+syntax-class-parse
+debug-parse
+[...search manuals...]
+  top← prev  up  next → 
+
+8.9 Debugging and inspection tools
+
+ (require syntax/parse/debug)
+
+The following special forms are for debugging syntax classes.
+
+(syntax-class-attributes syntax-class-id)
+Returns a list of the syntax class’s attributes. Each attribute entry consists
+of the attribute’s name and ellipsis depth.
+
+(syntax-class-arity syntax-class-id)
+(syntax-class-keywords syntax-class-id)
+Returns the syntax class’s arity and keywords, respectively. Compare with
+procedure-arity and procedure-keywords.
+
+(syntax-class-parse syntax-class-id stx-expr arg ...)
+ 
+   stx-expr    :   syntax?
+Runs the parser for the syntax class (parameterized by the arg-exprs) on the
+syntax object produced by stx-expr. On success, the result is a list of vectors
+representing the attribute bindings of the syntax class. Each vector contains
+the attribute name, depth, and associated value. On failure, the result is some
+internal representation of the failure.
+
+(debug-parse stx-expr S-pattern ...+)
+ 
+   stx-expr   :   syntax?
+Tries to match stx-expr against the S-patterns. If matching succeeds, the
+symbol 'success is returned. Otherwise, an S-expression describing the failure
+is returned.
+
+The failure S-expression shows both the raw set of failures (unsorted) and the
+failures with maximal progress. The maximal failures are divided into
+equivalence classes based on their progress (progress is a partial order); that
+is, failures within an equivalence class have the same progress and, in
+principle, pinpoint the same term as the problematic term. Multiple equivalence
+classes only arise from ~parse patterns (or equivalently, #:with clauses) that
+match computed terms or ~fail (#:fail-when, etc) clauses that allow a computed
+term to be pinpointed.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

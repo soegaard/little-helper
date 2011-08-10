@@ -1,0 +1,85 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 6  raco setup: Installation Management
+6.1  Running raco setup
+6.2  "info.rkt" File Format
+6.3  API for Installation
+6.4  API for Installing ".plt" Archives
+6.5  API for Finding Installation Directories
+6.6  API for Reading "info.rkt" Files
+6.7  API for Relative Paths
+6.8  API for Cross-References for Installed Manuals
+[...search manuals...]
+  top← prev  up  next → 
+
+6.2 "info.rkt" File Format
+
+ #lang setup/infotab
+
+In each collection, a special module file "info.rkt" provides general
+information about a collection for use by various tools. For example, an
+"info.rkt" file specifies how to build the documentation for a collection, and
+it lists plug-in tools for DrRacket or commands for raco that the collection
+provides.
+
+Although an "info.rkt" file contains a module declaration, the declaration has
+a highly constrained form. It must match the following grammar of info-module:
+
+       info-module   =   (module info intotab-mod-path
+                           (define id info-expr)
+                           ...)
+                          
+  intotab-mod-path   =   setup/infotab
+                     |   (lib "setup/infotab.ss")
+                     |   (lib "setup/infotab.rkt")
+                     |   (lib "infotab.rkt" "setup")
+                     |   (lib "infotab.ss" "setup")
+                          
+         info-expr   =   'datum
+                     |   `datum
+                     |   (info-primitive info-expr ...)
+                     |   id
+                     |   string
+                     |   number
+                     |   boolean
+                     |   (string-constant identifier)
+                          
+    info-primitive   =   cons
+                     |   car
+                     |   cdr
+                     |   list
+                     |   list*
+                     |   reverse
+                     |   append
+                     |   string-append
+                     |   path->string
+                     |   build-path
+                     |   collection-path
+                     |   system-library-subpath
+
+For example, the following declaration could be the "info.rkt" library of the
+"games" collection. It contains definitions for three info tags, name,
+racket-launcher-libraries, and racket-launcher-names.
+
+    #lang setup/infotab
+    (define name "Games")
+    (define gracket-launcher-libraries '("main.rkt"))
+    (define gracket-launcher-names     '("PLT Games"))
+
+As illustrated in this example, an "info.rkt" file can use #lang notation, but
+only with the setup/infotab language.
+
+See also get-info from setup/getinfo.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

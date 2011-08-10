@@ -1,0 +1,1001 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+add-selected
+after-delete
+after-insert
+after-interactive-move
+after-interactive-resize
+after-move-to
+after-reorder
+after-resize
+after-select
+can-delete?
+can-insert?
+can-interactive-move?
+can-interactive-resize?
+can-move-to?
+can-reorder?
+can-resize?
+can-select?
+change-style
+copy-self-to
+delete
+do-copy
+do-paste
+do-paste-x-selection
+erase
+find-next-selected-snip
+find-snip
+get-center
+get-dragable
+get-scroll-step
+get-selection-visible
+insert
+interactive-adjust-mouse
+interactive-adjust-move
+interactive-adjust-resize
+is-selected?
+lower
+move
+move-to
+no-selected
+on-default-event
+on-delete
+on-double-click
+on-insert
+on-interactive-move
+on-interactive-resize
+on-move-to
+on-reorder
+on-resize
+on-select
+raise
+remove
+remove-selected
+resize
+set-after
+set-before
+set-dragable
+set-scroll-step
+set-selected
+set-selection-visible
+Inherited methods:
+from editor<%>
+add-canvas
+add-undo
+adjust-cursor
+after-edit-sequence
+after-load-file
+after-save-file
+auto-wrap
+begin-edit-sequence
+begin-write-header-footer-to-file
+blink-caret
+can-do-edit-operation?
+can-load-file?
+can-save-file?
+clear
+clear-undos
+copy
+copy-self
+cut
+dc-location-to-editor-location
+default-style-name
+do-edit-operation
+editor-location-to-dc-location
+end-edit-sequence
+end-write-header-footer-to-file
+find-first-snip
+find-scroll-line
+get-active-canvas
+get-admin
+get-canvas
+get-canvases
+get-dc
+get-descent
+get-extent
+get-file
+get-filename
+get-flattened-text
+get-focus-snip
+get-inactive-caret-threshold
+get-keymap
+get-load-overwrites-styles
+get-max-height
+get-max-undo-history
+get-max-view-size
+get-max-width
+get-min-height
+get-min-width
+get-paste-text-only
+get-snip-data
+get-snip-location
+get-space
+get-style-list
+get-view-size
+global-to-local
+in-edit-sequence?
+insert-box
+insert-file
+insert-image
+insert-port
+invalidate-bitmap-cache
+is-locked?
+is-modified?
+is-printing?
+kill
+load-file
+local-to-global
+locations-computed?
+lock
+locked-for-flow?
+locked-for-read?
+locked-for-write?
+needs-update
+num-scroll-lines
+on-change
+on-char
+on-default-char
+on-display-size
+on-display-size-when-ready
+on-edit-sequence
+on-event
+on-focus
+on-load-file
+on-local-char
+on-local-event
+on-new-box
+on-new-image-snip
+on-paint
+on-save-file
+on-snip-modified
+own-caret
+paste
+paste-x-selection
+print
+print-to-dc
+put-file
+read-footer-from-file
+read-from-file
+read-header-from-file
+redo
+refresh
+refresh-delayed?
+release-snip
+remove-canvas
+resized
+save-file
+save-port
+scroll-editor-to
+scroll-line-location
+scroll-to
+select-all
+set-active-canvas
+set-admin
+set-caret-owner
+set-cursor
+set-filename
+set-inactive-caret-threshold
+set-keymap
+set-load-overwrites-styles
+set-max-height
+set-max-undo-history
+set-max-width
+set-min-height
+set-min-width
+set-modified
+set-paste-text-only
+set-snip-data
+set-style-list
+size-cache-invalid
+style-has-changed
+undo
+use-file-text-mode
+write-footers-to-file
+write-headers-to-file
+write-to-file
+[...search manuals...]
+  top← prev  up  next → 
+
+pasteboard% : class?
+  superclass: object%
+
+  extends:  editor<%>
+A pasteboard% object is an editor for displaying snips with arbitrary location
+s.
+
+(new pasteboard%) → (is-a?/c pasteboard%)
+The editor will not be displayed until it is attached to an editor-canvas%
+object or some other display.
+
+A new keymap% object is created for the new editor. See also get-keymap and
+set-keymap.
+
+A new style-list% object is created for the new editor. See also get-style-list
+and set-style-list.
+
+(send a-pasteboard add-selected snip) → void?
+  snip : (is-a?/c snip%)
+(send a-pasteboard add-selected x y w h) → void?
+  x : real?
+  y : real?
+  w : (and/c real? (not/c negative?))
+  h : (and/c real? (not/c negative?))
+Selects snips without deselecting other snips. When coordinates are given, this
+method selects all snips that intersect with the given rectangle (in editor
+coordinates).
+
+The selection in a pasteboard can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-select to
+monitor selection changes.
+
+(send a-pasteboard after-delete snip) → void?
+  snip : (is-a?/c snip%)
+Refine this method with augment.
+Specification: Called after a snip is deleted from the editor (and after the
+display is refreshed; use on-delete and begin-edit-sequence to avoid extra
+refreshes when after-delete modifies the editor).
+
+See also can-delete? and on-edit-sequence.
+
+No internals locks are set when this method is called.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard after-insert   snip          
+                                  before        
+                                  x             
+                                  y)       →   void?
+  snip : (is-a?/c snip%)
+  before : (or/c (is-a?/c snip%) false/c)
+  x : real?
+  y : real?
+Refine this method with augment.
+Specification: Called after a snip is inserted into the editor (and after the
+display is refreshed; use on-insert and begin-edit-sequence to avoid extra
+refreshes when after-insert modifies the editor).
+
+See also can-insert? and on-edit-sequence.
+
+No internals locks are set when this method is called.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard after-interactive-move event) → void?
+  event : (is-a?/c mouse-event%)
+Refine this method with augment.
+Specification: Called after the user stops interactively dragging snips (the
+ones that are selected; see find-next-selected-snip). The mouse event that
+terminated the move (usually a button-up event) is provided.
+
+See also can-interactive-move? and on-interactive-move.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard after-interactive-resize snip) → void?
+  snip : (is-a?/c snip%)
+Refine this method with augment.
+Specification: Called after the user stops interactively resizing a snip (the
+one that is currently selected; see find-next-selected-snip). The snip argument
+is the snip that was resized.
+
+See also can-interactive-resize? and on-interactive-resize.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard after-move-to   snip              
+                                   x                 
+                                   y                 
+                                   dragging?)   →   void?
+  snip : (is-a?/c snip%)
+  x : real?
+  y : real?
+  dragging? : any/c
+Refine this method with augment.
+Specification: Called after a given snip is moved within the editor (and after
+the display is refreshed; use on-move-to and begin-edit-sequence to avoid extra
+refreshes when after-move-to modifies the editor).
+
+If dragging? is not #f, then this move was a temporary move for dragging.
+
+See also can-move-to? and on-edit-sequence.
+
+No internals locks are set when this method is called.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard after-reorder   snip            
+                                   to-snip         
+                                   before?)   →   boolean?
+  snip : (is-a?/c snip%)
+  to-snip : (is-a?/c snip%)
+  before? : any/c
+Refine this method with augment.
+Specification: Called before a snip is moved in the pasteboard’s front-to-back
+snip order (and after the display is refreshed; use on-reorder and
+begin-edit-sequence to avoid extra refreshes when after-reorder modifies the
+editor).
+
+If before? is #t, then snip was moved before to-snip, otherwise snip was moved
+after to-snip.
+
+See also can-reorder? and on-edit-sequence.
+
+No internals locks are set when this method is called.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard after-resize   snip             
+                                  w                
+                                  h                
+                                  resized?)   →   void?
+  snip : (is-a?/c snip%)
+  w : (and/c real? (not/c negative?))
+  h : (and/c real? (not/c negative?))
+  resized? : any/c
+Refine this method with augment.
+Specification: Called after a given snip is resized (and after the display is
+refreshed; use on-resize and begin-edit-sequence to avoid extra refreshes when
+after-resize modifies the editor), or after an unsuccessful resize attempt was
+made.
+
+If resized? is not #f, the snip was successfully resized.
+
+See also can-resize? and on-edit-sequence.
+
+No internals locks are set when this method is called.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard after-select snip on?) → void?
+  snip : (is-a?/c snip%)
+  on? : any/c
+Refine this method with augment.
+Specification: Called after a snip in the pasteboard is selected or deselected.
+See also on-select. This method is not called after selected snip is deleted
+(and thus de-selected indirectly); see also after-delete.
+
+If on? is #t, then snip was just selected, otherwise snip was just deselected.
+
+See also can-select? and on-edit-sequence.
+
+No internals locks are set when this method is called.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard can-delete? snip) → boolean?
+  snip : (is-a?/c snip%)
+Refine this method with augment.
+Specification: Called before a snip is deleted from the editor. If the return
+value is #f, then the delete will be aborted.
+
+See also on-delete and after-delete.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks).
+
+Default implementation: Returns #t.
+
+(send a-pasteboard can-insert?   snip          
+                                 before        
+                                 x             
+                                 y)       →   boolean?
+  snip : (is-a?/c snip%)
+  before : (or/c (is-a?/c snip%) false/c)
+  x : real?
+  y : real?
+Refine this method with augment.
+Specification: Called before a snip is inserted from the editor. If the return
+value is #f, then the insert will be aborted.
+
+See also on-insert and after-insert.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks).
+
+Default implementation: Returns #t.
+
+(send a-pasteboard can-interactive-move? event) → boolean?
+  event : (is-a?/c mouse-event%)
+Refine this method with augment.
+Specification: Called when the user starts interactively dragging snips (the
+ones that are selected; see find-next-selected-snip). All of the selected snips
+will be moved. If #f is returned, the interactive move is disallowed. The mouse
+event that started the move (usually a button-down event) is provided.
+
+See also on-interactive-move, after-interactive-move, and
+interactive-adjust-move.
+
+Default implementation: Returns #t.
+
+(send a-pasteboard can-interactive-resize? snip) → boolean?
+  snip : (is-a?/c snip%)
+Refine this method with augment.
+Specification: Called when the user starts interactively resizing a snip (the
+one that is selected; see find-next-selected-snip). If #f is returned, the
+interactive resize is disallowed.
+
+The snip argument is the snip that will be resized.
+
+See also after-interactive-resize, after-interactive-resize, and
+interactive-adjust-resize.
+
+Default implementation: Returns #t.
+
+(send a-pasteboard can-move-to?   snip              
+                                  x                 
+                                  y                 
+                                  dragging?)   →   boolean?
+  snip : (is-a?/c snip%)
+  x : real?
+  y : real?
+  dragging? : any/c
+Refine this method with augment.
+Specification: Called before a snip is moved in the editor. If the return value
+is #f, then the move will be aborted.
+
+If dragging? is not #f, then this move is a temporary move for dragging.
+
+See also on-move-to and after-move-to.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks).
+
+Default implementation: Returns #t.
+
+(send a-pasteboard can-reorder?   snip            
+                                  to-snip         
+                                  before?)   →   boolean?
+  snip : (is-a?/c snip%)
+  to-snip : (is-a?/c snip%)
+  before? : any/c
+Refine this method with augment.
+Specification: Called before a snip is moved in the pasteboard’s front-to-back
+snip order. If the return value is #f, then the reordering will be aborted.
+
+If before? is #t, then snip is to be moved before to-snip, otherwise snip is to
+be moved after to-snip.
+
+See also on-reorder and after-reorder.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks).
+
+Default implementation: Returns #t.
+
+(send a-pasteboard can-resize? snip w h) → boolean?
+  snip : (is-a?/c snip%)
+  w : (and/c real? (not/c negative?))
+  h : (and/c real? (not/c negative?))
+Refine this method with augment.
+Specification: Called before a snip is resized in the editor. If the return
+value is #f, then the resize will be aborted.
+
+See also on-resize and after-resize.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks).
+
+Default implementation: Returns #t.
+
+(send a-pasteboard can-select? snip on?) → boolean?
+  snip : (is-a?/c snip%)
+  on? : any/c
+Refine this method with augment.
+Specification: This method is called before a snip in the pasteboard is
+selected or deselected. If #f is returned, the selection change is disallowed.
+This method is not called when a selected snip is to be deleted (and thus
+de-selected indirectly); see also can-delete?.
+
+If on? is #t, then snip will be selected, otherwise snip will be deselected.
+
+See also on-select and after-select.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks).
+
+Default implementation: Returns #t.
+
+(send a-pasteboard change-style [style snip]) → void?
+   style   :   (or/c (is-a?/c style-delta%) (is-a?/c style<%>) #f)
+           =   #f
+  snip : (or/c (is-a?/c snip%) #f) = #f
+Changes the style of snip to a specific style or by applying a style delta. If
+snip is #f, then all currently selected snips are changed. If style is #f, then
+the default style is used, according to default-style-name.
+
+To change a large collection of snips from one style to another style, consider
+providing a style<%> instance rather than a style-delta% instance. Otherwise,
+change-style must convert the style-delta% instance to the style<%> instance
+for every snip; this conversion consumes both time and (temporary) memory.
+
+When a style is provided: The editor’s style list must contain style, otherwise
+the style is not changed. See also convert in style-list%.
+
+(send a-pasteboard copy-self-to dest) → void?
+  dest : (or/c (is-a?/c text%) (is-a?/c pasteboard%))
+Overrides copy-self-to in editor<%>.
+In addition to the default copy-self-to in editor<%> work, the dragability,
+selection visibility state, and scroll step of a-pasteboard are installed into
+dest.
+
+(send a-pasteboard delete) → void?
+(send a-pasteboard delete snip) → void?
+  snip : (is-a?/c snip%)
+Deletes snip when provided, or deletes the currently selected snips from the
+editor when snip is not provided.
+
+The content of an editor can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-delete to
+monitor content deletion changes.
+
+(send a-pasteboard do-copy time extend?) → void?
+  time : exact-integer?
+  extend? : any/c
+Specification: Called to copy the editor’s current selection into the
+clipboard. This method is provided so that it can be overridden by subclasses.
+Do not call this method directly; instead, call copy.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+Default implementation: Copies the current selection, extending the current
+clipboard contexts if extend? is true.
+
+(send a-pasteboard do-paste time) → void?
+  time : exact-integer?
+Specification: Called to paste the current contents of the clipboard into the
+editor. This method is provided so that it can be overridden by subclasses. Do
+not call this method directly; instead, call paste.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+Default implementation: Pastes.
+
+(send a-pasteboard do-paste-x-selection time) → void?
+  time : exact-integer?
+Specification: Called to paste the current contents of the X11 selection on
+Unix (or the clipboard on Windows and Mac OS X) into the editor. This method is
+provided so that it can be overridden by subclasses. Do not call this method
+directly; instead, call paste-x-selection.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+Default implementation: Pastes.
+
+(send a-pasteboard erase) → void?
+Deletes all snips from the editor.
+
+See also delete.
+
+(send a-pasteboard find-next-selected-snip start)
+ → (or/c (is-a?/c snip%) false/c)
+  start : (or/c (is-a?/c snip%) false/c)
+Returns the next selected snip in the editor, starting the search after start.
+(See Editor Structure and Terminology for information about snip order in
+pasteboards.) If start is #f, then the search starts with the first snip in the
+editor (and thus returns the first selected snip, if any are selected). If no
+more selected snips are available, or if start is not in the pasteboard, #f is
+returned.
+
+(send a-pasteboard find-snip x y [after])
+ → (or/c (is-a?/c snip%) false/c)
+  x : real?
+  y : real?
+  after : (or/c (is-a?/c snip%) false/c) = #f
+Finds the frontmost snip (after a given snip) that intersects a given location.
+See Editor Structure and Terminology for information about snip order in
+pasteboards.
+
+The x and y arguments are in editor coordinates. If after is not supplied, the
+frontmost snip at x and y is returned, otherwise the frontmost snip behind
+after is returned. If after is a snip that is not in the pasteboard, #f is
+returned.
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology).
+
+(send a-pasteboard get-center)   →   real?   real?
+Returns the center of the pasteboard in pasteboard coordinates.
+
+The first result is the x-coordinate of the center and the second result is the
+y-coordinate of the center.
+
+(send a-pasteboard get-dragable) → boolean?
+Returns whether snips in the editor can be interactively dragged by event
+handling in on-default-event: #t if dragging is allowed, #f otherwise. By
+default, dragging is allowed. See also set-dragable.
+
+(send a-pasteboard get-scroll-step)
+ → (and/c real? (not/c negative?))
+Gets the editor location offset for each vertical scroll position. See also
+set-scroll-step.
+
+(send a-pasteboard get-selection-visible) → boolean?
+Returns whether selection dots are drawn around the edge of selected snips in
+the pasteboard. By default, selection dots are on. See also
+set-selection-visible.
+
+(send a-pasteboard insert snip) → void?
+  snip : (is-a?/c snip%)
+(send a-pasteboard insert snip before x y) → void?
+  snip : (is-a?/c snip%)
+  before : (or/c (is-a?/c snip%) false/c)
+  x : real?
+  y : real?
+(send a-pasteboard insert snip x y) → void?
+  snip : (is-a?/c snip%)
+  x : real?
+  y : real?
+(send a-pasteboard insert snip before) → void?
+  snip : (is-a?/c snip%)
+  before : (or/c (is-a?/c snip%) false/c)
+Extends insert in editor<%>.
+Inserts snip at location (x, y) just in front of before. (See Editor Structure
+and Terminology for information about snip order in pasteboards.) If before is
+not provided or is #f, then snip is inserted behind all other snips. If x and y
+are not provided, the snip is added at (0, 0).
+
+(send a-pasteboard interactive-adjust-mouse   x         
+                                              y)   →   void?
+  x : (box/c real?)
+  y : (box/c real?)
+Specification: This method is called during interactive dragging and resizing
+(of the currently selected snips; see find-next-selected-snip) to preprocess
+the current mouse location (in editor coordinates). The snip and actual x and y
+coordinates are passed into the method (boxed); the resulting coordinates are
+used instead of the actual mouse location.
+
+See also interactive-adjust-resize.
+
+Default implementation: A negative value for either x or y is replaced with 0.
+
+(send a-pasteboard interactive-adjust-move   snip        
+                                             x           
+                                             y)     →   void?
+  snip : (is-a?/c snip%)
+  x : (box/c real?)
+  y : (box/c real?)
+Specification: This method is called during an interactive move (for each
+selected snip) to preprocess the user-determined snip location for each
+selected snip. The snip and mouse-determined locations (in editor coordinates)
+are passed into the method (boxed); the resulting locations are used for
+graphical feedback to the user during moving.
+
+The actual mouse coordinates are first sent through interactive-adjust-mouse
+before determining the locations passed into this method.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard interactive-adjust-resize   snip           
+                                               width          
+                                               height)   →   void?
+  snip : (is-a?/c snip%)
+  width : (box/c (and/c real? (not/c negative?)))
+  height : (box/c (and/c real? (not/c negative?)))
+Specification: This method is called during interactive resizing of a snip to
+preprocess the user-determined snip size. The snip and mouse-determined height
+and width are passed into the method (boxed); the resulting height and width
+are used for graphical feedback to the user during resizing.
+
+The actual mouse coordinates are first sent through interactive-adjust-mouse
+before determining the sizes passed into this method.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard is-selected? snip) → boolean?
+  snip : (is-a?/c snip%)
+Returns #t if a specified snip is currently selected or #f otherwise.
+
+(send a-pasteboard lower snip) → void?
+  snip : (is-a?/c snip%)
+Moves the snip one level deeper (i.e., behind one more other snip) in the
+pasteboard’s snip order. See Editor Structure and Terminology for information
+about snip order in pasteboards.
+
+See also raise, set-before, and set-after.
+
+(send a-pasteboard move snip x y) → void?
+  snip : (is-a?/c snip%)
+  x : real?
+  y : real?
+(send a-pasteboard move x y) → void?
+  x : real?
+  y : real?
+Moves snip right x pixels and down y pixels. If snip is not provided, then all
+selected snips are moved.
+
+Snip locations in a pasteboard can be changed by the system in response to
+other method calls, and such changes do not go through this method; use
+on-move-to to monitor snip position changes.
+
+(send a-pasteboard move-to snip x y) → void?
+  snip : (is-a?/c snip%)
+  x : real?
+  y : real?
+Moves snip to a given location in the editor.
+
+Snip locations in a pasteboard can be changed by the system in response to
+other method calls, and such changes do not go through this method; use
+on-move-to to monitor snip position changes.
+
+(send a-pasteboard no-selected) → void?
+Deselects all selected snips in the editor.
+
+The selection in a pasteboard can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-select to
+monitor selection changes.
+
+(send a-pasteboard on-default-event event) → void?
+  event : (is-a?/c mouse-event%)
+Overrides on-default-event in editor<%>.
+Selects, drags, and resizes snips:
+
+  • Clicking on a snip selects the snip. Shift-clicking extends the current
+    selection with the snip.
+
+  • Clicking in the space between snips drags a selection box; once the mouse
+    button is released, all snips touching the box are selected. Shift-clicking
+    extends the current selection with the new snips.
+
+  • Double-clicking on a snip calls on-double-click.
+
+  • Clicking on a selected snip drags the selected snip(s) to a new location.
+
+  • Clicking on a hiliting tab for a selected object resizes the object.
+
+(send a-pasteboard on-delete snip) → void?
+  snip : (is-a?/c snip%)
+Refine this method with augment.
+Called before a snip is deleted from the editor, after can-delete? is called to
+verify that the deletion is allowed. The after-delete method is guaranteed to
+be called after the delete has completed.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks). Use after-delete to modify the editor, if
+necessary.
+
+(send a-pasteboard on-double-click   snip          
+                                     event)   →   void?
+  snip : (is-a?/c snip%)
+  event : (is-a?/c mouse-event%)
+Specification: This method is called when the user double-clicks on a snip in
+the editor. The clicked-on snip and event records are passed to the method.
+
+Default implementation: If snip accepts events, it is designated as the caret
+owner and all snips in the editor are unselected.
+
+(send a-pasteboard on-insert snip before x y) → void?
+  snip : (is-a?/c snip%)
+  before : (or/c (is-a?/c snip%) false/c)
+  x : real?
+  y : real?
+Refine this method with augment.
+
+Called before a snip is inserted from the editor, after can-insert? is called
+to verify that the insertion is allowed. The after-insert method is guaranteed
+to be called after the insert has completed.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks). Use after-insert to modify the editor, if
+necessary.
+
+(send a-pasteboard on-interactive-move event) → void?
+  event : (is-a?/c mouse-event%)
+Refine this method with augment.
+Specification: Called when the user starts interactively dragging snips (the
+ones that are selected; see find-next-selected-snip), after
+can-interactive-move? is called to verify that the move is allowed. The
+after-interactive-move method is guaranteed to be called after the move has
+completed. All of the selected snips will be moved. The mouse event that
+started the move (usually a button-down event) is provided.
+
+See also interactive-adjust-move.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard on-interactive-resize snip) → void?
+  snip : (is-a?/c snip%)
+Refine this method with augment.
+Specification: Called when the user starts interactively resizing a snip (the
+one that is selected; see find-next-selected-snip), after
+can-interactive-resize? is called to verify that the resize is allowed. The
+after-interactive-resize method is guaranteed to be called after the resize has
+completed.
+
+The snip argument is the snip that will be resized.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard on-move-to   snip              
+                                x                 
+                                y                 
+                                dragging?)   →   void?
+  snip : (is-a?/c snip%)
+  x : real?
+  y : real?
+  dragging? : any/c
+Refine this method with augment.
+Specification: Called before a snip is moved in the editor, after can-move-to?
+is called to verify that the move is allowed. The after-move-to method is
+guaranteed to be called after the move has completed.
+
+If dragging? is not #f, then this move is a temporary move for dragging.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks). Use after-move-to to modify the editor, if
+necessary. See also on-interactive-move and interactive-adjust-move.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard on-reorder   snip            
+                                to-snip         
+                                before?)   →   void?
+  snip : (is-a?/c snip%)
+  to-snip : (is-a?/c snip%)
+  before? : any/c
+Refine this method with augment.
+Specification: Called before a snip is moved in the pasteboard’s front-to-back
+snip order, after can-reorder? is called to verify that the reorder is allowed.
+The after-reorder method is guaranteed to be called after the reorder has
+completed.
+
+If before? is #t, then snip is to be moved before to-snip, otherwise snip is to
+be moved after to-snip.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks). Use after-reorder to modify the editor, if
+necessary.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard on-resize snip w h) → void?
+  snip : (is-a?/c snip%)
+  w : (and/c real? (not/c negative?))
+  h : (and/c real? (not/c negative?))
+Refine this method with augment.
+Specification: Called before a snip is resized by the editor, after can-resize?
+is called to verify that the resize is allowed. The after-resize method is
+guaranteed to be called after the resize has completed.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks). Use after-resize to modify the editor, if
+necessary.
+
+Note that a snip calls resized, not this method, to notify the pasteboard that
+the snip resized itself.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard on-select snip on?) → void?
+  snip : (is-a?/c snip%)
+  on? : any/c
+Refine this method with augment.
+Specification: Called before a snip in the pasteboard is selected or
+deselected, after can-select? is called to verify that the selection is
+allowed. The after-select method is guaranteed to be called after the selection
+has completed. This method is not called when a selected snip is to be deleted
+(and thus de-selected indirectly); see also on-delete .
+
+If on? is #t, then snip will be selected, otherwise snip will be deselected.
+
+The editor is internally locked for writing when this method is called (see
+also Internal Editor Locks). Use after-select to modify the editor, if
+necessary.
+
+Default implementation: Does nothing.
+
+(send a-pasteboard raise snip) → void?
+  snip : (is-a?/c snip%)
+Moves a snip one level shallower (i.e., in front of one more other snip) in the
+pasteboard’s snip order. See Editor Structure and Terminology for information
+about snip order in pasteboards.
+
+See also lower, set-before, and set-after.
+
+(send a-pasteboard remove snip) → void?
+  snip : (is-a?/c snip%)
+Removes the specified snip from the editor in a non-undoable manner (so the
+snip is completely free of the pasteboard can be used in other editors).
+
+See also delete.
+
+(send a-pasteboard remove-selected snip) → void?
+  snip : (is-a?/c snip%)
+Deselects snip (if it is currently selected) without deselecting any other
+snips.
+
+The selection in a pasteboard can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-select to
+monitor selection changes.
+
+(send a-pasteboard resize snip w h) → boolean?
+  snip : (is-a?/c snip%)
+  w : (and/c real? (not/c negative?))
+  h : (and/c real? (not/c negative?))
+Attempts to resize a given snip. If the snip allows resizing, #t is returned,
+otherwise #f is returned. Using this method instead of calling the snip’s
+resize method directly will make the resize undo-able.
+
+(send a-pasteboard set-after snip after) → void?
+  snip : (is-a?/c snip%)
+  after : (or/c (is-a?/c snip%) false/c)
+Changes the depth of snip moving it just behind after. If after is #f, snip is
+moved to the back. See Editor Structure and Terminology for information about
+snip order in pasteboards.
+
+See also raise, lower, and set-before.
+
+(send a-pasteboard set-before snip before) → void?
+  snip : (is-a?/c snip%)
+  before : (or/c (is-a?/c snip%) false/c)
+Changes the depth of snip moving it just in front of before. If before is #f,
+snip is moved to the front. See Editor Structure and Terminology for
+information about snip order in pasteboards.
+
+See also raise, lower, and set-after.
+
+(send a-pasteboard set-dragable allow-drag?) → void?
+  allow-drag? : any/c
+Sets whether snips in the editor can be interactively dragged by event handling
+in on-default-event: a true value allows dragging, #f disallows dragging. See
+also get-dragable.
+
+(send a-pasteboard set-scroll-step stepsize) → void?
+  stepsize : (and/c real? (not/c negative?))
+Sets the editor location offset for each vertical scroll position. See also
+get-scroll-step.
+
+(send a-pasteboard set-selected snip) → void?
+  snip : (is-a?/c snip%)
+Selects a specified snip (deselecting all others).
+
+The selection in a pasteboard can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-select to
+monitor selection changes.
+
+(send a-pasteboard set-selection-visible visible?) → void?
+  visible? : any/c
+Sets whether selection dots are drawn around the edge of selected snips in the
+pasteboard. See also get-selection-visible.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

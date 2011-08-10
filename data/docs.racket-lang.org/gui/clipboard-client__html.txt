@@ -1,0 +1,124 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+add-type
+get-data
+get-types
+on-replaced
+[...search manuals...]
+  top← prev  up  next → 
+
+clipboard-client% : class?
+  superclass: object%
+
+A clipboard-client% object allows a program to take over the clipboard and
+service requests for clipboard data. See clipboard<%> for more information.
+
+A clipboard-client% object is associated to an eventspace when it becomes the
+current client; see set-clipboard-client for more information.
+
+(new clipboard-client%) → (is-a?/c clipboard-client%)
+Creates a clipboard client that supports no data formats.
+
+(send a-clipboard-client add-type format) → void?
+  format : string?
+Adds a new data format name to the list supported by the clipboard client.
+
+The format string is typically four capital letters. (On Mac OS X, only four
+characters for format are ever used.) For example, "TEXT" is the name of the
+UTF-8-encoded string format. New format names can be used to communicate
+application- and platform-specific data formats.
+
+(send a-clipboard-client get-data format)
+ → (or/c bytes? string? false/c)
+  format : string?
+Called when a process requests clipboard data while this client is the current
+one for the clipboard. The requested format is passed to the method, and the
+result should be a byte string matching the requested format, or #f if the
+request cannot be fulfilled.
+
+Only data format names in the client’s list will be passed to this method; see
+add-type.
+
+When this method is called by the clipboard, the current eventspace is the same
+as the client’s eventspace. If, at the point of the clipboard request, the
+current eventspace is not the client’s eventspace, then current thread is
+guaranteed to be the handler thread of the client’s eventspace.
+
+(send a-clipboard-client get-types) → (listof string?)
+Returns a list of names that are the data formats supported by the clipboard
+client.
+
+(send a-clipboard-client on-replaced) → void?
+Called when a clipboard client is dismissed as the clipboard owner (because the
+clipboard has be taken by another client or by an external application).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

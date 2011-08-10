@@ -1,0 +1,92 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+mark-parameter
+mark-parameter-first
+mark-parameter-all
+mark-parameters-all
+mark-parameterize
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+20 Mark Parameters
+
+Jay McCarthy <jay@racket-lang.org>
+
+ (require unstable/markparam)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+This library provides a simplified version of parameters that are backed by
+continuation marks, rather than parameterizations. This means they are slightly
+slower, are not inherited by child threads, do not have initial values, and
+cannot be imperatively mutated.
+
+(struct mark-parameter ())
+The struct for mark parameters. It is guaranteed to be serializable and
+transparent. If used as a procedure, it calls mark-parameter-first on itself.
+
+(mark-parameter-first mp [tag]) → any/c
+  mp : mark-parameter?
+   tag   :   continuation-prompt-tag?
+         =   default-continuation-prompt-tag
+Returns the first value of mp up to tag.
+
+(mark-parameter-all mp [tag]) → list?
+  mp : mark-parameter?
+   tag   :   continuation-prompt-tag?
+         =   default-continuation-prompt-tag
+Returns the values of mp up to tag.
+
+(mark-parameters-all mps none-v [tag]) → (listof vector?)
+  mps : (listof mark-parameter?)
+  none-v : [any/c #f]
+   tag   :   continuation-prompt-tag?
+         =   default-continuation-prompt-tag
+Returns the values of the mps up to tag. The length of each vector in the
+result list is the same as the length of mps, and a value in a particular
+vector position is the value for the corresponding mark parameter in mps.
+Values for multiple mark parameter appear in a single vector only when the mark
+parameters are for the same continuation frame in the current continuation. The
+none-v argument is used for vector elements to indicate the lack of a value.
+
+(mark-parameterize ([mp expr] ...) body-expr ...)
+Parameterizes (begin body-expr ...) by associating each mp with the evaluation
+of expr in the parameterization of the entire expression.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,46 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+make-bitmap-label
+bitmap-label-maker
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Bitmap Label
+
+ (require mrlib/bitmap-label)
+
+(make-bitmap-label str img [font]) → (is-a?/c bitmap%)
+  str : string?
+  img : (or/c (is-a?/c bitmap%) path-string?)
+  font : (is-a?/c font%) = normal-control-font
+Constructs a bitmap label suitable for use a button that contains the image
+specified by img followed by the text in str.
+
+((bitmap-label-maker str img) future-parent) → (is-a?/c bitmap%)
+  str : string?
+  img : (or/c (is-a?/c bitmap%) path-string?)
+  future-parent : (is-a?/c area-container<%>)
+And older variant of make-bitmap-label that obtains a font to use from a
+container future-parent.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,194 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+On this page:
+object?
+class?
+interface?
+generic?
+object=?
+object->vector
+class->interface
+object-interface
+is-a?
+subclass?
+implementation?
+interface-extension?
+method-in-interface?
+interface->method-names
+object-method-arity-includes?
+field-names
+object-info
+class-info
+exn: fail: object
+[...search manuals...]
+  top← prev  up  next → 
+
+5.11 Object, Class, and Interface Utilities
+
+(object? v) → boolean?
+  v : any/c
+Returns #t if v is an object, #f otherwise.
+
+(class? v) → boolean?
+  v : any/c
+Returns #t if v is a class, #f otherwise.
+
+(interface? v) → boolean?
+  v : any/c
+Returns #t if v is an interface, #f otherwise.
+
+(generic? v) → boolean?
+  v : any/c
+Returns #t if v is a generic, #f otherwise.
+
+(object=? a b) → boolean?
+  a : object?
+  b : object?
+Determines if two objects are the same object, or not; this procedure uses eq?,
+but also works properly with contracts.
+
+(object->vector object [opaque-v]) → vector?
+  object : object?
+  opaque-v : any/c = #f
+Returns a vector representing object that shows its inspectable fields,
+analogous to struct->vector.
+
+(class->interface class) → interface?
+  class : class?
+Returns the interface implicitly defined by class.
+
+(object-interface object) → interface?
+  object : object?
+Returns the interface implicitly defined by the class of object.
+
+(is-a? v type) → boolean?
+  v : any/c
+  type : (or/c interface? class?)
+Returns #t if v is an instance of a class type or a class that implements an
+interface type, #f otherwise.
+
+(subclass? v class) → boolean?
+  v : any/c
+  class : class?
+Returns #t if v is a class derived from (or equal to) class, #f otherwise.
+
+(implementation? v interface) → boolean?
+  v : any/c
+  interface : interface?
+Returns #t if v is a class that implements interface, #f otherwise.
+
+(interface-extension? v interface) → boolean?
+  v : any/c
+  interface : interface?
+Returns #t if v is an interface that extends interface, #f otherwise.
+
+(method-in-interface? sym interface) → boolean?
+  sym : symbol?
+  interface : interface?
+Returns #t if interface (or any of its ancestor interfaces) includes a member
+with the name sym, #f otherwise.
+
+(interface->method-names interface) → (listof symbol?)
+  interface : interface?
+Returns a list of symbols for the method names in interface, including methods
+inherited from superinterfaces, but not including methods whose names are local
+(i.e., declared with define-local-member-names).
+
+(object-method-arity-includes?   object        
+                                 sym           
+                                 cnt)     →   boolean?
+  object : object?
+  sym : symbol?
+  cnt : exact-nonnegative-integer?
+Returns #t if object has a method named sym that accepts cnt arguments, #f
+otherwise.
+
+(field-names object) → (listof symbol?)
+  object : object?
+Returns a list of all of the names of the fields bound in object, including
+fields inherited from superinterfaces, but not including fields whose names are
+local (i.e., declared with define-local-member-names).
+
+(object-info object)   →   (or/c class? #f)   boolean?
+  object : any/c
+Returns two values, analogous to the return values of struct-info:
+
+  • class: a class or #f; the result is #f if the current inspector does not
+    control any class for which the object is an instance.
+
+  • skipped?: #f if the first result corresponds to the most specific class of
+    object, #t otherwise.
+
+(class-info class)
+      symbol?
+      exact-nonnegative-integer?
+      (listof symbol?)
+  →   (any/c exact-nonnegative-integer? . -> . any/c)
+      (any/c exact-nonnegative-integer? any/c . -> . any/c)
+      (or/c class? #f)
+      boolean?
+  class : class?
+Returns seven values, analogous to the return values of struct-type-info:
+
+  • name: the class’s name as a symbol;
+
+  • field-cnt: the number of fields (public and private) defined by the class;
+
+  • field-name-list: a list of symbols corresponding to the class’s public
+    fields; this list can be larger than field-cnt because it includes
+    inherited fields;
+
+  • field-accessor: an accessor procedure for obtaining field values in
+    instances of the class; the accessor takes an instance and a field index
+    between 0 (inclusive) and field-cnt (exclusive);
+
+  • field-mutator: a mutator procedure for modifying field values in instances
+    of the class; the mutator takes an instance, a field index between 0
+    (inclusive) and field-cnt (exclusive), and a new field value;
+
+  • super-class: a class for the most specific ancestor of the given class that
+    is controlled by the current inspector, or #f if no ancestor is controlled
+    by the current inspector;
+
+  • skipped?: #f if the sixth result is the most specific ancestor class, #t
+    otherwise.
+
+(struct   exn:fail:object exn:fail ()
+          #:extra-constructor-name make-exn:fail:object)
+Raised for class-related failures, such as attempting to call a method that is
+not supplied by an object.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

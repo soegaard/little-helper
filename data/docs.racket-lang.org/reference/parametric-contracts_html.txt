@@ -1,0 +1,136 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Data-structure Contracts
+7.2  Function Contracts
+7.3  Parametric Contracts
+7.4  Lazy Data-structure Contracts
+7.5  Attaching Contracts to Values
+7.6  Building New Contract Combinators
+7.7  Contract Utilities
+7.8  Legacy Contracts
+On this page:
+parametric->/ c
+new-∀/ c
+new-∃/ c
+[...search manuals...]
+  top← prev  up  next → 
+
+7.3 Parametric Contracts
+
+ (require racket/contract/parametric)
+
+The most convenient way to use parametric contract is to use provide/contract’s
+#:exists keyword. The racket/contract/parametric provides a few more,
+general-purpose parametric contracts.
+
+(parametric->/c (x ...) c)
+Creates a contract for parametric polymorphic functions. Each function is
+protected by c, where each x is bound in c and refers to a polymorphic type
+that is instantiated each time the function is applied.
+
+At each application of a function, the parametric->/c contract constructs a new
+opaque wrapper for each x; values flowing into the polymorphic function (i.e.
+values protected by some x in negative position with respect to parametric->/c)
+are wrapped in the corresponding opaque wrapper. Values flowing out of the
+polymorphic function (i.e. values protected by some x in positive position with
+respect to parametric->/c) are checked for the appropriate wrapper. If they
+have it, they are unwrapped; if they do not, a contract violation is signaled.
+
+Examples:
+
+    > (define/contract (check x y)
+        (parametric->/c [X] (boolean? X . -> . X))
+        (if (or (not x) (equal? y 'surprise))
+            'invalid
+            y))
+    > (check #t 'ok)
+    'ok
+
+    > (check #f 'ignored)
+    check: self-contract violation, expected a(n) X; got:
+
+    'invalid
+
+      contract from (function check), blaming (function check)
+
+      contract: (parametric->/c (X) ...)
+
+            at: eval:2.0
+
+    > (check #t 'surprise)
+    'surprise
+
+
+
+(new-∀/c name) → contract?
+  name : symbol?
+Constructs a new universal contract.
+
+Universal contracts accept all values when in negative positions (e.g.,
+function inputs) and wrap them in an opaque struct, hiding the precise value.
+In positive positions (e.g. function returns), a universal contract accepts
+only values that were previously accepted in negative positions (by checking
+for the wrappers).
+
+The name is used to identify the contract in error messages.
+
+For example, this contract:
+
+    (let ([a (new-∀/c 'a)])
+      (-> a a))
+
+describes the identity function (or a non-terminating function) That is, the
+first use of the a appears in a negative position and thus inputs to that
+function are wrapped with an opaque struct. Then, when the function returns, it
+is checked to determine whether the result is wrapped, since the second a
+appears in a positive position.
+
+The new-∀/c construct constructor is dual to new-∃/c.
+
+(new-∃/c name) → contract?
+  name : symbol?
+Constructs a new existential contract.
+
+Existential contracts accept all values when in positive positions (e.g.,
+function returns) and wrap them in an opaque struct, hiding the precise value.
+In negative positions (e.g. function inputs), they accepts only values that
+were previously accepted in positive positions (by checking for the wrappers).
+
+The name is used to identify the contract in error messages.
+
+For example, this contract:
+
+    (let ([a (new-∃/c 'a)])
+      (-> (-> a a)
+          any/c))
+
+describes a function that accepts the identity function (or a non-terminating
+function) and returns an arbitrary value. That is, the first use of the a
+appears in a positive position and thus inputs to that function are wrapped
+with an opaque struct. Then, when the function returns, it is checked to see if
+the result is wrapped, since the second a appears in a negative position.
+
+The new-∃/c construct constructor is dual to new-∀/c.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,496 @@
+▼  The Typed Racket Reference
+ 1  Type Reference
+ 2  Special Form Reference
+ 3  Libraries Provided With Typed Racket
+ 4  Utilities
+ 5  Typed Racket Syntax Without Type Checking
+ 6  Typed Regions
+ 7  Optimization in Typed Racket
+ 8  Legacy Forms
+ 9  Compatibility Languages
+10  Experimental Features
+► 2  Special Form Reference
+ 2.1  Binding Forms
+ 2.2  Anonymous Functions
+ 2.3  Loops
+ 2.4  Definitions
+ 2.5  Structure Definitions
+ 2.6  Names for Types
+ 2.7  Generating Predicates Automatically
+ 2.8  Type Annotation and Instantiation
+ 2.9  Require
+2.10  Other Forms
+On this page:
+2.1 Binding Forms
+let:
+letrec:
+let*:
+let-values:
+letrec-values:
+let*-values:
+let/ cc:
+let/ ec:
+2.2 Anonymous Functions
+lambda:
+λ:
+plambda:
+case-lambda:
+pcase-lambda:
+opt-lambda:
+popt-lambda:
+2.3 Loops
+for:
+for/ list:
+for/ hash:
+for/ hasheq:
+for/ hasheqv:
+for/ vector:
+for/ flvector:
+for/ and:
+for/ or:
+for/ first:
+for/ last:
+for*/ list:
+for*/ hash:
+for*/ hasheq:
+for*/ hasheqv:
+for*/ vector:
+for*/ flvector:
+for*/ and:
+for*/ or:
+for*/ first:
+for*/ last:
+for/ lists:
+for/ fold:
+for*:
+for*/ lists:
+for*/ fold:
+for
+for*
+do:
+2.4 Definitions
+define:
+2.5 Structure Definitions
+struct:
+define-struct:
+define-struct/ exec:
+2.6 Names for Types
+define-type
+2.7 Generating Predicates Automatically
+define-predicate
+2.8 Type Annotation and Instantiation
+:
+provide:
+ann
+inst
+2.9 Require
+require/ typed
+2.10 Other Forms
+with-handlers
+#%module-begin
+#%top-interaction
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Special Form Reference
+
+Typed Racket provides a variety of special forms above and beyond those in
+Racket. They are used for annotating variables with types, creating new types,
+and annotating expressions.
+
+2.1 Binding Forms
+
+loop, f, a, and v are names, t is a type. e is an expression and body is a
+block.
+
+(let: ([v : t e] ...) . body)
+(let: loop : t0 ([v : t e] ...) . body)
+Local bindings, like let, each with associated types. In the second form, t0 is
+the type of the result of loop (and thus the result of the entire expression as
+well as the final expression in body). Type annotations are optional.
+Examples:
+
+    > (: filter-even : (Listof Natural) (Listof Natural) -> (Listof Natural))
+    > (define (filter-even lst accum)
+        (if (null? lst)
+            accum
+            (let: ([first : Natural (car lst)]
+                   [rest  : (Listof Natural) (cdr lst)])
+                  (if (even? first)
+                      (filter-even rest (cons first accum))
+                      (filter-even rest accum)))))
+    > (filter-even (list 1 2 3 4 5 6) null)
+    - : (Listof Exact-Nonnegative-Integer)
+
+    '(6 4 2)
+
+
+
+Examples:
+
+    > (: filter-even-loop : (Listof Natural) -> (Listof Natural))
+    > (define (filter-even-loop lst)
+        (let: loop : (Listof Natural)
+              ([accum : (Listof Natural) null]
+               [lst   : (Listof Natural) lst])
+              (cond
+                [(null? lst)       accum]
+                [(even? (car lst)) (loop (cons (car lst) accum) (cdr lst))]
+                [else              (loop accum (cdr lst))])))
+    > (filter-even-loop (list 1 2 3 4))
+    - : (Listof Exact-Nonnegative-Integer)
+
+    '(4 2)
+
+
+
+(letrec: ([v : t e] ...) . body)
+(let*: ([v : t e] ...) . body)
+(let-values: ([([v : t] ...) e] ...) . body)
+(letrec-values: ([([v : t] ...) e] ...) . body)
+(let*-values: ([([v : t] ...) e] ...) . body)
+Type-annotated versions of letrec, let*, let-values, letrec-values, and
+let*-values. As with let:, type annotations are optional.
+
+(let/cc: v : t . body)
+(let/ec: v : t . body)
+Type-annotated versions of let/cc and let/ec.
+
+2.2 Anonymous Functions
+
+(lambda: formals . body)
+ 
+formals   =   ([v : t] ...)
+          |   ([v : t] ...    v : t *)
+          |   ([v : t] ...    v : t ...)
+A function of the formal arguments v, where each formal argument has the
+associated type. If a rest argument is present, then it has type (Listof t).
+(λ: formals . body)
+An alias for the same form using lambda:.
+(plambda: (a ...) formals . body)
+A polymorphic function, abstracted over the type variables a. The type
+variables a are bound in both the types of the formal, and in any type
+expressions in the body.
+(case-lambda: [formals body] ...)
+A function of multiple arities. Note that each formals must have a different
+arity.
+Example:
+
+    > (define add-map
+        (case-lambda:
+         [([lst : (Listof Integer)])
+          (map add1 lst)]
+         [([lst1 : (Listof Integer)]
+           [lst2 : (Listof Integer)])
+          (map + lst1 lst2)]))
+
+For the type declaration of add-map look at case-lambda.
+
+(pcase-lambda: (a ...) [formals body] ...)
+A polymorphic function of multiple arities.
+(opt-lambda: formals . body)
+ 
+formals   =   ([v : t] ... [v : t default] ...)
+          |   ([v : t] ... [v : t default] ...    v : t *)
+          |   ([v : t] ... [v : t default] ...    v : t ...)
+A function with optional arguments.
+(popt-lambda: (a ...) formals . body)
+A polymorphic function with optional arguments.
+
+2.3 Loops
+
+(for: type-ann-maybe (for-clause ...)
+  expr ...+)
+ 
+type-ann-maybe   =  
+                 |   : u
+                      
+   for:-clause   =   [id : t seq-expr]
+                 |   [id seq-expr]
+                 |   #:when guard
+Like for, but each id having the associated type t. Since the return type is
+always Void, annotating the return type of a for form is optional. Unlike for,
+multi-valued seq-exprs are not supported. Type annotations in clauses are
+optional for all for: variants.
+
+(for/list: type-ann-maybe (for:-clause ...) expr ...+)
+(for/hash: type-ann-maybe (for:-clause ...) expr ...+)
+(for/hasheq: type-ann-maybe (for:-clause ...) expr ...+)
+(for/hasheqv: type-ann-maybe (for:-clause ...) expr ...+)
+(for/vector: type-ann-maybe (for:-clause ...) expr ...+)
+(for/flvector: type-ann-maybe (for:-clause ...) expr ...+)
+(for/and: type-ann-maybe (for:-clause ...) expr ...+)
+(for/or:   type-ann-maybe (for:-clause ...) expr ...+)
+(for/first: type-ann-maybe (for:-clause ...) expr ...+)
+(for/last: type-ann-maybe (for:-clause ...) expr ...+)
+(for*/list: type-ann-maybe (for:-clause ...) expr ...+)
+(for*/hash: type-ann-maybe (for:-clause ...) expr ...+)
+(for*/hasheq: type-ann-maybe (for:-clause ...) expr ...+)
+(for*/hasheqv: type-ann-maybe (for:-clause ...) expr ...+)
+(for*/vector: type-ann-maybe (for:-clause ...) expr ...+)
+(for*/flvector: type-ann-maybe (for:-clause ...) expr ...+)
+(for*/and: type-ann-maybe (for:-clause ...) expr ...+)
+(for*/or:   type-ann-maybe (for:-clause ...) expr ...+)
+(for*/first: type-ann-maybe (for:-clause ...) expr ...+)
+(for*/last: type-ann-maybe (for:-clause ...) expr ...+)
+These behave like their non-annotated counterparts, with the exception that
+#:when clauses can only appear as the last for:-clause. The return value of the
+entire form must be of type u. For example, a for/list: form would be annotated
+with a Listof type. All annotations are optional.
+
+(for/lists: type-ann-maybe ([id : t] ...)
+  (for:-clause ...)
+  expr ...+)
+(for/fold:  type-ann-maybe ([id : t init-expr] ...)
+  (for:-clause ...)
+  expr ...+)
+These behave like their non-annotated counterparts. Unlike the above, #:when
+clauses can be used freely with these.
+
+(for*: void-ann-maybe (for-clause ...)
+  expr ...+)
+(for*/lists: type-ann-maybe ([id : t] ...)
+  (for:-clause ...)
+  expr ...+)
+(for*/fold:  type-ann-maybe ([id : t init-expr] ...)
+  (for:-clause ...)
+  expr ...+)
+These behave like their non-annotated counterparts.
+
+for
+for*
+These are identical to for and for*, but provide additional annotations to help
+the typechecker.
+
+(do: : u ([id : t init-expr step-expr-maybe] ...)
+         (stop?-expr finish-expr ...)
+  expr ...+)
+ 
+step-expr-maybe   =  
+                  |   step-expr
+Like do, but each id having the associated type t, and the final body expr
+having the type u. Type annotations are optional.
+
+2.4 Definitions
+
+(define: v : t e)
+(define: (f . formals) : t . body)
+(define: (a ...) (f . formals) : t . body)
+These forms define variables, with annotated types. The first form defines v
+with type t and value e. The second and third forms defines a function f with
+appropriate types. In most cases, use of : is preferred to use of define:.
+
+Examples:
+
+    > (define: foo : Integer 10)
+    > (define: (add [first : Integer]
+                    [rest  : Integer]) : Integer
+        (+ first rest))
+    > (define: (A) (poly-app [func : (A A -> A)]
+                             [first : A]
+                             [rest  : A]) : A
+        (func first rest))
+
+
+2.5 Structure Definitions
+
+(struct: maybe-type-vars name-spec ([f : t] ...) options ...)
+ 
+maybe-type-vars   =  
+                  |   (v ...)
+                       
+      name-spec   =   name
+                  |   name parent
+                       
+        options   =   #:transparent
+                  |   #:mutable
+Defines a structure with the name name, where the fields f have types t,
+similar to the behavior of struct. When parent is present, the structure is a
+substructure of parent. When maybe-type-vars is present, the structure is
+polymorphic in the type variables v.
+
+Options provided have the same meaning as for the struct form.
+
+(define-struct: maybe-type-vars name-spec ([f : t] ...) options ...)
+ 
+maybe-type-vars   =  
+                  |   (v ...)
+                       
+      name-spec   =   name
+                  |   (name parent)
+                       
+        options   =   #:transparent
+                  |   #:mutable
+Legacy version of struct:, corresponding to define-struct.
+
+(define-struct/exec: name-spec ([f : t] ...) [e : proc-t])
+ 
+name-spec   =   name
+            |   (name parent)
+Like define-struct:, but defines a procedural structure. The procdure e is used
+as the value for prop:procedure, and must have type proc-t.
+
+2.6 Names for Types
+
+(define-type name t)
+(define-type (name v ...) t)
+The first form defines name as type, with the same meaning as t. The second
+form is equivalent to (define-type name (All (v ...) t)). Type names may refer
+to other types defined in the same module, but cycles among them are
+prohibited.
+
+Examples:
+
+    > (define-type IntStr (U Integer String))
+    > (define-type (ListofPairs A) (Listof (Pair A A)))
+
+
+2.7 Generating Predicates Automatically
+
+(define-predicate name t)
+Defines name as a predicate for the type t. name has the type (Any -> Boolean :
+t). t may not contain function types.
+
+2.8 Type Annotation and Instantiation
+
+(: v t)
+This declares that v has type t. The definition of v must appear after this
+declaration. This can be used anywhere a definition form may be used.
+Examples:
+
+    > (: var1 Integer)
+    > (: var2 String)
+
+
+(provide: [v t] ...)
+This declares that the vs have the types t, and also provides all of the vs.
+
+(litchar  " #{v : t} ")
+This declares that the variable v has type t. This is legal only for binding
+occurrences of v.
+
+(ann e t)
+Ensure that e has type t, or some subtype. The entire expression has type t.
+This is legal only in expression contexts. The syntax #{e :: t} may also be
+used.
+
+(inst e t ...)
+Instantiate the type of e with types t .... e must have a polymorphic type with
+the appropriate number of type variables. This is legal only in expression
+contexts.
+Example:
+
+    > (foldl (inst cons Integer Integer) null (list 1 2 3 4))
+    - : (Listof Integer)
+
+    '(4 3 2 1)
+
+
+
+Examples:
+
+    > (: fold-list : (All (A) (Listof A) -> (Listof A)))
+    > (define (fold-list lst)
+        (foldl (inst cons A A) null lst))
+    > (fold-list (list "1" "2" "3" "4"))
+    - : (Listof String)
+
+    '("4" "3" "2" "1")
+
+
+
+The syntax #{e @ t ...} may also be used.
+
+2.9 Require
+
+Here, m is a module spec, pred is an identifier naming a predicate, and r is an
+optionally-renamed identifier.
+
+(require/typed m rt-clause ...)
+ 
+    rt-clause   =   [r t]
+                |   [struct name ([f : t] ...)
+                         struct-option ...]
+                |   [struct (name parent) ([f : t] ...)
+                         struct-option ...]
+                |   [opaque t pred]
+                     
+struct-option   =   #:constructor-name constructor-id
+                |   #:extra-constructor-name constructor-id
+{This form requires identifiers from the module m, giving them the specified
+types.
+
+The first form requires r, giving it type t.
+
+The second and third forms require the struct with name name with fields f ...,
+where each field has type t. The third form allows a parent structure type to
+be specified. The parent type must already be a structure type known to Typed
+Racket, either built-in or via require/typed. The structure predicate has the
+appropriate Typed Racket filter type so that it may be used as a predicate in
+if expressions in Typed Racket.
+
+Examples:
+
+    > (module UNTYPED racket/base
+        (define n 100)
+      
+        (struct IntTree
+          (elem left right))
+      
+        (provide n (struct-out IntTree)))
+    > (module TYPED typed/racket
+        (require/typed 'UNTYPED
+                       [n Natural]
+                       [struct IntTree
+                         ([elem  : Integer]
+                          [left  : IntTree]
+                          [right : IntTree])]))
+
+
+The fourth case defines a new type t. pred, imported from module m, is a
+predicate for this type. The type is defined as precisely those values to which
+pred produces #t. pred must have type (Any -> Boolean). Opaque types must be
+required lexically before they are used.
+
+In all cases, the identifiers are protected with contracts which enforce the
+specified types. If this contract fails, the module m is blamed.
+
+Some types, notably polymorphic types constructed with All, cannot be converted
+to contracts and raise a static error when used in a require/typed form. Here
+is an example of using case-> in require/typed.
+
+    (require/typed racket/base
+                   [file-or-directory-modify-seconds
+                    (case->
+                      [String -> Exact-Nonnegative-Integer]
+                      [String (Option Exact-Nonnegative-Integer)
+                              ->
+                              (U Exact-Nonnegative-Integer Void)]
+                      [String (Option Exact-Nonnegative-Integer) (-> Any)
+                              ->
+                              Any])])
+
+file-or-directory-modify-seconds has some arguments which are optional, so we
+need to use case->.}
+
+2.10 Other Forms
+
+with-handlers
+Identical to with-handlers, but provides additional annotations to help the
+typechecker.
+
+(#%module-begin form ...)
+Legal only in a module begin context. The #%module-begin form of typed/racket
+checks all the forms in the module, using the Typed Racket type checking rules.
+All provide forms are rewritten to insert contracts where appropriate.
+Otherwise, the #%module-begin form of typed/racket behaves like #%module-begin
+from racket.
+
+(#%top-interaction . form)
+Performs type checking of forms entered at the read-eval-print loop. The #
+%top-interaction form also prints the type of form after type checking.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

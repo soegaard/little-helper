@@ -1,0 +1,139 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Data-structure Contracts
+7.2  Function Contracts
+7.3  Parametric Contracts
+7.4  Lazy Data-structure Contracts
+7.5  Attaching Contracts to Values
+7.6  Building New Contract Combinators
+7.7  Contract Utilities
+7.8  Legacy Contracts
+On this page:
+contract?
+chaperone-contract?
+impersonator-contract?
+flat-contract?
+flat-contract-predicate
+contract-name
+value-contract
+has-contract?
+contract-projection
+make-none/ c
+recursive-contract
+opt/ c
+define-opt/ c
+[...search manuals...]
+  top← prev  up  next → 
+
+7.7 Contract Utilities
+
+(contract? v) → boolean?
+  v : any/c
+Returns #t if its argument is a contract (i.e., constructed with one of the
+combinators described in this section or a value that can be used as a
+contract) and #f otherwise.
+
+(chaperone-contract? v) → boolean?
+  v : any/c
+Returns #t if its argument is a contract that guarantees that it returns a
+value which passes chaperone-of? when compared to the original, uncontracted
+value.
+
+(impersonator-contract? v) → boolean?
+  v : any/c
+Returns #t if its argument is a contract that is not a chaperone contract nor a
+flat contract.
+
+(flat-contract? v) → boolean?
+  v : any/c
+Returns #t when its argument is a contract that can be checked immediately
+(unlike, say, a function contract).
+
+For example, flat-contract constructs flat contracts from predicates, and
+symbols, booleans, numbers, and other ordinary Racket values (that are defined
+as contracts) are also flat contracts.
+
+(flat-contract-predicate v) → (any/c . -> . any/c)
+  v : flat-contract?
+Extracts the predicate from a flat contract.
+
+(contract-name c) → any/c
+  c : contract?
+Produces the name used to describe the contract in error messages.
+
+(value-contract v) → contract?
+  v : has-contract?
+Returns the contract attached to v, if recorded. Otherwise it returns #f.
+
+(has-contract? v) → boolean?
+  v : any/c
+Returns #t if v is a value that has a recorded contract attached to it.
+
+(contract-projection c) → (-> blame? (-> any/c any/c))
+  c : contract?
+Produces the projection defining a contract’s behavior on protected values.
+
+(make-none/c sexp-name) → contract?
+  sexp-name : any/c
+Makes a contract that accepts no values, and reports the name sexp-name when
+signaling a contract violation.
+
+(recursive-contract contract-expr)
+(recursive-contract contract-expr type)
+Delays the evaluation of its argument until the contract is checked, making
+recursive contracts possible. If type is given, it describes the expected type
+of contract and must be one of the keywords #:impersonator, #:chaperone, or
+#:flat. If type is not given, an impersonator contract is created.
+
+(opt/c contract-expr)
+This optimizes its argument contract expression by traversing its syntax and,
+for known contract combinators, fuses them into a single contract combinator
+that avoids as much allocation overhead as possible. The result is a contract
+that should behave identically to its argument, except faster (due to less
+allocation).
+
+(define-opt/c (id id ...) expr)
+This defines a recursive contract and simultaneously optimizes it.
+Semantically, it behaves just as if the -opt/c were not present, defining a
+function on contracts (except that the body expression must return a contract).
+But, it also optimizes that contract definition, avoiding extra allocation,
+much like opt/c does.
+
+For example,
+
+    (define-contract-struct bt (val left right))
+     
+    (define-opt/c (bst-between/c lo hi)
+      (or/c null?
+            (bt/c [val (real-in lo hi)]
+                  [left (val) (bst-between/c lo val)]
+                  [right (val) (bst-between/c val hi)])))
+     
+    (define bst/c (bst-between/c -inf.0 +inf.0))
+
+defines the bst/c contract that checks the binary search tree invariant.
+Removing the -opt/c also makes a binary search tree contract, but one that is
+(approximately) 20 times slower.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

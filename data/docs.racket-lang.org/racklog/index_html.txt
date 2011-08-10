@@ -1,0 +1,132 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+Racklog: Prolog-Style Logic Programming
+
+Dorai Sitaram
+
+            Adapted from Schelog by Dorai Sitaram for Racket by Dorai Sitaram,
+            John Clements, and Jay McCarthy.
+
+ (require racklog)
+
+Racklog is an embedding of Prolog-style logic programming in Racket.
+“Embedding” means you don’t lose Racket: You can use Prolog-style and
+conventional Racket code fragments alongside each other. Racklog contains the
+full repertoire of Prolog features, including meta-logical and second-order
+(“set”) predicates, leaving out only those features that could more easily and
+more efficiently be done with Racket subexpressions.
+
+The Racklog implementation uses the approach to logic programming for Scheme
+described in Felleisen [mf:prolog] and Haynes [logick]. In contrast to earlier
+Lisp simulations of Prolog [campbell], which used explicit continuation
+arguments to store failure (backtrack) information, the Felleisen and Haynes
+model uses the implicit reified continuations of Scheme. In Racket these are
+provided by the operator call-with-current-continuation (aka call/cc). This
+allows Racklog to be an embedding, ie, logic programming is not built as a new
+language on top of Racket, but is used alongside Racket’s other features. Both
+styles of programming may be mixed to any extent that a project needs.
+
+The Racklog user does not need to know about the implementation mechanism or
+about call/cc and continuations to get on with the business of doing logic
+programming with Racklog.
+
+This text is a gentle introduction to Racklog syntax and programming. It
+assumes a working knowledge of Racket and an awareness of, if not actual
+programming experience with, Prolog. If you need assistance for Prolog, you may
+consult [bratko, ok:prolog, aop] or many other excellent books and online
+documents available.
+
+    1 Simple Goals and Queries
+
+    2 Predicates
+
+      2.1 Predicates Introducing Facts
+
+      2.2 Predicates with Rules
+
+      2.3 Solving Goals
+
+      2.4 Asserting Extra Clauses
+
+      2.5 Local Variables
+
+    3 Using Conventional Racket Expressions in Racklog
+
+      3.1 Constructors
+
+      3.2 %is
+
+      3.3 Lexical Scoping
+
+      3.4 Type Predicates
+
+    4 Backtracking
+
+    5 Unification
+
+      5.1 The Occurs Check
+
+    6 Conjuctions and Disjunctions
+
+    7 Manipulating Racklog Variables
+
+      7.1 Checking for Variables
+
+      7.2 Preserving Variables
+
+    8 The Cut (!)
+
+      8.1 Conditional Goals
+
+      8.2 Negation as Failure
+
+    9 Set Predicates
+
+    10 Racklog Module Language
+
+    11 Glossary of Racklog Primitives
+
+      11.1 Racket Predicates
+
+      11.2 User Interface
+
+      11.3 Relations
+
+      11.4 Racklog Variables
+
+      11.5 Cut
+
+      11.6 Racklog Operators
+
+      11.7 Unification
+
+      11.8 Numeric Predicates
+
+      11.9 List Predicates
+
+      11.10 Set Predicates
+
+      11.11 Racklog Predicates
+
+      11.12 Racklog Variable Manipulation
+
+    Bibliography
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

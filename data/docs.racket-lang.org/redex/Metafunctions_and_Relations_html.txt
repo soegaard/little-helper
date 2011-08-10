@@ -1,0 +1,167 @@
+▼  Redex: Practical Semantics Engineering
+1  Patterns
+2  Terms
+3  Languages
+4  Reduction Relations
+5  Metafunctions and Relations
+6  Testing
+7  GUI
+8  Typesetting
+   Index
+On this page:
+define-metafunction
+define-metafunction/ extension
+in-domain?
+define-relation
+current-traced-metafunctions
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Metafunctions and Relations
+
+(define-metafunction language
+  metafunction-contract
+  [(name pattern ...) term extras ...]
+  ...)
+ 
+metafunction-contract   =  
+                        |   id : pattern ... -> range
+                             
+                range   =   pattern
+                        |   pattern or range
+                        |   pattern ∨ range
+                        |   pattern ∪ range
+                             
+               extras   =   (side-condition racket-expression)
+                        |   (side-condition/hidden racket-expression)
+                        |   (where pat term)
+                        |   (where/hidden pat term)
+The define-metafunction form builds a function on sexpressions according to the
+pattern and right-hand-side expressions. The first argument indicates the
+language used to resolve non-terminals in the pattern expressions. Each of the
+rhs-expressions is implicitly wrapped in term.
+
+The side-condition, hidden-side-condition, where, and where/hidden clauses
+behave as in the reduction-relation form.
+
+Raises an exception recognized by exn:fail:redex? if no clauses match, if one
+of the clauses matches multiple ways (and that leads to different results for
+the different matches), or if the contract is violated.
+
+Note that metafunctions are assumed to always return the same results for the
+same inputs, and their results are cached, unless caching-enabled? is set to #
+f. Accordingly, if a metafunction is called with the same inputs twice, then
+its body is only evaluated a single time.
+
+As an example, these metafunctions finds the free variables in an expression in
+the lc-lang above:
+
+    (define-metafunction lc-lang
+      free-vars : e -> (x ...)
+      [(free-vars (e_1 e_2 ...))
+       (∪ (free-vars e_1) (free-vars e_2) ...)]
+      [(free-vars x) (x)]
+      [(free-vars (lambda (x ...) e))
+       (- (free-vars e) (x ...))])
+
+The first argument to define-metafunction is the grammar (defined above).
+Following that are three cases, one for each variation of expressions (e in
+lc-lang). The free variables of an application are the free variables of each
+of the subterms; the free variables of a variable is just the variable itself,
+and the free variables of a lambda expression are the free variables of the
+body, minus the bound parameters.
+
+Here are the helper metafunctions used above.
+
+    (define-metafunction lc-lang
+      ∪ : (x ...) ... -> (x ...)
+      [(∪ (x_1 ...) (x_2 ...) (x_3 ...) ...)
+       (∪ (x_1 ... x_2 ...) (x_3 ...) ...)]
+      [(∪ (x_1 ...))
+       (x_1 ...)]
+      [(∪) ()])
+     
+    (define-metafunction lc-lang
+      - : (x ...) (x ...) -> (x ...)
+      [(- (x ...) ()) (x ...)]
+      [(- (x_1 ... x_2 x_3 ...) (x_2 x_4 ...))
+       (- (x_1 ... x_3 ...) (x_2 x_4 ...))
+       (side-condition (not (memq (term x_2) (term (x_3 ...)))))]
+      [(- (x_1 ...) (x_2 x_3 ...))
+       (- (x_1 ...) (x_3 ...))])
+
+Note the side-condition in the second case of -. It ensures that there is a
+unique match for that case. Without it, (term (- (x x) x)) would lead to an
+ambiguous match.
+
+(define-metafunction/extension f language
+  metafunction-contract
+  [(g pattern ...) term extras ...]
+  ...)
+Defines a metafunction g as an extension of an existing metafunction f. The
+metafunction g behaves as if f’s clauses were appended to its definition (with
+occurrences of f changed to g in the inherited clauses).
+
+For example, define-metafunction/extension may be used to extend the free-vars
+function above to the forms introduced by the language lc-num-lang.
+
+    (define-metafunction/extension free-vars lc-num-lang
+      free-vars-num : e -> (x ...)
+      [(free-vars-num number)
+       ()]
+      [(free-vars-num (+ e_1 e_2))
+       (∪ (free-vars-num e_1)
+          (free-vars-num e_2))])
+
+(in-domain? (metafunction-name term ...))
+Returns #t if the inputs specified to metafunction-name are legtimate inputs
+according to metafunction-name’s contract, and #f otherwise.
+
+(define-relation language
+ relation-contract
+ [(name pattern ...) term ...] ...)
+ 
+relation-contract   =  
+                    |   id ⊂ pat x ... x pat
+                    |   id ⊆ pat x ... x pat
+The define-relation form builds a relation on sexpressions according to the
+pattern and right-hand-side expressions. The first argument indicates the
+language used to resolve non-terminals in the pattern expressions. Each of the
+rhs-expressions is implicitly wrapped in term.
+
+Relations are like metafunctions in that they are called with arguments and
+return results (unlike in, say, prolog, where a relation definition would be
+able to synthesize some of the arguments based on the values of others).
+
+Unlike metafunctions, relations check all possible ways to match each case,
+looking for a true result and if none of the clauses match, then the result is
+#f. If there are multiple expressions on the right-hand side of a relation,
+then all of them must be satisfied in order for that clause of the relation to
+be satisfied.
+
+The contract specification for a relation restricts the patterns that can be
+used as input to a relation. For each argument to the relation, there should be
+a single pattern, using x or x to separate the argument contracts.
+
+Note that relations are assumed to always return the same results for the same
+inputs, and their results are cached, unless caching-enable? is set to #f.
+Accordingly, if a relation is called with the same inputs twice, then its
+right-hand sides are evaluated only once.
+
+(current-traced-metafunctions) → (or/c 'all (listof symbol?))
+(current-traced-metafunctions traced-metafunctions) → void?
+  traced-metafunctions : (or/c 'all (listof symbol?))
+Controls which metafunctions are currently being traced. If it is 'all, all of
+them are. Otherwise, the elements of the list name the metafunctions to trace.
+
+The tracing looks just like the tracing done by the racket/trace library,
+except that the first column printed by each traced call indicate if this call
+to the metafunction is cached. Specifically, a c is printed in the first column
+if the result is just returned from the cache and a space is printed if the
+metafunction call is actually performed.
+
+Defaults to '().
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

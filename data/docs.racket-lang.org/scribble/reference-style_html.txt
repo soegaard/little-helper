@@ -1,0 +1,217 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+► 4.2  Style Guide
+4.2.1  Prose and Terminology
+4.2.2  Typesetting Code
+4.2.3  Typesetting Prose
+4.2.4  Section Titles
+4.2.5  Indexing
+4.2.6  Examples
+On this page:
+4.2.1 Prose and Terminology
+4.2.2 Typesetting Code
+4.2.3 Typesetting Prose
+4.2.4 Section Titles
+4.2.5 Indexing
+4.2.6 Examples
+[...search manuals...]
+  top← prev  up  next → 
+
+4.2 Style Guide
+
+Consistent style—for terms, typesetting, and prose—makes documentation clearer.
+As much as possible, follow the rules listed in this section. Many of the rules
+are arbitrary in the sense that a different choice of rule could work fine, but
+the only way to make our documentation consistent is to pick one of the
+choices.
+
+There are too many rules to absorb easily on a first reading. Re-read this
+section after writing documentation for a library or two, and revisit the
+section periodically to refresh your memory and check for new rules.
+
+4.2.1 Prose and Terminology
+
+In the descriptive body of defform, defproc, etc., do not start with “This ...”
+Instead, start with a sentence whose implicit subject is the form or value
+being described. Capitalize the first word. Thus, the description will often
+start with “Returns” or “Produces.” Refer to arguments and sub-forms by name.
+
+Do not use the word “argument” to describe a sub-form in a syntactic form; use
+the term “sub-form” instead, reserving “argument” for values or expressions in
+a function call. Refer to libraries and languages as such, rather than as
+“modules” (even though the form to typeset a library or language name is called
+racketmodname). Do not call an identifier (i.e., a syntactic element) a
+“variable” or a “symbol.” Do not use the word “expression” for a form that is a
+definition or might be a definition; use the word “form,” instead. Prefer
+“function” to “procedure.”
+
+Use the word “list” only when you mean a run-time value consisting of the empty
+list and cons cells; use the word “sequence” in other cases, if you must use
+any word. For example, do not write that begin has a “list of sub-forms;”
+instead, it has a “sequence of sub-forms.” Similarly, do not refer to a “list
+of arguments” in a function call; just write “arguments” if possible, or write
+“sequence of argument expressions.” (Unfortunately, “sequence” has acquired a
+specific run-time meaning, too, but the collision is less severe than the
+historical confusion between lists and other entities in Lisp.)
+
+Avoid cut-and-paste for descriptive text. If two functions are similar,
+consider documenting them together with deftogether. To abstract a description,
+consider using explicit prose abstraction, such as “x is like y, except that
+...,” instead of abstracting the source and instantiating it multiple times;
+often, a prose abstraction is clearer to the reader than a hidden abstraction
+in the document implementation.
+
+Hyphenate the words “sub-form” and “sub-expression.”
+
+Use “Windows,” “Mac OS X,” and “Unix” for the three “platforms” (as opposed to
+“systems”) on which Racket runs. Use “Unix” as a generic term for Unix-like
+operating systems—notably including Linux—other than Mac OS X. Use “Unix” even
+when “Gtk” or “the X11 windowing system” would be more precisely correct, but
+use “X11” as adjective when necessary, such as “X11 display.” Racket runs “on”
+a platform, as opposed to “under” a platform.
+
+4.2.2 Typesetting Code
+
+Use id or a name that ends -id in defform to mean an identifier, not
+identifier, variable, name, or symbol. Similarly, use expr or something that
+ends -expr for an expression position within a syntactic form. Use body for a
+form (definition or expression) in an internal-definition position—always
+followed by ...+ in a grammar description. Do not use expr for something that
+isn’t exactly an expression, id for something that isn’t exactly an identifier,
+etc.; instead, use defform/subs to define a new non-terminal.
+
+Beware of using deftogether to define multiple variants of a syntactic form or
+procedure, because each defform or defproc creates a definition point, but each
+form or procedure should have a single definition point. (Scribble issues a
+warning when a binding has multiple definition points.) Instead, use defproc*
+or defform*.
+
+For function arguments, use v as the meta-variable for “any value.” Use x as a
+meta-variable only for numerical values. Other conventions include lst for a
+list and proc for a procedure.
+
+Pay attention to the difference between identifiers and meta-variables when
+using racket, especially outside of defproc or defform. Prefix a meta-variable
+with _; for example,
+
+  @racket[(rator-expr rand-expr ...)]
+
+
+would be the wrong way to refer to the grammar of a function call, because it
+produces (rator-expr rand-expr ...), where rator-expr and rand-expr are typeset
+as variables. The correct description is
+
+  @racket[(_rator-expr _rand-expr ...)]
+
+
+which produces (rator-expr rand-expr ...), where rator-expr and rand-expr are
+typeset as meta-variables. The defproc, defform, etc. forms greatly reduce this
+burden in descriptions, since they automatically set up meta-variable
+typesetting for non-literal identifiers. In defform, be sure to include literal
+identifiers (i.e., those not meant as variables, other than the form name being
+defined) in a #:literals clause.
+
+To typeset an identifier with no particular interpretation—syntax, variable,
+meta-variable, etc.—use racketidfont (e.g., as in rand-expr above). Otherwise,
+use litchar, not merely racketfont or verbatim, to refer to a specific sequence
+of characters.
+
+When showing example evaluations, use the REPL-snapshot style:
+
+  @interaction[
+
+  (+ 1 2)
+
+  ]
+
+
+See also the scribble/eval library and Examples.
+
+Use four dots, ...., in place of omitted code, since ... means repetition.
+
+4.2.3 Typesetting Prose
+
+Refrain from referring to documentation “above” or “below,” and instead have a
+hyperlink point to the right place.
+
+In prose, use `` and '' quotation marks instead of ". Use --- for an em dash,
+and do not include spaces on either side. Use American style for quotation
+marks and punctuation at the end of quotation marks (i.e., a
+sentence-terminating period goes inside the quotation marks). Of course, this
+rule does not apply for quotation marks that are part of code.
+
+Do not use a citation reference (as created by cite) as a noun; use it as an
+annotation.
+
+Do not start a sentence with a Racket variable name, since it is normally
+lowercase. For example, use “The thing argument is...” instead of “thing is...”
+
+Use etc for “etc.” when it does not end a sentence, and include a comma after
+“etc.” unless it ends a sentence of is followed by other punctuation (such as a
+parenthesis).
+
+4.2.4 Section Titles
+
+Capitalize all words except articles (“the,” “a,” etc.), prepositions, and
+conjunctions that are not at the start of the title.
+
+A manual title should normally start with a suitable keyword or key phrase
+(such as “Scribble” for this manual) that is in boldface. If the key word is
+primarily an executable name, use exec instead of bold. Optionally add further
+descriptive text in the title after a colon, where the text starting with the
+colon is not in boldface.
+
+4.2.5 Indexing
+
+Document and section titles, identifiers that are documented with defproc,
+defform, etc. are automatically indexed, as are terms defined with deftech.
+
+Symbols are not indexed automatically. Use indexed-racket instead of racket for
+the instance of a symbol that roughly defines the use. For an example, try
+searching for “truncate” to find 'truncate as used with open-output-file. Do no
+use something like (index "'truncate") to index a symbol, because it will not
+typeset correctly (i.e., in a fixed-width font with the color of a literal).
+
+Use index, as-index, and section-index as a last resort. Create index entries
+for terms that are completely different from terms otherwise indexed. Do not
+try to index minor variations of a term or phrase in an attempt to improve
+search results; if search fails to find a word or phrase due to a minor
+variation, then the search algorithm should be fixed, not the index entry.
+
+4.2.6 Examples
+
+Strive to include examples (using examples) with the documentation of every
+function and syntactic form. When writing examples, refrain from using nonsense
+words like “foo” and “bar.” For example, when documenting member, resist the
+temptation to write
+
+    > (member "foo" '("bar" "foo" "baz"))
+    '("foo" "baz")
+
+
+and instead write something like
+
+    > (member "Groucho" '("Harpo" "Groucho" "Zeppo"))
+    '("Groucho" "Zeppo")
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

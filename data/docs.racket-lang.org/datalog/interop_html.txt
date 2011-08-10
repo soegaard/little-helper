@@ -1,0 +1,125 @@
+▼  Datalog: Deductive Database Programming
+1  Datalog Module Language
+2  Tutorial
+3  Parenthetical Datalog Module Language
+4  Racket Interoperability
+5  Acknowledgments
+On this page:
+theory/ c
+make-theory
+datalog
+datalog!
+!
+~
+: -
+?
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Racket Interoperability
+
+ (require datalog)
+
+The Datalog database can be directly used by Racket programs through this API.
+
+Examples:
+
+    > (define family (make-theory))
+    > (datalog family
+               (! (parent joseph2 joseph1))
+               (! (parent joseph2 lucy))
+               (! (parent joseph3 joseph2)))
+    '()
+
+    > (datalog family
+               (? (parent X joseph2)))
+    '(       #hasheq((X . joseph3)))
+
+    > (datalog family
+               (? (parent joseph2 X)))
+    '(       #hasheq((X . joseph1)) #hasheq((X . lucy)))
+
+    > (datalog family
+               (? (parent joseph2 X))
+               (? (parent X joseph2)))
+    '(       #hasheq((X . joseph3)))
+
+    > (datalog family
+               (! (:- (ancestor A B)
+                      (parent A B)))
+               (! (:- (ancestor A B)
+                      (parent A C)
+                      (= D C)
+                      (ancestor D B))))
+    '()
+
+    > (datalog family
+               (? (ancestor A B)))
+    '(       #hasheq((A . joseph3) (B . joseph2)) #hasheq((A . joseph2) (B .
+    lucy)) #hasheq((A . joseph2) (B . joseph1)) #hasheq((A . joseph3) (B .
+    lucy)) #hasheq((A . joseph3) (B . joseph1)))
+
+    > (let ([x 'joseph2])
+        (datalog family
+                 (? (parent x X))))
+    '(       #hasheq((X . joseph1)) #hasheq((X . lucy)))
+
+    > (datalog family
+               (? (add1 1 :- X)))
+    '(       #hasheq((X . 2)))
+
+
+
+theory/c : contract?
+A contract for Datalog theories.
+
+(make-theory) → theory/c
+Creates a theory for use with datalog.
+
+(datalog thy-expr
+         stmt ...)
+ 
+   thy-expr   :   theory/c
+Executes the statements on the theory given by thy-expr. Returns the answers to
+the final query as a list of substitution dictionaries or returns empty.
+
+(datalog! thy-expr
+         stmt ...)
+ 
+   thy-expr   :   theory/c
+Executes the statements on the theory given by thy-expr. Prints the answers to
+every query in the list of statements. Returns (void).
+
+Statements are either assertions, retractions, or queries.
+
+(! clause)
+Asserts the clause.
+(~ clause)
+Retracts the literal.
+
+(:- literal question ...)
+A conditional clause.
+
+(? question)
+Queries the literal and prints the result literals.
+
+Questions are either literals or external queries. Literals are represented as
+identifier or (identifier term ...). External queries are represented as
+(identifier term ... :- term ...), where identifier is bound to a procedure
+that when given the first set of terms as arguments returns the second set of
+terms as values. A term is either a non-capitalized identifiers for a constant
+symbol, a Racket datum for a constant datum, or a capitalized identifier for a
+variable symbol. Bound identifiers in terms are treated as datums.
+
+External queries invalidate Datalog’s guaranteed termination. For example, this
+program does not terminate:
+
+    (datalog (make-theory)
+             (! (:- (loop X)
+                    (add1 X :- Z)
+                    (loop Z)))
+             (? (loop 1)))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

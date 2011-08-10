@@ -1,0 +1,409 @@
+▼  The Typed Racket Guide
+1  Quick Start
+2  Beginning Typed Racket
+3  Specifying Types
+4  Types in Typed Racket
+5  Optimization in Typed Racket
+► 4  Types in Typed Racket
+4.1  Basic Types
+4.2  Function Types
+4.3  Union Types
+4.4  Recursive Types
+4.5  Structure Types
+4.6  Subtyping
+4.7  Polymorphism
+4.8  Variable-Arity Functions: Programming with Rest Arguments
+On this page:
+4.1 Basic Types
+4.2 Function Types
+4.3 Union Types
+4.4 Recursive Types
+4.5 Structure Types
+4.6 Subtyping
+4.7 Polymorphism
+4.7.1 Polymorphic Data Structures
+4.7.2 Polymorphic Functions
+4.8 Variable-Arity Functions: Programming with Rest Arguments
+4.8.1 Uniform Variable-Arity Functions
+4.8.2 Non-Uniform Variable-Arity Functions
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Types in Typed Racket
+
+Typed Racket provides a rich variety of types to describe data. This section
+introduces them.
+
+4.1 Basic Types
+
+The most basic types in Typed Racket are those for primitive data, such as True
+and False for booleans, String for strings, and Char for characters.
+
+    > '"hello, world"
+    - : String
+
+    "hello, world"
+
+    > #\f
+    - : Char
+
+    #\f
+
+    > #t
+    - : True
+
+    #t
+
+    > #f
+    - : False
+
+    #f
+
+
+Each symbol is given a unique type containing only that symbol. The Symbol type
+includes all symbols.
+
+    > 'foo
+    - : 'foo
+
+    'foo
+
+    > 'bar
+    - : 'bar
+
+    'bar
+
+
+Typed Racket also provides a rich hierarchy for describing particular kinds of
+numbers.
+
+    > 0
+    - : Zero
+
+    0
+
+    > -7
+    - : Negative-Fixnum
+
+    -7
+
+    > 14
+    - : Positive-Byte
+
+    14
+
+    > 3.2
+    - : Positive-Flonum
+
+    3.2
+
+    > 7.0+2.8i
+    - : Float-Complex
+
+    7.0+2.8i
+
+
+Finally, any value is itself a type:
+
+    > (ann 23 : 23)
+    - : 23
+
+    23
+
+
+4.2 Function Types
+
+We have already seen some examples of function types. Function types are
+constructed using ->, with the argument types before the arrow and the result
+type after. Here are some example function types:
+
+    (Number -> Number)
+    (String String -> Boolean)
+    (Char -> (values String Natural))
+
+The first type requires a Number as input, and produces a Number. The second
+requires two arguments. The third takes one argument, and produces multiple
+values, of types String and Natural. Here are example functions for each of
+these types.
+
+    > (lambda: ([x : Number]) x)
+    - : (Number -> Number : ((! False @ 0) | (False @ 0)) (0))
+
+    #<procedure>
+
+    > (lambda: ([a : String] [b : String]) (equal? a b))
+    - : (String String -> Boolean)
+
+    #<procedure>
+
+    > (lambda: ([c : Char]) (values (string c) (char->integer c)))
+    - : (Char -> (values String Index))
+
+    #<procedure>
+
+
+4.3 Union Types
+
+Sometimes a value can be one of several types. To specify this, we can use a
+union type, written with the type constructor U.
+
+    > (let ([a-number 37])
+        (if (even? a-number)
+            'yes
+            'no))
+    - : (U 'no 'yes)
+
+    'no
+
+
+Any number of types can be combined together in a union, and nested unions are
+flattened.
+
+    (U Number String Boolean Char)
+
+4.4 Recursive Types
+
+Recursive types can refer to themselves. This allows a type to describe an
+infinite family of data. For example, this is the type of binary trees of
+numbers.
+
+    (define-type BinaryTree (Rec BT (U Number (Pair BT BT))))
+
+The Rec type constructor specifies that the type BT refers to the whole binary
+tree type within the body of the Rec form.
+
+4.5 Structure Types
+
+Using struct: introduces new types, distinct from any previous type.
+
+    (struct: point ([x : Real] [y : Real]))
+
+Instances of this structure, such as (point 7 12), have type point.
+
+4.6 Subtyping
+
+In Typed Racket, all types are placed in a hierarchy, based on what values are
+included in the type. When an element of a larger type is expected, an element
+of a smaller type may be provided. The smaller type is called a subtype of the
+larger type. The larger type is called a supertype. For example, Integer is a
+subtype of Real, since every integer is a real number. Therefore, the following
+code is acceptable to the type checker:
+
+    (: f (Real -> Real))
+    (define (f x) (* x 0.75))
+     
+    (: x Integer)
+    (define x -125)
+     
+    (f x)
+
+All types are subtypes of the Any type.
+
+The elements of a union type are individually subtypes of the whole union, so
+String is a subtype of (U String Number). One function type is a subtype of
+another if they have the same number of arguments, the subtype’s arguments are
+more permissive (is a supertype), and the subtype’s result type is less
+permissive (is a subtype). For example, (Any -> String) is a subtype of (Number
+-> (U String #f)).
+
+4.7 Polymorphism
+
+Typed Racket offers abstraction over types as well as values.
+
+4.7.1 Polymorphic Data Structures
+
+Virtually every Racket program uses lists and other collections. Fortunately,
+Typed Racket can handle these as well. A simple list processing program can be
+written like this:
+
+    #lang typed/racket
+    (: sum-list ((Listof Number) -> Number))
+    (define (sum-list l)
+      (cond [(null? l) 0]
+            [else (+ (car l) (sum-list (cdr l)))]))
+
+This looks similar to our earlier programs — except for the type of l, which
+looks like a function application. In fact, it’s a use of the type constructor
+Listof, which takes another type as its input, here Number. We can use Listof
+to construct the type of any kind of list we might want.
+
+We can define our own type constructors as well. For example, here is an analog
+of the Maybe type constructor from Haskell:
+
+    #lang typed/racket
+    (struct: None ())
+    (struct: (a) Some ([v : a]))
+     
+    (define-type (Opt a) (U None (Some a)))
+     
+    (: find (Number (Listof Number) -> (Opt Number)))
+    (define (find v l)
+      (cond [(null? l) (None)]
+            [(= v (car l)) (Some v)]
+            [else (find v (cdr l))]))
+
+The first struct: defines None to be a structure with no contents.
+
+The second definition
+
+    (struct: (a) Some ([v : a]))
+
+creates a parameterized type, Some, which is a structure with one element,
+whose type is that of the type argument to Some. Here the type parameters (only
+one, a, in this case) are written before the type name, and can be referred to
+in the types of the fields.
+
+The type definiton
+
+
+    (define-type (Opt a) (U None (Some a)))
+
+creates a parameterized type — Opt is a potential container for whatever type
+is supplied.
+
+The find function takes a number v and list, and produces (Some v) when the
+number is found in the list, and (None) otherwise. Therefore, it produces a
+(Opt Number), just as the annotation specified.
+
+4.7.2 Polymorphic Functions
+
+Sometimes functions over polymorphic data structures only concern themselves
+with the form of the structure. For example, one might write a function that
+takes the length of a list of numbers:
+
+    #lang typed/racket
+    (: list-number-length ((Listof Number) -> Integer))
+    (define (list-number-length l)
+      (if (null? l)
+          0
+          (add1 (list-number-length (cdr l)))))
+
+and also a function that takes the length of a list of strings:
+
+    #lang typed/racket
+    (: list-string-length ((Listof String) -> Integer))
+    (define (list-string-length l)
+      (if (null? l)
+          0
+          (add1 (list-string-length (cdr l)))))
+
+Notice that both of these functions have almost exactly the same definition;
+the only difference is the name of the function. This is because neither
+function uses the type of the elements in the definition.
+
+We can abstract over the type of the element as follows:
+
+    #lang typed/racket
+    (: list-length (All (A) ((Listof A) -> Integer)))
+    (define (list-length l)
+      (if (null? l)
+          0
+          (add1 (list-length (cdr l)))))
+
+The new type constructor All takes a list of type variables and a body type.
+The type variables are allowed to appear free in the body of the All form.
+
+4.8 Variable-Arity Functions: Programming with Rest Arguments
+
+Typed Racket can handle some uses of rest arguments.
+
+4.8.1 Uniform Variable-Arity Functions
+
+In Racket, one can write a function that takes an arbitrary number of arguments
+as follows:
+
+    #lang racket
+    (define (sum . xs)
+      (if (null? xs)
+          0
+          (+ (car xs) (apply sum (cdr xs)))))
+     
+    (sum)
+    (sum 1 2 3 4)
+    (sum 1 3)
+
+The arguments to the function that are in excess to the non-rest arguments are
+converted to a list which is assigned to the rest parameter. So the examples
+above evaluate to 0, 10, and 4.
+
+We can define such functions in Typed Racket as well:
+
+    #lang typed/racket
+    (: sum (Number * -> Number))
+    (define (sum . xs)
+      (if (null? xs)
+          0
+          (+ (car xs) (apply sum (cdr xs)))))
+
+This type can be assigned to the function when each element of the rest
+parameter is used at the same type.
+
+4.8.2 Non-Uniform Variable-Arity Functions
+
+However, the rest argument may be used as a heterogeneous list. Take this
+(simplified) definition of the R6RS function fold-left:
+
+    #lang racket
+    (define (fold-left f i as . bss)
+      (if (or (null? as)
+              (ormap null? bss))
+          i
+          (apply fold-left
+                 f
+                 (apply f i (car as) (map car bss))
+                 (cdr as)
+                 (map cdr bss))))
+     
+    (fold-left + 0 (list 1 2 3 4) (list 5 6 7 8))
+    (fold-left + 0 (list 1 2 3) (list 2 3 4) (list 3 4 5) (list 4 5 6))
+    (fold-left (λ (i v n s) (string-append i (vector-ref v n) s))
+               ""
+               (list (vector "A cat" "A dog" "A mouse")
+                     (vector "tuna" "steak" "cheese"))
+               (list 0 2)
+               (list " does not eat " "."))
+
+Here the different lists that make up the rest argument bss can be of different
+types, but the type of each list in bss corresponds to the type of the
+corresponding argument of f. We also know that, in order to avoid arity errors,
+the length of bss must be two less than the arity of f. The first argument to f
+is the accumulator, and as corresponds to the second argument of f.
+
+The example uses of fold-left evaluate to 36, 42, and "A cat does not eat
+cheese.".
+
+In Typed Racket, we can define fold-left as follows:
+
+    #lang typed/racket
+    (: fold-left
+       (All (C A B ...)
+            ((C A B ... B -> C) C (Listof A) (Listof B) ... B
+             ->
+             C)))
+    (define (fold-left f i as . bss)
+      (if (or (null? as)
+              (ormap null? bss))
+          i
+          (apply fold-left
+                 f
+                 (apply f i (car as) (map car bss))
+                 (cdr as)
+                 (map cdr bss))))
+
+Note that the type variable B is followed by an ellipsis. This denotes that B
+is a dotted type variable which corresponds to a list of types, much as a rest
+argument corresponds to a list of values. When the type of fold-left is
+instantiated at a list of types, then each type t which is bound by B (notated
+by the dotted pre-type t ... B) is expanded to a number of copies of t equal to
+the length of the sequence assigned to B. Then B in each copy is replaced with
+the corresponding type from the sequence.
+
+So the type of (inst fold-left Integer Boolean String Number) is
+
+((Integer Boolean String Number -> Integer) Integer (Listof Boolean) (Listof
+String) (Listof Number) -> Integer).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

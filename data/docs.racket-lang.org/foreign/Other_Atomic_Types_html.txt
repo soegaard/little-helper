@@ -1,0 +1,36 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 3  C Types
+3.1  Type Constructors
+3.2  Numeric Types
+3.3  Other Atomic Types
+3.4  String Types
+3.5  Pointer Types
+3.6  Function Types
+3.7  C Struct Types
+3.8  Enumerations and Masks
+On this page:
+_ bool
+_ void
+[...search manuals...]
+  top← prev  up  next → 
+
+3.3 Other Atomic Types
+
+_bool : ctype?
+Translates #f to a 0 _int, and any other value to 1.
+
+_void : ctype?
+Indicates a Racket #<void> return value, and it cannot be used to translate
+values to C. This type cannot be used for function inputs.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

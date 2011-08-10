@@ -1,0 +1,137 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 15  Reflection and Dynamic Evaluation
+15.1  eval
+15.2  Manipulating Namespaces
+15.3  Scripting Evaluation and Using load
+[...search manuals...]
+  top← prev  up  next → 
+
+15.3 Scripting Evaluation and Using load
+
+Historically, Lisp implementations did not offer module systems. Instead, large
+programs were built by essentially scripting the REPL to evaluate program
+fragments in a particular order. While REPL scripting turns out to be a bad way
+to structure programs and libraries, it is still sometimes a useful capability.
+
+            Describing a program via load interacts especially badly with
+            macro-defined language extensions [Flatt02].
+
+The load function runs a REPL script by reading S-expressions from a file, one
+by one, and passing them to eval. If a file "place.rkts" contains
+
+    (define city "Salt Lake City")
+    (define state "Utah")
+    (printf "~a, ~a\n" city state)
+
+then it can be loaded in a REPL:
+
+    > (load "place.rkts")
+    Salt Lake City, Utah
+
+    > city
+    "Salt Lake City"
+
+
+Since load uses eval, however, a module like the following generally will not
+work—for the same reasons described in Namespaces:
+
+    #lang racket
+     
+    (define there "Utopia")
+     
+    (load "here.rkts")
+
+The current namespace for evaluating the content of "here.rkts" is likely to be
+empty; in any case, you cannot get there from "here.rkts". Also, any
+definitions in "here.rkts" will not become visible for use within the module;
+after all, the load happens dynamically, while references to identifiers within
+the module are resolved lexically, and therefore statically.
+
+Unlike eval, load does not accept a namespace argument. To supply a namespace
+to load, set the current-namespace parameter. The following example evaluates
+the expressions in "here.rkts" using the bindings of the racket/base module:
+
+    #lang racket
+     
+    (parameterize ([current-namespace (make-base-namespace)])
+      (load "here.rkts"))
+
+You can even use namespace-anchor->namespace to make the bindings of the
+enclosing module accessible for dynamic evaluation. In the following example,
+when "here.rkts" is loaded, it can refer to there as well as the bindings of
+racket:
+
+    #lang racket
+     
+    (define there "Utopia")
+     
+    (define-namespace-anchor a)
+    (parameterize ([current-namespace (namespace-anchor->namespace a)])
+      (load "here.rkts"))
+
+Still, if "here.rkts" defines any identifiers, the definitions cannot be
+directly (i.e., statically) referenced by in the enclosing module.
+
+The racket/load module language is different from racket or racket/base. A
+module using racket/load treats all of its content as dynamic, passing each
+form in the module body to eval (using a namespace that is initialized with
+racket). As a result, uses of eval and load in the module body see the same
+dynamic namespace as immediate body forms. For example, if "here.rkts" contains
+
+    (define here "Morporkia")
+    (define (go!) (set! here there))
+
+then running
+
+    #lang racket/load
+     
+    (define there "Utopia")
+     
+    (load "here.rkts")
+     
+    (go!)
+    (printf "~a\n" here)
+
+prints “Utopia”.
+
+Drawbacks of using racket/load include reduced error checking, tool support,
+and performance. For example, with the program
+
+    #lang racket/load
+     
+    (define good 5)
+    (printf "running\n")
+    good
+    bad
+
+DrRacket’s Check Syntax tool cannot tell that the second good is a reference to
+the first, and the unbound reference to bad is reported only at run time
+instead of rejected syntactically.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

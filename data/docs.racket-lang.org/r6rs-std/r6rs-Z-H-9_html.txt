@@ -1,0 +1,236 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 6
+
+Entry format
+
+The chapters that describe bindings in the base library and the standard
+libraries are organized into entries. Each entry describes one language feature
+or a group of related features, where a feature is either a syntactic construct
+or a built-in procedure. An entry begins with one or more header lines of the
+form
+
+template    category 
+
+The category defines the kind of binding described by the entry, typically
+either “syntax” or “procedure”. An entry may specify various restrictions on
+subforms or arguments. For background on this, see section 5.4.
+
+6.1  Syntax entries
+
+If category is “syntax”, the entry describes a special syntactic construct, and
+the template gives the syntax of the forms of the construct. The template is
+written in a notation similar to a right-hand side of the BNF rules in chapter 
+4, and describes the set of forms equivalent to the forms matching the template
+as syntactic data. Some “syntax” entries carry a suffix (expand), specifying
+that the syntactic keyword of the construct is exported with level 1.
+Otherwise, the syntactic keyword is exported with level 0; see section 7.2.
+
+Components of the form described by a template are designated by syntactic
+variables, which are written using angle brackets, for example, <expression>,
+<variable>. Case is insignificant in syntactic variables. Syntactic variables
+stand for other forms, or sequences of them. A syntactic variable may refer to
+a non-terminal in the grammar for syntactic data (see section 4.3.1), in which
+case only forms matching that non-terminal are permissible in that position.
+For example, <identifier> stands for a form which must be an identifier. Also,
+<expression> stands for any form which is a syntactically valid expression.
+Other non-terminals that are used in templates are defined as part of the
+specification.
+
+The notation
+
+        <thing[1]> ...
+
+indicates zero or more occurrences of a <thing>, and
+
+        <thing[1]> <thing[2]> ...
+
+indicates one or more occurrences of a <thing>.
+
+It is the programmer’s responsibility to ensure that each component of a form
+has the shape specified by a template. Descriptions of syntax may express other
+restrictions on the components of a form. Typically, such a restriction is
+formulated as a phrase of the form “<x> must bea ...”. Again, these specify the
+programmer’s responsibility. It is the implementation’s responsibility to check
+that these restrictions are satisfied, as long as the macro transformers
+involved in expanding the form terminate. If the implementation detects that a
+component does not meet the restriction, an exception with condition type &
+syntax is raised.
+
+6.2  Procedure entries
+
+If category is “procedure”, then the entry describes a procedure, and the
+header line gives a template for a call to the procedure. Parameter names in
+the template are italicized. Thus the header line
+
+(vector-ref vector k)    procedure 
+
+indicates that the built-in procedure vector-ref takes two arguments, a vector
+vector and an exact non-negative integer object k (see below). The header lines
+
+(make-vector k)    procedure 
+(make-vector k fill)    procedure 
+
+indicate that the make-vector procedure takes either one or two arguments. The
+parameter names are case-insensitive: Vector is the same as vector.
+
+As with syntax templates, an ellipsis ... at the end of a header line, as in
+
+(= z[1] z[2] z[3] ...)    procedure 
+
+indicates that the procedure takes arbitrarily many arguments of the same type
+as specified for the last parameter name. In this case, = accepts two or more
+arguments that must all be complex number objects.
+
+A procedure that detects an argument that it is not specified to handle must
+raise an exception with condition type &assertion. Also, the argument
+specifications are exhaustive: if the number of arguments provided in a
+procedure call does not match any number of arguments accepted by the
+procedure, an exception with condition type &assertion must be raised.
+
+For succinctness, the report follows the convention that if a parameter name is
+also the name of a type, then the corresponding argument must be of the named
+type. For example, the header line for vector-ref given above dictates that the
+first argument to vector-ref must be a vector. The following naming conventions
+imply type restrictions:
+
+obj        any object
+z          complex number object
+x          real number object
+y          real number object
+q          rational number object
+n          integer object
+k          exact non-negative integer object
+bool       boolean (#f or #t)
+octet      exact integer object in {0, ..., 255}
+byte       exact integer object in { - 128, ..., 127}
+char       character (see section 11.11)
+pair       pair (see section 11.9)
+vector     vector (see section 11.13)
+string     string (see section 11.12)
+condition  condition (see library section on “Conditions”)
+bytevector bytevector (see library chapter on “Bytevectors”)
+proc       procedure (see section 1.6)
+
+Other type restrictions are expressed through parameter-naming conventions that
+are described in specific chapters. For example, library chapter on
+“Arithmetic” uses a number of special parameter variables for the various
+subsets of the numbers.
+
+With the listed type restrictions, it is the programmer’s responsibility to
+ensure that the corresponding argument is of the specified type. It is the
+implementation’s responsibility to check for that type.
+
+A parameter called list means that it is the programmer’s responsibility to
+pass an argument that is a list (see section 11.9). It is the implementation’s
+responsibility to check that the argument is appropriately structured for the
+operation to perform its function, to the extent that this is possible and
+reasonable. The implementation must at least check that the argument is either
+an empty list or a pair.
+
+Descriptions of procedures may express other restrictions on the arguments of a
+procedure. Typically, such a restriction is formulated as a phrase of the form
+“x must be a ...” (or otherwise using the word “must”).
+
+6.3  Implementation responsibilities
+
+In addition to the restrictions implied by naming conventions, an entry may
+list additional explicit restrictions. These explicit restrictions usually
+describe both the programmer’s responsibilities, who must ensure that the
+subforms of a form are appropriate, or that an appropriate argument is passed,
+and the implementation’s responsibilities, which must check that subform
+adheres to the specified restrictions (if macro expansion terminates), or if
+the argument is appropriate. A description may explicitly list the
+implementation’s responsibilities for some arguments or subforms in a paragraph
+labeled “Implementation responsibilities”. In this case, the responsibilities
+specified for these subforms or arguments in the rest of the description are
+only for the programmer. A paragraph describing implementation responsibility
+does not affect the implementation’s responsibilities for checking subforms or
+arguments not mentioned in the paragraph.
+
+6.4  Other kinds of entries
+
+If category is something other than “syntax” and “procedure”, then the entry
+describes a non-procedural value, and the category describes the type of that
+value. The header line
+
+&who    condition type 
+
+indicates that &who is a condition type. The header line
+
+unquote    auxiliary syntax 
+
+indicates that unquote is a syntax binding that may occur only as part of
+specific surrounding expressions. Any use as an independent syntactic construct
+or identifier is a syntax violation. As with “syntax” entries, some “auxiliary
+syntax” entries carry a suffix (expand), specifying that the syntactic keyword
+of the construct is exported with level 1.
+
+6.5  Equivalent entries
+
+The description of an entry occasionally states that it is the same as another
+entry. This means that both entries are equivalent. Specifically, it means that
+if both entries have the same name and are thus exported from different
+libraries, the entries from both libraries can be imported under the same name
+without conflict.
+
+6.6  Evaluation examples
+
+The symbol “⇒” used in program examples can be read “evaluates to”. For
+example,
+
+(* 5 8)              ⇒  40
+
+means that the expression (* 5 8) evaluates to the object 40. Or, more
+precisely: the expression given by the sequence of characters “(* 5 8)”
+evaluates, in an environment that imports the relevant library, to an object
+that may be represented externally by the sequence of characters “40”. See
+section 4.3 for a discussion of external representations of objects.
+
+The “⇒” symbol is also used when the evaluation of an expression causes a
+violation. For example,
+
+(integer->char #xD800)   &assertion exception
+
+means that the evaluation of the expression (integer->char #xD800) must raise
+an exception with condition type &assertion.
+
+Moreover, the “⇒” symbol is also used to explicitly say that the value of an
+expression in unspecified. For example:
+
+(eqv? "" "")                     ⇒  unspecified
+
+Mostly, examples merely illustrate the behavior specified in the entry. In some
+cases, however, they disambiguate otherwise ambiguous specifications and are
+thus normative. Note that, in some cases, specifically in the case of inexact
+number objects, the return value is only specified conditionally or
+approximately. For example:
+
+(atan -inf.0)                  
+                ⇒ -1.5707963267948965 ; approximately
+
+6.7  Naming conventions
+
+By convention, the names of procedures that store values into previously
+allocated locations (see section 5.10) usually end in “!”.
+
+By convention, “->” appears within the names of procedures that take an object
+of one type and return an analogous object of another type. For example, list->
+vector takes a list and returns a vector whose elements are the same as those
+of the list.
+
+By convention, the names of predicates—procedures that always return a boolean
+value—end in “?” when the name contains any letters; otherwise, the predicate’s
+name does not end with a question mark.
+
+By convention, the components of compound names are separated by “-” In
+particular, prefixes that are actual words or can be pronounced as though they
+were actual words are followed by a hyphen, except when the first character
+following the hyphen would be something other than a letter, in which case the
+hyphen is omitted. Short, unpronounceable prefixes (“fx” and “fl”) are not
+followed by a hyphen.
+
+By convention, the names of condition types start with “&”.
+
+                        [Go to first, previous, next page;   contents;   index]
+

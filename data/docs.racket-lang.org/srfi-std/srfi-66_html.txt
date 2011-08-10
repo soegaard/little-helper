@@ -1,0 +1,244 @@
+Title
+
+Octet Vectors
+
+Authors
+
+Michael Sperber
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. To provide input on this SRFI, please
+mailto:srfi-66@srfi.schemers.org. See instructions here to subscribe to the
+list. You can access previous messages via the archive of the mailing list.
+
+  • Received: 2005/03/11
+  • Revised: 2005/04/18
+  • Revised: 2005/06/06
+  • Final: 2005/12/15
+
+Abstract
+
+This SRFI defines a set of procedures for creating, accessing, and manipulating
+uniform vectors of octets.
+
+Rationale
+
+A number of applications deal with sequences of octets (often called bytes),
+most prominently interfaces to C and I/O. Vectors are typically too
+space-costly and too slow to work well in these circumstance. This justifies
+having a separate type for octet vectors.
+
+This SRFI is related to SRFI 4 (Homogeneous numeric vector datatypes), which
+also provides vectors of octets, and uses names consistent with it. However,
+the extension described here does not require any extensions to the syntax of
+the underlying Scheme system, and provides a slightly richer set of primtives.
+
+Scheme systems implementing both SRFI 4 and this SRFI should use the same type
+for u8vector and octet vectors as specified here.
+
+Specification
+
+Octet vectors are objects of a new type. This type may or may not be disjoint
+from the type of regular vectors. Its elements must be octets, that is, exact
+integers in the range [0,255].
+
+As with vectors, the length of a octet vector is the number of elements it
+contains. This number is fixed. A valid index into a octet vector is an exact,
+non-negative integer. The first element of a octet vector has index 0, the last
+element has an index one less than the length of the vector.
+
+(u8vector? obj)
+
+    Returns #t if obj is a vector, otherwise returns #f. Analogous to vector?.
+
+(make-u8vector k fill)
+
+    Returns a newly allocated octet vector of k elements. Each element is
+    initialized to fill. Fill must be an octet. Analogous to make-vector.
+
+(u8vector octet ...)
+
+    Returns a newly allocated octet vector whose elements contain the given
+    arguments, which must all be octets. Analogous to vector.
+
+(u8vector->list u8vector)
+(list->u8vector octets)
+
+    u8vector->listreturns a newly allocated list of the elements of u8vector in
+    the same order.Analogous to vector->list.
+
+    List->u8vector returns a newly allocated octet vector whose elements are
+    the elements of list octets, which must all be octets. Analogous to list->
+    vector.
+
+(u8vector-length u8vector)
+
+    Returns the number of elements in u8vector as an exact integer. Analogous
+    to vector-length.
+
+(u8vector-ref u8vector k)
+
+    k must be a valid index of u8vector. u8vector-ref returns the contents of
+    element k of u8vector. Analogous to vector-ref.
+
+(u8vector-set! u8vector k octet)
+
+    k must be a valid index of u8vector. u8vector-set! stores octet in element
+    k of u8vector. The number of return values and the return values are
+    unspecified. However, the number of return values is such that it is
+    accepted by a continuation created by begin. Analogous to vector-set!.
+
+(u8vector=? u8vector-1 u8vector-2)
+
+    Returns #t if u8vector-1 and u8vector-2 are equal---that is, if they have
+    the same length and equal elements at all valid indices.
+
+(u8vector-compare u8vector-1 u8vector-2)
+
+    Compares u8vector-1 and u8vector-2 and returns a value consistent with the
+    vector ordering specified in SRFI 67, i.e. -1 if u8vector-1 is smaller than
+    u8vector-2, 0 if they are equal, and 1 if u8vector-1 is greater than
+    u8vector-2. Shorter vectors are always smaller than longer ones, and
+    vectors of equal length are compared lexicographically.
+
+(u8vector-copy! source source-start target target-start n)
+
+    Copies data from octet vector source to octet vector target. Source-start,
+    target-start, and n must be non-negative exact integers that satisfy
+
+    0 <= source-start <= source-start + n <= (u8vector-length source)
+
+    0 <= target-start <= target-start + n <= (u8vector-length target)
+
+    This copies the octets from source at indices [source-start, source-start +
+    n) to consecutive indices in target starting at target-index.
+
+    This must work even if the memory regions for the source and the target
+    overlap, i.e., the octets at the target location after the copy must be
+    equal to the octets at the source location before the copy.
+
+    The number of return values and the return values are unspecified. However,
+    the number of return values is such that it is accepted by a continuation
+    created by begin. Analogous to vector-ref.
+
+(u8vector-copy u8vector)
+
+    Returns a newly allocated copy of octet vector u8vector.
+
+Reference Implementation
+
+This reference implementation makes use of SRFI 9 (Defining Record Types) and
+SRFI 23 (Error reporting mechanism) .
+
+(define-record-type :u8vector
+  (really-make-u8vector elements)
+  u8vector?
+  (elements u8vector-elements))
+
+(define (ensure-octet thing)
+  (if (not (and (integer? thing)
+                (exact? thing)
+                (>= thing 0)
+                (<= thing 255)))
+      (error "not a octet" thing)))
+
+(define (make-u8vector k fill)
+  (ensure-octet fill)
+  (really-make-u8vector (make-vector k fill)))
+
+(define (list->u8vector octets)
+  (for-each ensure-octet octets)
+  (really-make-u8vector (apply vector octets)))
+
+(define (u8vector->list octets)
+  (vector->list (u8vector-elements octets)))
+
+(define (u8vector . octets)
+  (list->u8vector octets))
+
+(define (u8vector-length u8vector)
+  (vector-length (u8vector-elements u8vector)))
+
+(define (u8vector-ref u8vector k)
+  (vector-ref (u8vector-elements u8vector) k))
+
+(define (u8vector-set! u8vector k octet)
+  (ensure-octet octet)
+  (vector-set! (u8vector-elements u8vector) k octet))
+
+(define (u8vector-copy! source source-start target target-start count)
+  (if (>= source-start target-start)
+      (do ((i 0 (+ i 1)))
+          ((= i count))
+        (u8vector-set! target
+                          (+ target-start i)
+                          (u8vector-ref source (+ source-start i))))
+      (do ((i (- count 1) (- i 1)))
+          ((= i -1))
+        (u8vector-set! target
+                          (+ target-start i)
+                          (u8vector-ref source (+ source-start i))))))
+
+(define (u8vector-copy u8vector)
+  (let* ((size (u8vector-length u8vector))
+         (copy (make-u8vector size 0)))
+    (u8vector-copy! u8vector 0 copy 0 size)
+    copy))
+
+(define (u8vector=? u8vector-1 u8vector-2)
+  (let ((size (u8vector-length u8vector-1)))
+    (and (= size (u8vector-length u8vector-2))
+         (let loop ((i 0))
+           (or (>= i size)
+               (and (= (u8vector-ref u8vector-1)
+                       (u8vector-ref u8vector-2))
+                    (loop (+ 1 i))))))))
+
+(define (u8vector-compare u8vector-1 u8vector-2)
+  (let ((length-1 (u8vector-length u8vector-1))
+        (length-2 (u8vector-length u8vector-2)))
+    (cond
+      ((< length-1 length-2) -1)
+      ((> length-1 length-2)  1)
+      (else
+       (let loop ((i 0))
+         (if (= i length-1)
+             0
+             (let ((elt-1 (u8vector-ref u8vector-1 i))
+                   (elt-2 (u8vector-ref u8vector-2 i)))
+               (cond ((< elt-1 elt-2) -1)
+                     ((> elt-1 elt-2)  1)
+                     (else (loop (+ i 1)))))))))))
+
+References
+
+  • SRFI 4 (Homogeneous numeric vector datatypes)
+  • The "Byte Vectors" section of The Incomplete Scheme 48 Reference Manual
+    available from this page.
+
+Copyright
+
+Copyright (C) Michael Sperber (2005). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: David Van Horn

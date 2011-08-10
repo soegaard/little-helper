@@ -1,0 +1,1813 @@
+Title
+
+MU and NU simulating VALUES & CALL-WITH-VALUES, and their related LET-syntax
+
+Author
+
+Joo ChurlSoo
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. To provide input on this SRFI, please
+mailto:srfi minus 86 at srfi dot schemers dot org. See instructions here to
+subscribe to the list. You can access the discussion via the archive of the
+mailing list. You can access post-finalization messages via the archive of the
+mailing list.
+
+  • Received: 2006/04/03
+  • Revised: 2006/05/08
+  • Revised: 2006/05/22
+  • Revised: 2006/06/20
+  • Final: 2006/06/20
+  • Draft: 2006/04/04 - 2006/06/01
+
+Abstract
+
+Unlike the values/call-with-values mechanism of R5RS, this SRFI uses an
+explicit representation for multiple return values as a single value, namely a
+procedure. Decomposition of multiple values is done by simple application. Each
+of the two macros, mu and nu, evaluates to a procedure that takes one procedure
+argument. The mu and nu can be compared with lambda. While lambda expression
+that consists of <formals> and <body> requires some actual arguments later when
+the evaluated lambda expression is called, mu and nu expressions that consist
+of <expression>s corresponding to actual arguments of lambda require <formals>
+and <body>, that is, an evaluated lambda expression, later when the evaluated
+mu and nu expressions are called.
+
+This SRFI also introduces new let-syntax depending on mu and nu to manipulate
+multiple values, alet and alet* that are compatible with let and let* of R5RS
+in single value bindings. They also have a binding form making use of values
+and call-with-values to handle multiple values. In addition, they have several
+new binding forms for useful functions such as escape, recursion, etc.
+
+Rationale
+
+It is impossible to bind the evaluated result of values expression to a single
+variable unlike other Scheme expressions. Moreover, the pair of values and
+call-with-values is clumsy to use and somewhat slow under some circumstances. A
+solution would be to enclose the arguments of values expression in a procedure
+of one argument, a consumer procedure of call-with-values. The following are
+examples to show the differences.
+
+(define v (values 1 2 3))               => error
+(define v (lambda () (values 1 2 3)))   => (lambda () (values 1 2 3))
+(define m (mu 1 2 3))                   => (lambda (f) (f 1 2 3))
+(define a (apply values 1 '(2 3)))      => error
+(define a
+  (lambda () (apply values 1 '(2 3))))  => (lambda () (apply values 1 '(2 3)))
+(define n (nu 1 '(2 3)))                => (lambda (f) (apply f 1 '(2 3)))
+
+(call-with-values v list)       => (1 2 3)
+(m list)                        => (1 2 3)
+(call-with-values a list)       => (1 2 3)
+(n list)                        => (1 2 3)
+
+The alet and alet* are cases in point to use mu and nu. The differences between
+this let-syntax and others, and some additional functions are best explained by
+simple examples.
+
+ 1. The following are rest argument forms of each SRFI.
+
+    In SRFI 11:
+
+    (let-values ((a (values 1 2)) ((b c) (values 3 4)))
+                (list a b c))
+    => ((1 2) 3 4)
+
+    In SRFI 71:
+
+    (srfi-let (((values . a) (values 1 2)) ((values b c) (values 3 4)))
+              (list a b c))
+    => ((1 2) 3 4)
+
+    In this SRFI:
+
+    (alet (a (mu 1 2) ((b c) (mu 3 4)))
+      (list a b c))
+    => ((1 2) 3 4)
+
+ 2. The expressions for alet bindings are evaluated in sequence from left to
+    right unlike let of R5RS and let of SRFI 71.
+
+    In SRFI 71:
+
+    (srfi-let ((a (begin (display "1st") 1))
+               (b c (values (begin (display "2nd") 2) 3))
+               (d (begin (display "3rd") 4))
+               ((values e . f) (values (begin (display "4th") 5) 6)))
+              (list a b c d e f))
+    => 2nd4th1st3rd(1 2 3 4 5 (6))
+
+    In this SRFI:
+
+    (alet ((a (begin (display "1st") 1))
+           (b c (mu (begin (display "2nd") 2) 3))
+           (d (begin (display "3rd") 4))
+           ((e . f) (mu (begin (display "4th") 5) 6)))
+      (list a b c d e f))
+    => 1st2nd3rd4th(1 2 3 4 5 (6))
+
+ 3. The bindings that require multiple values can take multiple expressions, if
+    syntactically possible, as well as a single expression that produce
+    multiple values.
+
+    (alet* (((a b) (mu 1 2))
+            ((c d e) a (+ a b c) (+ a b c d))
+            ((f . g) (mu 5 6 7))
+            ((h i j . k) e 9 10 h i j))
+      (list a b c d e f g h i j k))
+
+    => (1 2 1 4 8 5 (6 7) 8 9 10 (8 9 10))
+
+ 4. The named-alet and named-alet* are allowed to take multiple values
+    bindings.
+
+    In SRFI 71:
+
+    (srfi-let tag ((a 1) (b 2) (c 3) (d 4) (e 5))
+              (if (< a 10) (tag 10 b c d e) (list a b c d e)))
+    => (10 2 3 4 5)
+
+    In this SRFI:
+
+    (alet* tag ((a 1) (a b b c (mu (+ a 2) 4 5 6)) ((d e e) b 5 (+ a b c)))
+           (if (< a 10) (tag a 10 b c c d e d) (list a b c d e)))
+    => (10 6 6 5 5)
+
+ 5. They have a new binding form that has a recursive function like named-alet.
+    It is also allowed to take multiple values bindings.
+
+    (alet* ((a 1)
+            ((b 2) (b c c (mu 3 4 5)) ((d e d (mu a b c)) . intag) . tag)
+            (f 6))
+      (if (< d 10)
+          (intag d e 10)
+          (if (< c 10)
+              (tag b 11 c 12 a b d intag)
+              (list a b c d e f))))
+    => (1 11 12 10 3 6)
+
+ 6. They have a new binding form that has an escape function.
+
+    (alet ((exit)
+           (a (begin (display "1st") 1))
+           (b c (mu (begin (display "2nd") 2) (begin (display "3rd") 3))))
+      (display (list a b c))
+      (exit 10)
+      (display "end"))
+    => 1st2nd3rd(1 2 3)10
+
+ 7. The and-let and and-let* are integrated into the alet and alet* with a
+    syntactic keyword and.
+
+    (alet ((and (a (begin (display "1st") 1))
+                (b (begin (display "2nd") 2))
+                (c (begin (display "false") #f))
+                (d (begin (display "3nd") 3))))
+      (list a b c d))
+    => 1st2ndfalse#f
+
+    (alet ((and (a (begin (display "1st") 1))
+                (b (begin (display "2nd") 2) (< b 2)) ; different from SRFI 2
+                (c (begin (display "false") #f))
+                (d (begin (display "3nd") 3))))
+      (list a b c d))
+    => 1st2nd#f
+
+ 8. The rest-values of SRFI 51 is integrated into the alet and alet* with
+    syntactic keywords opt and cat in the similar way to let-optionals in Scsh.
+
+    ((lambda (str . rest)
+       (alet* ((len (string-length str))
+               (opt rest
+                    (start 0 (integer? start)
+                           (if (< start 0) 0 (if (< len start) len start)))  ;true
+                    (end len (integer? end)
+                         (if (< end start) start (if (< len end) len end)))));true
+         (substring str start end))) "abcdefg" 1 20)
+    => "bcdefg"
+
+    ((lambda (str . rest)
+       (alet* ((len (string-length str))
+               (min (apply min rest))
+               (cat rest
+                    (start 0 (= start min)
+                           (if (< start 0) 0 (if (< len start) len start)))  ;true
+                    (end len (integer? end)
+                         (if (< end start) start (if (< len end) len end)))));true
+         (substring str start end))) "abcdefg" 20 1)
+    => "bcdefg"
+
+    ((lambda (str . rest)
+       (alet ((cat rest
+                   (start 0
+                          (and (list? start) (= 2 (length start))
+                               (eq? 'start (car start)))
+                          (cadr start))     ; true
+                   (end (string-length str)
+                        (and (list? end) (= 2 (length end)) (eq? 'end (car end)))
+                        (cadr end))))       ; true
+         (substring str start end))) "abcdefg" '(end 6) '(start 1))
+    => "bcdef"
+
+ 9. The let-keywords and let-keywords* are integrated into the alet and alet*
+    with a syntactic keyword key. They use any Scheme objects as keywords.
+
+    (define rest-list '(a 10 cc 30 40 b 20))
+    (alet ((key rest-list (a 1) (b 2) ((c 'cc) 3) . d)) (list a b c d))
+    => (10 2 30 (40 b 20))
+
+    (alet ((key rest-list (a 1) (b 2) ((c 'cc) 3) #f . d)) (list a b c d))
+    => (10 2 30 (40 b 20))
+
+    (alet ((key rest-list (a 1) (b 2) ((c 'cc) 3) #t . d)) (list a b c d))
+    => (10 20 30 (40))
+
+    (define rest (list 'a 10 'd 40 "c" 30 50 'b 20))
+    (alet ((key rest (a 1) (b 2) ((c "c") 3) . d)) (list a b c d))
+    => (10 2 30 (d 40 50 b 20))
+
+    (alet ((key rest (a 1) (b 2) ((c "c") 3) #f . d)) (list a b c d))
+    => (10 2 3 (d 40 "c" 30 50 b 20))
+
+    (alet ((key rest (a 1) (b 2) ((c "c") 3) #t . d)) (list a b c d))
+    => (10 20 30 (d 40 50))
+
+    ((lambda (m . n)
+       (alet* ((opt n (a 10) (b 20) (c 30) . d)
+               (key d (x 100) (y 200) (a 300)))
+         (list m a b c x y)))
+     0 1 2 3 'a 30 'y 20 'x 10)
+    => (0 30 2 3 10 20)
+
+    ((lambda (m . n)
+       (alet* ((key n (x 100) (y 200) (a 300) . d)
+               (opt d (a 10) (b 20) (c 30)))
+         (list m a b c x y)))
+     0 'a 30 'y 20 'x 10 1 2 3)
+    => (0 1 2 3 10 20)
+
+10. The letrecand letrec* are integrated into the alet and alet* with a
+    syntactic keyword rec.
+
+    (alet* ((a 1)
+            (rec (a 2) (b 3) (b (lambda () c)) (c a))
+            (d 50))
+      (list a (b) c d))
+    => '(2 2 2 50)
+
+11. They have a binding form that use call-with-values and values to handle
+    multiple values with a syntactic keyword values like SRFI 71.
+
+    (alet ((a b (mu 1 2))
+           (values c d (values 3 4))        ;This is different from SRFI 71.
+           ((e f) (mu 5 6))
+           ((values g h) (values 7 8))
+           ((i j . k) (nu 9 '(10 11 12)))
+           ((values l m . n) (apply values 13 '(14 15 16)))
+           o (mu 17 18)
+           ((values . p) (values 19 20)))
+      (list a b c d e f g h i j k l m n o p))
+    => (1 2 3 4 5 6 7 8 9 10 (11 12) 13 14 (15 16) (17 18) (19 20))
+
+12. They have a new binding form that works as an intervening external
+    environment in alet and as an intervening internal environment in alet*.
+
+    (alet ((a 1)
+           (() (define a 10) (define b 100))
+           (b a))
+      (list a b))
+    => (1 10)
+
+    (alet* ((a 1)
+            (() (define a 10) (define b 100))
+            (b a))
+      (list a b))
+    => (10 10)
+
+
+Specification
+
+(mu <expr> ...)                 => (lambda (f) (f <expr> ...))
+(nu <expr> ... <exprn>)         => (lambda (f) (apply f <expr> ... <exprn>))
+
+The <exprn> should be a list.
+
+Each macro evaluates to a procedure of one argument. The environment in effect
+when the macro expression was evaluated is remembered as part of the procedure.
+When the procedure is later called with an actual argument, a procedure, the
+environment in which the macro was evaluated is extended by binding <expr>s to
+the corresponding variables in the formal argument list of the argument
+procedure. The argument procedure of mu is called with the <expr>s, and that of
+nu is applied to APPLY procedure with the <expr>s.
+
+(alet  (<binding spec> ...) body ...)
+(alet* (<binding spec> ...) body ...)
+
+syntax-rules identifier: opt cat key and rec values
+
+<binding spec>:
+
+ 1. (<var> <expr>)
+
+ 2. (<var1> <var2> <var3> ... <expr>)
+
+ 3. ((<var>) <expr>)
+
+ 4. ((<var1> <var2> <var3> ... ) <expr>)
+
+ 5. ((<var1> ... <varm> . <varn>) <expr>)
+
+ 6. ((<var1> <var2> <var3> ... ) <expr1> <expr2> <expr3> ...)
+
+ 7. ((<var1> ... <varm> . <varn>) <expr1> ... <exprm> <exprn> ...)
+
+ 8. <var> <expr>
+
+ 9. (<var>)
+
+10. (<binding spec1> <binding spec2> ... . <var>)
+
+11. (() . <var>)
+
+12. (and (<var1> <expr1> [<test1>]) (<var2> <expr2> [<test2>]) ...)
+
+13. (opt <rest list>
+        (<var1> <default1> [<test1> [<true substitute1> [<false substitute1>]]])
+        ...
+        (<varn> <defaultn> [<testn> [<true substituten> [<false substituten>]]])
+        . [<rest var>])
+
+14. (cat <rest list>
+         (<var1> <default1> [<test1> [<true substitute1> [<false substitute1>]]])
+         ...
+         (<varn> <defaultn> [<testn> [<true substituten> [<false substituten>]]])
+         . [<rest var>])
+
+15. (key <rest list>
+     (<var spec1> <default1> [<test1> [<true substitute1> [<false substitute1>]]])
+     ...
+     (<var specn> <defaultn> [<testn> [<true substituten> [<false substituten>]]])
+     [<option>]
+     . [<rest var>])
+
+16. (rec (<var1> <expr1>) (<var2> <expr2>) ...)
+
+17. (values <var1> <var2> ... <expr>)
+
+18. ((values <var1> <var2> ...) <expr>)
+
+19. ((values <var1> ... . <varn>) <expr>)
+
+20. ((values <var1> <var2> <var3> ...) <expr1> <expr2> <expr3> ...)
+
+21. ((values <var1> ... . <varn>) <expr1> ... <exprn> ...)
+
+22. (() <expr1> <expr2> ...)
+
+
+The alet* is to the alet what the let* is to the let. However, the <binding
+spec>s of alet are evaluated in sequence from left to spec>right unlike let of
+R5RS. The alet and alet* make use of mu or nu instead of values to handle
+multiple values. So, the single <expr> of multiple values binding should be a
+mu or nu expression, or its equivalent. And the number of arguments of mu or
+the number of `applied' arguments of nu must match the number of values
+expected by the binding specification. Otherwise an error is signaled, as
+lambda expression would.
+
+ 1. (<var> <expr>)
+
+    This is the same as let (R5RS, 4.2.2).
+ 2. (<var1> <var2> <var3> ... <expr>)
+
+    This is the same as 4.
+ 3. ((<var>) <expr>)
+
+    This is the same as 1.
+ 4. ((<var1> <var2> <var3> ... ) <expr>)
+
+ 5. ((<var1> ... <varm> . <varn>) <expr>)
+
+    The <expr> must be a mu or nu expression or its equivalent. The matching of
+    <var>s to the values of <expr> is as for the matching of <formals> to
+    arguments in a lambda expression (R5RS, 4.1.4).
+ 6. ((<var1> <var2> <var3> ... ) <expr1> <expr2> <expr3> ...)
+
+    This is the same as
+
+    (let[*] ((<var1> <expr1>) (<var2> <expr2>) (<var3> <expr3>) ...).
+
+ 7. ((<var1> ... <varm> . <varn>) <expr1> ... <exprm> <exprn> ...)
+
+    This is the same as
+
+    (let[*] ((<var1> <expr1>) ... (<varm> <exprm>) (<varn>  (list <exprn> ...))).
+
+ 8. <var> <expr>
+
+    The <var> is a rest argument, so the <expr> should be a form that can
+    deliver multiple values, that is, a mu or nu expression or its equivalent.
+ 9. (<var>)
+
+    The <var> becomes an escape procedure that can take return values of alet
+    [*] as its arguments.
+10. (<binding spec1> <binding spec2> ... . <var>)
+
+    The <var> becomes a recursive procedure that takes all <vars> of <binding
+    spec>s as arguments.
+11. (() . <var>)
+
+    The <var> becomes a recursive thunk that takes no argument.
+12. (and (<var1> <expr1> [<test1>]) (<var2> <expr2> [<test2>]) ...)
+
+    Each <expr> is evaluated sequentially and bound to the corresponding <var>.
+    During the process, if there is no <test> and the value of <expr> is false,
+    it stops and returns #f. When there is a <test>, the process is continued
+    regardless of the value of <expr> unless the value of <test> is false. If
+    the value of <test> is false, it stops and returns #f.
+13. (opt <rest list>
+        (<var1> <default1> [<test1> [<true substitute1> [<false substitute1>]]])
+        ...
+        (<varn> <defaultn> [<testn> [<true substituten> [<false substituten>]]])
+        . [<rest var>])
+
+    This binds each <var> to a corresponding element of <rest list>. If there
+    is no more element, then the corresponding <default> is evaluated and bound
+    to the <var>. An error is signaled when there are more elements than <var>
+    s. But if <rest var> is given, it is bound to the remaining elements. If
+    there is a <test>, it is evaluated only when <var> is bound to an element
+    of <rest list>. If it returns a false value and there is no <false
+    substitute>, an error is signaled. If it returns a false value and there is
+    a <false substitute>, <var> is rebound to the result of evaluating <false
+    substitute> instead of signaling an error. If it returns a true value and
+    there is a <true substitute>, <var> is rebound to the result of evaluating
+    <true substitute>.
+14. (cat <rest list>
+         (<var1> <default1> [<test1> [<true substitute1> [<false substitute1>]]])
+         ...
+         (<varn> <defaultn> [<testn> [<true substituten> [<false substituten>]]])
+         . [<rest var>])
+
+    This is the same as the above opt except the binding method. It temporarily
+    binds <var> to each elements of <rest list> sequentally, until <test>
+    returns a true value, then the <var> is finally bound to the passed
+    element. If there is no <test>, the first element of the remained <rest
+    list> is regarded as passing. If any element of the <rest list> does not
+    pass the <test>, the <default> is bound to the <var> instead of signaling
+    an error. If there is a <false substitute> and <test> returns a false
+    value, <var> is finally bound to the result of evaluating <false
+    substitute> instead of the above process. If there is a <true substitute>
+    and <test> returns a true value, <var> is finally bound to the result of
+    evaluating <true substitute>.
+15. (key <rest list>
+     (<var spec1> <default1> [<test1> [<true substitute1> [<false substitute1>]]])
+     ...
+     (<var specn> <defaultn> [<testn> [<true substituten> [<false substituten>]]])
+     [<option>]
+     . [<rest var>])
+
+    <var spec> --> <var> | (<var> <keyword>)
+    <option> --> #f | #t
+    <keyword>  --> <any scheme object>
+    <default> --> <expression>
+    <test> --> <expression>
+    <true substitute> --> <expression>
+    <false substitute> --> <expression>
+
+    This key form is the same as the cat form in view of the fact that both
+    don't use argument position for binding <var>s to elements of <rest list>.
+    However, for extracting values from <rest list>, the former uses explicitly
+    keywords and the latter uses implicitly <test>s. The keywords in this form
+    are not self-evaluating symbols (keyword objects) but any scheme objects.
+    The keyword used in <rest list> for the corresponding variable is a symbol
+    of the same name as the variable of the <var spec> composed of a single
+    <var>. But the keyword can be any scheme object when the <var spec> is
+    specified as a parenthesized variable and a keyword. The elements of <rest
+    list> are sequentially interpreted as a series of pairs, where the first
+    member of each pair is a keyword and the second is the corresponding value.
+    If there is no element for a particular keyword, the <var> is bound to the
+    result of evaluating <default>. When there is a <test>, it is evaluated
+    only when <var> is bound to an element of <rest list>. If it returns a
+    false value and there is no <false substitute>, an error is signaled. If it
+    returns a false value and there is a <false substitute>, <var> is rebound
+    to the result of evaluating <false substitute> instead of signaling an
+    error. If it returns a true value and there is a <true substitute>, <var>
+    is rebound to the result of evaluating <true substitute>. When there are
+    more elements than ones that are specified by <var spec>s, an error is
+    signaled. But if <rest var> is given, it is bound to the remaining
+    elements. The following options can be used to control binding behavior
+    when the keyword of keyword-value pair at the bind processing site is
+    different from any keywords specified by <var spec>s.
+     1. default -- the remaining elements of <rest list> are continually
+        interpreted as a series of pairs.
+     2. #f - the variable is bound to the corresponding <default>.
+     3. #t - the remaining elements of <rest list> are continually interpreted
+        as a single element until the element is a particular keyword.
+16. (rec (<var1> <expr1>) (<var2>
+    <expr2>) ...)
+
+    This is the same as
+
+    (letrec[*] ((<var1> <expr1>) (<var2> <expr2>) ...)
+
+17. (values <var1> <var2> ... <expr>)
+
+    This is the same as 17.
+18. ((values <var1> <var2> ...) <expr>)
+
+19. ((values <var1> ... . <varn>) <expr>)
+
+    The <expr> should be a values expression or its equivalent. The matching of
+    <var>s to the values of <expr> is as for the matching of <formals> to
+    arguments in a lambda expression.
+20. ((values <var1> <var2> <var3> ...) <expr1> <expr2> <expr3> ...)
+
+    This is the same as
+
+    (let[*] ((<var1> <expr1>) (<var2> <expr2>) (<var3> <expr3>) ...)
+
+21.  ((values <var1> ... . <varn>) <expr1> ... <exprn> ...)
+
+    This is the same as (let[*] ((<var1> <expr1>) ... (<varn> (list <exprn>
+    ...))).
+22. (() <expr1> <expr2> ...)
+
+    This works as an intervening external environment in alet, and an
+    intervening internal environment in alet*.
+
+(alet  name (<binding spec> ...) body ...)
+(alet* name (<binding spec> ...) body ...)
+
+These are the same as the named-let (R5RS, 4.2.4) except binding specification.
+These allow all sorts of bindings in <binding spec>.
+
+Examples
+
+(alet ((a (begin (display "1st") 1))
+       ((b c) 2 (begin (display "2nd") 3))
+       (() (define m #f) (define n (list 8)))
+       ((d (begin (display "3rd") 4))
+        (key '(e 5 tmp 6) (e 0) ((f 'tmp) 55)) . p)
+       g (nu (begin (display "4th") 7) n)
+       ((values . h) (apply values 7 (begin (display "5th") n)))
+       ((m 11) (n n) . q)
+       (rec (i (lambda () (- (j) 1)))
+            (j (lambda ()  10)))
+       (and (k (begin (display "6th") m))
+            (l (begin (display "end") (newline) 12)))
+       (o))
+  (if (< d 10)
+      (p 40 50 60)
+      (if (< m 100)
+          (q 111 n)
+          (begin (display (list a b c d e f g h (i) (j) k l m n))
+                 (newline))))
+  (o (list o p q))
+  (display "This is not displayed"))
+=> 1st2nd3rd4th5th6th#f
+
+(alet* ((a (begin (display "1st") 1))
+        ((b c) 2 (begin (display "2nd") 3))
+        (() (define m #f) (define n (list 8)))
+        ((d (begin (display "3rd") 4))
+         (key '(e 5 tmp 6) (e 0) ((f 'tmp) 55)) . p)
+        g (nu (begin (display "4th") 7) n)
+        ((values . h) (apply values 7 (begin (display "5th") n)))
+        ((m 11) (n n) . q)
+        (rec (i (lambda () (- (j) 1)))
+             (j (lambda ()  10)))
+        (and (k (begin (display "6th") m))
+             (l (begin (display "end") (newline) 12)))
+        (o))
+  (if (< d 10)
+      (p 40 50 60)
+      (if (< m 100)
+          (q 111 n)
+          (begin (display (list a b c d e f g h (i) (j) k l m n))
+                 (newline))))
+  (o (list o p q))
+  (display "This is not displayed"))
+=> 1st2nd3rd4th5th6thend
+   4th5th6thend
+   6thend
+   (1 2 3 40 50 60 (7 8) (7 8) 9 10 111 12 111 (8))
+   (#<continuation> #<procedure:p> #<procedure:q>)
+
+(define (arg-message head-message proc . message)
+  (display head-message) (newline)
+  (alet ((() . lp)
+         (() (for-each display message))
+         (arg (read)))
+    (if (proc arg) arg (lp))))
+
+(define (substr str . rest)
+  (alet* ((len (string-length str))
+          (opt rest
+               (start 0
+                      (and (integer? start) (<= 0 start len))
+                      start
+                      (arg-message
+                       "The first  argument:"
+                       (lambda (n) (and (integer? n) (<= 0 n len)))
+                       "Write number (" 0 " <= number <= " len "): "))
+               (end len
+                    (and (integer? end) (<= start end len))
+                    end
+                    (arg-message
+                     "The second argument:"
+                     (lambda (n) (and (integer? n) (<= start n len)))
+                     "Write number (" start " <= number <= " len "): "))))
+    (substring str start end)))
+
+(substr "abcdefghi" 3)
+=> "defghi"
+
+(substr "abcdefghi" 3 7)
+=> "defg"
+
+(substr "abcdefghi" 20 7)
+=> The first  argument:
+   Write number (0 <= number <= 9): 3
+   "defg"
+
+(substr "abcdefghi" "a" 20)
+=> The first  argument:
+   Write number (0 <= number <= 9): 2
+   The second argument:
+   Write number (2 <= number <= 9): 10
+   Write number (2 <= number <= 9): 9
+   "cdefghi"
+
+Implementation
+
+The following implementation is written in R5RS hygienic macros and requires
+SRFI 23 (Error reporting mechanism).
+
+;;; mu & nu
+(define-syntax mu
+  (syntax-rules ()
+    ((mu argument ...)
+     (lambda (f) (f argument ...)))))
+
+(define-syntax nu
+  (syntax-rules ()
+    ((nu argument ...)
+     (lambda (f) (apply f argument ...)))))
+
+;;; alet
+(define-syntax alet
+  (syntax-rules ()
+    ((alet (bn ...) bd ...)
+     (%alet () () (bn ...) bd ...))
+    ((alet var (bn ...) bd ...)
+     (%alet (var) () (bn ...) bd ...))))
+
+(define-syntax %alet
+  (syntax-rules (opt cat key rec and values)
+    ((%alet () ((n v) ...) () bd ...)
+     ((lambda (n ...) bd ...) v ...))
+    ((%alet (var) ((n v) ...) () bd ...)
+     ((letrec ((var (lambda (n ...) bd ...)))
+        var) v ...))
+    ((%alet (var (p ...) (nv ...) (bn ...)) ((n v) ...) () bd ...)
+     ((letrec ((t (lambda (v ...)
+                    (%alet (p ...) (nv ... (n v) ... (var t))
+                           (bn ...) bd ...))))
+        t) v ...))
+    ((%alet (p ...) (nv ...) ((() a b ...) bn ...) bd ...)
+     ((lambda () a b ... (%alet (p ...) (nv ...) (bn ...) bd ...))))
+    ((%alet (p ...) (nv ...) (((a) c) bn ...) bd ...)
+     ((lambda (t) (%alet (p ...) (nv ... (a t)) (bn ...) bd ...)) c))
+
+    ((%alet (p ...) (nv ...) (((values a) c) bn ...) bd ...)
+     ((lambda (t) (%alet (p ...) (nv ... (a t)) (bn ...) bd ...)) c))
+    ((%alet (p ...) (nv ...) (((values . b) c d ...) bn ...) bd ...)
+     (%alet "dot" (p ...) (nv ...) (values) (b c d ...) (bn ...) bd ...))
+    ((%alet "dot" (p ...) (nv ...) (values t ...) ((a . b) c ...)
+            (bn ...) bd ...)
+     (%alet "dot" (p ...) (nv ... (a tn)) (values t ... tn) (b c ...)
+            (bn ...) bd ...))
+    ((%alet "dot" (p ...) (nv ...) (values t ...) (() c) (bn ...) bd ...)
+     (call-with-values (lambda () c)
+       (lambda (t ...) (%alet (p ...) (nv ...) (bn ...) bd ...))))
+    ((%alet "dot" (p ...) (nv ...) (values t ...) (() c ...) (bn ...) bd ...)
+     ((lambda (t ...) (%alet (p ...) (nv ...) (bn ...) bd ...)) c ...))
+    ((%alet "dot" (p ...) (nv ...) (values t ...) (b c) (bn ...) bd ...)
+     (call-with-values (lambda () c)
+       (lambda (t ... . tn)
+         (%alet (p ...) (nv ... (b tn)) (bn ...) bd ...))))
+    ((%alet "dot" (p ...) (nv ...) (values t ...) (b c ...) (bn ...) bd ...)
+     ((lambda (t ... . tn)
+        (%alet (p ...) (nv ... (b tn)) (bn ...) bd ...)) c ...))
+
+    ((%alet (p ...) (nv ...) (((a . b) c d ...) bn ...) bd ...)
+     (%alet "dot" (p ...) (nv ... (a t)) (t) (b c d ...) (bn ...) bd ...))
+    ((%alet "dot" (p ...) (nv ...) (t ...) ((a . b) c ...) (bn ...) bd ...)
+     (%alet "dot" (p ...) (nv ... (a tn)) (t ... tn) (b c ...) (bn ...)
+            bd ...))
+    ((%alet "dot" (p ...) (nv ...) (t ...) (() c) (bn ...) bd ...)
+     (c (lambda (t ...) (%alet (p ...) (nv ...) (bn ...) bd ...))))
+    ((%alet "dot" (p ...) (nv ...) (t ...) (() c ...) (bn ...) bd ...)
+     ((lambda (t ...) (%alet (p ...) (nv ...) (bn ...) bd ...)) c ...))
+    ((%alet "dot" (p ...) (nv ...) (t ...) (b c) (bn ...) bd ...)
+     (c (lambda (t ... . tn) (%alet (p ...) (nv ... (b tn)) (bn ...) bd ...))))
+    ((%alet "dot" (p ...) (nv ...) (t ...) (b c ...) (bn ...) bd ...)
+     ((lambda (t ... . tn)
+        (%alet (p ...) (nv ... (b tn)) (bn ...) bd ...)) c ...))
+
+    ((%alet (p ...) (nv ...) ((and (n1 v1 t1 ...) (n2 v2 t2 ...) ...) bn ...)
+            bd ...)
+     (%alet "and" (p ...) (nv ...) ((n1 v1 t1 ...) (n2 v2 t2 ...) ...) (bn ...)
+            bd ...))
+    ((%alet "and" (p ...) (nv ...) ((n v) nvt ...) (bn ...) bd ...)
+     (let ((t v))
+       (and t (%alet "and" (p ...) (nv ... (n t)) (nvt ...) (bn ...) bd ...))))
+    ((%alet "and" (p ...) (nv ...) ((n v t) nvt ...) (bn ...) bd ...)
+     (let ((tt v))
+       (and (let ((n tt)) t)
+            (%alet "and" (p ...) (nv ... (n tt)) (nvt ...) (bn ...) bd ...))))
+    ((%alet "and" (p ...) (nv ...) () (bn ...) bd ...)
+     (%alet (p ...) (nv ...) (bn ...) bd ...))
+    ((%alet (p ...) (nv ...) ((opt z a . e) bn ...) bd ...)
+     (%alet "opt" (p ...) (nv ...) z (a . e) (bn ...) bd ...))
+    ((%alet "opt" (p ...) (nv ...) z ((n d t ...)) (bn ...) bd ...)
+     (let ((x (if (null? z)
+                  d
+                  (if (null? (cdr z))
+                      (wow-opt n (car z) t ...)
+                      (error "alet: too many arguments" (cdr z))))))
+       (%alet (p ...) (nv ... (n x)) (bn ...) bd ...)))
+    ((%alet "opt" (p ...) (nv ...) z ((n d t ...) . e) (bn ...) bd ...)
+     (let ((y (if (null? z) z (cdr z)))
+           (x (if (null? z)
+                  d
+                  (wow-opt n (car z) t ...))))
+       (%alet "opt" (p ...) (nv ... (n x)) y e (bn ...) bd ...)))
+    ((%alet "opt" (p ...) (nv ...) z e (bn ...) bd ...)
+     (let ((te z))
+       (%alet (p ...) (nv ... (e te)) (bn ...) bd ...)))
+    ((%alet (p ...) (nv ...) ((cat z a . e) bn ...) bd ...)
+     (let ((y z))
+       (%alet "cat" (p ...) (nv ...) y (a . e) (bn ...) bd ...)))
+    ((%alet "cat" (p ...) (nv ...) z ((n d t ...)) (bn ...) bd ...)
+     (let ((x (if (null? z)
+                  d
+                  (if (null? (cdr z))
+                      (wow-cat-end z n t ...)
+                      (error "alet: too many arguments" (cdr z))))))
+       (%alet (p ...) (nv ... (n x)) (bn ...) bd ...)))
+    ((%alet "cat" (p ...) (nv ...) z ((n d t ...) . e) (bn ...) bd ...)
+     (let ((x (if (null? z)
+                  d
+                  (wow-cat! z n d t ...))))
+       (%alet "cat" (p ...) (nv ... (n x)) z e (bn ...) bd ...)))
+    ((%alet "cat" (p ...) (nv ...) z e (bn ...) bd ...)
+     (let ((te z))
+       (%alet (p ...) (nv ... (e te)) (bn ...) bd ...)))
+    ((%alet (p ...) (nv ...) ((key z a . e) bn ...) bd ...)
+     (let ((y z))
+       (%alet "key" (p ...) (nv ...) y () () (a . e) () (bn ...) bd ...)))
+    ((%alet "key" (p ...) (nv ...) z ()
+            (ndt ...) (((n k) d t ...) . e) (kk ...) (bn ...) bd ...)
+     (%alet "key" (p ...) (nv ...) z ()
+            (ndt ... ((n k) d t ...)) e (kk ... k) (bn ...) bd ...))
+    ((%alet "key" (p ...) (nv ...) z ()
+            (ndt ...) ((n d t ...) . e) (kk ...) (bn ...) bd ...)
+     (%alet "key" (p ...) (nv ...) z ()
+            (ndt ... ((n 'n) d t ...)) e (kk ... 'n) (bn ...) bd ...))
+    ((%alet "key" (p ...) (nv ...) z ()
+            (ndt nd ...) (#t . e) (kk k ...) (bn ...) bd ...)
+     (%alet "key" (p ...) (nv ...) z (#t)
+            (ndt nd ...) e (kk k ...) (bn ...) bd ...))
+    ((%alet "key" (p ...) (nv ...) z ()
+            (ndt nd ...) (#f . e) (kk k ...) (bn ...) bd ...)
+     (%alet "key" (p ...) (nv ...) z (#f)
+            (ndt nd ...) e (kk k ...) (bn ...) bd ...))
+    ((%alet "key" (p ...) (nv ...) z (o ...)
+            (((n k) d t ...) ndt ...) e (kk ...) (bn ...) bd ...)
+     (let ((x (if (null? z)
+                  d
+                  (wow-key! z (o ...) (kk ...) (n k) d t ...))))
+       (%alet "key" (p ...) (nv ... (n x)) z (o ...)
+              (ndt ...) e (kk ...) (bn ...) bd ...)))
+    ((%alet "key" (p ...) (nv ...) z (o ...) () () (kk ...) (bn ...) bd ...)
+     (if (null? z)
+         (%alet (p ...) (nv ...) (bn ...) bd ...)
+         (error "alet: too many arguments" z)))
+    ((%alet "key" (p ...) (nv ...) z (o ...) () e (kk ...) (bn ...) bd ...)
+     (let ((te z)) (%alet (p ...) (nv ... (e te)) (bn ...) bd ...)))
+    ((%alet (p ...) (nv ...) ((rec (n v) (nn vv) ...) bn ...) bd ...)
+     (%alet "rec" (p ...) (nv ... (n t)) ((n v t))
+            ((nn vv) ...) (bn ...) bd ...))
+    ((%alet "rec" (p ...) (nv ...) (nvt ...) ((n v) (nn vv) ...)
+            (bn ...) bd ...)
+     (%alet "rec" (p ...) (nv ... (n t)) (nvt ... (n v t)) ((nn vv) ...)
+            (bn ...) bd ...))
+    ((%alet "rec" (p ...) (nv ...) ((n v t) ...) () (bn ...) bd ...)
+     ((let ((n '<undefined>) ...)
+        (let ((t v) ...)
+          (set! n t) ...
+          (mu n ...)))
+      (lambda (t ...) (%alet (p ...) (nv ...) (bn ...) bd ...))))
+
+    ((%alet (p ...) (nv ...) ((a b) bn ...) bd ...)
+     ((lambda (t) (%alet (p ...) (nv ... (a t)) (bn ...) bd ...)) b))
+
+    ((%alet (p ...) (nv ...) ((values a c) bn ...) bd ...)
+     ((lambda (t) (%alet (p ...) (nv ... (a t)) (bn ...) bd ...)) c))
+    ((%alet (p ...) (nv ...) ((values a b c ...) bn ...) bd ...)
+     (%alet "not" (p ...) (nv ... (a t)) (values t) (b c ...) (bn ...) bd ...))
+    ((%alet "not" (p ...) (nv ...) (values t ...) (a b c ...) (bn ...) bd ...)
+     (%alet "not" (p ...) (nv ... (a tn)) (values t ... tn) (b c ...)
+            (bn ...) bd ...))
+    ((%alet "not" (p ...) (nv ...) (values t ...) (z) (bn ...) bd ...)
+     (call-with-values (lambda () z)
+       (lambda (t ...) (%alet (p ...) (nv ...) (bn ...) bd ...))))
+
+    ((%alet (p ...) (nv ...) ((a b c ...) bn ...) bd ...)
+     (%alet "not" (p ...) (nv ... (a t)) (t) (b c ...) (bn ...) bd ...))
+    ((%alet "not" (p ...) (nv ...) (t ...) (a b c ...) (bn ...) bd ...)
+     (%alet "not" (p ...) (nv ... (a tn)) (t ... tn) (b c ...) (bn ...)
+            bd ...))
+    ((%alet "not" (p ...) (nv ...) (t ...) (z) (bn ...) bd ...)
+     (z (lambda (t ...) (%alet (p ...) (nv ...) (bn ...) bd ...))))
+    ((%alet (p ...) (nv ...) ((a) bn ...) bd ...)
+     (call-with-current-continuation
+      (lambda (t) (%alet (p ...) (nv ... (a t)) (bn ...) bd ...))))
+    ((%alet (p ...) (nv ...) ((a . b) bn ...) bd ...)
+     (%alet "rot" (p ...) (nv ...) (a) b (bn ...) bd ...))
+    ((%alet "rot" (p ...) (nv ...) (new-bn ...) (a . b) (bn ...) bd ...)
+     (%alet "rot" (p ...) (nv ...) (new-bn ... a) b (bn ...) bd ...))
+    ((%alet "rot" (p ...) (nv ...) (()) b (bn ...) bd ...)
+     (%alet (b (p ...) (nv ...) (bn ...)) () () bd ...))
+    ((%alet "rot" (p ...) (nv ...) (new-bn ...) b (bn ...) bd ...)
+     (%alet (b (p ...) (nv ...) (bn ...)) () (new-bn ...) bd ...))
+    ((%alet (p ...) (nv ...) (a b bn ...) bd ...)
+     (b (lambda t (%alet (p ...) (nv ... (a t)) (bn ...) bd ...))))))
+
+;;; alet*
+(define-syntax alet*
+  (syntax-rules (opt cat key rec and values)
+    ((alet* () bd ...)
+     ((lambda () bd ...)))
+    ((alet* ((() a b ...) bn ...) bd ...)
+     ((lambda () a b ... (alet* (bn ...) bd ...))))
+    ((alet* (((a) c) bn ...) bd ...)
+     ((lambda (a) (alet* (bn ...) bd ...)) c))
+
+    ((alet* (((values a) c) bn ...)  bd ...)
+     ((lambda (a) (alet* (bn ...) bd ...)) c))
+
+    ((alet* (((values . b) c) bn ...)  bd ...)
+     (call-with-values (lambda () c)
+       (lambda* b (alet* (bn ...) bd ...))))
+    ((alet* (((values . b) c d ...) bn ...) bd ...)
+     (alet* "dot" (b c d ...) (bn ...) bd ...))
+    ((alet* "dot" ((a . b) c d ...) (bn ...) bd ...)
+     ((lambda (a) (alet* "dot" (b d ...) (bn ...) bd ...)) c))
+    ((alet* "dot" (()) (bn ...) bd ...)
+     (alet* (bn ...) bd ...))
+    ((alet* "dot" (b c ...) (bn ...) bd ...)
+     ((lambda b (alet* (bn ...) bd ...)) c ...))
+
+    ((alet* (((a . b) c) bn ...)  bd ...)
+     (c (lambda* (a . b) (alet* (bn ...) bd ...))))
+    ((alet* (((a . b) c d ...) bn ...) bd ...)
+     ((lambda (a) (alet* "dot" (b d ...) (bn ...) bd ...)) c))
+
+    ((alet* ((and (n1 v1 t1 ...) (n2 v2 t2 ...) ...) bn ...) bd ...)
+     (alet-and* ((n1 v1 t1 ...) (n2 v2 t2 ...) ...) (alet* (bn ...) bd ...)))
+    ((alet* ((opt z a . e) bn ...) bd ...)
+     (%alet-opt* z (a . e) (alet* (bn ...) bd ...)))
+    ((alet* ((cat z a . e) bn ...)  bd ...)
+     (let ((y z))
+       (%alet-cat* y (a . e) (alet* (bn ...) bd ...))))
+    ((alet* ((key z a . e) bn ...)  bd ...)
+     (let ((y z))
+       (%alet-key* y () () (a . e) () (alet* (bn ...) bd ...))))
+    ((alet* ((rec (n1 v1) (n2 v2) ...) bn ...) bd ...)
+     (alet-rec* ((n1 v1) (n2 v2) ...) (alet* (bn ...) bd ...)))
+
+    ((alet* ((a b) bn ...) bd ...)
+     ((lambda (a) (alet* (bn ...) bd ...)) b))
+
+    ((alet* ((values a c) bn ...) bd ...)
+     ((lambda (a) (alet* (bn ...) bd ...)) c))
+    ((alet* ((values a b c ...) bn ...) bd ...)
+     (alet* "not" (values a) (b c ...) (bn ...) bd ...))
+    ((alet* "not" (values r ...) (a b c ...) (bn ...) bd ...)
+     (alet* "not" (values r ... a) (b c ...) (bn ...) bd ...))
+    ((alet* "not" (values r ...) (z) (bn ...) bd ...)
+     (call-with-values (lambda () z)
+       (lambda* (r ...) (alet* (bn ...) bd ...))))
+
+    ((alet* ((a b c ...) bn ...) bd ...)
+     (alet* "not" (a) (b c ...) (bn ...) bd ...))
+    ((alet* "not" (r ...) (a b c ...) (bn ...) bd ...)
+     (alet* "not" (r ... a) (b c ...) (bn ...) bd ...))
+    ((alet* "not" (r ...) (z) (bn ...) bd ...)
+     (z (lambda* (r ...) (alet* (bn ...) bd ...))))
+    ((alet* ((a) bn ...) bd ...)
+     (call-with-current-continuation (lambda (a) (alet* (bn ...)  bd ...))))
+    ((alet* ((a . b) bn ...) bd ...)
+     (%alet* () () ((a . b) bn ...) bd ...))
+    ((alet* (a b bn ...) bd ...)
+     (b (lambda a (alet* (bn ...) bd ...))))
+    ((alet* var (bn ...) bd ...)
+     (%alet* (var) () (bn ...) bd ...))))
+
+(define-syntax %alet*
+  (syntax-rules (opt cat key rec and values)
+    ((%alet* (var) (n ...) () bd ...)
+     ((letrec ((var (lambda* (n ...) bd ...)))
+        var) n ...))
+    ((%alet* (var (bn ...)) (n ...) ()  bd ...)
+     ((letrec ((var (lambda* (n ...) (alet* (bn ...) bd ...))))
+        var) n ...))
+    ((%alet* (var (p ...) (nn ...) (bn ...)) (n ...) ()  bd ...)
+     ((letrec ((var (lambda* (n ...)
+                             (%alet* (p ...) (nn ... n ... var) (bn ...)
+                                     bd ...))))
+        var) n ...))
+    ((%alet* (p ...) (n ...) ((() a b ...) bn ...) bd ...)
+     ((lambda () a b ... (%alet* (p ...) (n ...) (bn ...) bd ...))))
+    ((%alet* (p ...) (n ...) (((a) c) bn ...) bd ...)
+     ((lambda (a) (%alet* (p ...) (n ... a) (bn ...) bd ...)) c))
+
+    ((%alet* (p ...) (n ...) (((values a) c) bn ...) bd ...)
+     ((lambda (a) (%alet* (p ...) (n ... a) (bn ...) bd ...)) c))
+
+    ((%alet* (p ...) (n ...) (((values . b) c) bn ...) bd ...)
+     (%alet* "one" (p ...) (n ...) (values) (b c) (bn ...) bd ...))
+    ((%alet* "one" (p ...) (n ...) (values r ...) ((a . b) c) (bn ...) bd ...)
+     (%alet* "one" (p ...) (n ... a) (values r ... a) (b c) (bn ...) bd ...))
+    ((%alet* "one" (p ...) (n ...) (values r ...) (() c) (bn ...) bd ...)
+     (call-with-values (lambda () c)
+       (lambda* (r ...) (%alet* (p ...) (n ...) (bn ...) bd ...))))
+    ((%alet* "one" (p ...) (n ...) (values r ...) (b c) (bn ...) bd ...)
+     (call-with-values (lambda () c)
+       (lambda* (r ... . b) (%alet* (p ...) (n ... b) (bn ...) bd ...))))
+
+    ((%alet* (p ...) (n ...) (((values . b) c d ...) bn ...) bd ...)
+     (%alet* "dot" (p ...) (n ...) (b c d ...) (bn ...) bd ...))
+
+    ((%alet* (p ...) (n ...) (((a . b) c) bn ...) bd ...)
+     (%alet* "one" (p ...) (n ... a) (a) (b c) (bn ...) bd ...))
+    ((%alet* "one" (p ...) (n ...) (r ...) ((a . b) c) (bn ...) bd ...)
+     (%alet* "one" (p ...) (n ... a) (r ... a) (b c) (bn ...) bd ...))
+    ((%alet* "one" (p ...) (n ...) (r ...) (() c) (bn ...) bd ...)
+     (c (lambda* (r ...) (%alet* (p ...) (n ...) (bn ...) bd ...))))
+    ((%alet* "one" (p ...) (n ...) (r ...) (b c) (bn ...) bd ...)
+     (c (lambda* (r ... . b) (%alet* (p ...) (n ... b) (bn ...) bd ...))))
+
+    ((%alet* (p ...) (n ...) (((a . b) c d ...) bn ...) bd ...)
+     ((lambda (a)
+        (%alet* "dot" (p ...) (n ... a) (b d ...) (bn ...) bd ...)) c))
+    ((%alet* "dot" (p ...) (n ...) ((a . b) c d ...) (bn ...) bd ...)
+     ((lambda (a)
+        (%alet* "dot" (p ...) (n ... a) (b d ...) (bn ...) bd ...)) c))
+    ((%alet* "dot" (p ...) (n ...) (()) (bn ...) bd ...)
+     (%alet* (p ...) (n ...) (bn ...) bd ...))
+    ((%alet* "dot" (p ...) (n ...) (b c ...) (bn ...) bd ...)
+     ((lambda b (%alet* (p ...) (n ... b) (bn ...) bd ...)) c ...))
+
+    ((%alet* (p ...) (n ...) ((and (n1 v1 t1 ...) (n2 v2 t2 ...) ...) bn ...)
+             bd ...)
+     (alet-and* ((n1 v1 t1 ...) (n2 v2 t2 ...) ...)
+                (%alet* (p ...) (n ... n1 n2 ...) (bn ...) bd ...)))
+    ((%alet* (p ...) (n ...) ((opt z a . e) bn ...) bd ...)
+     (%alet* "opt" (p ...) (n ...) z (a . e) (bn ...) bd ...))
+    ((%alet* "opt" (p ...) (nn ...) z ((n d t ...)) (bn ...) bd ...)
+     (let ((n (if (null? z)
+                  d
+                  (if (null? (cdr z))
+                      (wow-opt n (car z) t ...)
+                      (error "alet*: too many arguments" (cdr z))))))
+       (%alet* (p ...) (nn ... n) (bn ...) bd ...)))
+    ((%alet* "opt" (p ...) (nn ...) z ((n d t ...) . e) (bn ...) bd ...)
+     (let ((y (if (null? z) z (cdr z)))
+           (n (if (null? z)
+                  d
+                  (wow-opt n (car z) t ...))))
+       (%alet* "opt" (p ...) (nn ... n) y e (bn ...) bd ...)))
+    ((%alet* "opt" (p ...) (nn ...) z e (bn ...) bd ...)
+     (let ((e z))
+       (%alet* (p ...) (nn ... e) (bn ...) bd ...)))
+    ((%alet* (p ...) (nn ...) ((cat z a . e) bn ...) bd ...)
+     (let ((y z))
+       (%alet* "cat" (p ...) (nn ...) y (a . e) (bn ...) bd ...)))
+    ((%alet* "cat" (p ...) (nn ...) z ((n d t ...)) (bn ...) bd ...)
+     (let ((n (if (null? z)
+                  d
+                  (if (null? (cdr z))
+                      (wow-cat-end z n t ...)
+                      (error "alet*: too many arguments" (cdr z))))))
+       (%alet* (p ...) (nn ... n) (bn ...) bd ...)))
+    ((%alet* "cat" (p ...) (nn ...) z ((n d t ...) . e) (bn ...) bd ...)
+     (let ((n (if (null? z)
+                  d
+                  (wow-cat! z n d t ...))))
+       (%alet* "cat" (p ...) (nn ... n) z e (bn ...) bd ...)))
+    ((%alet* "cat" (p ...) (nn ...) z e (bn ...) bd ...)
+     (let ((e z))
+       (%alet* (p ...) (nn ... e) (bn ...) bd ...)))
+    ((%alet* (p ...) (m ...) ((key z a . e) bn ...) bd ...)
+     (let ((y z))
+       (%alet* "key" (p ...) (m ...) y () () (a . e) () (bn ...) bd ...)))
+    ((%alet* "key" (p ...) (m ...) z ()
+             (ndt ...) (((n k) d t ...) . e) (kk ...) (bn ...) bd ...)
+     (%alet* "key" (p ...) (m ...) z ()
+             (ndt ... ((n k) d t ...)) e (kk ... k) (bn ...) bd ...))
+    ((%alet* "key" (p ...) (m ...) z ()
+             (ndt ...) ((n d t ...) . e) (kk ...) (bn ...) bd ...)
+     (%alet* "key" (p ...) (m ...) z ()
+             (ndt ... ((n 'n) d t ...)) e (kk ... 'n) (bn ...) bd ...))
+    ((%alet* "key" (p ...) (m ...) z ()
+             (ndt nd ...) (#t . e) (kk k ...) (bn ...) bd ...)
+     (%alet* "key" (p ...) (m ...) z (#t)
+             (ndt nd ...) e (kk k ...) (bn ...) bd ...))
+    ((%alet* "key" (p ...) (m ...) z ()
+             (ndt nd ...) (#f . e) (kk k ...) (bn ...) bd ...)
+     (%alet* "key" (p ...) (m ...) z (#f)
+             (ndt nd ...) e (kk k ...) (bn ...) bd ...))
+    ((%alet* "key" (p ...) (m ...) z (o ...)
+             (((n k) d t ...) ndt ...) e (kk ...) (bn ...) bd ...)
+     (let ((n (if (null? z)
+                  d
+                  (wow-key! z (o ...) (kk ...) (n k) d t ...))))
+       (%alet* "key" (p ...) (m ... n) z (o ...)
+               (ndt ...) e (kk ...) (bn ...) bd ...)))
+    ((%alet* "key" (p ...) (m ...) z (o ...) () () (kk ...) (bn ...) bd ...)
+     (if (null? z)
+         (%alet* (p ...) (m ...) (bn ...) bd ...)
+         (error "alet*: too many arguments" z)))
+    ((%alet* "key" (p ...) (m ...) z (o ...) () e (kk ...) (bn ...) bd ...)
+     (let ((e z)) (%alet* (p ...) (m ... e) (bn ...) bd ...)))
+    ((%alet* (p ...) (n ...) ((rec (n1 v1) (n2 v2) ...) bn ...) bd ...)
+     (alet-rec* ((n1 v1) (n2 v2) ...)
+                (%alet* (p ...) (n ... n1 n2 ...) (bn ...) bd ...)))
+
+    ((%alet* (p ...) (n ...) ((a b) bn ...) bd ...)
+     ((lambda (a) (%alet* (p ...) (n ... a) (bn ...) bd ...)) b))
+
+    ((%alet* (p ...) (n ...) ((values a c) bn ...) bd ...)
+     ((lambda (a) (%alet* (p ...) (n ... a) (bn ...) bd ...)) c))
+    ((%alet* (p ...) (n ...) ((values a b c ...) bn ...) bd ...)
+     (%alet* "not" (p ...) (n ... a) (values a) (b c ...) (bn ...) bd ...))
+    ((%alet* "not" (p ...) (n ...) (values r ...) (a b c ...) (bn ...) bd ...)
+     (%alet* "not" (p ...) (n ... a) (values r ... a) (b c ...) (bn ...)
+             bd ...))
+    ((%alet* "not" (p ...) (n ...) (values r ...) (z) (bn ...) bd ...)
+     (call-with-values (lambda () z)
+       (lambda* (r ...) (%alet* (p ...) (n ...) (bn ...) bd ...))))
+
+    ((%alet* (p ...) (n ...) ((a b c ...) bn ...) bd ...)
+     (%alet* "not" (p ...) (n ... a) (a) (b c ...) (bn ...) bd ...))
+    ((%alet* "not" (p ...) (n ...) (r ...) (a b c ...) (bn ...) bd ...)
+     (%alet* "not" (p ...) (n ... a) (r ... a) (b c ...) (bn ...) bd ...))
+    ((%alet* "not" (p ...) (n ...) (r ...) (z) (bn ...) bd ...)
+     (z (lambda* (r ...) (%alet* (p ...) (n ...) (bn ...) bd ...))))
+    ((%alet* (p ...) (n ...) ((a) bn ...) bd ...)
+     (call-with-current-continuation
+      (lambda (a) (%alet* (p ...) (n ... a) (bn ...) bd ...))))
+    ((%alet* (p ...) (n ...) ((a . b) bn ...) bd ...)
+     (%alet* "rot" (p ...) (n ...) (a) b (bn ...) bd ...))
+    ((%alet* "rot" (p ...) (n ...) (new-bn ...) (a . b) (bn ...) bd ...)
+     (%alet* "rot" (p ...) (n ...) (new-bn ... a) b (bn ...) bd ...))
+    ((%alet* "rot" () () (()) b (bn ...) bd ...)
+     (%alet* (b (bn ...)) () () bd ...))
+    ((%alet* "rot" (p ...) (n ...) (()) b (bn ...) bd ...)
+     (%alet* (b (p ...) (n ...) (bn ...)) () () bd ...))
+    ((%alet* "rot" () () (new-bn ...) b (bn ...) bd ...)
+     (%alet* (b (bn ...)) () (new-bn ...) bd ...))
+    ((%alet* "rot" (p ...) (n ...) (new-bn ...) b (bn ...) bd ...)
+     (%alet* (b (p ...) (n ...) (bn ...)) () (new-bn ...) bd ...))
+    ((%alet* (p ...) (n ...) (a b bn ...) bd ...)
+     (b (lambda a (%alet* (p ...) (n ... a) (bn ...) bd ...))))))
+
+;;; auxiliaries
+(define-syntax lambda*
+  (syntax-rules ()
+    ((lambda* (a . e) bd ...)
+     (lambda* "star" (ta) (a) e bd ...))
+    ((lambda* "star" (t ...) (n ...) (a . e) bd ...)
+     (lambda* "star" (t ... ta) (n ... a) e bd ...))
+    ((lambda* "star" (t ...) (n ...) () bd ...)
+     (lambda (t ...)
+       (let* ((n t) ...) bd ...)))
+    ((lambda* "star" (t ...) (n ...) e bd ...)
+     (lambda (t ... . te)
+       (let* ((n t) ... (e te)) bd ...)))
+    ((lambda* e bd ...)
+     (lambda e bd ...))))
+
+(define-syntax alet-and
+  (syntax-rules ()
+    ((alet-and ((n v t ...) ...) bd ...)
+     (alet-and "and" () ((n v t ...) ...) bd ...))
+    ((alet-and "and" (nt ...) ((n v) nvt ...) bd ...)
+     (let ((t v))
+       (and t (alet-and "and" (nt ... (n t)) (nvt ...) bd ...))))
+    ((alet-and "and" (nt ...) ((n v t) nvt ...) bd ...)
+     (let ((tt v))
+       (and (let ((n tt)) t)
+            (alet-and "and" (nt ... (n tt)) (nvt ...) bd ...))))
+    ((alet-and "and" ((n t) ...) () bd ...)
+     ((lambda (n ...) bd ...) t ...))))
+
+(define-syntax alet-and*
+  (syntax-rules ()
+    ((alet-and* () bd ...)
+     ((lambda () bd ...)))
+    ((alet-and* ((n v) nvt ...) bd ...)
+     (let ((n v))
+       (and n (alet-and* (nvt ...) bd ...))))
+    ((alet-and* ((n v t) nvt ...) bd ...)
+     (let ((n v))
+       (and t (alet-and* (nvt ...) bd ...))))))
+
+(define-syntax alet-rec
+  (syntax-rules ()
+    ((alet-rec ((n v) ...) bd ...)
+     (alet-rec "rec" () ((n v) ...) bd ...))
+    ((alet-rec "rec" (nvt ...) ((n v) nv ...) bd ...)
+     (alet-rec "rec" (nvt ... (n v t)) (nv ...) bd ...))
+    ((alet-rec "rec" ((n v t) ...) () bd ...)
+     (let ((n '<undefined>) ...)
+       (let ((t v) ...)
+         (set! n t) ...
+         ;;(let ()
+         ;;  bd ...))))))
+         bd ...)))))
+
+(define-syntax alet-rec*
+  (syntax-rules ()
+    ((alet-rec* ((n v) ...) bd ...)
+     (let* ((n '<undefined>) ...)
+       (set! n v) ...
+       ;;(let ()
+       ;; bd ...)))))
+       bd ...))))
+
+(define-syntax wow-opt
+  (syntax-rules ()
+    ((wow-opt n v)
+     v)
+    ((wow-opt n v t)
+     (let ((n v))
+       (if t n (error "alet[*]: bad argument" n 'n 't))))
+    ((wow-opt n v t ts)
+     (let ((n v))
+       (if t ts (error "alet[*]: bad argument" n 'n 't))))
+    ((wow-opt n v t ts fs)
+     (let ((n v))
+       (if t ts fs)))))
+
+(define-syntax wow-opt!
+  (syntax-rules ()
+    ((wow-opt! z n)
+     (let ((n (car z)))
+       (set! z (cdr z))
+       n))
+    ((wow-opt! z n t)
+     (let ((n (car z)))
+       (if t
+           (begin (set! z (cdr z)) n)
+           (error "alet[*]: bad argument" n 'n 't))))
+    ((wow-opt! z n t ts)
+     (let ((n (car z)))
+       (if t
+           (begin (set! z (cdr z)) ts)
+           (error "alet[*]: bad argument" n 'n 't))))
+    ((wow-opt! z n t ts fs)
+     (let ((n (car z)))
+       (if t
+           (begin (set! z (cdr z)) ts)
+           (begin (set! z (cdr z)) fs))))))
+
+(define-syntax wow-cat-end
+  (syntax-rules ()
+    ((wow-cat-end z n)
+     (car z))
+    ((wow-cat-end z n t)
+     (let ((n (car z)))
+       (if t n (error "alet[*]: too many argument" z))))
+    ((wow-cat-end z n t ts)
+     (let ((n (car z)))
+       (if t ts (error "alet[*]: too many argument" z))))
+    ((wow-cat-end z n t ts fs)
+     (let ((n (car z)))
+       (if t ts fs)))))
+
+(define-syntax wow-cat
+  (syntax-rules ()
+    ((wow-cat z n d)
+     z)
+    ((wow-cat z n d t)
+     (let ((n (car z)))
+       (if t
+           z
+           (let lp ((head (list n)) (tail (cdr z)))
+             (if (null? tail)
+                 (cons d z)
+                 (let ((n (car tail)))
+                   (if t
+                       (cons n (append (reverse head) (cdr tail)))
+                       (lp (cons n head) (cdr tail)))))))))
+    ((wow-cat z n d t ts)
+     (let ((n (car z)))
+       (if t
+           (cons ts (cdr z))
+           (let lp ((head (list n)) (tail (cdr z)))
+             (if (null? tail)
+                 (cons d z)
+                 (let ((n (car tail)))
+                   (if t
+                       (cons ts (append (reverse head) (cdr tail)))
+                       (lp (cons n head) (cdr tail)))))))))
+    ((wow-cat z n d t ts fs)
+     (let ((n (car z)))
+       (if t
+           (cons ts (cdr z))
+           (cons fs (cdr z)))))))
+
+(define-syntax wow-cat!
+  (syntax-rules ()
+    ((wow-cat! z n d)
+     (let ((n (car z)))
+       (set! z (cdr z))
+       n))
+    ((wow-cat! z n d t)
+     (let ((n (car z)))
+       (if t
+           (begin (set! z (cdr z)) n)
+           (let lp ((head (list n)) (tail (cdr z)))
+             (if (null? tail)
+                 d
+                 (let ((n (car tail)))
+                   (if t
+                       (begin (set! z (append (reverse head) (cdr tail))) n)
+                       (lp (cons n head) (cdr tail)))))))))
+    ((wow-cat! z n d t ts)
+     (let ((n (car z)))
+       (if t
+           (begin (set! z (cdr z)) ts)
+           (let lp ((head (list n)) (tail (cdr z)))
+             (if (null? tail)
+                 d
+                 (let ((n (car tail)))
+                   (if t
+                       (begin (set! z (append (reverse head) (cdr tail))) ts)
+                       (lp (cons n head) (cdr tail)))))))))
+    ((wow-cat! z n d t ts fs)
+     (let ((n (car z)))
+       (if t
+           (begin (set! z (cdr z)) ts)
+           (begin (set! z (cdr z)) fs))))))
+
+(define-syntax wow-key!
+  (syntax-rules ()
+    ((wow-key! z () (kk ...) (n key) d)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (begin (set! z (cdr y)) (car y))
+               (let lp ((head (list (car y) x)) (tail (cdr y)))
+                 (if (null? tail)
+                     d
+                     (let ((x (car tail))
+                           (y (cdr tail)))
+                       (if (null? y)
+                           d
+                           (if (equal? key x)
+                               (begin (set! z (append (reverse head) (cdr y)))
+                                      (car y))
+                               (lp (cons (car y) (cons x head))
+                                   (cdr y)))))))))))
+    ((wow-key! z (#f) (kk ...) (n key) d)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (begin (set! z (cdr y)) (car y))
+               (let ((lk (list kk ...)))
+                 (if (not (member x lk))
+                     d
+                     (let lp ((head (list (car y) x)) (tail (cdr y)))
+                       (if (null? tail)
+                           d
+                           (let ((x (car tail))
+                                 (y (cdr tail)))
+                             (if (null? y)
+                                 d
+                                 (if (equal? key x)
+                                     (begin (set! z (append (reverse head)
+                                                            (cdr y)))
+                                            (car y))
+                                     (if (not (member x lk))
+                                         d
+                                         (lp (cons (car y) (cons x head))
+                                             (cdr y))))))))))))))
+    ((wow-key! z (#t) (kk ...) (n key) d)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (begin (set! z (cdr y)) (car y))
+               (let* ((lk (list kk ...))
+                      (m (member x lk)))
+                 (let lp ((head (if m (list (car y) x) (list x)))
+                          (tail (if m (cdr y) y)))
+                   (if (null? tail)
+                       d
+                       (let ((x (car tail))
+                             (y (cdr tail)))
+                         (if (null? y)
+                             d
+                             (if (equal? key x)
+                                 (begin (set! z (append (reverse head)
+                                                        (cdr y)))
+                                        (car y))
+                                 (let ((m (member x lk)))
+                                   (lp (if m
+                                           (cons (car y) (cons x head))
+                                           (cons x head))
+                                       (if m (cdr y) y)))))))))))))
+    ((wow-key! z () (kk ...) (n key) d t)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (let ((n (car y)))
+                 (if t
+                     (begin (set! z (cdr y)) n)
+                     (error "alet[*]: bad argument" n 'n 't)))
+               (let lp ((head (list (car y) x)) (tail (cdr y)))
+                 (if (null? tail)
+                     d
+                     (let ((x (car tail))
+                           (y (cdr tail)))
+                       (if (null? y)
+                           d
+                           (if (equal? key x)
+                               (let ((n (car y)))
+                                 (if t
+                                     (begin (set! z (append (reverse head)
+                                                            (cdr y)))
+                                            n)
+                                     (error "alet[*]: bad argument"
+                                            n 'n 't)))
+                               (lp (cons (car y) (cons x head))
+                                   (cdr y)))))))))))
+    ((wow-key! z (#f) (kk ...) (n key) d t)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (let ((n (car y)))
+                 (if t
+                     (begin (set! z (cdr y)) n)
+                     (error "alet[*]: bad argument" n 'n 't)))
+               (let ((lk (list kk ...)))
+                 (if (not (member x lk))
+                     d
+                     (let lp ((head (list (car y) x)) (tail (cdr y)))
+                       (if (null? tail)
+                           d
+                           (let ((x (car tail))
+                                 (y (cdr tail)))
+                             (if (null? y)
+                                 d
+                                 (if (equal? key x)
+                                     (let ((n (car y)))
+                                       (if t
+                                           (begin
+                                             (set! z (append (reverse head)
+                                                             (cdr y)))
+                                             n)
+                                           (error "alet[*]: bad argument"
+                                                  n 'n 't)))
+                                     (if (not (member x lk))
+                                         d
+                                         (lp (cons (car y) (cons x head))
+                                             (cdr y))))))))))))))
+    ((wow-key! z (#t) (kk ...) (n key) d t)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (let ((n (car y)))
+                 (if t
+                     (begin (set! z (cdr y)) n)
+                     (error "alet[*]: bad argument" n 'n 't)))
+               (let* ((lk (list kk ...))
+                      (m (member x lk)))
+                 (let lp ((head (if m (list (car y) x) (list x)))
+                          (tail (if m (cdr y) y)))
+                   (if (null? tail)
+                       d
+                       (let ((x (car tail))
+                             (y (cdr tail)))
+                         (if (null? y)
+                             d
+                             (if (equal? key x)
+                                 (let ((n (car y)))
+                                   (if t
+                                       (begin (set! z (append (reverse head)
+                                                              (cdr y)))
+                                              n)
+                                       (error "alet[*]: bad argument"
+                                              n 'n 't)))
+                                 (let ((m (member x lk)))
+                                   (lp (if m
+                                           (cons (car y) (cons x head))
+                                           (cons x head))
+                                       (if m (cdr y) y)))))))))))))
+    ((wow-key! z () (kk ...) (n key) d t ts)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (let ((n (car y)))
+                 (if t
+                     (begin (set! z (cdr y)) ts)
+                     (error "alet[*]: bad argument" n 'n 't)))
+               (let lp ((head (list (car y) x)) (tail (cdr y)))
+                 (if (null? tail)
+                     d
+                     (let ((x (car tail))
+                           (y (cdr tail)))
+                       (if (null? y)
+                           d
+                           (if (equal? key x)
+                               (let ((n (car y)))
+                                 (if t
+                                     (begin (set! z (append (reverse head)
+                                                            (cdr y)))
+                                            ts)
+                                     (error "alet[*]: bad argument"
+                                            n 'n 't)))
+                               (lp (cons (car y) (cons x head))
+                                   (cdr y)))))))))))
+    ((wow-key! z (#f) (kk ...) (n key) d t ts)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (let ((n (car y)))
+                 (if t
+                     (begin (set! z (cdr y)) ts)
+                     (error "alet[*]: bad argument" n 'n 't)))
+               (let ((lk (list kk ...)))
+                 (if (not (member x lk))
+                     d
+                     (let lp ((head (list (car y) x)) (tail (cdr y)))
+                       (if (null? tail)
+                           d
+                           (let ((x (car tail))
+                                 (y (cdr tail)))
+                             (if (null? y)
+                                 d
+                                 (if (equal? key x)
+                                     (let ((n (car y)))
+                                       (if t
+                                           (begin
+                                             (set! z (append (reverse head)
+                                                             (cdr y)))
+                                             ts)
+                                           (error "alet[*]: bad argument"
+                                                  n 'n 't)))
+                                     (if (not (member x lk))
+                                         d
+                                         (lp (cons (car y) (cons x head))
+                                             (cdr y))))))))))))))
+    ((wow-key! z (#t) (kk ...) (n key) d t ts)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (let ((n (car y)))
+                 (if t
+                     (begin (set! z (cdr y)) ts)
+                     (error "alet[*]: bad argument" n 'n 't)))
+               (let* ((lk (list kk ...))
+                      (m (member x lk)))
+                 (let lp ((head (if m (list (car y) x) (list x)))
+                          (tail (if m (cdr y) y)))
+                   (if (null? tail)
+                       d
+                       (let ((x (car tail))
+                             (y (cdr tail)))
+                         (if (null? y)
+                             d
+                             (if (equal? key x)
+                                 (let ((n (car y)))
+                                   (if t
+                                       (begin (set! z (append (reverse head)
+                                                              (cdr y)))
+                                              ts)
+                                       (error "alet[*]: bad argument"
+                                              n 'n 't)))
+                                 (let ((m (member x lk)))
+                                   (lp (if m
+                                           (cons (car y) (cons x head))
+                                           (cons x head))
+                                       (if m (cdr y) y)))))))))))))
+    ((wow-key! z () (kk ...) (n key) d t ts fs)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (let ((n (car y)))
+                 (if t
+                     (begin (set! z (cdr y)) ts)
+                     (begin (set! z (cdr y)) fs)))
+               (let lp ((head (list (car y) x)) (tail (cdr y)))
+                 (if (null? tail)
+                     d
+                     (let ((x (car tail))
+                           (y (cdr tail)))
+                       (if (null? y)
+                           d
+                           (if (equal? key x)
+                               (let ((n (car y)))
+                                 (if t
+                                     (begin (set! z (append (reverse head)
+                                                            (cdr y)))
+                                            ts)
+                                     (begin (set! z (append (reverse head)
+                                                            (cdr y)))
+                                            fs)))
+                               (lp (cons (car y) (cons x head))
+                                   (cdr y)))))))))))
+    ((wow-key! z (#f) (kk ...) (n key) d t ts fs)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (let ((n (car y)))
+                 (if t
+                     (begin (set! z (cdr y)) ts)
+                     (begin (set! z (cdr y)) fs)))
+               (let ((lk (list kk ...)))
+                 (if (not (member x lk))
+                     d
+                     (let lp ((head (list (car y) x)) (tail (cdr y)))
+                       (if (null? tail)
+                           d
+                           (let ((x (car tail))
+                                 (y (cdr tail)))
+                             (if (null? y)
+                                 d
+                                 (if (equal? key x)
+                                     (let ((n (car y)))
+                                       (if t
+                                           (begin
+                                             (set! z (append (reverse head)
+                                                             (cdr y)))
+                                             ts)
+                                           (begin
+                                             (set! z (append (reverse head)
+                                                             (cdr y)))
+                                             fs)))
+                                     (if (not (member x lk))
+                                         d
+                                         (lp (cons (car y) (cons x head))
+                                             (cdr y))))))))))))))
+    ((wow-key! z (#t) (kk ...) (n key) d t ts fs)
+     (let ((x (car z))
+           (y (cdr z)))
+       (if (null? y)
+           d
+           (if (equal? key x)
+               (let ((n (car y)))
+                 (if t
+                     (begin (set! z (cdr y)) ts)
+                     (begin (set! z (cdr y)) fs)))
+               (let* ((lk (list kk ...))
+                      (m (member x lk)))
+                 (let lp ((head (if m (list (car y) x) (list x)))
+                          (tail (if m (cdr y) y)))
+                   (if (null? tail)
+                       d
+                       (let ((x (car tail))
+                             (y (cdr tail)))
+                         (if (null? y)
+                             d
+                             (if (equal? key x)
+                                 (let ((n (car y)))
+                                   (if t
+                                       (begin (set! z (append (reverse head)
+                                                              (cdr y)))
+                                              ts)
+                                       (begin (set! z (append (reverse head)
+                                                              (cdr y)))
+                                              fs)))
+                                 (let ((m (member x lk)))
+                                   (lp (if m
+                                           (cons (car y) (cons x head))
+                                           (cons x head))
+                                       (if m (cdr y) y)))))))))))))))
+
+(define-syntax alet-opt*
+  (syntax-rules ()
+    ((alet-opt* z (a . e) bd ...)
+     (let ((y z))
+       (%alet-opt* y (a . e) bd ...)))))
+(define-syntax %alet-opt*
+  (syntax-rules ()
+    ((%alet-opt* z ((n d t ...)) bd ...)
+     (let ((n (if (null? z)
+                  d
+                  (if (null? (cdr z))
+                      (wow-opt n (car z) t ...)
+                      (error "alet*: too many arguments" (cdr z))))))
+       bd ...))
+    ((%alet-opt* z ((n d t ...) . e)  bd ...)
+     (let ((y (if (null? z) z (cdr z)))
+           (n (if (null? z)
+                  d
+                  (wow-opt n (car z) t ...))))
+       (%alet-opt* y e bd ...)))
+    ((%alet-opt* z e bd ...)
+     (let ((e z)) bd ...))))
+;; (define-syntax %alet-opt*
+;;   (syntax-rules ()
+;;     ((%alet-opt* z ((n d t ...)) bd ...)
+;;      (let ((n (if (null? z)
+;;                d
+;;                (if (null? (cdr z))
+;;                    (wow-opt n (car z) t ...)
+;;                    (error "alet*: too many arguments" (cdr z))))))
+;;        bd ...))
+;;     ((%alet-opt* z ((n d t ...) . e)  bd ...)
+;;      (let ((n (if (null? z)
+;;                d
+;;                (wow-opt! z n t ...))))
+;;        (%alet-opt* z e bd ...)))
+;;     ((%alet-opt* z e bd ...)
+;;      (let ((e z)) bd ...))))
+;; (define-syntax %alet-opt*
+;;   (syntax-rules ()
+;;     ((%alet-opt* z (ndt ...) (a . e) bd ...)
+;;      (%alet-opt* z (ndt ... a) e bd ...))
+;;     ((%alet-opt* z ((n d t ...) (nn dd tt ...) ...) () bd ...)
+;;      (if (null? z)
+;;       (let* ((n d) (nn dd) ...) bd ...)
+;;       (let ((y (cdr z))
+;;             (n (wow-opt n (car z) t ...)))
+;;         (%alet-opt* y ((nn dd tt ...) ...) () bd ...))))
+;;     ((%alet-opt* z () () bd ...)
+;;      (if (null? z)
+;;       (let () bd ...)
+;;       (error "alet*: too many arguments" z)))
+;;     ((%alet-opt* z  ((n d t ...) (nn dd tt ...) ...) e bd ...)
+;;      (if (null? z)
+;;       (let* ((n d) (nn dd) ... (e z)) bd ...)
+;;       (let ((y (cdr z))
+;;             (n (wow-opt n (car z) t ...)))
+;;         (%alet-opt* y ((nn dd tt ...) ...) e bd ...))))
+;;     ((%alet-opt* z () e bd ...)
+;;      (let ((e z)) bd ...))))
+
+(define-syntax alet-cat*
+  (syntax-rules ()
+    ((alet-cat* z (a . e) bd ...)
+     (let ((y z))
+       (%alet-cat* y (a . e) bd ...)))))
+;; (define-syntax %alet-cat*
+;;   (syntax-rules ()
+;;     ((%alet-cat* z ((n d t ...)) bd ...)
+;;      (let ((n (if (null? z)
+;;                d
+;;                (if (null? (cdr z))
+;;                    (wow-cat-end z n t ...)
+;;                    (error "alet*: too many arguments" (cdr z))))))
+;;        bd ...))
+;;     ((%alet-cat* z ((n d t ...) . e) bd ...)
+;;      (let* ((w (if (null? z)
+;;                 (cons d z)
+;;                 (wow-cat z n d t ...)))
+;;          (n (car w))
+;;          (y (cdr w)))
+;;        (%alet-cat* y e bd ...)))
+;;     ((%alet-cat* z e bd ...)
+;;      (let ((e z)) bd ...))))
+(define-syntax %alet-cat*
+  (syntax-rules ()
+    ((%alet-cat* z ((n d t ...)) bd ...)
+     (let ((n (if (null? z)
+                  d
+                  (if (null? (cdr z))
+                      (wow-cat-end z n t ...)
+                      (error "alet*: too many arguments" (cdr z))))))
+       bd ...))
+    ((%alet-cat* z ((n d t ...) . e) bd ...)
+     (let ((n (if (null? z)
+                  d
+                  (wow-cat! z n d t ...))))
+       (%alet-cat* z e bd ...)))
+    ((%alet-cat* z e bd ...)
+     (let ((e z)) bd ...))))
+;; (define-syntax %alet-cat*
+;;   (syntax-rules ()
+;;     ((%alet-cat* z (ndt ...) (a . e) bd ...)
+;;      (%alet-cat* z (ndt ... a) e bd ...))
+;;     ((%alet-cat* z ((n d t ...) (nn dd tt ...) ...) () bd ...)
+;;      (if (null? z)
+;;       (let* ((n d) (nn dd) ...) bd ...)
+;;       (let* ((w (wow-cat z n d t ...))
+;;              (n (car w))
+;;              (y (cdr w)))
+;;         (%alet-cat* y ((nn dd tt ...) ...) () bd ...))))
+;;     ((%alet-cat* z () () bd ...)
+;;      (if (null? z)
+;;       (let () bd ...)
+;;       (error "alet*: too many arguments" z)))
+;;     ((%alet-cat* z  ((n d t ...) (nn dd tt ...) ...) e bd ...)
+;;      (if (null? z)
+;;       (let* ((n d) (nn dd) ... (e z)) bd ...)
+;;       (let* ((w (wow-cat z n d t ...))
+;;              (n (car w))
+;;              (y (cdr w)))
+;;         (%alet-cat* y ((nn dd tt ...) ...) e bd ...))))
+;;     ((%alet-cat* z () e bd ...)
+;;      (let ((e z)) bd ...))))
+
+(define-syntax alet-key*
+  (syntax-rules ()
+    ((alet-key* z (a . e) bd ...)
+     (let ((y z))
+       (%alet-key* y () () (a . e) () bd ...)))))
+(define-syntax %alet-key*
+  (syntax-rules ()
+    ((%alet-key* z () (ndt ...) (((n k) d t ...) . e) (kk ...) bd ...)
+     (%alet-key* z () (ndt ... ((n k) d t ...)) e (kk ... k) bd ...))
+    ((%alet-key* z () (ndt ...) ((n d t ...) . e) (kk ...) bd ...)
+     (%alet-key* z () (ndt ... ((n 'n) d t ...)) e (kk ... 'n) bd ...))
+    ((%alet-key* z () (ndt nd ...) (#f . e) (kk k ...) bd ...)
+     (%alet-key* z (#f) (ndt nd ...) e (kk k ...) bd ...))
+    ((%alet-key* z () (ndt nd ...) (#t . e) (kk k ...) bd ...)
+     (%alet-key* z (#t) (ndt nd ...) e (kk k ...) bd ...))
+
+    ((%alet-key* z (o ...) (((n k) d t ...) ndt ...) e (kk ...) bd ...)
+     (let ((n (if (null? z)
+                  d
+                  (wow-key! z (o ...) (kk ...) (n k) d t ...))))
+       (%alet-key* z (o ...) (ndt ...) e (kk ...) bd ...)))
+    ((%alet-key* z (o ...) () () (kk ...) bd ...)
+     (if (null? z)
+         (let () bd ...)
+         (error "alet*: too many arguments" z)))
+    ((%alet-key* z (o ...) () e (kk ...) bd ...)
+     (let ((e z)) bd ...))))
+
+References
+
+  • [R5RS] Richard Kelsey, William Clinger, and Jonathan Rees: Revised(5)
+    Report on the Algorithmic Language Scheme Link
+  • [SRFI 2] Oleg Kiselyov: and-let*: and and with local bindings, a guarded
+    let* special form. Link
+  • [SRFI 11] Lars T. Hansen: Syntax for receiving multiple values. Link
+  • [SRFI 51] Joo ChurlSoo: Handling rest list. Link
+  • [SRFI 71] Sebastian Egner: Extended let-syntax for multiple values. Link
+  • [Scsh] Olin Shivers, Brian Carlstrom, Martin Gasbichler, Mike Sperber Link
+
+Copyright
+
+Copyright (c) 2006 Joo ChurlSoo.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Mike Sperber

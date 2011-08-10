@@ -1,0 +1,163 @@
+▼  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+The Racket Graphical Interface Toolkit
+
+Matthew Flatt,
+Robert Bruce Findler,
+and John Clements
+
+ (require racket/gui/base)
+The racket/gui/base library provides all of the class, interface, and procedure
+bindings defined in this manual, in addition to the bindings of racket/draw and
+file/resource.
+
+ #lang racket/gui
+The racket/gui language combines all bindings of the racket language and the
+racket/gui/base and racket/draw modules.
+
+The racket/gui toolbox is roughly organized into two parts:
+
+  • The windowing toolbox, for implementing windows, buttons, menus, text
+    fields, and other controls.
+
+  • The editor toolbox, for developing traditional text editors, editors that
+    mix text and graphics, or free-form layout editors (such as a word
+    processor, HTML editor, or icon-based file browser).
+
+Both parts of the toolbox rely extensively on the racket/draw drawing library.
+
+    1 Windowing
+
+      1.1 Creating Windows
+
+      1.2 Drawing in Canvases
+
+      1.3 Core Windowing Classes
+
+      1.4 Geometry Management
+
+        1.4.1 Containees
+
+        1.4.2 Containers
+
+        1.4.3 Defining New Types of Containers
+
+      1.5 Mouse and Keyboard Events
+
+      1.6 Event Dispatching and Eventspaces
+
+        1.6.1 Event Types and Priorities
+
+        1.6.2 Eventspaces and Threads
+
+        1.6.3 Creating and Setting the Eventspace
+
+        1.6.4 Continuations and Event Dispatch
+
+      1.7 Animation in Canvases
+
+    2 Windowing Classes
+
+    3 Windowing Functions
+
+      3.1 Dialogs
+
+      3.2 Eventspaces
+
+      3.3 System Menus
+
+      3.4 Global Graphics
+
+      3.5 Fonts
+
+      3.6 Miscellaneous
+
+    4 Editors
+
+      4.1 Editor Structure and Terminology
+
+        4.1.1 Administrators
+
+        4.1.2 Styles
+
+      4.2 File Format
+
+        4.2.1 Encoding Snips
+
+          4.2.1.1 Snip Classes
+
+          4.2.1.2 Editor Data
+
+        4.2.2 Global Data: Headers and Footers
+
+      4.3 End of Line Ambiguity
+
+      4.4 Flattened Text
+
+      4.5 Caret Ownership
+
+      4.6 Cut and Paste Time Stamps
+
+      4.7 Clickbacks
+
+      4.8 Internal Editor Locks
+
+      4.9 Editors and Threads
+
+    5 Snip and Style Classes
+
+    6 Editor Classes
+
+    7 Editor Functions
+
+    8 WXME Decoding
+
+      8.1 Snip Class Mapping
+
+        8.1.1 Nested Editors
+
+        8.1.2 Images
+
+      8.2 DrRacket Comment Boxes
+
+      8.3 DrRacket XML Boxes
+
+      8.4 DrRacket Racket Boxes
+
+      8.5 DrRacket Text Boxes
+
+      8.6 DrRacket Fractions
+
+      8.7 DrRacket Teachpack Images
+
+      8.8 DrRacket Test-Case Boxes
+
+    9 Preferences
+
+    10 Dynamic Loading
+
+    11 Startup Actions
+
+    12 Platform Dependencies
+
+    Index
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

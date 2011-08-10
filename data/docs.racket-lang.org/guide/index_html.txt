@@ -1,0 +1,588 @@
+▼  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+The Racket Guide
+
+Matthew Flatt,
+Robert Bruce Findler,
+and PLT
+
+This guide is intended for programmers who are new to Racket or new to some
+part of Racket. It assumes programming experience, so if you are new to
+programming, consider instead reading How to Design Programs. If you want an
+especially quick introduction to Racket, start with Quick: An Introduction to
+Racket with Pictures.
+
+Chapter 2 provides a brief introduction to Racket. From Chapter 3 on, this
+guide dives into details—covering much of the Racket toolbox, but leaving
+precise details to The Racket Reference and other reference manuals.
+
+    1 Welcome to Racket
+
+      1.1 Interacting with Racket
+
+      1.2 Definitions and Interactions
+
+      1.3 Creating Executables
+
+      1.4 A Note to Readers with Lisp/Scheme Experience
+
+    2 Racket Essentials
+
+      2.1 Simple Values
+
+      2.2 Simple Definitions and Expressions
+
+        2.2.1 Definitions
+
+        2.2.2 An Aside on Indenting Code
+
+        2.2.3 Identifiers
+
+        2.2.4 Function Calls (Procedure Applications)
+
+        2.2.5 Conditionals with if, and, or, and cond
+
+        2.2.6 Function Calls, Again
+
+        2.2.7 Anonymous Functions with lambda
+
+        2.2.8 Local Binding with define, let, and let*
+
+      2.3 Lists, Iteration, and Recursion
+
+        2.3.1 Predefined List Loops
+
+        2.3.2 List Iteration from Scratch
+
+        2.3.3 Tail Recursion
+
+        2.3.4 Recursion versus Iteration
+
+      2.4 Pairs, Lists, and Racket Syntax
+
+        2.4.1 Quoting Pairs and Symbols with quote
+
+        2.4.2 Abbreviating quote with ’
+
+        2.4.3 Lists and Racket Syntax
+
+    3 Built-In Datatypes
+
+      3.1 Booleans
+
+      3.2 Numbers
+
+      3.3 Characters
+
+      3.4 Strings (Unicode)
+
+      3.5 Bytes and Byte Strings
+
+      3.6 Symbols
+
+      3.7 Keywords
+
+      3.8 Pairs and Lists
+
+      3.9 Vectors
+
+      3.10 Hash Tables
+
+      3.11 Boxes
+
+      3.12 Void and Undefined
+
+    4 Expressions and Definitions
+
+      4.1 Notation
+
+      4.2 Identifiers and Binding
+
+      4.3 Function Calls (Procedure Applications)
+
+        4.3.1 Evaluation Order and Arity
+
+        4.3.2 Keyword Arguments
+
+        4.3.3 The apply Function
+
+      4.4 Functions (Procedures): lambda
+
+        4.4.1 Declaring a Rest Argument
+
+        4.4.2 Declaring Optional Arguments
+
+        4.4.3 Declaring Keyword Arguments
+
+        4.4.4 Arity-Sensitive Functions: case-lambda
+
+      4.5 Definitions: define
+
+        4.5.1 Function Shorthand
+
+        4.5.2 Curried Function Shorthand
+
+        4.5.3 Multiple Values and define-values
+
+        4.5.4 Internal Definitions
+
+      4.6 Local Binding
+
+        4.6.1 Parallel Binding: let
+
+        4.6.2 Sequential Binding: let*
+
+        4.6.3 Recursive Binding: letrec
+
+        4.6.4 Named let
+
+        4.6.5 Multiple Values: let-values, let*-values, letrec-values
+
+      4.7 Conditionals
+
+        4.7.1 Simple Branching: if
+
+        4.7.2 Combining Tests: and and or
+
+        4.7.3 Chaining Tests: cond
+
+      4.8 Sequencing
+
+        4.8.1 Effects Before: begin
+
+        4.8.2 Effects After: begin0
+
+        4.8.3 Effects If...: when and unless
+
+      4.9 Assignment: set!
+
+        4.9.1 Guidelines for Using Assignment
+
+        4.9.2 Multiple Values: set!-values
+
+      4.10 Quoting: quote and ’
+
+      4.11 Quasiquoting: quasiquote and `
+
+      4.12 Simple Dispatch: case
+
+      4.13 Dynamic Binding: parameterize
+
+    5 Programmer-Defined Datatypes
+
+      5.1 Simple Structure Types: struct
+
+      5.2 Copying and Update
+
+      5.3 Structure Subtypes
+
+      5.4 Opaque versus Transparent Structure Types
+
+      5.5 Structure Comparisons
+
+      5.6 Structure Type Generativity
+
+      5.7 Prefab Structure Types
+
+      5.8 More Structure Type Options
+
+    6 Modules
+
+      6.1 Module Basics
+
+      6.2 Module Syntax
+
+        6.2.1 The module Form
+
+        6.2.2 The #lang Shorthand
+
+      6.3 Module Paths
+
+      6.4 Imports: require
+
+      6.5 Exports: provide
+
+      6.6 Assignment and Redefinition
+
+    7 Contracts
+
+      7.1 Contracts and Boundaries
+
+        7.1.1 Contract Violations
+
+        7.1.2 Experimenting with Contracts and Modules
+
+      7.2 Simple Contracts on Functions
+
+        7.2.1 Styles of ->
+
+        7.2.2 any and any/c
+
+        7.2.3 Rolling Your Own Contracts
+
+        7.2.4 Contracts on Higher-order Functions
+
+        7.2.5 Contract Messages with “???”
+
+      7.3 Contracts on Functions in General
+
+        7.3.1 Optional Arguments
+
+        7.3.2 Rest Arguments
+
+        7.3.3 Keyword Arguments
+
+        7.3.4 Optional Keyword Arguments
+
+        7.3.5 Contracts for case-lambda
+
+        7.3.6 Argument and Result Dependencies
+
+        7.3.7 Checking State Changes
+
+        7.3.8 Multiple Result Values
+
+        7.3.9 Fixed but Statically Unknown Arities
+
+      7.4 Contracts: A Thorough Example
+
+      7.5 Contracts on Structures
+
+        7.5.1 Guarantees for a Specific Value
+
+        7.5.2 Guarantees for All Values
+
+        7.5.3 Checking Properties of Data Structures
+
+      7.6 Abstract Contracts using #:exists and #:∃
+
+      7.7 Additional Examples
+
+        7.7.1 A Customer-Manager Component
+
+        7.7.2 A Parameteric (Simple) Stack
+
+        7.7.3 A Dictionary
+
+        7.7.4 A Queue
+
+      7.8 Gotchas
+
+        7.8.1 Contracts and eq?
+
+        7.8.2 Exists Contracts and Predicates
+
+        7.8.3 Defining Recursive Contracts
+
+        7.8.4 Mixing set! and provide/contract
+
+    8 Input and Output
+
+      8.1 Varieties of Ports
+
+      8.2 Default Ports
+
+      8.3 Reading and Writing Racket Data
+
+      8.4 Datatypes and Serialization
+
+      8.5 Bytes, Characters, and Encodings
+
+      8.6 I/O Patterns
+
+    9 Regular Expressions
+
+      9.1 Writing Regexp Patterns
+
+      9.2 Matching Regexp Patterns
+
+      9.3 Basic Assertions
+
+      9.4 Characters and Character Classes
+
+        9.4.1 Some Frequently Used Character Classes
+
+        9.4.2 POSIX character classes
+
+      9.5 Quantifiers
+
+      9.6 Clusters
+
+        9.6.1 Backreferences
+
+        9.6.2 Non-capturing Clusters
+
+        9.6.3 Cloisters
+
+      9.7 Alternation
+
+      9.8 Backtracking
+
+      9.9 Looking Ahead and Behind
+
+        9.9.1 Lookahead
+
+        9.9.2 Lookbehind
+
+      9.10 An Extended Example
+
+    10 Exceptions and Control
+
+      10.1 Exceptions
+
+      10.2 Prompts and Aborts
+
+      10.3 Continuations
+
+    11 Iterations and Comprehensions
+
+      11.1 Sequence Constructors
+
+      11.2 for and for*
+
+      11.3 for/list and for*/list
+
+      11.4 for/vector and for*/vector
+
+      11.5 for/and and for/or
+
+      11.6 for/first and for/last
+
+      11.7 for/fold and for*/fold
+
+      11.8 Multiple-Valued Sequences
+
+      11.9 Iteration Performance
+
+    12 Pattern Matching
+
+    13 Classes and Objects
+
+      13.1 Methods
+
+      13.2 Initialization Arguments
+
+      13.3 Internal and External Names
+
+      13.4 Interfaces
+
+      13.5 Final, Augment, and Inner
+
+      13.6 Controlling the Scope of External Names
+
+      13.7 Mixins
+
+        13.7.1 Mixins and Interfaces
+
+        13.7.2 The mixin Form
+
+        13.7.3 Parameterized Mixins
+
+      13.8 Traits
+
+        13.8.1 Traits as Sets of Mixins
+
+        13.8.2 Inherit and Super in Traits
+
+        13.8.3 The trait Form
+
+      13.9 Class Contracts
+
+        13.9.1 External Class Contracts
+
+        13.9.2 Internal Class Contracts
+
+    14 Units (Components)
+
+      14.1 Signatures and Units
+
+      14.2 Invoking Units
+
+      14.3 Linking Units
+
+      14.4 First-Class Units
+
+      14.5 Whole-module Signatures and Units
+
+      14.6 Contracts for Units
+
+        14.6.1 Adding Contracts to Signatures
+
+        14.6.2 Adding Contracts to Units
+
+      14.7 unit versus module
+
+    15 Reflection and Dynamic Evaluation
+
+      15.1 eval
+
+        15.1.1 Local Scopes
+
+        15.1.2 Namespaces
+
+        15.1.3 Namespaces and Modules
+
+      15.2 Manipulating Namespaces
+
+        15.2.1 Creating and Installing Namespaces
+
+        15.2.2 Sharing Data and Code Across Namespaces
+
+      15.3 Scripting Evaluation and Using load
+
+    16 Macros
+
+      16.1 Pattern-Based Macros
+
+        16.1.1 define-syntax-rule
+
+        16.1.2 Lexical Scope
+
+        16.1.3 define-syntax and syntax-rules
+
+        16.1.4 Matching Sequences
+
+        16.1.5 Identifier Macros
+
+        16.1.6 Macro-Generating Macros
+
+        16.1.7 Extended Example: Call-by-Reference Functions
+
+      16.2 General Macro Transformers
+
+        16.2.1 Syntax Objects
+
+        16.2.2 Mixing Patterns and Expressions: syntax-case
+
+        16.2.3 with-syntax and generate-temporaries
+
+        16.2.4 Compile and Run-Time Phases
+
+        16.2.5 Syntax Taints
+
+    17 Creating Languages
+
+      17.1 Module Languages
+
+        17.1.1 Implicit Form Bindings
+
+        17.1.2 Using #lang s-exp
+
+      17.2 Reader Extensions
+
+        17.2.1 Source Locations
+
+        17.2.2 Readtables
+
+      17.3 Defining new #lang Languages
+
+        17.3.1 Designating a #lang Language
+
+        17.3.2 Using #lang reader
+
+        17.3.3 Using #lang s-exp syntax/module-reader
+
+        17.3.4 Installing a Language
+
+        17.3.5 Source-Handling Configuration
+
+        17.3.6 Module-Handling Configuration
+
+    18 Performance
+
+      18.1 Performance in DrRacket
+
+      18.2 The Bytecode and Just-in-Time (JIT) Compilers
+
+      18.3 Modules and Performance
+
+      18.4 Function-Call Optimizations
+
+      18.5 Mutation and Performance
+
+      18.6 letrec Performance
+
+      18.7 Fixnum and Flonum Optimizations
+
+      18.8 Unchecked, Unsafe Operations
+
+      18.9 Memory Management
+
+      18.10 Parallelism with Futures
+
+    19 Running and Creating Executables
+
+      19.1 Running racket and gracket
+
+        19.1.1 Interactive Mode
+
+        19.1.2 Module Mode
+
+        19.1.3 Load Mode
+
+      19.2 Scripts
+
+        19.2.1 Unix Scripts
+
+        19.2.2 Windows Batch Files
+
+      19.3 Creating Stand-Alone Executables
+
+    20 Compilation and Configuration
+
+    21 More Libraries
+
+      21.1 Graphics and GUIs
+
+      21.2 The Web Server
+
+      21.3 Using Foreign Libraries
+
+      21.4 And More
+
+    22 Dialects of Racket and Scheme
+
+      22.1 More Rackets
+
+      22.2 Standards
+
+        22.2.1 R5RS
+
+        22.2.2 R6RS
+
+      22.3 Teaching
+
+    Bibliography
+
+    Index
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

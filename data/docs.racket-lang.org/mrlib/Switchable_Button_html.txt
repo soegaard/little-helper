@@ -1,0 +1,74 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+switchable-button%
+set-label-visible
+command
+get-button-label
+[...search manuals...]
+  top← prev  up  next → 
+
+13 Switchable Button
+
+ (require mrlib/switchable-button)
+
+switchable-button% : class?
+  superclass: canvas%
+
+A switchable-button% control displays and icon and a string label. It toggles
+between display of just the icon and a display with the label and the icon
+side-by-side.
+
+
+    (new switchable-button%    [label label]                        
+                               [callback callback]                  
+                               [bitmap bitmap]                      
+                             [ [alternate-bitmap alternate-bitmap]  
+                               [vertical-tight? vertical-tight?]]   
+                               ...superclass-args...)               
+     → (is-a?/c switchable-button%)
+      label : string?
+      callback : (-> (is-a?/c switchable-button%) any/c)
+      bitmap : (is-a?/c bitmap%)
+      alternate-bitmap : (is-a?/c bitmap%) = bitmap
+      vertical-tight? : boolean? = #f
+    The callback is called when the button is pressed. The string and bitmap
+    are used as discussed above.
+
+    If alternate-bitmap is supplied, then it is used when the button is
+    switched to the view that just shows the bitmap. If it is not supplied,
+    both modes show the same bitmap.
+
+    If the vertical-tight? argument is #t, then the button takes up as little
+    as possible vertical space.
+
+    (send a-switchable-button set-label-visible visible?) → void?
+      visible? : boolean?
+    Sets the visibility of the string part of the label.
+
+    (send a-switchable-button command) → void?
+    Calls the button’s callback function.
+
+    (send a-switchable-button get-button-label) → string?
+    Returns the label of this button.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

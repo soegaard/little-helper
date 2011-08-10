@@ -1,0 +1,260 @@
+▼  Redex: Practical Semantics Engineering
+1  Patterns
+2  Terms
+3  Languages
+4  Reduction Relations
+5  Metafunctions and Relations
+6  Testing
+7  GUI
+8  Typesetting
+   Index
+On this page:
+reduction-relation
+extend-reduction-relation
+union-reduction-relations
+reduction-relation->rule-names
+compatible-closure
+context-closure
+reduction-relation?
+apply-reduction-relation
+apply-reduction-relation/ tag-with-names
+apply-reduction-relation*
+current-cache-all?
+-->
+fresh
+with
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Reduction Relations
+
+(reduction-relation language domain base-arrow
+                    reduction-case ...
+                    shortcuts)
+ 
+        domain   =  
+                 |   #:domain pattern
+                      
+    base-arrow   =  
+                 |   #:arrow base-arrow-name
+                      
+reduction-case   =   (arrow-name pattern term extras ...)
+                      
+        extras   =   rule-name
+                 |   (fresh fresh-clause ...)
+                 |   (side-condition racket-expression)
+                 |   (where pattern term)
+                 |   (side-condition/hidden racket-expression)
+                 |   (where/hidden pattern term)
+                      
+     shortcuts   =  
+                 |   with shortcut ...
+                      
+      shortcut   =   [(old-arrow-name pattern term)
+                      (new-arrow-name identifier identifier)]
+                      
+     rule-name   =   identifier
+                 |   string
+                 |   (computed-name racket-expression)
+                      
+  fresh-clause   =   var
+                 |   ((var1 ...) (var2 ...))
+Defines a reduction relation casewise, one case for each of the reduction-case
+clauses.
+
+The optional domain clause provides a contract for the relation, in the form of
+a pattern that defines the relation’s domain and codomain.
+
+The arrow-name in each reduction-case clause is either base-arrow-name (default
+-->) or an arrow name defined by shortcuts (described below). In either case,
+the pattern refers to language and binds variables in the corresponding term.
+Following the pattern and term can be the name of the reduction rule and
+declarations of fresh variables and side-conditions.
+
+For example, the expression
+
+    (reduction-relation
+     lc-lang
+     (--> (in-hole c_1 ((lambda (variable_i ...) e_body) v_i ...))
+          (in-hole c_1 ,(foldl lc-subst
+                               (term e_body)
+                               (term (v_i ...))
+                               (term (variable_i ...))))
+          beta-v))
+
+defines a reduction relation for the lc-lang grammar.
+
+A rule’s name (used in typesetting, the stepper, traces, and
+apply-reduction-relation/tag-with-names) can be given as a literal (an
+identifier or a string) or as an expression that computes a name using the
+values of the bound pattern variables (much like the rule’s right-hand side).
+Some operations require literal names, so a rule definition may provide both a
+literal name and a computed name. In particular, only rules that include a
+literal name may be replaced using extend-reduction-relation, used as
+breakpoints in the stepper, and selected using render-reduction-relation-rules.
+The output of apply-reduction-relation/tag-with-names, traces, and the stepper
+prefers the computed name, if it exists. Typesetting a rule with a computed
+name shows the expression that computes the name only when the rule has no
+literal name or when it would not typeset in pink due to with-unquote-rewriters
+in the context; otherwise, the literal name (or nothing) is shown.
+
+Fresh variable clauses generate variables that do not occur in the term being
+reduced. If the fresh-clause is a variable, that variable is used both as a
+binding in the term and as the prefix for the freshly generated variable. (The
+variable does not have to be a non-terminal in the language of the reduction
+relation.)
+
+The second form of fresh-clauses generates a sequence of variables. In that
+case, the ellipses are literal ellipses; that is, you must actually write
+ellipses in your rule. The variable var1 is like the variable in first case of
+a fresh-clause; namely it is used to determine the prefix of the generated
+variables and it is bound in the right-hand side of the reduction rule, but
+unlike the single-variable fresh clause, it is bound to a sequence of
+variables. The variable var2 is used to determine the number of variables
+generated and var2 must be bound by the left-hand side of the rule.
+
+The expressions within side-condition clauses and side-condition/hidden clauses
+are collected with and and used as guards on the case being matched. The
+argument to each side-condition should be a Racket expression, and the pattern
+variables in the pattern are bound in that expression. A side-condition/hidden
+clause is the same as a side-condition clause, except that the condition is not
+rendered when typesetting via redex/pict.
+
+Each where clause acts as a side condition requiring a successful pattern
+match, and it can bind pattern variables in the side-conditions (and where
+clauses) that follow and in the metafunction result. The bindings are the same
+as bindings in a term-let expression. A where/hidden clause is the same as a
+where clause, but the clause is not rendered when typesetting via redex/pict.
+
+Each shortcut clause defines arrow names in terms of base-arrow-name and
+earlier shortcut definitions. The left- and right-hand sides of a shortcut
+definition are identifiers, not patterns and terms. These identifiers need not
+correspond to non-terminals in language.
+
+For example, this expression
+
+    (reduction-relation
+     lc-num-lang
+     (==> ((lambda (variable_i ...) e_body) v_i ...)
+          ,(foldl lc-subst
+                  (term e_body)
+                  (term (v_i ...))
+                  (term (variable_i ...))))
+     (==> (+ number_1 ...)
+          ,(apply + (term (number_1 ...))))
+     
+     with
+     [(--> (in-hole c_1 a) (in-hole c_1 b))
+      (==> a b)])
+
+defines reductions for the lambda calculus with numbers, where the ==> shortcut
+is defined by reducing in the context c.
+
+A fresh clause in reduction-case defined by shortcut refers to the entire term,
+not just the portion matched by the left-hand side of shortcut’s use.
+
+(extend-reduction-relation reduction-relation language more ...)
+This form extends the reduction relation in its first argument with the rules
+specified in more. They should have the same shape as the rules (including the
+with clause) in an ordinary reduction-relation.
+
+If the original reduction-relation has a rule with the same name as one of the
+rules specified in the extension, the old rule is removed.
+
+In addition to adding the rules specified to the existing relation, this form
+also reinterprets the rules in the original reduction, using the new language.
+(union-reduction-relations r ...) → reduction-relation?
+  r : reduction-relation?
+Combines all of the argument reduction relations into a single reduction
+relation that steps when any of the arguments would have stepped.
+
+(reduction-relation->rule-names r) → (listof symbol?)
+  r : reduction-relation?
+Returns the names of the reduction relation’s named clauses.
+
+(compatible-closure reduction-relation lang non-terminal)
+This accepts a reduction, a language, the name of a non-terminal in the
+language and returns the compatible closure of the reduction for the specified
+non-terminal.
+
+(context-closure reduction-relation lang pattern)
+This accepts a reduction, a language, a pattern representing a context (ie,
+that can be used as the first argument to in-hole; often just a non-terminal)
+in the language and returns the closure of the reduction in that context.
+
+(reduction-relation? v) → boolean?
+  v : any/c
+Returns #t if its argument is a reduction-relation, and #f otherwise.
+
+(apply-reduction-relation r t) → (listof any/c)
+  r : reduction-relation?
+  t : any/c
+This accepts reduction relation, a term, and returns a list of terms that the
+term reduces to.
+
+(apply-reduction-relation/tag-with-names   r   
+                                           t)  
+ → (listof (list/c (union false/c string?) any/c))
+  r : reduction-relation?
+  t : any/c
+Like apply-reduction-relation, but the result indicates the names of the
+reductions that were used.
+
+(apply-reduction-relation*    r                          
+                              t                          
+                            [ #:cache-all? cache-all?])  
+ → (listof any/c)
+  r : reduction-relation?
+  t : any/c
+  cache-all? : boolean? = (current-cache-all?)
+Accepts a reduction relation and a term. Starting from t, it follows every
+reduction path and returns all of the terms that do not reduce further. If
+there are infinite reduction sequences that do not repeat, this function will
+not terminate (it does terminate if the only infinite reduction paths are
+cyclic).
+
+If the cache-all? argument is #t, then apply-reduction-relation* keeps a cache
+of all visited terms when traversing the graph and does not revisit any of
+them. This cache can, in some cases, use a lot of memory, so it is off by
+default and the cycle checking happens by keeping track only of the current
+path it is traversing through the reduction graph.
+
+(current-cache-all?) → boolean?
+(current-cache-all? cache-all?) → void?
+  cache-all? : boolean?
+Controls the behavior of apply-reduction-relation* and test-->>’s cycle
+checking. See apply-reduction-relation* for more details.
+
+Examples:
+
+    > (define-language empty-lang)
+    > (define R
+        (reduction-relation
+         empty-lang
+         (--> 0 1)
+         (--> 0 2)
+         (--> 2 3)
+         (--> 3 3)))
+    > (apply-reduction-relation R 0)
+    '(2 1)
+
+    > (apply-reduction-relation* R 0)
+    '(1)
+
+
+
+-->
+Recognized specially within reduction-relation. A --> form is an error
+elsewhere.
+
+fresh
+Recognized specially within reduction-relation. A fresh form is an error
+elsewhere.
+
+with
+Recognized specially within reduction-relation. A with form is an error
+elsewhere.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

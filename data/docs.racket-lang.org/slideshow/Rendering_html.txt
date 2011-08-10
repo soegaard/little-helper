@@ -1,0 +1,72 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 2  Making Pictures
+2.1  Pict Datatype
+2.2  Basic Pict Constructors
+2.3  Pict Combiners
+2.4  Pict Drawing Adjusters
+2.5  Bounding-Box Adjusters
+2.6  Pict Finders
+2.7  More Pict Constructors
+2.8  Miscellaneous
+2.9  Rendering
+On this page:
+dc-for-text-size
+draw-pict
+make-pict-drawer
+show-pict
+current-expected-text-scale
+[...search manuals...]
+  top← prev  up  next → 
+
+2.9 Rendering
+
+(dc-for-text-size) → (or/c #f (is-a?/c dc<%>))
+(dc-for-text-size dc) → void?
+  dc : (or/c #f (is-a?/c dc<%>))
+A parameter that is used to determine the bounding box of picts created with
+text.
+
+The drawing context installed in this parameter need not be the same as the
+ultimate drawing context, but it should measure text in the same way. Under
+normal circumstances, font metrics are the same for all drawing contexts, so
+the default value of dc-for-text-size is a bitmap-dc% that draws to a 1-by-1
+bitmap.
+
+(draw-pict pict dc x y) → void?
+  pict : pict?
+  dc : (is-a?/c dc<%>)
+  x : real?
+  y : real?
+Draws pict to dc, with its top-left corner at offset (x, y).
+
+(make-pict-drawer pict)
+ → ((is-a?/c dc<%>) real? real? . -> . void?)
+  pict : pict?
+Generates a pict-drawer procedure for multiple renderings of pict. Using the
+generated procedure can be faster than repeated calls to draw-pict.
+
+(show-pict pict [w h]) → void?
+  pict : pict?
+  w : (or/c #f exact-nonnegative-integer?) = #f
+  h : (or/c #f exact-nonnegative-integer?) = #f
+Opens a frame that displays pict. The frame adds one method, set-pict, which
+takes a pict to display. The optional w and h arguments specify a minimum size
+for the frame’s drawing area.
+
+(current-expected-text-scale) → (list real? real?)
+(current-expected-text-scale scales) → void?
+  scales : (list real? real?)
+A parameter used to refine text measurements to better match an expected
+scaling of the image. The scale/improve-new-text form sets this parameter while
+also scaling the resulting pict.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

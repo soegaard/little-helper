@@ -1,0 +1,56 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+set-interactive-display-handler
+set-interactive-write-handler
+set-interactive-print-handler
+[...search manuals...]
+  top← prev  up  next → 
+
+9 Interactive Value Port
+
+ (require mrlib/interactive-value-port)
+
+(set-interactive-display-handler port) → void?
+  port : output-port?
+Sets port’s display handler (via port-display-handler) so that when it
+encounters these values:
+
+  • exact, real, non-integral numbers
+
+  • syntax objects
+
+it uses write-special to send snips to the port, instead of those values.
+Otherwise, it behaves like the default handler.
+
+To show values embedded in lists and other compound object, it uses
+pretty-print.
+
+(set-interactive-write-handler port) → void?
+  port : output-port?
+Like set-interactive-display-handler, but sets the port-write-handler.
+
+(set-interactive-print-handler port) → void?
+  port : output-port?
+Like set-interactive-display-handler, but sets the port-print-handler.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

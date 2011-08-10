@@ -1,0 +1,89 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 8  Input and Output
+8.1  Varieties of Ports
+8.2  Default Ports
+8.3  Reading and Writing Racket Data
+8.4  Datatypes and Serialization
+8.5  Bytes, Characters, and Encodings
+8.6  I/ O Patterns
+[...search manuals...]
+  top← prev  up  next → 
+
+8.2 Default Ports
+
+For most simple I/O functions, the target port is an optional argument, and the
+default is the current input port or current output port. Furthermore, error
+messages are written to the current error port, which is an output port. The
+current-input-port, current-output-port, and current-error-port functions
+return the corresponding current ports.
+
+Examples:
+
+    > (display "Hi")
+    Hi
+
+    > (display "Hi" (current-output-port)) ; the same
+    Hi
+
+
+
+If you start the racket program in a terminal, then the current input, output,
+and error ports are all connected to the terminal. More generally, they are
+connected to the OS-level stdin, stdout, and stderr. In this guide, the
+examples show output written to stdout in purple, and output written to stderr
+in red italics.
+
+Examples:
+
+    (define (swing-hammer)
+      (display "Ouch!" (current-error-port)))
+    > (swing-hammer)
+    Ouch!
+
+
+
+The current-port functions are actually parameters, which means that their
+values can be set with parameterize.
+
+            See Dynamic Binding: parameterize for an introduction to
+            parameters.
+
+Example:
+
+    > (let ([s (open-output-string)])
+        (parameterize ([current-error-port s])
+          (swing-hammer)
+          (swing-hammer)
+          (swing-hammer))
+        (get-output-string s))
+    "Ouch!Ouch!Ouch!"
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

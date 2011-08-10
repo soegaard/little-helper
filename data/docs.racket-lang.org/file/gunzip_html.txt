@@ -1,0 +1,69 @@
+▼  File: Racket File Format Libraries
+1  Convertible: Data-Conversion Protocol
+2  gzip Compression and File Creation
+3  gzip Decompression
+4  zip File Creation
+5  tar File Creation
+6  MD5 Message Digest
+7  SHA1 Message Digest
+8  GIF File Writing
+9  Windows Registry
+   Bibliography
+   Index
+On this page:
+gunzip
+gunzip-through-ports
+inflate
+[...search manuals...]
+  top← prev  up  next → 
+
+3 gzip Decompression
+
+ (require file/gunzip)
+The file/gunzip library provides utilities to decompress archive files in gzip
+format, or simply to deccompress data using the pkzip “inflate” method.
+
+(gunzip file [output-name-filter]) → void?
+  file : path-string?
+   output-name-filter   :   (string? boolean? . -> . path-string?)
+                        =   (lambda (file archive-supplied?) file)
+Extracts data that was compressed using the gzip utility (or gzip function),
+writing the uncompressed data directly to a file. The file argument is the name
+of the file containing compressed data. The default output file name is the
+original name of the compressed file as stored in file. If a file by this name
+exists, it will be overwritten. If no original name is stored in the source
+file, "unzipped" is used as the default output file name.
+
+The output-name-filter procedure is applied to two arguments—the default
+destination file name and a boolean that is #t if this name was read from file—
+before the destination file is created. The return value of the file is used as
+the actual destination file name (to be opened with the 'truncate flag of
+open-output-file).
+
+If the compressed data turns out to be corrupted, the exn:fail exception is
+raised.
+
+(gunzip-through-ports in out) → void?
+  in : input-port?
+  out : output-port?
+Reads the port in for compressed data that was created using the gzip utility,
+writing the uncompressed data to the port out.
+
+If the compressed data turns out to be corrupted, the exn:fail exception is
+raised. The unzipping process may peek further into in than needed to
+decompress the data, but it will not consume the unneeded bytes.
+
+(inflate in out) → void?
+  in : input-port?
+  out : output-port?
+Reads pkzip-format “deflated” data from the port in and writes the uncompressed
+(“inflated”) data to the port out. The data in a file created by gzip uses this
+format (preceded with some header information).
+
+If the compressed data turns out to be corrupted, the exn:fail exception is
+raised. The inflate process may peek further into in than needed to decompress
+the data, but it will not consume the unneeded bytes.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

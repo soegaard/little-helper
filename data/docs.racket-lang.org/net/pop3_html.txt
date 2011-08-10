@@ -1,0 +1,252 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 10  POP3: Reading Mail
+10.1  Exceptions
+10.2  Example Session
+10.3  POP3 Unit
+10.4  POP3 Signature
+On this page:
+communicator
+connect-to-server
+disconnect-from-server
+authenticate/ plain-text
+get-mailbox-status
+get-message/ complete
+get-message/ headers
+get-message/ body
+delete-message
+get-unique-id/ single
+get-unique-id/ all
+make-desired-header
+extract-desired-headers
+10.1 Exceptions
+pop3
+cannot-connect
+username-rejected
+password-rejected
+not-ready-for-transaction
+not-given-headers
+illegal-message-number
+cannot-delete-message
+disconnect-not-quiet
+malformed-server-response
+10.2 Example Session
+10.3 POP3 Unit
+pop3@
+10.4 POP3 Signature
+pop3^
+[...search manuals...]
+  top← prev  up  next → 
+
+10 POP3: Reading Mail
+
+ (require net/pop3)
+The net/pop3 module provides tools for the Post Office Protocol version 3 [
+RFC977].
+
+(struct   communicator (sender receiver server port state)
+          #:extra-constructor-name make-communicator)
+  sender : output-port?
+  receiver : input-port?
+  server : string?
+  port : (integer-in 0 65535)
+  state : (one-of/c 'disconnected 'authorization 'transaction)
+Once a connection to a POP-3 server has been established, its state is stored
+in a communicator instance, and other procedures take communicator instances as
+an argument.
+
+(connect-to-server server [port-number]) → communicator?
+  server : string?
+  port-number : (integer-in 0 65535) = 110
+Connects to server at port-number.
+
+(disconnect-from-server communicator) → void?
+  communicator : communicator?
+Disconnects communicator from the server, and sets communicator’s state to
+'disconnected.
+
+(authenticate/plain-text   user                 
+                           passwd               
+                           communicator)   →   void?
+  user : string?
+  passwd : string?
+  communicator : communicator?
+Authenticates using user and passwd. If authentication is successful,
+communicator’s state is set to 'transaction.
+
+(get-mailbox-status communicator)   →   exact-nonnegative-integer?
+                                        exact-nonnegative-integer?
+  communicator : communicator?
+Returns the number of messages and the number of octets in the mailbox.
+
+(get-message/complete   communicator     
+                        message-number)  
+  →   (listof string?)   (listof string?)
+  communicator : communicator?
+  message-number : exact-integer?
+Given a message number, returns a list of message-header lines and list of
+message-body lines.
+
+(get-message/headers   communicator     
+                       message-number)  
+  →   (listof string?)   (listof string?)
+  communicator : communicator?
+  message-number : exact-integer?
+Given a message number, returns a list of message-header lines.
+
+(get-message/body   communicator     
+                    message-number)  
+  →   (listof string?)   (listof string?)
+  communicator : communicator?
+  message-number : exact-integer?
+Given a message number, returns a list of message-body lines.
+
+(delete-message   communicator           
+                  message-number)   →   void?
+  communicator : communicator?
+  message-number : exact-integer?
+Deletes the specified message.
+
+(get-unique-id/single   communicator           
+                        message-number)   →   string?
+  communicator : communicator?
+  message-number : exact-integer?
+Gets the server’s unique id for a particular message.
+
+(get-unique-id/all communicator)
+ → (listof (cons/c exact-integer? string?))
+  communicator : communicator?
+Gets a list of unique id’s from the server for all the messages in the mailbox.
+The car of each item in the result list is the message number, and the cdr of
+each item is the message’s id.
+
+(make-desired-header tag-string) → regexp?
+  tag-string : string?
+Takes a header field’s tag and returns a regexp to match the field
+
+(extract-desired-headers header desireds) → (listof string?)
+  header : (listof string?)
+  desireds : (listof regexp?)
+Given a list of header lines and of desired regexps, returns the header lines
+that match any of the desireds.
+
+10.1 Exceptions
+
+(struct   pop3 exn ()
+          #:extra-constructor-name make-pop3)
+The supertype of all POP3 exceptions.
+
+(struct   cannot-connect pop3 ()
+          #:extra-constructor-name make-cannot-connect)
+Raised when a connection to a server cannot be established.
+
+(struct   username-rejected pop3 ()
+          #:extra-constructor-name make-username-rejected)
+Raised if the username is rejected.
+
+(struct   password-rejected pop3 ()
+          #:extra-constructor-name make-password-rejected)
+Raised if the password is rejected.
+
+(struct   not-ready-for-transaction pop3 (communicator)
+          #:extra-constructor-name make-not-ready-for-transaction)
+  communicator : communicator?
+Raised when the communicator is not in transaction mode.
+
+(struct   not-given-headers pop3 (communicator message)
+          #:extra-constructor-name make-not-given-headers)
+  communicator : communicator?
+  message : exact-integer?
+Raised when the server does not respond with headers for a message as
+requested.
+
+(struct   illegal-message-number pop3 (communicator message)
+          #:extra-constructor-name make-illegal-message-number)
+  communicator : communicator?
+  message : exact-integer?
+Raised when the client specifies an illegal message number.
+
+(struct   cannot-delete-message exn (communicator message)
+          #:extra-constructor-name make-cannot-delete-message)
+  communicator : communicator?
+  message : exact-integer?
+Raised when the server is unable to delete a message.
+
+(struct   disconnect-not-quiet pop3 (communicator)
+          #:extra-constructor-name make-disconnect-not-quiet)
+  communicator : communicator?
+Raised when the server does not gracefully disconnect.
+
+(struct   malformed-server-response pop3 (communicator)
+          #:extra-constructor-name make-malformed-server-response)
+  communicator : communicator?
+Raised when the server produces a malformed response.
+
+10.2 Example Session
+
+    > (require net/pop3)
+    > (define c (connect-to-server "foo.bar.com"))
+    > (authenticate/plain-text "bob" "********" c)
+    > (get-mailbox-status c)
+    196
+    816400
+    > (get-message/headers c 100)
+    ("Date: Thu, 6 Nov 1997 12:34:18 -0600 (CST)"
+     "Message-Id: <199711061834.MAA11961@foo.bar.com>"
+     "From: Alice <alice@foo.bar.com>"
+     ....
+     "Status: RO")
+    > (get-message/complete  c 100)
+    ("Date: Thu, 6 Nov 1997 12:34:18 -0600 (CST)"
+     "Message-Id: <199711061834.MAA11961@foo.bar.com>"
+     "From: Alice <alice@foo.bar.com>"
+     ....
+     "Status: RO")
+    ("some body" "text" "goes" "." "here" "." "")
+    > (get-unique-id/single c 205)
+    no message numbered 205 available for unique id
+    > (list-tail (get-unique-id/all c) 194)
+    ((195 . "e24d13c7ef050000") (196 . "3ad2767070050000"))
+    > (get-unique-id/single c 196)
+    "3ad2767070050000"
+    > (disconnect-from-server c)
+
+10.3 POP3 Unit
+
+ (require net/pop3-unit)
+
+pop3@ : unit?
+Imports nothing, exports pop3^.
+
+10.4 POP3 Signature
+
+ (require net/pop3-sig)
+
+pop3^ : signature
+
+Includes everything exported by the net/pop3 module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

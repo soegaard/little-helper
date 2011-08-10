@@ -1,0 +1,138 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 1  Ht DP Teachpacks
+ 1.1  Manipulating Images: "image.ss"
+ 1.2  Simulations and Animations: "world.ss"
+ 1.3  Converting Temperatures: "convert.ss"
+ 1.4  Guessing Numbers: "guess.ss"
+ 1.5  Master Minding: "master.ss"
+ 1.6  Playing Master Mind: "master-play.ss"
+ 1.7  Simple Drawing: "draw.ss"
+ 1.8  Hangman: "hangman.ss"
+ 1.9  Playing Hangman: "hangman-play.ss"
+1.10  Managing Control Arrows: "arrow.ss"
+1.11  Manipulating Simple HTML Documents: "docs.ss"
+1.12  Working with Files and Directories: "dir.ss"
+1.13  Graphing Functions: "graphing.ss"
+1.14  Simple Graphical User Interfaces: "gui.ss"
+1.15  An Arrow GUI: "arrow-gui.ss"
+1.16  Controlling an Elevator: "elevator.ss"
+1.17  Lookup GUI: "lkup-gui.ss"
+1.18  Guess GUI: "guess-gui.ss"
+1.19  Queens: "show-queen.ss"
+1.20  Matrix Functions: "matrix.ss"
+On this page:
+matrix?
+matrix-rows
+matrix-cols
+rectangle->matrix
+matrix->rectangle
+make-matrix
+build-matrix
+matrix-ref
+matrix-set
+matrix-where?
+matrix-render
+matrix-minor
+matrix-set!
+[...search manuals...]
+  top← prev  up  next → 
+
+1.20 Matrix Functions: "matrix.ss"
+
+ (require htdp/matrix)
+
+The experimental teachpack supports matrices and matrix functions. A matrix is
+just a rectangle of ’objects’. It is displayed as an image, just like the
+images from Manipulating Images: "image.ss". Matrices are images and, indeed,
+scenes in the sense of the Simulations and Animations: "world.ss".
+
+No educational materials involving matrices exist.
+
+The functions access a matrix in the usual (school-mathematics) manner: row
+first, column second.
+
+The functions aren’t tuned for efficiency so don’t expect to build programs
+that process lots of data.
+
+Rectangle A Rectangle (of X) is a non-empty list of lists containing X where
+all elements of the list are lists of equal (non-zero) length.
+
+(matrix? o) → boolean?
+  o : any/c
+determines whether the given object is a matrix?
+
+(matrix-rows m) → natural-number/c
+  m : matrix?
+determines how many rows this matrix m has
+
+(matrix-cols m) → natural-number/c
+  m : matrix?
+determines ow many columns this matrix m has
+
+(rectangle->matrix r) → matrix?
+  r : Rectangle
+creates a matrix from the given Rectangle
+
+(matrix->rectangle m) → Rectangle
+  m : matrix?
+creates a rectangle from this matrix m
+
+(make-matrix n m l) → matrix?
+  n : natural-number/c
+  m : natural-number/c
+  l : (Listof X)
+creates an n by m matrix from l
+
+NOTE: make-matrix would consume an optional number of entries, if it were like
+make-vector
+
+(build-matrix n m f) → matrix?
+  n : natural-number/c
+  m : natural-number/c
+           (-> (and/c natural-number/c (</c m))
+   f   :       (and/c natural-number/c (</c n))
+               any/c)
+creates an n by m matrix by applying f to (0 ,0), (0 ,1), ..., ((sub1 m) ,(sub1
+n))
+
+(matrix-ref m i j) → any/c
+  m : matrix?
+  i : (and/c natural-number/c (</c (matrix-rows m)))
+  j : (and/c natural-number/c (</c (matrix-rows m)))
+retrieve the item at (i,j) in matrix m
+
+(matrix-set m i j x) → matrix?
+  m : matrix?
+  i : (and/c natural-number/c (</c (matrix-rows m)))
+  j : (and/c natural-number/c (</c (matrix-rows m)))
+  x : any/c
+creates a new matrix with x at (i,j) and all other places the same as in m
+
+(matrix-where? m pred?) → (listof posn?)
+  m : matrix?
+  pred? : (-> any/c boolean?)
+(matrix-where? M P) produces a list of (make-posn i j) such that (P (matrix-ref
+M i j)) holds
+
+(matrix-render m) → Rectangle
+  m : matrix?
+renders this matrix m as a rectangle of strings
+
+(matrix-minor m i j) → matrix?
+  m : matrix?
+  i : (and/c natural-number/c (</c (matrix-rows m)))
+  j : (and/c natural-number/c (</c (matrix-rows m)))
+creates a matrix minor from m at (i,j)
+
+(matrix-set! m i j x) → matrix?
+  m : matrix?
+  i : (and/c natural-number/c (</c (matrix-rows m)))
+  j : (and/c natural-number/c (</c (matrix-rows m)))
+  x : any/c
+like matrix-set but uses a destructive update
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

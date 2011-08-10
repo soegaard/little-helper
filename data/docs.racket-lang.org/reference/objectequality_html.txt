@@ -1,0 +1,82 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+On this page:
+equal<%>
+[...search manuals...]
+  top← prev  up  next → 
+
+5.8 Object Equality and Hashing
+
+By default, objects that are instances of different classes or that are
+instances of a non-transparent class are equal? only if they are eq?. Like
+transparent structures, two objects that are instances of the same transparent
+class (i.e., every superclass of the class has #f as its inspector) are equal?
+when their field values are equal?.
+
+To customize the way that a class instance is compared to other instances by
+equal?, implement the equal<%> interface.
+
+equal<%> : interface?
+The equal<%> interface includes three methods, which are analogous to the
+functions provided for a structure type with prop:equal+hash:
+
+  • equal-to? — Takes two arguments. The first argument is an object that is an
+    instance of the same class (or a subclass that does not re-declare its
+    implementation of equal<%>) and that is being compared to the target
+    object. The second argument is an equal?-like procedure of two arguments
+    that should be used for recursive equality testing. The result should be a
+    true value if the object and the first argument of the method are equal, #f
+    otherwise.
+
+  • equal-hash-code-of — Takes one argument, which is a procedure of one
+    argument that should be used for recursive hash-code computation. The
+    result should be an exact integer representing the target object’s hash
+    code.
+
+  • equal-secondary-hash-code-of — Takes one argument, which is a procedure of
+    one argument that should be used for recursive hash-code computation. The
+    result should be an exact integer representing the target object’s
+    secondary hash code.
+
+The equal<%> interface is unusual in that declaring the implementation of the
+interface is different from inheriting the interface. Two objects can be equal
+only if they are instances of classes whose most specific ancestor to
+explicitly implement equal<%> is the same ancestor.
+See prop:equal+hash for more information on equality comparisons and hash
+codes. The equal<%> interface is implemented with interface* and
+prop:equal+hash.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

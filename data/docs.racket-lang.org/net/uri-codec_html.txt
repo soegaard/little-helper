@@ -1,0 +1,193 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 2  URI Codec: Encoding and Decoding URIs
+2.1  Functions
+On this page:
+2.1 Functions
+uri-encode
+uri-decode
+uri-path-segment-encode
+uri-path-segment-decode
+uri-userinfo-encode
+uri-userinfo-decode
+form-urlencoded-encode
+form-urlencoded-decode
+alist->form-urlencoded
+form-urlencoded->alist
+current-alist-separator-mode
+[...search manuals...]
+  top← prev  up  next → 
+
+2 URI Codec: Encoding and Decoding URIs
+
+ (require net/uri-codec)
+The net/uri-codec module provides utilities for encoding and decoding strings
+using the URI encoding rules given in RFC 2396 [RFC2396], and to encode and
+decode name/value pairs using the application/x-www-form-urlencoded mimetype
+given the in HTML 4.0 specification. There are minor differences between the
+two encodings.
+
+The URI encoding uses allows a few characters to be represented as-is: a
+through z, A through Z, 0-9, -, _, ., !, ~, *, ', ( and ). The remaining
+characters are encoded as %‹xx›, where ‹xx› is the two-character hex
+representation of the integer value of the character (where the mapping
+character–integer is determined by US-ASCII if the integer is less than 128).
+
+The encoding, in line with RFC 2396’s recommendation, represents a character
+as-is, if possible. The decoding allows any characters to be represented by
+their hex values, and allows characters to be incorrectly represented as-is.
+
+The rules for the application/x-www-form-urlencoded mimetype given in the HTML
+4.0 spec are:
+
+  • Control names and values are escaped. Space characters are replaced by +,
+    and then reserved characters are escaped as described in RFC 1738, section
+    2.2: Non-alphanumeric characters are replaced by %‹xx› representing the
+    ASCII code of the character. Line breaks are represented as CRLF pairs:
+    %0D%0A. Note that RFC 2396 supersedes RFC 1738 [RFC1738].
+
+  • The control names/values are listed in the order they appear in the
+    document. The name is separated from the value by = and name/value pairs
+    are separated from each other by either ; or &. When encoding, ; is used as
+    the separator by default. When decoding, both ; and & are parsed as
+    separators by default.
+
+These rules differs slightly from the straight encoding in RFC 2396 in that +
+is allowed, and it represents a space. The net/uri-codec library follows this
+convention, encoding a space as + and decoding + as a space. In addtion, since
+there appear to be some brain-dead decoders on the web, the library also
+encodes !, ~, ', (, and ) using their hex representation, which is the same
+choice as made by the Java’s URLEncoder.
+
+2.1 Functions
+
+(uri-encode str) → string?
+  str : string?
+Encode a string using the URI encoding rules.
+
+(uri-decode str) → string?
+  str : string?
+Decode a string using the URI decoding rules.
+
+(uri-path-segment-encode str) → string?
+  str : string?
+Encodes a string according to the rules in [RFC3986] for path segments.
+(uri-path-segment-decode str) → string?
+  str : string?
+Decodes a string according to the rules in [RFC3986] for path segments.
+(uri-userinfo-encode str) → string?
+  str : string?
+Encodes a string according to the rules in [RFC3986] for the userinfo field.
+(uri-userinfo-decode str) → string?
+  str : string?
+Decodes a string according to the rules in [RFC3986] for the userinfo field.
+
+(form-urlencoded-encode str) → string?
+  str : string?
+Encode a string using the application/x-www-form-urlencoded encoding rules. The
+result string contains no non-ASCII characters.
+
+(form-urlencoded-decode str) → string?
+  str : string?
+Decode a string encoded using the application/x-www-form-urlencoded encoding
+rules.
+
+(alist->form-urlencoded alist) → string?
+  alist : (listof (cons/c symbol? string?))
+Encode an association list using the application/x-www-form-urlencoded encoding
+rules.
+
+The current-alist-separator-mode parameter determines the separator used in the
+result.
+
+(form-urlencoded->alist str)
+ → (listof (cons/c symbol? string?))
+  str : string
+Decode a string encoded using the application/x-www-form-urlencoded encoding
+rules into an association list. All keys are case-folded for conversion to
+symbols.
+
+The current-alist-separator-mode parameter determines the way that separators
+are parsed in the input.
+
+(current-alist-separator-mode)
+ → (one-of/c 'amp 'semi 'amp-or-semi 'semi-or-amp)
+(current-alist-separator-mode mode) → void?
+  mode : (one-of/c 'amp 'semi 'amp-or-semi 'semi-or-amp)
+A parameter that determines the separator used/recognized between associations
+in form-urlencoded->alist, alist->form-urlencoded, url->string, and string->url
+.
+
+The default value is 'amp-or-semi, which means that both & and ; are treated as
+separators when parsing, and & is used as a separator when encoding. The other
+modes use/recognize only of the separators.
+
+Examples:
+
+    > (define ex '((x . "foo") (y . "bar") (z . "baz")))
+    > (current-alist-separator-mode 'amp) ; try 'amp...
+    > (form-urlencoded->alist "x=foo&y=bar&z=baz")
+    '((x . "foo") (y . "bar") (z . "baz"))
+
+    > (form-urlencoded->alist "x=foo;y=bar;z=baz")
+    '((x . "foo;y=bar;z=baz"))
+
+    > (alist->form-urlencoded ex)
+    "x=foo&y=bar&z=baz"
+
+    > (current-alist-separator-mode 'semi) ; try 'semi...
+    > (form-urlencoded->alist "x=foo;y=bar;z=baz")
+    '((x . "foo") (y . "bar") (z . "baz"))
+
+    > (form-urlencoded->alist "x=foo&y=bar&z=baz")
+    '((x . "foo&y=bar&z=baz"))
+
+    > (alist->form-urlencoded ex)
+    "x=foo;y=bar;z=baz"
+
+    > (current-alist-separator-mode 'amp-or-semi) ; try 'amp-or-semi...
+    > (form-urlencoded->alist "x=foo&y=bar&z=baz")
+    '((x . "foo") (y . "bar") (z . "baz"))
+
+    > (form-urlencoded->alist "x=foo;y=bar;z=baz")
+    '((x . "foo") (y . "bar") (z . "baz"))
+
+    > (alist->form-urlencoded ex)
+    "x=foo&y=bar&z=baz"
+
+    > (current-alist-separator-mode 'semi-or-amp) ; try 'semi-or-amp...
+    > (form-urlencoded->alist "x=foo&y=bar&z=baz")
+    '((x . "foo") (y . "bar") (z . "baz"))
+
+    > (form-urlencoded->alist "x=foo;y=bar;z=baz")
+    '((x . "foo") (y . "bar") (z . "baz"))
+
+    > (alist->form-urlencoded ex)
+    "x=foo;y=bar;z=baz"
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

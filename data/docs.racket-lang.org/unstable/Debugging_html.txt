@@ -1,0 +1,224 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+debug
+dprintf
+debugf
+begin/ debug
+define/ debug
+define/ private/ debug
+define/ public/ debug
+define/ override/ debug
+define/ augment/ debug
+let/ debug
+let*/ debug
+letrec/ debug
+let-values/ debug
+let*-values/ debug
+letrec-values/ debug
+with-syntax/ debug
+with-syntax*/ debug
+parameterize/ debug
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Debugging
+
+Carl Eastlund <cce@racket-lang.org>
+
+ (require unstable/debug)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+This module provides macros and functions for printing out debugging
+information.
+
+(debug options ... expr)
+ 
+options   =   #:name name-expr
+          |   #:source srcloc-expr
+Writes debugging information about the evaluation of expr to the current error
+port. The name and source location of the expression may be overridden by
+keyword options; their defaults are the syntactic form of the expression and
+its syntactic source location, respectively.
+
+Examples:
+
+    > (debug 0)
+    >> eval:2.0: 0
+
+      result: 0
+
+    << eval:2.0: 0
+
+    0
+
+    > (debug #:name "one, two, three" (values 1 2 3))
+    >> eval:3.0: "one, two, three"
+
+      results: (values 1 2 3)
+
+    << eval:3.0: "one, two, three"
+
+    1
+
+    2
+
+    3
+
+    > (debug #:source (make-srcloc 'here 1 2 3 4)
+        (error 'function "something went wrong"))
+    >> here:1.2: (error 'function "something went wrong")
+
+      raised exception: function: something went wrong
+
+    << here:1.2: (error 'function "something went wrong")
+
+    function: something went wrong
+
+
+
+(dprintf fmt arg ...) → void?
+  fmt : string?
+  arg : any/c
+Constructs a message in the same manner as format and writes it to (
+current-error-port), with indentation reflecting the number of nested debug
+forms.
+
+Examples:
+
+    > (dprintf "level: ~a" 0)
+    level: 0
+
+    > (debug (dprintf "level: ~a" 1))
+    >> eval:6.0: (dprintf "level: ~a" 1)
+
+      level: 1
+
+      result: #<void>
+
+    << eval:6.0: (dprintf "level: ~a" 1)
+
+    > (debug (debug (dprintf "level: ~a" 2)))
+    >> eval:7.0: (debug (dprintf "level: ~a" 2))
+
+      >> eval:7.0: (dprintf "level: ~a" 2)
+
+        level: 2
+
+        result: #<void>
+
+      << eval:7.0: (dprintf "level: ~a" 2)
+
+      result: #<void>
+
+    << eval:7.0: (debug (dprintf "level: ~a" 2))
+
+
+
+(debugf function-expr argument ...)
+ 
+argument   =   argument-expr
+           |   argument-keyword argument-expr
+Logs debugging information for (#%app function-expr argument ...), including
+the evaluation and results of the function and each argument.
+
+Example:
+
+    > (debugf + 1 2 3)
+    >> eval:8.0: debugf
+
+      >> eval:8.0: +
+
+        result: #<procedure:+>
+
+      << eval:8.0: +
+
+      >> eval:8.0: 1
+
+        result: 1
+
+      << eval:8.0: 1
+
+      >> eval:8.0: 2
+
+        result: 2
+
+      << eval:8.0: 2
+
+      >> eval:8.0: 3
+
+        result: 3
+
+      << eval:8.0: 3
+
+      result: 6
+
+    << eval:8.0: debugf
+
+    6
+
+
+
+(begin/debug expr ...)
+(define/debug id expr)
+(define/debug (head args) body ...+)
+(define/private/debug id expr)
+(define/private/debug (head args) body ...+)
+(define/public/debug id expr)
+(define/public/debug (head args) body ...+)
+(define/override/debug id expr)
+(define/override/debug (head args) body ...+)
+(define/augment/debug id expr)
+(define/augment/debug (head args) body ...+)
+(let/debug ([lhs-id rhs-expr] ...) body ...+)
+(let/debug loop-id ([lhs-id rhs-expr] ...) body ...+)
+(let*/debug ([lhs-id rhs-expr] ...) body ...+)
+(letrec/debug ([lhs-id rhs-expr] ...) body ...+)
+(let-values/debug ([(lhs-id ...) rhs-expr] ...) body ...+)
+(let*-values/debug ([(lhs-id ...) rhs-expr] ...) body ...+)
+(letrec-values/debug ([(lhs-id ...) rhs-expr] ...) body ...+)
+(with-syntax/debug ([pattern stx-expr] ...) body ...+)
+(with-syntax*/debug ([pattern stx-expr] ...) body ...+)
+(parameterize/debug ([param-expr value-expr] ...) body ...+)
+These macros add logging based on debug to the evaluation of expressions in
+begin, define, define/private, define/public, define/override, define/augment,
+let, let*, letrec, let-values, let*-values, letrec-values, with-syntax,
+with-syntax*, and parameterize.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,86 @@
+▼  Data: Data Structures
+1  Imperative Queues
+2  Growable Vectors
+3  Orders and Ordered Dictionaries
+4  Splay Trees
+5  Skip Lists
+6  Interval Maps
+7  Binary Heaps
+On this page:
+make-heap
+heap?
+heap-count
+heap-add!
+heap-add-all!
+heap-min
+heap-remove-min!
+vector->heap
+heap->vector
+heap-copy
+heap-sort!
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Binary Heaps
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require data/heap)
+
+Binary heaps are a simple implementation of priority queues.
+
+(make-heap <=?) → heap?
+  <=? : (-> any/c any/c any/c)
+Makes a new empty heap using <=? to order elements.
+
+(heap? x) → boolean?
+  x : any/c
+Returns #t if x is a heap, #f otherwise.
+
+(heap-count h) → exact-nonnegative-integer?
+  h : heap?
+Returns the number of elements in the heap.
+
+(heap-add! h v ...) → void?
+  h : heap?
+  v : any/c
+Adds each v to the heap.
+
+(heap-add-all! h v) → void?
+  h : heap?
+  v : (or/c list? vector? heap?)
+Adds each element contained in v to the heap, leaving v unchanged.
+
+(heap-min h) → any/c
+  h : heap?
+Returns the least element in the heap h, according to the heap’s ordering. If
+the heap is empty, an exception is raised.
+
+(heap-remove-min! h) → void?
+  h : heap?
+Removes the least element in the heap h. If the heap is empty, an exception is
+raised.
+
+(vector->heap <=? items) → heap?
+  <=? : (-> any/c any/c any/c)
+  items : vector?
+Builds a heap with the elements from items. The vector is not modified.
+
+(heap->vector h) → vector?
+  h : heap?
+Returns a vector containing the elements of heap h in the heap’s order. The
+heap is not modified.
+
+(heap-copy h) → heap?
+  h : heap?
+Makes a copy of heap h.
+
+(heap-sort! <=? v) → void?
+  <=? : (-> any/c any/c any/c)
+  v : vector?
+Sorts vector v using the comparison function <=?.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

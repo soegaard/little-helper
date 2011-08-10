@@ -1,0 +1,133 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 3  C Types
+3.1  Type Constructors
+3.2  Numeric Types
+3.3  Other Atomic Types
+3.4  String Types
+3.5  Pointer Types
+3.6  Function Types
+3.7  C Struct Types
+3.8  Enumerations and Masks
+► 3.4  String Types
+3.4.1  Primitive String Types
+3.4.2  Fixed Auto-Converting String Types
+3.4.3  Variable Auto-Converting String Type
+3.4.4  Other String Types
+On this page:
+3.4.1 Primitive String Types
+_ string/ ucs-4
+_ string/ utf-16
+_ path
+_ symbol
+3.4.2 Fixed Auto-Converting String Types
+_ string/ utf-8
+_ string/ latin-1
+_ string/ locale
+_ string*/ utf-8
+_ string*/ latin-1
+_ string*/ locale
+3.4.3 Variable Auto-Converting String Type
+_ string
+default-_ string-type
+3.4.4 Other String Types
+_ file
+_ bytes/ eof
+_ string/ eof
+[...search manuals...]
+  top← prev  up  next → 
+
+3.4 String Types
+
+3.4.1 Primitive String Types
+
+The five primitive string types correspond to cases where a C representation
+matches Racket’s representation without encodings.
+
+The form _bytes form can be used type for Racket byte strings, which
+corresponds to C’s char* type. In addition to translating byte strings, #f
+corresponds to the NULL pointer.
+
+_string/ucs-4 : ctype?
+A type for Racket’s native Unicode strings, which are in UCS-4 format. These
+correspond to the C mzchar* type used by Racket. As usual, the types treat #f
+as NULL and vice versa.
+
+_string/utf-16 : ctype?
+Unicode strings in UTF-16 format. As usual, the types treat #f as NULL and vice
+versa.
+
+_path : ctype?
+Simple char* strings, corresponding to Racket’s paths. As usual, the types
+treat #f as NULL and vice versa.
+
+Beware that changing the current directory via current-directory does not
+change the OS-level current directory as seen by foreign library functions.
+Paths normally should be converted to absolute form using path->complete-path
+(which uses the current-directory parameter) before passing them to a foreign
+function.
+
+_symbol : ctype?
+Simple char* strings as Racket symbols (encoded in UTF-8). Return values using
+this type are interned as symbols.
+
+3.4.2 Fixed Auto-Converting String Types
+
+_string/utf-8 : ctype?
+_string/latin-1 : ctype?
+_string/locale : ctype?
+Types that correspond to (character) strings on the Racket side and char*
+strings on the C side. The bridge between the two requires a transformation on
+the content of the string. As usual, the types treat #f as NULL and vice versa.
+
+_string*/utf-8 : ctype?
+_string*/latin-1 : ctype?
+_string*/locale : ctype?
+Similar to _string/utf-8, etc., but accepting a wider range of values: Racket
+byte strings are allowed and passed as is, and Racket paths are converted using
+path->bytes.
+
+3.4.3 Variable Auto-Converting String Type
+
+The _string/ucs-4 type is rarely useful when interacting with foreign code,
+while using _bytes is somewhat unnatural, since it forces Racket programmers to
+use byte strings. Using _string/utf-8, etc., meanwhile, may prematurely commit
+to a particular encoding of strings as bytes. The _string type supports
+conversion between Racket strings and char* strings using a
+parameter-determined conversion.
+
+_string : ctype?
+Expands to a use of the default-_string-type parameter. The parameter’s value
+is consulted when _string is evaluated, so the parameter should be set before
+any interface definition that uses _string.
+
+(default-_string-type) → ctype?
+(default-_string-type type) → void?
+  type : ctype?
+A parameter that determines the current meaning of _string. It is initially set
+to _string*/utf-8. If you change it, do so before interfaces are defined.
+
+3.4.4 Other String Types
+
+_file : ctype?
+Like _path, but when values go from Racket to C, cleanse-path is used on the
+given value. As an output value, it is identical to _path.
+
+_bytes/eof : ctype?
+Similar to the _bytes type, except that a foreign return value of NULL is
+translated to a Racket eof value.
+
+_string/eof : ctype?
+Similar to the _string type, except that a foreign return value of NULL is
+translated to a Racket eof value.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

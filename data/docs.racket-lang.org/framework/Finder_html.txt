@@ -1,0 +1,193 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+finder: dialog-parent-parameter
+finder: default-extension
+finder: default-filters
+finder: common-put-file
+finder: common-get-file
+finder: std-put-file
+finder: std-get-file
+finder: put-file
+finder: get-file
+finder: common-get-file-list
+[...search manuals...]
+  top← prev  up  next → 
+
+13 Finder
+
+(finder:dialog-parent-parameter)
+ → (or/c false/c (is-a?/c dialog%) (is-a?/c frame%))
+(finder:dialog-parent-parameter parent) → void?
+  parent : (or/c false/c (is-a?/c dialog%) (is-a?/c frame%))
+This parameter determines the parent of the dialogs created by finder:get-file,
+finder:put-file, finder:common-get-file, finder:common-put-file,
+finder:common-get-file-list, finder:std-get-file, and finder:std-put-file.
+(finder:default-extension) → string?
+(finder:default-extension extension) → void?
+  extension : string?
+This parameter controls the default extension for the framework’s
+finder:put-file dialog. Its value gets passed as the default-extension argument
+to put-file.
+
+Its default value is "".
+(finder:default-filters) → (listof (list/c string? string?))
+(finder:default-filters filters) → void?
+  filters : (listof (list/c string? string?))
+This parameter controls the default filters for the framework’s finder:put-file
+dialog. Its value gets passed as the default-filters argument to put-file.
+
+Its default value is '(("Any" "*.*")).
+(finder:common-put-file  [ name              
+                           directory         
+                           replace?          
+                           prompt            
+                           filter            
+                           filter-msg        
+                           parent])     →   (or/c false/c path?)
+  name : string? = "Untitled"
+  directory : (or/c false/c path?) = #f
+  replace? : boolean? = #f
+  prompt : string? = "Select File"
+  filter : (or/c false/c byte-regexp?) = #f
+   filter-msg   :   string?
+                =   "That filename does not have the right form."
+   parent   :   (or/c (is-a?/c top-level-window<%>) false/c)
+            =   (finder:dialog-parent-parameter)
+This procedure queries the user for a single filename, using a
+platform-independent dialog box. Consider using finder:put-file instead of this
+function.
+(finder:common-get-file  [ directory         
+                           prompt            
+                           filter            
+                           filter-msg        
+                           parent])     →   (or/c path? false/c)
+  directory : (or/c path? false/c) = #f
+  prompt : string? = "Select File"
+  filter : (or/c byte-regexp? false/c) = #f
+   filter-msg   :   string?
+                =   "That filename does not have the right form."
+  parent : (or/c false/c (is-a?/c top-level-window<%>)) = #f
+This procedure queries the user for a single filename, using a
+platform-independent dialog box. Consider using finder:get-file instead of this
+function.
+(finder:std-put-file  [ name              
+                        directory         
+                        replace?          
+                        prompt            
+                        filter            
+                        filter-msg        
+                        parent])     →   (or/c false/c path?)
+  name : string? = "Untitled"
+  directory : (or/c false/c path?) = #f
+  replace? : boolean? = #f
+  prompt : string? = "Select File"
+  filter : (or/c false/c byte-regexp?) = #f
+   filter-msg   :   string?
+                =   "That filename does not have the right form."
+   parent   :   (or/c (is-a?/c top-level-window<%>) false/c)
+            =   (finder:dialog-parent-parameter)
+This procedure queries the user for a single filename, using a
+platform-dependent dialog box. Consider using finder:put-file instead of this
+function.
+(finder:std-get-file  [ directory         
+                        prompt            
+                        filter            
+                        filter-msg        
+                        parent])     →   (or/c path? false/c)
+  directory : (or/c path? false/c) = #f
+  prompt : string? = "Select File"
+  filter : (or/c byte-regexp? false/c) = #f
+   filter-msg   :   string?
+                =   "That filename does not have the right form."
+  parent : (or/c false/c (is-a?/c top-level-window<%>)) = #f
+This procedure queries the user for a single filename, using a
+platform-dependent dialog box. Consider using finder:get-file instead of this
+function.
+(finder:put-file  [ name              
+                    directory         
+                    replace?          
+                    prompt            
+                    filter            
+                    filter-msg        
+                    parent])     →   (or/c false/c path?)
+  name : string? = "Untitled"
+  directory : (or/c false/c path?) = #f
+  replace? : boolean? = #f
+  prompt : string? = "Select File"
+  filter : (or/c false/c byte-regexp?) = #f
+   filter-msg   :   string?
+                =   "That filename does not have the right form."
+   parent   :   (or/c (is-a?/c top-level-window<%>) false/c)
+            =   (finder:dialog-parent-parameter)
+Queries the user for a filename.
+
+If the result of (preferences:get 'framework:file-dialogs) is 'std this calls
+finder:std-put-file, and if it is 'common, finder:common-put-file is called.
+(finder:get-file  [ directory         
+                    prompt            
+                    filter            
+                    filter-msg        
+                    parent])     →   (or/c path? false/c)
+  directory : (or/c path? false/c) = #f
+  prompt : string? = "Select File"
+  filter : (or/c byte-regexp? string? false/c) = #f
+   filter-msg   :   string?
+                =   "That filename does not have the right form."
+  parent : (or/c false/c (is-a?/c top-level-window<%>)) = #f
+Queries the user for a filename.
+
+If the result of (preferences:get 'framework:file-dialogs) is 'std this calls
+finder:std-get-file, and if it is 'common, finder:common-get-file is called.
+(finder:common-get-file-list  [ directory   
+                                prompt      
+                                filter      
+                                filter-msg  
+                                parent])    
+ → (or/c (listof path?) false/c)
+  directory : (or/c false/c path?) = #f
+  prompt : string? = "Select File"
+  filter : (or/c false/c byte-regexp?) = #f
+   filter-msg   :   string?
+                =   "That filename does not have the right form."
+  parent : (or/c false/c (is-a?/c top-level-window<%>)) = #f
+This procedure queries the user for a list of filenames, using a
+platform-independent dialog box.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

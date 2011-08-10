@@ -1,0 +1,154 @@
+Title
+
+S-expression comments
+
+Author
+
+Taylor Campbell
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access previous messages via the
+archive of the mailing list.
+
+  • Received: 2005/01/04
+  • Draft: 2005/01/03-2005/03/04
+  • Revised: 2005/02/27
+  • Final: 2005/07/21
+
+Abstract
+
+This SRFI proposes a simple extension to Scheme's lexical syntax that allows
+individual S-expressions to be made into comments, ignored by the reader. This
+contrasts with the standard Lisp semicolon commnets, which make the reader
+ignore the remainder of the line, and the slightly less common block comments,
+as SRFI 30 defines: both of these mechanisms comment out slices of text, not
+S-expressions.
+
+Rationale
+
+Line and block comments are useful for embedding textual commentary in
+programs, but they are not conducive to commenting out code easily in an
+absence of extensive editor support for removing selected text that composes
+S-expressions while retaining them in the text itself, or subsequently removing
+the comments and re-introducing the S-expressions themselves.
+
+Informal specification
+
+A new octothorpe reader syntax character is defined, #\;, such that the reader
+ignores the S-expression following the #; and proceeds on to the S-expression
+after that. For example,
+
+(+ 1 #;(* 2 3) 4)  -reads-> (+ 1 4)                     -evals-> 5
+
+(list 'x #;'y 'z)  -reads-> (list (quote x) (quote z))  -evals-> (x z)
+
+(* 3 4 #;(+ 1 2))  -reads-> (* 3 4)                     -evals-> 12
+
+(#;sqrt abs -16)   -reads-> (abs -16)                   -evals-> 16
+
+Some examples of nested S-expression comments may appear confusing at first,
+but they are straightforwardly explained. For instance, consider the text (list
+'a #; #;'b 'c 'd). This reads as the list represented by (list (quote a) (quote
+d)). Note that both 'b and 'c seemed to 'disappear.' The reason is simply that
+when the first #; causes the reader to read ahead in the input stream for the
+next S-expression, the reader encounters another #;, which causes the 'b to be
+consumed, and which then moves the reader on to 'c to return as the first
+S-expression following the first #;. Since it is the first S-expression
+following a #;, 'b is ignored as well, leaving only 'd.
+
+That is a fairly special case of nested S-expression comments. Others are
+somewhat simpler for intuition to grasp immediately, such as:
+
+(list 'a #;(list 'b #;c 'd) 'e) -reads-> (list (quote a) (quote e)) -evals-> (a
+e)
+
+There are also some other somewhat peculiar examples, such as in dotted lists
+and at the end of lists, which are still simple to grasp:
+
+
+'(a . #;b c)  -reads-> (quote (a . c))
+
+'(a . b #;c)  -reads-> (quote (a . b))
+
+Note, however, that any text that is invalid without S-expression comments will
+be invalid with them as well, and an S-expression comment prefix, #;, must be
+followed by a complete S-expression (and after that either a complete
+S-expression or a special token such as a closing parenthesis, a dot in dotted
+lists, or the end of file); for instance, the following are all errors:
+
+
+  • (#;a . b)
+  • (a . #;b)
+  • (a #;. b)
+  • (#;x #;y . z)
+  • (#; #;x #;y . z)
+  • (#; #;x . z)
+
+Formal specification
+
+R5RS's formal syntax is modified as follows:
+
+  • In section 7.1.1, a #; option is added to the <token> non-terminal.
+  • In section 7.1.2, a non-terminal <commented datum> is defined:
+
+      <commented datum> ---> "#;" <datum> <datum>
+
+  • Also in section 7.1.2, the <datum> non-terminal is modified to have a
+    <commented datum> option.
+  • Finally in section 7.1.2, the <list> and <vector> non-terminals are
+    replaced with the following rules, along with two auxiliary ones:
+
+      <list> ---> "(" <datum>* <optional dot> <delimiter prefix> ")"
+      <vector> ---> "#(" <datum>* <delimiter prefix> ")"
+      <optional dot> ---> <empty> | <datum> <delimiter prefix> "." <datum>
+      <delimiter prefix> ---> <empty> | "#;" <datum> <delimiter prefix>
+
+
+The first datum in a <commented datum> is ignored semantically, as is any datum
+immediately following a #; token in a delimiter prefix.
+
+All of the new or modified rules are presented here:
+
+  7.1.1:
+
+    <token> ---> <identifier> | <boolean> | <number>
+        | <character> | <string>
+        | "(" | ")" | "#(" | "'" | "`" | "," | ",@" | "." | "#;"
+
+  7.1.2:
+
+    <datum> ---> <simple datum> | <compound datum>
+        | <commented datum>
+    <commented datum> ---> "#;" <datum> <datum>
+    <list> ---> "(" <datum>* <optional dot> <delimiter prefix> ")"
+    <vector> ---> "#(" <datum>* <delimiter prefix> ")"
+    <optional dot> ---> <empty> | <datum> <delimiter prefix> "." <datum>
+    <delimiter prefix> ---> <empty> | "#;" <datum> <delimiter prefix>
+
+Copyright
+
+Copyright (C) 2004 Taylor Campbell. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Mike Sperber

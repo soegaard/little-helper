@@ -1,0 +1,228 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+if
+cond
+else
+=>
+and
+or
+[...search manuals...]
+  top← prev  up  next → 
+
+2.12 Conditionals: if, cond, and, and or
+
+            +Conditionals in The Racket Guide introduces conditionals.
+
+(if test-expr then-expr else-expr)
+Evaluates test-expr. If it produces any value other than #f, then then-expr is
+evaluated, and its results are the result for the if form. Otherwise, else-expr
+is evaluated, and its results are the result for the if form. The then-expr and
+else-expr are in tail position with respect to the if form.
+
+Examples:
+
+    > (if (positive? -5) (error "doesn't get here") 2)
+    2
+
+    > (if (positive? 5) 1 (error "doesn't get here"))
+    1
+
+    > (if 'we-have-no-bananas "yes" "no")
+    "yes"
+
+
+
+(cond cond-clause ...)
+ 
+cond-clause   =   [test-expr then-body ...+]
+              |   [else then-body ...+]
+              |   [test-expr => proc-expr]
+              |   [test-expr]
+
+
+            +Chaining Tests: cond in The Racket Guide introduces cond.
+
+A cond-clause that starts with else must be the last cond-clause.
+
+If no cond-clauses are present, the result is #<void>.
+
+If only a [else then-body ...+] is present, then the then-bodys are evaluated.
+The results from all but the last then-body are ignored. The results of the
+last then-body, which is in tail position with respect to the cond form, are
+the results for the whole cond form.
+
+Otherwise, the first test-expr is evaluated. If it produces #f, then the result
+is the same as a cond form with the remaining cond-clauses, in tail position
+with respect to the original cond form. Otherwise, evaluation depends on the
+form of the cond-clause:
+
+    [test-expr then-body ...+]
+
+    The then-bodys are evaluated in order, and the results from all but the
+    last then-body are ignored. The results of the last then-body, which is in
+    tail position with respect to the cond form, provides the result for the
+    whole cond form.
+
+    [test-expr => proc-expr]
+
+    The proc-expr is evaluated, and it must produce a procedure that accepts
+    one argument, otherwise the exn:fail:contract exception is raised. The
+    procedure is applied to the result of test-expr in tail position with
+    respect to the cond expression.
+
+    [test-expr]
+
+    The result of the test-expr is returned as the result of the cond form. The
+    test-expr is not in tail position.
+
+Examples:
+
+    > (cond)
+    > (cond
+        [else 5])
+    5
+
+    > (cond
+       [(positive? -5) (error "doesn't get here")]
+       [(zero? -5) (error "doesn't get here, either")]
+       [(positive? 5) 'here])
+    'here
+
+    > (cond
+       [(member 2 '(1 2 3)) => (lambda (l) (map - l))])
+    '(-2 -3)
+
+    > (cond
+       [(member 2 '(1 2 3))])
+    '(2 3)
+
+
+
+else
+Recognized specially within forms like cond. An else form as an expression is a
+syntax error.
+
+=>
+Recognized specially within forms like cond. A => form as an expression is a
+syntax error.
+
+(and expr ...)
+
+
+            +Combining Tests: and and or in The Racket Guide introduces and.
+
+If no exprs are provided, then result is #t.
+
+If a single expr is provided, then it is in tail position, so the results of
+the and expression are the results of the expr.
+
+Otherwise, the first expr is evaluated. If it produces #f, the result of the
+and expression is #f. Otherwise, the result is the same as an and expression
+with the remaining exprs in tail position with respect to the original and
+form.
+
+Examples:
+
+    > (and)
+    #t
+
+    > (and 1)
+    1
+
+    > (and (values 1 2))
+    1
+
+    2
+
+    > (and #f (error "doesn't get here"))
+    #f
+
+    > (and #t 5)
+    5
+
+
+
+(or expr ...)
+
+
+            +Combining Tests: and and or in The Racket Guide introduces or.
+
+If no exprs are provided, then result is #f.
+
+If a single expr is provided, then it is in tail position, so the results of
+the or expression are the results of the expr.
+
+Otherwise, the first expr is evaluated. If it produces a value other than #f,
+that result is the result of the or expression. Otherwise, the result is the
+same as an or expression with the remaining exprs in tail position with respect
+to the original or form.
+
+Examples:
+
+    > (or)
+    #f
+
+    > (or 1)
+    1
+
+    > (or (values 1 2))
+    1
+
+    2
+
+    > (or 5 (error "doesn't get here"))
+    5
+
+    > (or #f 5)
+    5
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

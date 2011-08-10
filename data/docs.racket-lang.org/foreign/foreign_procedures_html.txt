@@ -1,0 +1,402 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 3  C Types
+3.1  Type Constructors
+3.2  Numeric Types
+3.3  Other Atomic Types
+3.4  String Types
+3.5  Pointer Types
+3.6  Function Types
+3.7  C Struct Types
+3.8  Enumerations and Masks
+► 3.6  Function Types
+3.6.1  Custom Function Types
+On this page:
+_ cprocedure
+_ fun
+function-ptr
+3.6.1 Custom Function Types
+define-fun-syntax
+_ ?
+_ ptr
+_ box
+_ list
+_ vector
+_ bytes
+[...search manuals...]
+  top← prev  up  next → 
+
+3.6 Function Types
+
+(_cprocedure    input-types                                    
+                output-type                                    
+              [ #:abi abi                                      
+                #:atomic? atomic?                              
+                #:async-apply async-apply                      
+                #:in-original-place? in-original-place?        
+                #:save-errno save-errno                        
+                #:wrapper wrapper                              
+                #:keep keep])                             →   any
+  input-types : (list ctype?)
+  output-type : ctype?
+  abi : (or/c #f 'default 'stdcall 'sysv) = #f
+  atomic? : any/c = #f
+  async-apply : (or/c #f ((-> any) . -> . any)) = #f
+  in-original-place? : any/c = #f
+  save-errno : (or/c #f 'posix 'windows) = #f
+  wrapper : (or/c #f (procedure? . -> . procedure?)) = #f
+  keep : (or/c boolean? box? (any/c . -> . any/c)) = #t
+A type constructor that creates a new function type, which is specified by the
+given input-types list and output-type. Usually, the _fun syntax (described
+below) should be used instead, since it manages a wide range of complicated
+cases.
+
+The resulting type can be used to reference foreign functions (usually
+ffi-objs, but any pointer object can be referenced with this type), generating
+a matching foreign callout object. Such objects are new primitive procedure
+objects that can be used like any other Racket procedure. As with other pointer
+types, #f is treated as a NULL function pointer and vice versa.
+
+A type created with _cprocedure can also be used for passing Racket procedures
+to foreign functions, which will generate a foreign function pointer that calls
+the given Racket procedure when it is used. There are no restrictions on the
+Racket procedure; in particular, its lexical context is properly preserved.
+
+The optional abi keyword argument determines the foreign ABI that is used.
+Supplying #f or 'default indicates the platform-dependent default. The other
+possible values—'stdcall and 'sysv (i.e., “cdecl”)—are currently supported only
+for 32-bit Windows; using them on other platforms raises an exception. See also
+ffi/winapi.
+
+If atomic? is true, then when a Racket procedure is given this procedure type
+and called from foreign code, then the Racket process is put into atomic mode
+while evaluating the Racket procedure body. In atomic mode, other Racket
+threads do not run, so the Racket code must not call any function that
+potentially blocks on synchronization with other threads, or else it may lead
+to deadlock. In addition, the Racket code must not perform any potentially
+blocking operation (such as I/O), it must not raise an uncaught exception, it
+must not perform any escaping continuation jumps, and its non-tail recursion
+must be minimal to avoid C-level stack overflow; otherwise, the process may
+crash or misbehave.
+
+If an async-apply procedure is provided, then a Racket procedure with the
+generated procedure type can be applied in a foreign thread (i.e., an OS-level
+thread other than the one used to run Racket). The call in the foreign thread
+is transferred to the OS-level thread that runs Racket, but the Racket-level
+thread (in the sense of thread) is unspecified; the job of the provided
+async-apply procedure is to arrange for the callback procedure to be run in a
+suitable Racket thread. The given async-apply procedure is applied to a thunk
+that encapsulates the specific callback invocation, and the foreign OS-level
+thread blocks until the thunk is called and completes; the thunk must be called
+exactly once, and the callback invocation must return normally. The given
+async-apply procedure itself is called in atomic mode (see atomic? above). If
+the callback is known to complete quickly, requires no synchronization, and
+works independent of the Racket thread in which it runs, then it is safe for
+the given async-apply procedure to apply the thunk directly. Otherwise, the
+given async-apply procedure must arrange for the thunk to be applied in a
+suitable Racket thread sometime after the given async-apply procedure itself
+returns; if the thunk raises an exception or synchronizes within an unsuitable
+Racket-level thread, it can deadlock or otherwise damage the Racket process.
+Foreign-thread detection to trigger async-apply works only when Racket is
+compiled with OS-level thread support, which is the default for many platforms.
+If a callback with an async-apply is called from foreign code in the same
+OS-level thread that runs Racket, then the async-apply wrapper is not used.
+
+            The atomic? and async-apply arguments affect callbacks into Racket,
+            while in-original-place? affects calls from Racket into foreign
+            code.
+
+If in-original-place? is true, then when a foreign procedure with the generated
+type is called in any Racket place, the procedure is called from the original
+Racket place. Use this mode for a foreign function that is not thread-safe at
+the C level, which means that it is not place-safe at the Racket level.
+Callbacks from place-unsafe code back into Racket at a non-original place
+typically will not work, since the place of the Racket code may have a
+different allocator than the original place.
+
+If save-errno is 'posix, then the value of errno is saved (specific to the
+current thread) immediately after a foreign function returns. The saved value
+is accessible through saved-errno. If save-errno is 'windows, then the value of
+GetLastError() is saved for later use via saved-errno; the 'windows option is
+available only on Windows (on other platforms saved-errno will return 0). If
+save-errno is #f, no error value is saved automatically. The error-recording
+support provided by save-errno is needed because the Racket runtime system may
+otherwise preempt the current Racket thread and itself call functions that set
+error values.
+
+The optional wrapper, if provided, is expected to be a function that can change
+a callout procedure: when a callout is generated, the wrapper is applied on the
+newly created primitive procedure, and its result is used as the new function.
+Thus, wrapper is a hook that can perform various argument manipulations before
+the foreign function is invoked, and return different results (for example,
+grabbing a value stored in an “output” pointer and returning multiple values).
+It can also be used for callbacks, as an additional layer that tweaks arguments
+from the foreign code before they reach the Racket procedure, and possibly
+changes the result values too.
+
+Sending Racket functions as callbacks to foreign code is achieved by
+translating them to a foreign “closure,” which foreign code can call as plain C
+functions. Additional care must be taken in case the foreign code might hold on
+to the callback function. In these cases you must arrange for the callback
+value to not be garbage-collected, or the held callback will become invalid.
+The optional keep keyword argument is used to achieve this. It can have the
+following values:
+
+  • #t makes the callback value stay in memory as long as the converted
+    function is. In order to use this, you need to hold on to the original
+    function, for example, have a binding for it. Note that each function can
+    hold onto one callback value (it is stored in a weak hash table), so if you
+    need to use a function in multiple callbacks you will need to use one of
+    the last two options below. (This is the default, as it is fine in most
+    cases.)
+
+  • #f means that the callback value is not held. This may be useful for a
+    callback that is only used for the duration of the foreign call — for
+    example, the comparison function argument to the standard C library qsort
+    function is only used while qsort is working, and no additional references
+    to the comparison function are kept. Use this option only in such cases,
+    when no holding is necessary and you want to avoid the extra cost.
+
+  • A box holding #f (or a callback value) — in this case the callback value
+    will be stored in the box, overriding any value that was in the box (making
+    it useful for holding a single callback value). When you know that it is no
+    longer needed, you can “release” the callback value by changing the box
+    contents, or by allowing the box itself to be garbage-collected. This is
+    can be useful if the box is held for a dynamic extent that corresponds to
+    when the callback is needed; for example, you might encapsulate some
+    foreign functionality in a Racket class or a unit, and keep the callback
+    box as a field in new instances or instantiations of the unit.
+
+  • A box holding null (or any list) – this is similar to the previous case,
+    except that new callback values are consed onto the contents of the box. It
+    is therefore useful in (rare) cases when a Racket function is used in
+    multiple callbacks (that is, sent to foreign code to hold onto multiple
+    times).
+
+  • Finally, if a one-argument function is provided as keep, it will be invoked
+    with the callback value when it is generated. This allows you to grab the
+    value directly and use it in any way.
+
+(_fun fun-option ... maybe-args type-spec ... -> type-spec
+      maybe-wrapper)
+ 
+   fun-option   =   #:abi abi-expr
+                |   #:save-errno save-errno-expr
+                |   #:keep keep-expr
+                |   #:atomic? atomic?-expr
+                |   #:async-apply async-apply-expr
+                |   #:in-original-place? in-original-place?-expr
+                     
+   maybe-args   =  
+                |   (id ...) ::
+                |   id ::
+                |   (id ... . id) ::
+                     
+    type-spec   =   type-expr
+                |   (id : type-expr)
+                |   (type-expr = value-expr)
+                |   (id : type-expr = value-expr)
+                     
+maybe-wrapper   =  
+                |   -> output-expr
+Creates a new function type. The _fun form is a convenient syntax for the
+_cprocedure type constructor. In its simplest form, only the input type-exprs
+and the output type-expr are specified, and each types is a simple expression,
+which creates a straightforward function type.
+
+For instance,
+
+    (_fun _int _string -> _int)
+
+specifies a function that receives an integer and a string, and returns an
+integer.
+
+In its full form, the _fun syntax provides an IDL-like language that can be
+used to create a wrapper function around the primitive foreign function. These
+wrappers can implement complex foreign interfaces given simple specifications.
+The full form of each of the type specifications can include an optional label
+and an expression. If a = value-expr is provided, then the resulting function
+will be a wrapper that calculates the argument for that position itself,
+meaning that it does not expect an argument for that position. The expression
+can use previous arguments if they were labeled with id :. In addition, the
+result of a function call need not be the value returned from the foreign call:
+if the optional output-expr is specified, or if an expression is provided for
+the output type, then this specifies an expression that will be used as a
+return value. This expression can use any of the previous labels, including a
+label given for the output which can be used to access the actual foreign
+return value.
+
+In rare cases where complete control over the input arguments is needed, the
+wrapper’s argument list can be specified as args, in any form (including a
+“rest” argument). Identifiers in this place are related to type labels, so if
+an argument is there is no need to use an expression.
+
+For example,
+
+    (_fun (n s) :: (s : _string) (n : _int) -> _int)
+
+specifies a function that receives an integer and a string, but the foreign
+function receives the string first.
+
+(function-ptr ptr-or-proc fun-type) → cpointer?
+  ptr-or-proc : (or cpointer? procedure?)
+  fun-type : ctype?
+Casts ptr-or-proc to a function pointer of type fun-type.
+
+3.6.1 Custom Function Types
+
+The behavior of the _fun type can be customized via custom function types,
+which are pieces of syntax that can behave as C types and C type constructors,
+but they can interact with function calls in several ways that are not possible
+otherwise. When the _fun form is expanded, it tries to expand each of the given
+type expressions, and ones that expand to certain keyword-value lists interact
+with the generation of the foreign function wrapper. This expansion makes it
+possible to construct a single wrapper function, avoiding the costs involved in
+compositions of higher-order functions.
+
+Custom function types are macros that expand to a sequence (key: val ...),
+where each key: is from a short list of known keys. Each key interacts with
+generated wrapper functions in a different way, which affects how its
+corresponding argument is treated:
+
+  • type: specifies the foreign type that should be used, if it is #f then this
+    argument does not participate in the foreign call.
+
+  • expr: specifies an expression to be used for arguments of this type,
+    removing it from wrapper arguments.
+
+  • bind: specifies a name that is bound to the original argument if it is
+    required later (e.g., _box converts its associated value to a C pointer,
+    and later needs to refer back to the original box).
+
+  • 1st-arg: specifies a name that can be used to refer to the first argument
+    of the foreign call (good for common cases where the first argument has a
+    special meaning, e.g., for method calls).
+
+  • prev-arg: similar to 1st-arg:, but refers to the previous argument.
+
+  • pre: a pre-foreign code chunk that is used to change the argument’s value.
+
+  • post: a similar post-foreign code chunk.
+
+  • keywords: specifies keyword/value expressions that will be used with the
+    surrounding _fun form. (Note: the keyword/value sequence follows keywords:,
+    not parenthesized.)
+
+The pre: and post: bindings can be of the form (id => expr) to use the existing
+value. Note that if the pre: expression is not (id => expr), then it means that
+there is no input for this argument to the _fun-generated procedure. Also note
+that if a custom type is used as an output type of a function, then only the
+post: code is used.
+
+Most custom types are meaningful only in a _fun context, and will raise a
+syntax error if used elsewhere. A few such types can be used in non-_fun
+contexts: types which use only type:, pre:, post:, and no others. Such custom
+types can be used outside a _fun by expanding them into a usage of make-ctype,
+using other keywords makes this impossible, because it means that the type has
+specific interaction with a function call.
+
+(define-fun-syntax id transformer-expr)
+Binds id as a custom function type as well as a syntax transformer (i.e,
+macro). The type is expanded by applying the procedure produced by
+transformer-expr to a use of the custom function type.
+
+For instance, the following defines a new type that automatically coerces the
+input number to an inexact form which is compatible with the _float type.
+
+    (define-fun-syntax _float*
+      (syntax-id-rules (_float*)
+        [(_float*) (type: _float pre: (x => (+ 0.0 x)))]))
+     
+    (_fun _float* -> _bool)
+
+_?
+A custom function type that is a marker for expressions that should not be sent
+to the foreign function. Use this to bind local values in a computation that is
+part of an ffi wrapper interface, or to specify wrapper arguments that are not
+sent to the foreign function (e.g., an argument that is used for processing the
+foreign output).
+
+(_ptr mode type-expr)
+ 
+ mode   =   i
+        |   o
+        |   io
+Creates a C pointer type, where mode indicates input or output pointers (or
+both). The mode can be one of the following:
+
+  • i — indicates an input pointer argument: the wrapper arranges for the
+    function call to receive a value that can be used with the type and to send
+    a pointer to this value to the foreign function. After the call, the value
+    is discarded.
+
+  • o — indicates an output pointer argument: the foreign function expects a
+    pointer to a place where it will save some value, and this value is
+    accessible after the call, to be used by an extra return expression. If
+    _ptr is used in this mode, then the generated wrapper does not expect an
+    argument since one will be freshly allocated before the call.
+
+  • io — combines the above into an input/output pointer argument: the wrapper
+    gets the Racket value, allocates and set a pointer using this value, and
+    then references the value after the call. The “_ptr” name can be confusing
+    here: it means that the foreign function expects a pointer, but the
+    generated wrapper uses an actual value. (Note that if this is used with
+    structs, a struct is created when calling the function, and a copy of the
+    return value is made too—which is inefficient, but ensures that structs are
+    not modified by C code.)
+
+For example, the _ptr type can be used in output mode to create a foreign
+function wrapper that returns more than a single argument. The following type:
+
+    (_fun (i : (_ptr o _int))
+          -> (d : _double)
+          -> (values d i))
+
+creates a function that calls the foreign function with a fresh integer
+pointer, and use the value that is placed there as a second return value.
+
+_box
+A custom function type similar to a (_ptr io type) argument, where the input is
+expected to be a box holding an appropriate value, which is unboxed on entry
+and modified accordingly on exit.
+
+(_list mode type maybe-len)
+ 
+     mode   =   i
+            |   o
+            |   io
+                 
+maybe-len   =  
+            |   len-expr
+A custom function type that is similar to _ptr, except that it is used for
+converting lists to/from C vectors. The optional maybe-len argument is needed
+for output values where it is used in the post code, and in the pre code of an
+output mode to allocate the block. In either case, it can refer to a previous
+binding for the length of the list which the C function will most likely
+require.
+
+(_vector mode type maybe-len)
+A custom function type like _list, except that it uses Racket vectors instead
+of lists.
+
+(_bytes o len-expr)
+_bytes
+A custom function type that can be used by itself as a simple type for a byte
+string as a C pointer. Alternatively, the second form is for a pointer return
+value, where the size should be explicitly specified.
+
+There is no need for other modes: input or input/output would be just like
+_bytes, since the string carries its size information (there is no real need
+for the o part of the syntax, but it is present for consistency with the above
+macros).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,263 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Contracts and Boundaries
+7.2  Simple Contracts on Functions
+7.3  Contracts on Functions in General
+7.4  Contracts: A Thorough Example
+7.5  Contracts on Structures
+7.6  Abstract Contracts using #: exists and #: ∃
+7.7  Additional Examples
+7.8  Gotchas
+► 7.5  Contracts on Structures
+7.5.1  Guarantees for a Specific Value
+7.5.2  Guarantees for All Values
+7.5.3  Checking Properties of Data Structures
+On this page:
+7.5.1 Guarantees for a Specific Value
+7.5.2 Guarantees for All Values
+7.5.3 Checking Properties of Data Structures
+[...search manuals...]
+  top← prev  up  next → 
+
+7.5 Contracts on Structures
+
+Modules deal with structures in two ways. First they export struct definitions,
+i.e., the ability to create structs of a certain kind, to access their fields,
+to modify them, and to distinguish structs of this kind against every other
+kind of value in the world. Second, on occasion a module exports a specific
+struct and wishes to promise that its fields contain values of a certain kind.
+This section explains how to protect structs with contracts for both uses.
+
+7.5.1 Guarantees for a Specific Value
+
+If your module defines a variable to be a structure, then you can specify the
+structure’s shape using struct/c:
+
+    #lang racket
+    (require lang/posn)
+     
+    (define origin (make-posn 0 0))
+     
+    (provide/contract
+     [origin (struct/c posn zero? zero?)])
+
+In this example, the module imports a library for representing positions, which
+exports a posn structure. One of the posns it creates and exports stands for
+the origin, i.e., (0,0), of the grid.
+
+            See also vector/c and similar contract combinators for (flat)
+            compound data.
+
+7.5.2 Guarantees for All Values
+
+The book How to Design Programs teaches that posns should contain only numbers
+in their two fields. With contracts we would enforce this informal data
+definition as follows:
+
+    #lang racket
+    (struct posn (x y))
+     
+    (provide/contract
+     [struct posn ((x number?) (y number?))]
+     [p-okay posn?]
+     [p-sick posn?])
+     
+    (define p-okay (posn 10 20))
+    (define p-sick (posn 'a 'b))
+
+This module exports the entire structure definition: posn, posn?, posn-x,
+posn-y, set-posn-x!, and set-posn-y!. Each function enforces or promises that
+the two fields of a posn structure are numbers — when the values flow across
+the module boundary. Thus, if a client calls posn on 10 and 'a, the contract
+system signals a contract violation.
+
+The creation of p-sick inside of the posn module, however, does not violate the
+contracts. The function posn is used internally, so 'a and 'b don’t cross the
+module boundary. Similarly, when p-sick crosses the boundary of posn, the
+contract promises a posn? and nothing else. In particular, this check does not
+require that the fields of p-sick are numbers.
+
+The association of contract checking with module boundaries implies that p-okay
+and p-sick look alike from a client’s perspective until the client extracts the
+pieces:
+
+    #lang racket
+    (require lang/posn)
+     
+    ... (posn-x p-sick) ...
+
+Using posn-x is the only way the client can find out what a posn contains in
+the x field. The application of posn-x sends p-sick back into the posn module
+and the result value – 'a here – back to the client, again across the module
+boundary. At this very point, the contract system discovers that a promise is
+broken. Specifically, posn-x doesn’t return a number but a symbol and is
+therefore blamed.
+
+This specific example shows that the explanation for a contract violation
+doesn’t always pinpoint the source of the error. The good news is that the
+error is located in the posn module. The bad news is that the explanation is
+misleading. Although it is true that posn-x produced a symbol instead of a
+number, it is the fault of the programmer who created a posn from symbols,
+i.e., the programmer who added
+
+    (define p-sick (posn 'a 'b))
+
+to the module. So, when you are looking for bugs based on contract violations,
+keep this example in mind.
+
+If we want to fix the contract for p-sick so that the error is caught when sick
+is exported, a single change suffices:
+
+    (provide/contract
+     ...
+     [p-sick (struct/c posn number? number?)])
+
+That is, instead of exporting p-sick as a plain posn?, we use a struct/c
+contract to enforce constraints on its components.
+
+7.5.3 Checking Properties of Data Structures
+
+Contracts written using struct/c immediately check the fields of the data
+structure, but sometimes this can have disastrous effects on the performance of
+a program that does not, itself, inspect the entire data structure.
+
+As an example, consider the binary search tree search algorithm. A binary
+search tree is like a binary tree, except that the numbers are organized in the
+tree to make searching the tree fast. In particular, for each interior node in
+the tree, all of the numbers in the left subtree are smaller than the number in
+the node, and all of the numbers in the right subtree are larger than the
+number in the node.
+
+We can implement a search function in? that takes advantage of the structure of
+the binary search tree.
+
+    #lang racket
+     
+    (struct node (val left right))
+     
+    ; determines if `n' is in the binary search tree `b',
+    ; exploiting the binary search tree invariant
+    (define (in? n b)
+      (cond
+        [(null? b) #f]
+        [else (cond
+                [(= n (node-val b))
+                 #t]
+                [(< n (node-val b))
+                 (in? n (node-left b))]
+                [(> n (node-val b))
+                 (in? n (node-right b))])]))
+     
+    ; a predicate that identifies binary search trees
+    (define (bst-between? b low high)
+      (or (null? b)
+          (and (<= low (node-val b) high)
+               (bst-between? (node-left b) low (node-val b))
+               (bst-between? (node-right b) (node-val b) high))))
+     
+    (define (bst? b) (bst-between? b -inf.0 +inf.0))
+     
+    (provide (struct node (val left right)))
+    (provide/contract
+     [bst? (any/c . -> . boolean?)]
+     [in? (number? bst? . -> . boolean?)])
+
+In a full binary search tree, this means that the in? function only has to
+explore a logarithmic number of nodes.
+
+The contract on in? guarantees that its input is a binary search tree. But a
+little careful thought reveals that this contract defeats the purpose of the
+binary search tree algorithm. In particular, consider the inner cond in the in?
+function. This is where the in? function gets its speed: it avoids searching an
+entire subtree at each recursive call. Now compare that to the bst-between?
+function. In the case that it returns #t, it traverses the entire tree, meaning
+that the speedup of in? is lost.
+
+In order to fix that, we can employ a new strategy for checking the binary
+search tree contract. In particular, if we only checked the contract on the
+nodes that in? looks at, we can still guarantee that the tree is at least
+partially well-formed, but without changing the complexity.
+
+To do that, we need to use define-contract-struct in place of struct. Like
+struct (and more like define-struct), define-contract-struct defines a maker,
+predicate, and selectors for a new structure. Unlike define-struct, it also
+defines contract combinators, in this case node/c and node/dc. Also unlike
+define-struct, it does not allow mutators, making its structs always immutable.
+
+The node/c function accepts a contract for each field of the struct and returns
+a contract on the struct. More interestingly, the syntactic form node/dc allows
+us to write dependent contracts, i.e., contracts where some of the contracts on
+the fields depend on the values of other fields. We can use this to define the
+binary search tree contract:
+
+    #lang racket
+     
+    (define-contract-struct node (val left right))
+     
+    ; determines if `n' is in the binary search tree `b'
+    (define (in? n b) ... as before ...)
+     
+    ; bst-between : number number -> contract
+    ; builds a contract for binary search trees
+    ; whose values are between low and high
+    (define (bst-between/c low high)
+      (or/c null?
+            (node/dc [val (between/c low high)]
+                     [left (val) (bst-between/c low val)]
+                     [right (val) (bst-between/c val high)])))
+     
+    (define bst/c (bst-between/c -inf.0 +inf.0))
+     
+    (provide make-node node-left node-right node-val node?)
+    (provide/contract
+     [bst/c contract?]
+     [in? (number? bst/c . -> . boolean?)])
+
+In general, each use of node/dc must name the fields and then specify contracts
+for each field. In the above, the val field is a contract that accepts values
+between low and high. The left and right fields are dependent on the value of
+the val field, indicated by their second sub-expressions. Their contracts are
+built by recursive calls to the bst-between/c function. Taken together, this
+contract ensures the same thing that the bst-between? function checked in the
+original example, but here the checking only happens as in? explores the tree.
+
+Although this contract improves the performance of in?, restoring it to the
+logarithmic behavior that the contract-less version had, it is still imposes a
+fairly large constant overhead. So, the contract library also provides
+define-opt/c that brings down that constant factor by optimizing its body. Its
+shape is just like the define above. It expects its body to be a contract and
+then optimizes that contract.
+
+    (define-opt/c (bst-between/c low high)
+      (or/c null?
+            (node/dc [val (between/c low high)]
+                     [left (val) (bst-between/c low val)]
+                     [right (val) (bst-between/c val high)])))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

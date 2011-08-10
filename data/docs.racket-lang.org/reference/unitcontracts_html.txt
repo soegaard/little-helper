@@ -1,0 +1,72 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 6  Units
+ 6.1  Creating Units
+ 6.2  Invoking Units
+ 6.3  Linking Units and Creating Compound Units
+ 6.4  Inferred Linking
+ 6.5  Generating A Unit from Context
+ 6.6  Structural Matching
+ 6.7  Extending the Syntax of Signatures
+ 6.8  Unit Utilities
+ 6.9  Unit Contracts
+6.10  Single-Unit Modules
+6.11  Single-Signature Modules
+6.12  Transformer Helpers
+On this page:
+unit/ c
+define-unit/ contract
+[...search manuals...]
+  top← prev  up  next → 
+
+6.9 Unit Contracts
+
+(unit/c (import sig-block ...) (export sig-block ...))
+ 
+sig-block   =   (tagged-sig-id [id contract] ...)
+            |   tagged-sig-id
+A unit contract wraps a unit and checks both its imported and exported
+identifiers to ensure that they match the appropriate contracts. This allows
+the programmer to add contract checks to a single unit value without adding
+contracts to the imported and exported signatures.
+
+The unit value must import a subset of the import signatures and export a
+superset of the export signatures listed in the unit contract. Any identifier
+which is not listed for a given signature is left alone. Variables used in a
+given contract expression first refer to other variables in the same signature,
+and then to the context of the unit/c expression.
+
+(define-unit/contract unit-id
+  (import sig-spec-block ...)
+  (export sig-spec-block ...)
+  init-depends-decl
+  unit-body-expr-or-defn
+  ...)
+ 
+sig-spec-block   =   (tagged-sig-spec [id contract] ...)
+                 |   tagged-sig-spec
+The define-unit/contract form defines a unit compatible with link inference
+whose imports and exports are contracted with a unit contract. The unit name is
+used for the positive blame of the contract.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

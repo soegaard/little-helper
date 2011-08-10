@@ -1,0 +1,136 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+On this page:
+<cats-path>
+<cats-path-tests>
+<on-cats-path?-tests>
+<on-cats-path?>
+<+/f>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18.5 The Cat’s Path
+
+Once we have a breadth-first search all sorted out, we can use it to build a
+function that determines where the shortest paths from the cat’s current
+position to the boundary are.
+
+<cats-path> ::=
+
+    <on-cats-path?>
+    <+/f>
+
+<cats-path-tests> ::=
+
+    <on-cats-path?-tests>
+    <+/f-tests>
+
+The function on-cats-path? accepts a world and returns a predicate on the posns
+in the world. The predicate indicates if the given posn is on the shortest
+path.
+
+For example, in a world of size 7 with the cat at (make-posn 2 2), the circles
+with white centers are on the shortest path to the boundary:
+
+[cat-distan]
+
+So we can formulate two test cases using this world, one in the white circles
+and one not:
+
+<on-cats-path?-tests> ::=
+
+    (let ([on-the-path?
+           (on-cats-path? (make-world (empty-board 7)
+                                      (make-posn 2 2)
+                                      'playing
+                                      7
+                                      #f
+                                      #t))])
+      (test (on-the-path? (make-posn 1 0))
+            #t)
+      (test (on-the-path? (make-posn 4 4))
+            #f))
+
+The computation of the shortest path to the boundary proceeds by computing two
+distance maps; the distance map to the boundary and the distance map to the
+cat. Then, a node is on one of the shortest paths if the distance to the cat
+plus the distance to the boundary is equal to the distance from the cat to the
+boundary.
+
+The code is essentially that, plus two other special cases. Specifically if the
+“h” key is not pressed down, then we just consider no cells to be on that
+shortest path. And if the distance to the cat is '∞, then again no nodes are on
+the path. The second situation happens when the cat is completely boxed in and
+has lost the game.
+
+<on-cats-path?> ::=
+
+    (define/contract (on-cats-path? w)
+      (-> world? (-> posn? boolean?))
+      (cond
+        [(world-h-down? w)
+         (let ()
+           (define edge-distance-map (build-bfs-table w 'boundary))
+           (define cat-distance-map (build-bfs-table w (world-cat w)))
+           (define cat-distance
+             (lookup-in-table edge-distance-map (world-cat w)))
+           (cond
+             [(equal? cat-distance '∞)
+              (lambda (p) #f)]
+             [else
+              (lambda (p)
+                (equal? (+/f (lookup-in-table cat-distance-map p)
+                             (lookup-in-table edge-distance-map p))
+                        cat-distance))]))]
+        [else
+         (lambda (p) #f)]))
+
+Finally, the helper function +/f is just like +, except that it returns '∞ if
+either argument is '∞.
+
+<+/f> ::=
+
+    (define (+/f x y)
+      (cond
+        [(or (equal? x '∞) (equal? y '∞))
+         '∞]
+        [else
+         (+ x y)]))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

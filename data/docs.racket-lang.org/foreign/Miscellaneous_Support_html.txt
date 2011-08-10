@@ -1,0 +1,112 @@
+▼  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+On this page:
+regexp-replaces
+list->cblock
+vector->cblock
+vector->cpointer
+flvector->cpointer
+saved-errno
+lookup-errno
+cast
+cblock->list
+cblock->vector
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Miscellaneous Support
+
+(regexp-replaces objname substs) → string?
+  objname : (or/c string? bytes? symbol?)
+  substs : (listof (list regexp? string?))
+A function that is convenient for many interfaces where the foreign library has
+some naming convention that you want to use in your interface as well. The
+objname argument can be any value that will be used to name the foreign object;
+it is first converted into a string, and then modified according to the given
+substs list in sequence, where each element in this list is a list of a regular
+expression and a substitution string. Usually, regexp-replace* is used to
+perform the substitution, except for cases where the regular expression begins
+with a ^ or ends with a $, in which case regexp-replace is used.
+
+For example, the following makes it convenient to define Racket bindings such
+as foo-bar for foreign names like MyLib_foo_bar:
+
+    (define mylib (ffi-lib "mylib"))
+    (define-syntax defmyobj
+      (syntax-rules (:)
+        [(_ name : type ...)
+         (define name
+           (get-ffi-obj
+            (regexp-replaces 'name '((#rx"-" "_")
+                                     (#rx"^" "MyLib_")))
+            mylib (_fun type ...)))]))
+    (defmyobj foo-bar : _int -> _int)
+
+(list->cblock lst type) → any
+  lst : list?
+  type : ctype?
+Allocates a memory block of an appropriate size, and initializes it using
+values from lst and the given type. The lst must hold values that can all be
+converted to C values according to the given type.
+
+(vector->cblock vec type) → any
+  vec : vector?
+  type : type?
+Like list->cblock, but for Racket vectors.
+
+(vector->cpointer vec) → cpointer?
+  vec : vector?
+Returns a pointer to an array of _scheme values, which is the internal
+representation of vec.
+
+(flvector->cpointer flvec) → cpointer?
+  flvec : flvector?
+Returns a pointer to an array of _double values, which is the internal
+representation of flvec.
+
+(saved-errno) → exact-integer?
+Returns the value most recently saved (in the current thread) after a foreign
+call with a non-#f #:save-errno option (see _fun and _cprocedure).
+
+(lookup-errno sym) → exact-integer?
+  sym : (or/c 'EINTR 'EEXIST 'EAGAIN)
+Returns a platform-specific value corresponding to a Posix errno symbol. The
+set of supported symbols is likely to expand in the future.
+
+(cast v from-type to-type) → any/c
+  v : any/c
+  from-type : ctype?
+  to-type : ctype?
+Converts v from a value matching from-type to a value matching to-type, where (
+ctype-sizeof from-type) matches (ctype-sizeof to-type).
+
+The conversion is equivalent to
+
+    (let ([p (malloc from-type)])
+      (ptr-set! p from-type v)
+      (ptr-ref p to-type))
+
+(cblock->list cblock type length) → list?
+  cblock : any/c
+  type : ctype?
+  length : exact-nonnegative-integer?
+Converts C cblock, which is a vector of types, to a Racket list. The arguments
+are the same as in the list->cblock. The length must be specified because there
+is no way to know where the block ends.
+
+(cblock->vector cblock type length) → vector?
+  cblock : any/c
+  type : ctype?
+  length : exact-nonnegative-integer?
+Like cblock->vector, but for Racket vectors.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,546 @@
+►  Dr Racket: The Racket Programming Environment
+1  Interface Essentials
+2  Languages
+3  Interface Reference
+4  Extending Dr Racket
+   Index
+▼ 3  Interface Reference
+3.1  Menus
+3.2  Preferences
+3.3  Keyboard Shortcuts
+3.4  Dr Racket Files
+► 3.3  Keyboard Shortcuts
+3.3.1  Moving Around
+3.3.2  Editing Operations
+3.3.3  File Operations
+3.3.4  Search
+3.3.5  Miscellaneous
+3.3.6  Interactions
+3.3.7  La Te X and Te X inspired keybindings
+3.3.8  Defining Custom Shortcuts
+On this page:
+3.3.1 Moving Around
+3.3.2 Editing Operations
+3.3.3 File Operations
+3.3.4 Search
+3.3.5 Miscellaneous
+3.3.6 Interactions
+3.3.7 La Te X and Te X inspired keybindings
+3.3.8 Defining Custom Shortcuts
+[...search manuals...]
+  top← prev  up  next → 
+
+3.3 Keyboard Shortcuts
+
+Most key presses simply insert a character into the editor, such as a, 3, or (.
+Other keys and key combinations act as keyboard shortcuts that move the
+blinking caret, delete a line, copy the selection, etc. Keyboard shortcuts are
+usually trigger by key combinations using the Control, Meta, or Command key.
+
+            Many of the key-binding actions can also be performed with menu
+            items.
+
+C-‹key› means press the Control key, hold it down and then press ‹key› and then
+release them both. For example: C-e (Control-E) moves the blinking caret to the
+end of the current line.
+
+M-‹key› is the same as C-‹key›, except with the Meta key. Depending on your
+keyboard, Meta may be called “Left,” “Right,” or have a diamond symbol, but
+it’s usually on the bottom row next to the space bar. M-‹key› can also be
+performed as a two-character sequence: first, strike and release the Escape
+key, then strike ‹key›. On Windows and Mac OS X, Meta is only available through
+the Escape key.
+
+DEL is the Delete key.
+
+SPACE is the Space bar.
+
+On most keyboards, “<” and “>” are shifted characters. So, to get M->, you
+actually have to type Meta-Shift->. That is, press and hold down both the Meta
+and Shift keys, and then strike “>”.
+
+On Windows, some of these keybindings are actually standard menu items. Those
+keybindings will behave according to the menus, unless the Enable keybindings
+in menus preference is unchecked.
+
+If you are most familiar with Emacs-style key bindings, you should uncheck the
+Enable keybindings in menus preference. Many of the keybindings below are
+inspired by Emacs.}
+
+3.3.1 Moving Around
+
+  • C-f : move forward one character
+
+  • C-b : move backward one character
+
+  • M-f : move forward one word
+
+  • M-b : move backward one word
+
+  • C-v : move forward one page
+
+  • M-v : move backward one page
+
+  • M-< : move to beginning of file
+
+  • M-> : move to end of file
+
+  • C-a : move to beginning of line (left)
+
+  • C-e : move to end of line (right)
+
+  • C-n : move to next line (down)
+
+  • C-p : move to previous line (up)
+
+  • M-C-f : move forward one S-expression
+
+  • M-C-b : move backward one S-expression
+
+  • M-C-u : move up out of an S-expression
+
+  • M-C-d : move down into a nested S-expression
+
+  • M-C-SPACE : select forward S-expression
+
+  • M-C-p : match parentheses backward
+
+  • M-C-left : move backwards to the nearest editor box
+
+  • A-C-left : move backwards to the nearest editor box
+
+  • M-C-right : move forward to the nearest editor box
+
+  • A-C-right : move forward to the nearest editor box
+
+  • M-C-up : move up out of an embedded editor
+
+  • A-C-up : move up out of an embedded editor
+
+  • M-C-down : move down into an embedded editor
+
+  • A-C-down : move down into an embedded editor
+
+  • C-F6 : move the cursor from the definitions window to the interactions
+    window (or the search window, if it is open).
+
+3.3.2 Editing Operations
+
+  • C-_ : undo
+
+  • C-+ : redo
+
+  • C-x u : undo
+
+  • C-d : delete forward one character
+
+  • C-h : delete backward one character
+
+  • M-d : delete forward one word
+
+  • M-DEL : delete backward one word
+
+  • C-k : delete forward to end of line
+
+  • M-C-k : delete forward one S-expression
+
+  • M-w : copy selection to clipboard
+
+  • C-w : delete selection to clipboard (cut)
+
+  • C-y : paste from clipboard (yank)
+
+  • C-t : transpose characters
+
+  • M-t : transpose words
+
+  • M-C-t : transpose sexpressions
+
+  • M-C-m : toggle dark green marking of matching parenthesis
+
+  • M-C-k : cut complete sexpression
+
+  • M-( : wrap selection in parentheses
+
+  • M-[ : wrap selection in square brackets
+
+  • M-{ : wrap selection in curly brackets
+
+  • M-S-L : wrap selection in (lambda () ...) and put the insertion point in
+    the arglist of the lambda
+
+  • C-c C-o : the sexpression following the insertion point is put in place of
+    its containing sexpression
+
+  • C-c C-e : the first and last characters (usually parentheses) of the
+    containing expression are removed
+
+  • C-c C-l : wraps a let around the sexpression following the insertion point
+    and puts a printf in at that point (useful for debugging).
+
+  • M-o : toggle overwrite mode
+
+3.3.3 File Operations
+
+  • C-x C-s : save file
+
+  • C-x C-w : save file under new name
+
+3.3.4 Search
+
+  • C-s : search for string forward
+
+  • C-r : search for string backward
+
+3.3.5 Miscellaneous
+
+  • F5 : Run
+
+3.3.6 Interactions
+
+The interactions window has all of the same keyboard shortcuts as the
+definitions window plus a few more:
+
+  • M-p : bring the previously entered expression down to the prompt
+
+  • M-n : bring the expression after the current expression in the expression
+    history down to the prompt
+
+3.3.7 LaTeX and TeX inspired keybindings
+
+  • C-\ M-\ c:x;l : traces backwards from the insertion point, looking for a
+    backslash followed by a LaTeX macro name or a prefix of such a name. If a
+    macro name is found, it replaces the backslash and the name with the
+    corresponding key in the table below; if a (proper) prefix p is found, it
+    replaces p with the longest common prefix of all macro names that have p as
+    a prefix (unless there is only one such name, in which case it behaves as
+    if p were a complete macro name).
+
+    These are the currently supported macro names and the keys they map into:
+     \Downarrow         ⇓
+
+     \nwarrow           ↖
+
+     \downarrow         ↓
+
+     \Rightarrow        ⇒
+
+     \rightarrow        →
+
+     \mapsto            ↦
+
+     \searrow           ↘
+
+     \swarrow           ↙
+
+     \leftarrow         ←
+
+     \uparrow           ↑
+
+     \Leftarrow         ⇐
+
+     \longrightarrow    −
+
+     \Uparrow           ⇑
+
+     \Leftrightarrow    ⇔
+
+     \updownarrow       ↕
+
+     \leftrightarrow    ↔
+
+     \nearrow           ↗
+
+     \Updownarrow       ⇕
+
+     \aleph             א
+
+     \prime             ′
+
+     \emptyset          ∅
+
+     \nabla             ∇
+
+     \diamondsuit       ♦
+
+     \spadesuit         ♠
+
+     \clubsuit          ♣
+
+     \heartsuit         ♥
+
+     \sharp             ♯
+
+     \flat              ♭
+
+     \natural           ♮
+
+     \surd              √
+
+     \neg               NOT
+
+     \triangle          △
+
+     \forall            ∀
+
+     \exists            ∃
+
+     \infty             ∞
+
+     \circ              ∘
+
+     \alpha             α
+
+     \theta             θ
+
+     \tau               τ
+
+     \beta              β
+
+     \vartheta          θ
+
+     \pi                π
+
+     \upsilon           υ
+
+     \gamma             γ
+
+     \varpi             π
+
+     \phi               φ
+
+     \delta             δ
+
+     \kappa             κ
+
+     \rho               ρ
+
+     \varphi            φ
+
+     \epsilon           ε
+
+     \lambda            λ
+
+     \varrho            ρ
+
+     \chi               χ
+
+     \varepsilon        ε
+
+     \mu                μ
+
+     \sigma             σ
+
+     \psi               ψ
+
+     \zeta              ζ
+
+     \nu                ν
+
+     \varsigma          ς
+
+     \omega             ω
+
+     \eta               η
+
+     \xi                ξ
+
+     \iota              ι
+
+     \Gamma             Γ
+
+     \Lambda            Λ
+
+     \Sigma             Σ
+
+     \Psi               Ψ
+
+     \Delta             ∆
+
+     \Xi                Ξ
+
+     \Upsilon           Υ
+
+     \Omega             Ω
+
+     \Theta             Θ
+
+     \Pi                Π
+
+     \Phi               Φ
+
+     \pm                +-
+
+     \cap               ∩
+
+     \diamond           ◇
+
+     \oplus             ⊕
+
+     \mp                ∓
+
+     \cup               ∪
+
+     \bigtriangleup     △
+
+     \ominus            ⊖
+
+     \times             x
+
+     \uplus             ⊎
+
+     \bigtriangledown   ▽
+
+     \otimes            ⊗
+
+     \div               -:
+
+     \sqcap             ⊓
+
+     \triangleleft      ▹
+
+     \oslash            ⊘
+
+     \ast               ∗
+
+     \sqcup             ⊔
+
+     \vee               ∨
+
+     \wedge             ∧
+
+     \triangleright     ◃
+
+     \odot              ⊙
+
+     \star              ★
+
+     \dagger            †
+
+     \bullet            •
+
+     \ddagger           ‡
+
+     \wr                ≀
+
+     \amalg             ⨿
+
+     \leq               ≤
+
+     \geq               ≥
+
+     \equiv             ≡
+
+     \models            ⊨
+
+     \prec              ≺
+
+     \succ              ≻
+
+     \sim               ∼
+
+     \perp              ⊥
+
+     \top               ⊤
+
+     \preceq            ≼
+
+     \succeq            ≽
+
+     \simeq             ≃
+
+     \ll                ≪
+
+     \gg                ≫
+
+     \asymp             ≍
+
+     \parallel          ∥
+
+     \subset            ⊂
+
+     \supset            ⊃
+
+     \approx            ≈
+
+     \bowtie            ⋈
+
+     \subseteq          ⊆
+
+     \supseteq          ⊇
+
+     \cong              ≌
+
+     \sqsubsetb         ⊏
+
+     \sqsupsetb         ⊐
+
+     \neq               ≠
+
+     \smile             ⌣
+
+     \sqsubseteq        ⊑
+
+     \sqsupseteq        ⊒
+
+     \doteq             ≐
+
+     \frown             ⌢
+
+     \in                ∈
+
+     \ni                ∋
+
+     \propto            ∝
+
+     \vdash             ⊢
+
+     \dashv             ⊣
+
+     \cdot              .
+
+     \sqrt              √
+
+     \skull             ☠
+
+     \smiley            ☺
+
+     \blacksmiley       ☻
+
+     \frownie           ☹
+
+     \S                 S:
+
+     \newpage           
+
+
+3.3.8 Defining Custom Shortcuts
+
+The Add User-defined Keybindings... menu item in the Keybindings sub-menu of
+Edit selects a file containing Racket definitions of keybindings. The file must
+contain a module that uses a special keybindings language, framework/
+keybinding-lang. To do so, begin your file with this line:
+
+    #lang s-exp framework/keybinding-lang
+
+The framework/keybinding-lang languages provides all of the bindings from
+racket, racket/class, and drracket/tool-lib, except that it adjusts #
+%module-begin to introduce a keybinding form:
+
+    (keybinding string-expr proc-expr)
+
+    Declares a keybinding, where string-expr must produce a suitable first
+    argument for map-function in keymap%, and the proc-expr must produce a
+    suitable second argument for add-function in keymap%.
+
+For example, this remaps the key combination “control-a” key to “!”.
+
+    #lang s-exp framework/keybinding-lang
+    (keybinding "c:a" (λ (editor evt) (send editor insert "!")))
+
+Note that DrRacket does not reload this file automatically when you make a
+change, so you’ll need to restart DrRacket to see changes to the file.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

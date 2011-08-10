@@ -1,0 +1,140 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+color-prefs: set-default/ color-scheme
+color-prefs: register-color-preference
+color-prefs: add-background-preferences-panel
+color-prefs: add-to-preferences-panel
+color-prefs: build-color-selection-panel
+color-prefs: marshall-style-delta
+color-prefs: unmarshall-style-delta
+color-prefs: white-on-black
+color-prefs: black-on-white
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Color Prefs
+
+(color-prefs:set-default/color-scheme   pref-sym               
+                                        black-on-white-color   
+                                        white-on-black-color)  
+ → void?
+  pref-sym : symbol?
+  black-on-white-color : (or/c (is-a?/c color%) string?)
+  white-on-black-color : (or/c (is-a?/c color%) string?)
+Registers a preference whose value will be updated when the user clicks on one
+of the color scheme default settings in the preferences dialog.
+
+Also calls preferences:set-default and preferences:set-un/marshall with
+appropriate arguments to register the preference.
+(color-prefs:register-color-preference  
+     pref-name                          
+     style-name                         
+     color/sd                           
+   [ white-on-black-color               
+     #:background background])          
+ → void?
+  pref-name : symbol?
+  style-name : string?
+  color/sd : (or/c (is-a?/c color%) (is-a?/c style-delta%))
+  white-on-black-color : (or/c string? (is-a?/c color%) #f) = #f
+  background : (or/c (is-a?/c color%) #f) = #f
+This function registers a color preference and initializes the style list
+returned from editor:get-standard-style-list. In particular, it calls
+preferences:set-default and preferences:set-un/marshall to install the pref for
+pref-name, using color/sd as the default color. The preference is bound to a
+style-delta%, and initially the style-delta% changes the foreground color to
+color/sd, unless color/sd is a style delta already, in which case it is just
+used directly. Then, it calls editor:set-standard-style-list-delta passing the
+style-name and the current value of the preference pref-name.
+
+Finally, it adds calls preferences:add-callback to set a callback for pref-name
+that updates the style list when the preference changes.
+
+If white-on-black-color is not #f, then the color of the color/sd argument is
+used in combination with white-on-black-color to register this preference with
+color-prefs:set-default/color-scheme.
+
+If either background is not #f, then it is used to construct the default
+background color for the style delta.
+(color-prefs:add-background-preferences-panel) → void?
+Adds a preferences panel that configures the background color for
+editor:basic-mixin.
+(color-prefs:add-to-preferences-panel   name         
+                                        func)   →   void?
+  name : string?
+  func : ((is-a?/c vertical-panel%) . -> . void?)
+Calls func with the subpanel of the preferences coloring panel that corresponds
+to name.
+(color-prefs:build-color-selection-panel  
+     parent                               
+     pref-sym                             
+     style-name                           
+     example-text                         
+   [ #:background? background?])          
+ → void?
+  parent : (is-a?/c area-container<%>)
+  pref-sym : symbol?
+  style-name : string?
+  example-text : string?
+  background? : boolean? = #f
+Builds a panel with a number of controls for configuring a font: its color
+(including a background configuration if background is #t) and check boxes for
+bold, italic, and underline. The parent argument specifies where the panel will
+be placed. The pref-sym should be a preference (suitable for use with
+preferences:get and preferences:set). The style-name specifies the name of a
+style in the style list returned from editor:get-standard-style-list and
+example-text is shown in the panel so users can see the results of their
+configuration.
+(color-prefs:marshall-style-delta style-delta) → printable/c
+  style-delta : (is-a?/c style-delta%)
+Builds a printed representation for a style-delta.
+(color-prefs:unmarshall-style-delta marshalled-style-delta)
+ → (or/c false/c (is-a?/c style-delta%))
+  marshalled-style-delta : printable/c
+Builds a style delta from its printed representation. Returns #f if the printed
+form cannot be parsed.
+(color-prefs:white-on-black) → any
+Sets the colors registered by color-prefs:register-color-preference to their
+white-on-black variety.
+(color-prefs:black-on-white) → any
+Sets the colors registered by color-prefs:register-color-preference to their
+black-on-white variety.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

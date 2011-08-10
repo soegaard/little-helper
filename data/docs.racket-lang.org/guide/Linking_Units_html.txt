@@ -1,0 +1,101 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 14  Units (Components)
+14.1  Signatures and Units
+14.2  Invoking Units
+14.3  Linking Units
+14.4  First-Class Units
+14.5  Whole-module Signatures and Units
+14.6  Contracts for Units
+14.7  unit versus module
+[...search manuals...]
+  top← prev  up  next → 
+
+14.3 Linking Units
+
+We can make our toy economy more efficient by having toy factories that
+cooperate with stores, creating toys that do not have to be repainted. Instead,
+the toys are always created using the store’s color, which the factory gets by
+importing toy-store^:
+
+        "store-specific-factory-unit.rkt"
+
+            #lang racket
+             
+            (require "toy-factory-sig.rkt")
+             
+            (define-unit store-specific-factory@
+              (import toy-store^)
+              (export toy-factory^)
+             
+              (define-struct toy () #:transparent)
+             
+              (define (toy-color t) (store-color))
+             
+              (define (build-toys n)
+                (for/list ([i (in-range n)])
+                  (make-toy)))
+             
+              (define (repaint t col)
+                (error "cannot repaint")))
+             
+            (provide store-specific-factory@)
+
+To invoke store-specific-factory@, we need toy-store^ bindings to supply to the
+unit. But to get toy-store^ bindings by invoking toy-store@, we will need a toy
+factory! The unit implementations are mutually dependent, and we cannot invoke
+either before the other.
+
+The solution is to link the units together, and then we can invoke the combined
+units. The define-compound-unit/infer form links any number of units to form a
+combined unit. It can propagate imports and exports from the linked units, and
+it can satisfy each unit’s imports using the exports of other linked units.
+
+    > (require "store-specific-factory-unit.rkt")
+    > (define-compound-unit/infer toy-store+factory@
+        (import)
+        (export toy-factory^ toy-store^)
+        (link store-specific-factory@
+              toy-store@))
+
+The overall result above is a unit toy-store+factory@ that exports both
+toy-factory^ and toy-store^. The connection between store-specific-factory@ and
+toy-store@ is inferred from the signatures that each imports and exports.
+
+This unit has no imports, so we can always invoke it:
+
+    > (define-values/invoke-unit/infer toy-store+factory@)
+    > (stock! 2)
+    > (get-inventory)
+    (list (toy )(toy ))
+
+    > (map toy-color (get-inventory))
+    '(green green)
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,67 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 2  Making Pictures
+2.1  Pict Datatype
+2.2  Basic Pict Constructors
+2.3  Pict Combiners
+2.4  Pict Drawing Adjusters
+2.5  Bounding-Box Adjusters
+2.6  Pict Finders
+2.7  More Pict Constructors
+2.8  Miscellaneous
+2.9  Rendering
+On this page:
+hyperlinkize
+scale-color
+color-series
+[...search manuals...]
+  top← prev  up  next → 
+
+2.8 Miscellaneous
+
+(hyperlinkize pict) → pict?
+  pict : pict?
+Adds an underline and blue color. The pict’s height and descent are extended.
+
+(scale-color factor color) → (is-a?/c color%)
+  factor : real?
+  color : (or/c string (is-a?/c color%))
+Scales a color, making it brighter or darker. If the factor is less than 1, the
+color is darkened by multiplying the RGB components by the factor. If the
+factor is greater tham 1, the color is lightened by dividing the gap between
+the RGB components and 255 by the factor.
+
+(color-series   dc                 
+                max-step           
+                step-delta         
+                start              
+                end                
+                proc               
+                set-pen?           
+                set-brush?)   →   void?
+  dc : (is-a?/c dc<%>)
+  max-step : exact-nonnegative-integer?
+  step-delta : (and/c exact? positive?)
+  start : (or/c string? (is-a?/c color%))
+  end : (or/c string? (is-a?/c color%))
+  proc : (exact? . -> . any)
+  set-pen? : any/c
+  set-brush? : any/c
+Calls a proc multiple times, gradually changing the pen and/or brush color for
+each call. For the first call, the current pen and/or brush color matches
+start; for the last call, it matches end; and for intermediate calls, the color
+is an intermediate color.
+
+The max-step and step-delta arguments should be exact numbers; the procedure is
+called with each number from 0 to max-step inclusive using a step-delta
+increment.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

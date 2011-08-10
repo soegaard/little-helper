@@ -1,0 +1,41 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 2  Dispatchers
+ 2.1  General
+ 2.2  Mapping URLs to Paths
+ 2.3  Sequencing
+ 2.4  Timeouts
+ 2.5  Lifting Procedures
+ 2.6  Filtering Requests
+ 2.7  Procedure Invocation upon Request
+ 2.8  Logging
+ 2.9  Password Protection
+2.10  Virtual Hosts
+2.11  Serving Files
+2.12  Serving Servlets
+2.13  Statistics
+2.14  Limiting Requests
+On this page:
+make
+[...search manuals...]
+  top← prev  up  next → 
+
+2.5 Lifting Procedures
+
+ (require web-server/dispatchers/dispatch-lift)
+The web-server/dispatchers/dispatch-lift module defines a dispatcher
+constructor.
+(make proc) → dispatcher/c
+  proc : (request? . -> . response?)
+Constructs a dispatcher that calls proc on the request object, and outputs the
+response to the connection.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,475 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+append
+append-column
+delete
+delete-column
+get-column-labels
+get-column-order
+get-column-width
+get-data
+get-first-visible-item
+get-label-font
+get-selections
+is-selected?
+number-of-visible-items
+select
+set
+set-column-label
+set-column-order
+set-column-width
+set-data
+set-first-visible-item
+set-string
+Inherited methods:
+from list-control<%>
+clear
+find-string
+get-number
+get-selection
+get-string
+get-string-selection
+set-selection
+set-string-selection
+from control<%>
+command
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-focus
+on-move
+on-size
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+[...search manuals...]
+  top← prev  up  next → 
+
+list-box% : class?
+  superclass: object%
+
+  extends:  list-control<%>
+A list box allows the user to select one or more string items from a scrolling
+list. A list box is either a single-selection control (if an item is selected,
+the previous selection is removed) or a multiple-selection control (clicking an
+item toggles the item on or off independently of other selections).
+
+Whenever the user changes the selection in a list box, the list box’s callback
+procedure is called. A callback procedure is provided as an initialization
+argument when each list box is created.
+
+A list box can have multiple columns with optional column headers. An item in
+the list corresponds to a row that spans all columns. When column headers are
+displayed, the column widths can be changed by a user. In addition, columns can
+optionally support dragging by the user to change the display order of columns,
+while the logical order remains fixed.
+
+List box rows and columns are indexed from 0.
+
+See also choice%.
+
+(new list-box%    [label label]                            
+                  [choices choices]                        
+                  [parent parent]                          
+                [ [callback callback]                      
+                  [style style]                            
+                  [selection selection]                    
+                  [font font]                              
+                  [label-font label-font]                  
+                  [enabled enabled]                        
+                  [vert-margin vert-margin]                
+                  [horiz-margin horiz-margin]              
+                  [min-width min-width]                    
+                  [min-height min-height]                  
+                  [stretchable-width stretchable-width]    
+                  [stretchable-height stretchable-height]  
+                  [columns columns]                        
+                  [column-order column-order]])            
+ → (is-a?/c list-box%)
+  label : (or/c label-string? false/c)
+  choices : (listof label-string?)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+   callback   :   ((is-a?/c list-box%) (is-a?/c control-event%) . -> . any)
+              =   (lambda (c e) (void))
+               (listof (one-of/c 'single 'multiple 'extended
+                                 'vertical-label 'horizontal-label
+   style   :                     'variable-columns 'column-headers
+                                 'clickable-headers 'reorderable-headers
+                                 'deleted))
+           =   '(single)
+  selection : (or/c exact-nonnegative-integer? false/c) = #f
+  font : (is-a?/c font%) = view-control-font
+  label-font : (is-a?/c font%) = normal-control-font
+  enabled : any/c = #t
+  vert-margin : (integer-in 0 1000) = 2
+  horiz-margin : (integer-in 0 1000) = 2
+  min-width : (integer-in 0 10000) = graphical-minimum-width
+  min-height : (integer-in 0 10000) = graphical-minimum-height
+  stretchable-width : any/c = #t
+  stretchable-height : any/c = #t
+   columns   :   (cons/c label-string? (listof label-string?))
+             =   '("Column")
+   column-order   :   (or/c #f (listof exact-nonnegative-integer?))
+                  =   #f
+If label is not #f, it is used as the list box label. Otherwise, the list box
+will not display its label.
+
+If & occurs in label, it is specially parsed as for button%.
+
+The choices list specifies the initial list of items to appear in the list box.
+If the list box has multiple columns, choices determines the content of the
+first column, and other columns are initialized to the empty string.
+
+The callback procedure is called when the user changes the list box selection,
+by either selecting, re-selecting, deselecting, or double-clicking an item. The
+type of the event provided to the callback is 'list-box-dclick when the user
+double-clicks on an item, or 'list-box otherwise.
+
+The columns list determines the number of columns in the list box. The column
+titles in columns are shown only if style includes 'column-headers. If style
+also includes 'clickable-headers, then a click on a header triggers a call to
+callback with a column-control-event% argument whose event type is 
+'list-box-column.
+
+The style specification must include exactly one of the following:
+
+  • 'single — Creates a single-selection list.
+
+  • 'multiple — Creates a multiple-selection list where a single click
+    deselects other items and selects a new item. Use this style for a list
+    when single-selection is common, but multiple selections are allowed.
+
+  • 'extended — Creates a multiple-selection list where a single click extends
+    or contracts the selection by toggling the clicked item. Use this style for
+    a list when multiple selections are the rule rather than the exception.
+
+The 'multiple and 'extended styles determine a platform-independent
+interpretation of unmodified mouse clicks, but dragging, shift-clicking,
+control-clicking, etc. have platform-standard interpretations. Whatever the
+platform-specific interface, the user can always select disjoint sets of items
+or deselect items (and leave no items selected). On some platforms, the user
+can deselect the (sole) selected item in a 'single list box.
+
+If style includes 'vertical-label, then the list box is created with a label
+above the control; if style does not include 'vertical-label (and optionally
+includes 'horizontal-label), then the label is created to the left of the list
+box. If style includes 'deleted, then the list box is created as hidden, and it
+does not affect its parent’s geometry; the list box can be made active later by
+calling parent’s add-child method.
+
+If style includes 'variable-columns, then the number of columns in the list box
+can be changed via append-column and delete-column.
+
+If selection is an integer, it is passed to set-selection to set the initial
+selection. The selection must be less than the length of choices.
+
+The font argument determines the font for the control content, and label-font
+determines the font for the control label. For information about the enabled
+argument, see window<%>. For information about the horiz-margin and vert-margin
+arguments, see subarea<%>. For information about the min-width, min-height,
+stretchable-width, and stretchable-height arguments, see area<%>.
+
+It the column-order argument is not #f, it determines the order in which
+logical columns are initially displayed. See set-column-order for more
+information. If style includes 'column-headers and 'reorderable-headers, then a
+user can reorder columns as displayed (but the display order does not change
+the logical order of the columns).
+
+(send a-list-box append item [data]) → void?
+  item : label-string?
+  data : any/c = #f
+Overrides append in list-control<%>.
+Adds a new item to the list box with an associated “data” object. The data
+object is not displayed in the list box; it is provided merely as a convenience
+for use with get-data, possibly allowing a programmer to avoid managing a
+separate item-to-data mapping in addition to the list box control.
+
+See also append in list-control<%>.
+
+(send a-list-box append-column label) → void?
+  label : label-string?
+Adds a new column with title label to the list box, but only if the list box is
+created with the 'variable-columns style. The new column is logically the last
+column, and it is initially displayed as the last column.
+
+(send a-list-box delete n) → void?
+  n : exact-nonnegative-integer?
+Deletes the item indexed by n. List box rows are indexed from 0. If n is equal
+to or larger than the number of items in the control, an exn:fail:contract
+exception is raised.
+
+Selected items that are not deleted remain selected, and no other items are
+selected.
+
+(send a-list-box delete-column n) → void?
+  n : exact-nonnegative-integer?
+Deletes the column with logical position n, but only if the list box is created
+with the 'variable-columns style, and only if the list box currently has more
+than one column (i.e., the number of columns can never be zero).
+
+(send a-list-box get-column-labels)
+ → (cons/c label-string? (listof label-string?))
+Returns the labels of the list box’s columns, and the number of returned
+strings indicates the number of columns in the list box.
+
+(send a-list-box get-column-order)
+ → (listof exact-nonnegative-integer?)
+Returns the display order of logical columns. Each column is represented by its
+logical position in the result list, and the order of the column positions
+indicates the display order.
+
+See also set-column-order.
+
+(send a-list-box get-column-width column)
+      (integer-in 0 10000)
+  →   (integer-in 0 10000)
+      (integer-in 0 10000)
+  column : exact-nonnegative-integer?
+Gets the width of the column identified by column (in logical positions, as
+opposed to display positions), which must be between 0 and one less than the
+number of columns.
+
+The result includes the column’s current width as well as its minimum and
+maximum widths to constrain the column size as adjusted by a user.
+
+See also set-column-width.
+
+(send a-list-box get-data n) → any/c
+  n : exact-nonnegative-integer?
+Returns the data for the item indexed by n, or #f if there is no associated
+data. List box rows are indexed from 0. If n is equal to or larger than the
+number of choices, an exn:fail:contract exception is raised.
+
+See also append and set-data.
+
+(send a-list-box get-first-visible-item)
+ → exact-nonnegative-integer?
+Reports the index of the item currently scrolled to the top of the list box.
+List box rows are indexed from 0.
+
+(send a-list-box get-label-font) → (is-a?/c font%)
+Returns the font used for the control’s label, which is optionally supplied
+when a list box is created.
+
+(send a-list-box get-selections)
+ → (listof exact-nonnegative-integer?)
+Returns a list of indices for all currently selected items. List box rows are
+indexed from 0.
+
+For single-selection lists, the result is always either null or a list
+containing one number.
+
+(send a-list-box is-selected? n) → boolean?
+  n : exact-nonnegative-integer?
+Returns #t if the items indexed by n is selected, #f otherwise. List box rows
+are indexed from 0. If n is equal to or larger than the number of choices, an
+exn:fail:contract exception is raised.
+
+A list box’s selection can be changed by the user clicking the control, and
+such changes do not go through this method; use the control callback procedure
+(provided as an initialization argument) to monitor selection changes.
+
+(send a-list-box number-of-visible-items)
+ → exact-positive-integer?
+Returns the maximum number of items in the list box that are visible to the
+user with the control’s current size (rounding down if the exact answer is
+fractional, but returning at least 1).
+
+(send a-list-box select n [select?]) → void?
+  n : exact-nonnegative-integer?
+  select? : any/c = #t
+Selects or deselects an item. For selection in a single-selection list box, if
+a different choice is currently selected, it is automatically deselected. For
+selection in a multiple-selection list box, other selections are preserved,
+unlike set-selection.
+
+If select? is #f, the item indexed by n is deselected; otherwise it is
+selected. List box rows are indexed from 0. If n is equal to or larger than the
+number of choices, an exn:fail:contract exception is raised.
+
+A list box’s selection can be changed by the user clicking the control, and
+such changes do not go through this method; use the control callback procedure
+(provided as an initialization argument) to monitor selection changes.
+
+The control’s callback procedure is not invoked.
+
+(send a-list-box set choices ...) → void?
+  choices : (listof label-string?)
+Clears the list box and installs a new list of items. The number of choices
+lists must match the number of columns, and all choices lists must have the
+same number of items, otherwise an exn:fail:contract exception is raised.
+
+(send a-list-box set-column-label   column        
+                                    label)   →   void?
+  column : exact-nonnegative-integer?
+  label : label-string?
+Sets the label of the column identified by column (in logical positions, as
+opposed to display positions), which must be between 0 and one less than the
+number of columns.
+
+(send a-list-box set-column-order column-order) → void?
+  column-order : (listof exact-nonnegative-integer?)
+Sets the order in which logical columns are displayed. Each element of
+column-order must identify a unique column by its logical position, and all
+logical columns must be represented in the list.
+
+See also get-column-order.
+
+(send a-list-box set-column-width   column            
+                                    width             
+                                    min-width         
+                                    max-width)   →   void?
+  column : exact-nonnegative-integer?
+  width : (integer-in 0 10000)
+  min-width : (integer-in 0 10000)
+  max-width : (integer-in 0 10000)
+Sets the width of the column identified by column (in logical positions, as
+opposed to display positions), which must be between 0 and one less than the
+number of columns.
+
+The width argument sets the current display width, while min-width and
+max-width constrain the width of the column when the user resizes it. The width
+argument must be no less than min-width and no more than max-width.
+
+The default width of a column is platform-specific, and the last column of a
+list box may extend to the end of the control independent of its requested
+size.
+
+See also get-column-width.
+
+(send a-list-box set-data n data) → void?
+  n : exact-nonnegative-integer?
+  data : any/c
+Sets the associated data for item indexed by n. List box rows are indexed from
+0. If n is equal to or larger than the number of choices, an exn:fail:contract
+exception is raised.
+
+See also append.
+
+(send a-list-box set-first-visible-item n) → void?
+  n : exact-nonnegative-integer?
+Scrolls the list box so that the item indexed by n is at the top of the list
+box display. List box rows are indexed from 0. If n is equal to or larger than
+the number of choices, an exn:fail:contract exception is raised.
+
+A list box’s scroll position can be changed by the user clicking the control,
+and such changes do not go through this method. A program cannot detect when
+the scroll position changes except by polling get-first-visible-item.
+
+(send a-list-box set-string n label [column]) → void?
+  n : exact-nonnegative-integer?
+  label : label-string?
+  column : exact-nonnegative-integer? = 0
+Sets the item indexed by n in logical column column. List box rows and columns
+are indexed from 0. If n is equal to or larger than the number of choices, or
+if column is equal to or larger than the number of columns, an
+exn:fail:contract exception is raised.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

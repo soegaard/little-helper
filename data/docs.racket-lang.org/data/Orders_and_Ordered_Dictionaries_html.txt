@@ -1,0 +1,229 @@
+▼  Data: Data Structures
+1  Imperative Queues
+2  Growable Vectors
+3  Orders and Ordered Dictionaries
+4  Splay Trees
+5  Skip Lists
+6  Interval Maps
+7  Binary Heaps
+On this page:
+ordering/ c
+prop: ordered-dict
+ordered-dict?
+dict-iterate-least
+dict-iterate-greatest
+dict-iterate-least/ >?
+dict-iterate-least/ >=?
+dict-iterate-greatest/ <?
+dict-iterate-greatest/ <=?
+order
+order?
+order-comparator
+order-domain-contract
+order-=?
+order-<?
+real-order
+datum-order
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Orders and Ordered Dictionaries
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require data/order)
+
+This library defines orders and the ordered dictionary generic interface.
+
+ordering/c : flat-contract?
+Contract for orderings, represented by the symbols '=, '<, and '>.
+
+prop:ordered-dict  :  (struct-type-property/c
+                       (vector-immutableof e/c e/c s/c s/c s/c s/c))
+Struct-type property for defining new ordered dictionary types. The value
+associated with prop:ordered-dict should be an immutable vector of six
+procedures, two “extrema” procedures and four “search” procedures. The extrema
+procedures must satisfy e/c and the search procedures must satisfy s/c:
+
+    e/c = (->i ([d ordered-dict?])
+               [_ (d) (or/c #f (dict-iter-contract d))])
+    s/c = (->i ([d ordered-dict?]
+                [k (d) (dict-key-contract d)])
+                [_ (d) (or/c #f (dict-iter-contract d))])
+
+The procedures are implementations of the following generic functions:
+
+  • dict-iterate-least
+
+  • dict-iterate-greatest
+
+  • dict-iterate-least/>?
+
+  • dict-iterate-least/>=?
+
+  • dict-iterate-greatest/<?
+
+  • dict-iterate-greatest/<=?
+
+A struct type that implements prop:ordered-dict must also implement prop:dict.
+
+(ordered-dict? x) → boolean?
+  x : any/c
+Returns #t if x is an instance of a struct implementing the ordered dictionary
+interface (via prop:ordered-dict).
+
+(dict-iterate-least dict) → any/c
+  dict : ordered-dict?
+(dict-iterate-greatest dict) → any/c
+  dict : ordered-dict?
+Returns the position of the least (greatest) key in the ordered dictionary
+dict. If dict is empty, #f is returned.
+
+(dict-iterate-least/>? dict key) → any/c
+  dict : ordered-dict?
+  key : any/c
+(dict-iterate-least/>=? dict key) → any/c
+  dict : ordered-dict?
+  key : any/c
+(dict-iterate-greatest/<? dict key) → any/c
+  dict : ordered-dict?
+  key : any/c
+(dict-iterate-greatest/<=? dict key) → any/c
+  dict : ordered-dict?
+  key : any/c
+Returns the position of the least key greater than key, the least key greater
+than or equal to key, the greatest key less than key, and the greatest key less
+than or equal to key, respectively. If no key satisfies the criterion, #f is
+returned.
+
+(order name domain-contract comparator)
+ → (and/c order? procedure?)
+  name : symbol?
+  domain-contract : contract?
+  comparator : (-> any/c any/c ordering/c)
+(order name domain-contract =? <? [>?]) → (and/c order? procedure?)
+  name : symbol?
+  domain-contract : contract?
+  =? : (-> any/c any/c boolean?)
+  <? : (-> any/c any/c boolean?)
+  >? : (-> any/c any/c boolean?) = (lambda (x y) (<? y x))
+Produces a named order object encapsulating a domain contract and a comparator
+function. If a single procedure is given, it is used directly as the
+comparator. If two or three procedures are given, they are used to construct
+the comparator.
+
+The domain-contract is not applied to the comparison function; rather, clients
+of the order are advised to incorporate the domain contracts into their own
+contracts. For example, when a splay-tree (see data/splay-tree) is constructed
+with an order, it applies the domain-contract to its keys. Thus the contract is
+checked once per dictionary procedure call, rather than on every comparison.
+
+An order object is applicable as a procedure; it behaves as its comparator.
+
+Examples:
+
+    > (define string-order (order 'string-order string? string=? string<?))
+    > (string-order "abc" "acdc")
+    '<
+
+    > (string-order "x" 12)
+    string=?: expects type <string> as 2nd argument, given: 12;
+
+    other arguments were: "x"
+
+
+
+(order? x) → boolean?
+  x : any/c
+Returns #t if x is an order object, #f otherwise.
+
+(order-comparator ord) → (-> any/c any/c ordering/c)
+  ord : order?
+Extracts the comparator function from an order object.
+
+(order-domain-contract ord) → contract?
+  ord : order?
+Extracts the domain contract from an order object.
+
+(order-=? ord) → (-> any/c any/c boolean?)
+  ord : order?
+(order-<? ord) → (-> any/c any/c boolean?)
+  ord : order?
+Returns a procedure representing the order’s equality relation or less-than
+relation, respectively.
+
+real-order : order?
+The order of the real numbers. The domain of real-order excludes +nan.0 but
+includes +inf.0 and -inf.0. The standard numeric comparisons (=, <) are used;
+exact 1 is equal to inexact 1.0.
+
+Examples:
+
+    > (real-order 1.0 1)
+    '=
+
+    > (real-order 5 7)
+    '<
+
+    > (real-order 9.0 3.4)
+    '>
+
+    > (real-order 1 +inf.0)
+    '<
+
+    > (real-order 5 -inf.0)
+    '>
+
+
+
+datum-order : order?
+An ad hoc order that encompasses many built-in Racket data types. The
+datum-order comparator orders values of the same data type according to the
+data type’s natural order: string=?, string<? for strings, for example (but see
+the warning about numbers below). Different data types are ordered arbitrarily
+but contiguously; for example, all strings sort before all vectors, or vice
+versa. Programs should not rely on the ordering of different data types.
+
+The order is designed so that lists, vectors, and prefab structs are ordered
+lexicographically.
+
+Warning! The datum-order is not compatible with the standard numeric order; all
+exact numbers are ordered before all inexact numbers. This allows 1 to be
+considered distinct from 1.0, for example.
+
+The following built-in data types are currently supported: numbers, strings,
+bytes, keywords, symbols, booleans, characters, null, pairs, vectors, boxes,
+and prefab structs.
+
+Examples:
+
+    > (datum-order 1 2)
+    '<
+
+    > (datum-order 8 5.0)
+    '<
+
+    > (datum-order 3+5i 3+2i)
+    '>
+
+    > (datum-order '(a #:b c) '(a #:c d c))
+    '<
+
+    > (datum-order "apricot" "apple")
+    '>
+
+    > (datum-order '#(1 2 3) '#(1 2))
+    '>
+
+    > (datum-order '#(1 2 3) '#(1 3))
+    '<
+
+    > (datum-order 'apple (box "candy"))
+    '<
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

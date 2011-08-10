@@ -1,0 +1,640 @@
+Title
+
+SRFI 60: Integers as Bits
+
+Author
+
+Aubrey Jaffer
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access previous messages via the
+archive of the mailing list.
+
+  • Received: 2005/01/03
+  • Draft: 2005/01/03 - 2005/03/03
+  • Revised: 2005/01/10
+  • Revised: 2005/01/27
+  • Revised: 2005/01/29
+  • Final: 2005/03/08
+
+Abstract
+
+Treating integers as two's-complement strings of bits is an arcane but
+important domain of computer science. It is used for:
+
+  • hashing;
+  • Galois-field[2] calculations of error-detecting and error-correcting codes;
+  • cryptography and ciphers;
+  • pseudo-random number generation;
+  • register-transfer-level modeling of digital logic designs;
+  • Fast-Fourier transforms;
+  • packing and unpacking numbers in persistent data structures;
+  • space-filling curves with applications to dimension reduction and sparse
+    multi-dimensional database indexes; and
+  • generating approximate seed values for root-finders and transcendental
+    function algorithms.
+
+Rationale
+
+This proposal describes the SLIB module logical, which has been used for those
+purposes listed above.
+
+The discussions of the withdrawn SRFI-33: "Integer Bitwise-operation Library"
+seemed to founder on consistency of procedure names and arity; and on perceived
+competition with the boolean arrays of SRFI-47.
+
+I have implemented both logical number operations and boolean arrays; and have
+not been conflicted as to their application. I used boolean arrays to construct
+very fast indexes for database tables having millions of records. To avoid
+running out of RAM, creation of megabit arrays should be explicit; so the
+boolean array procedures put their results into a passed array. In contrast,
+these procedures are purely functional.
+
+Bits and Complements
+
+A bit-index in these descriptions is nonnegative with the least significant bit
+at index 0. A positive integer has a finite number of "1" bits. A negative
+integer has a finite number of "0" bits.
+
+The reference implementation is written using only Scheme integer operations.
+Thus the only exposure of the underlying representation is the ranges of
+fixnums.
+
+The complement describes the representation of negative integers. With
+one's-complement fixnums, the range of integers is -(2^n) to 2^n, and there are
+two possible representations of 0. With two's-complement fixnums, the range of
+integers is -(2^n+1) to 2^n.
+
+Since we treat integers as having two's-complement negations, the
+two's-complement of an integer is simply its negation. The one's-complement of
+an integer is computed by lognot:
+
+(define (lognot n) (- -1 n))
+
+Bitwise Operations and Integer Properties
+
+The logior, logxor, logand, lognot, logtest, logbit? (logbitp), ash, logcount,
+and integer-length procedures are from Common-Lisp. Logior, logxor, and logand
+have been extended to accept any arity. Opportunities to use an n-ary version
+of logtest have not been frequent enough to justify its extension.
+
+In the Bitwise Operations, rather than striving for orthogonal completeness, I
+have concentrated on a nearly minimal set of bitwise logical functions
+sufficient to support the uses listed above.
+
+Although any two of logior, logxor, and logand (in combination with lognot) are
+sufficient to generate all the two-input logic functions, having these three
+means that any nontrivial two-input logical function can be synthesized using
+just one of these two-input primaries with zero or one calls to lognot.
+
+bitwise-if is what SRFI-33 calls bitwise-merge.
+
+The SRFI-33 aliases: bitwise-ior, bitwise-xor, bitwise-and, bitwise-not,
+bitwise-merge, any-bits-set?, and bit-count are also provided.
+
+log2-binary-factors (alias first-set-bit) is a useful function which is simple
+but non-obvious:
+
+(define (log2-binary-factors n)
+  (+ -1 (integer-length (logand n (- n)))))
+
+Bit Within Word and Field of Bits
+
+The Bit Within Word and Field of Bits procedures are used for modeling digital
+logic and accessing binary data structures in software.
+
+I have changed to copy-bit-field argument order to be consistent with the other
+Field of Bits procedures: the start and end index arguments are last. This
+makes them analogous to the argument order to substring and SRFI-47 arrays,
+which took their cue from substring.
+
+These start and end index arguments are not compatible with SRFI-33's size and
+position arguments (occurring first) in its bit-field procedures. Both define
+copy-bit-field; the arguments and purposes being incompatible.
+
+A procedure in slib/logical.scm, logical:rotate, rotated a given number of
+low-order bits by a given number of bits. This function was quite servicable,
+but I could not name it adequately. I have replaced it with rotate-bit-field
+with the addition of a start argument. This new function rotates a given field
+(from positions start to end) within an integer; leaving the rest unchanged.
+
+Another problematic name was logical:ones, which generated an integer with the
+least significant k bits set. Calls to bit-field could have replaced its uses .
+But the definition was so short that I just replaced its uses with:
+
+(lognot (ash -1 k))
+
+The bit-reverse procedure was then the only one which took a width argument. So
+I replaced it with reverse-bit-field.
+
+The Lamination and Gray-code functions were moved to slib/phil-spc.scm
+
+Bits as Booleans
+
+Bits as Booleans provides the procedures to convert between integers and lists
+of booleans. There is no comparable facility in SRFI-33.
+
+Specification
+
+Bitwise Operations
+
+Function: logand n1 ...
+Function: bitwise-and n1 ...
+    Returns the integer which is the bit-wise AND of the integer arguments.
+
+    Example:
+
+    (number->string (logand #b1100 #b1010) 2)
+        => "1000"
+
+
+Function: logior n1 ...
+Function: bitwise-ior n1 ...
+    Returns the integer which is the bit-wise OR of the integer arguments.
+
+    Example:
+
+    (number->string (logior #b1100 #b1010) 2)
+        => "1110"
+
+
+Function: logxor n1 ...
+Function: bitwise-xor n1 ...
+    Returns the integer which is the bit-wise XOR of the integer arguments.
+
+    Example:
+
+    (number->string (logxor #b1100 #b1010) 2)
+        => "110"
+
+
+Function: lognot n
+Function: bitwise-not n
+    Returns the integer which is the one's-complement of the integer argument.
+
+    Example:
+
+    (number->string (lognot #b10000000) 2)
+        => "-10000001"
+    (number->string (lognot #b0) 2)
+        => "-1"
+
+
+Function: bitwise-if mask n0 n1
+Function: bitwise-merge mask n0 n1
+    Returns an integer composed of some bits from integer n0 and some from
+    integer n1. A bit of the result is taken from n0 if the corresponding bit
+    of integer mask is 1 and from n1 if that bit of mask is 0.
+
+Function: logtest j k
+Function: any-bits-set? j k
+   
+    (logtest j k) == (not (zero? (logand j k)))
+
+    (logtest #b0100 #b1011) => #f
+    (logtest #b0100 #b0111) => #t
+
+
+Integer Properties
+
+Function: logcount n
+Function: bit-count n
+    Returns the number of bits in integer n. If integer is positive, the 1-bits
+    in its binary representation are counted. If negative, the 0-bits in its
+    two's-complement binary representation are counted. If 0, 0 is returned.
+
+    Example:
+
+    (logcount #b10101010)
+        => 4
+    (logcount 0)
+        => 0
+    (logcount -2)
+        => 1
+
+
+Function: integer-length n
+    Returns the number of bits necessary to represent n.
+
+    Example:
+
+    (integer-length #b10101010)
+        => 8
+    (integer-length 0)
+        => 0
+    (integer-length #b1111)
+        => 4
+
+
+Function: log2-binary-factors n
+Function: first-set-bit n
+    Returns the number of factors of two of integer n. This value is also the
+    bit-index of the least-significant `1' bit in n.
+
+    (require 'printf)
+    (do ((idx 0 (+ 1 idx)))
+          ((> idx 16))
+        (printf "%s(%3d) ==> %-5d %s(%2d) ==> %-5d\n"
+                'log2-binary-factors
+                (- idx) (log2-binary-factors (- idx))
+                'log2-binary-factors
+                idx (log2-binary-factors idx)))
+    -|
+    log2-binary-factors(  0) ==> -1    log2-binary-factors( 0) ==> -1
+    log2-binary-factors( -1) ==> 0     log2-binary-factors( 1) ==> 0
+    log2-binary-factors( -2) ==> 1     log2-binary-factors( 2) ==> 1
+    log2-binary-factors( -3) ==> 0     log2-binary-factors( 3) ==> 0
+    log2-binary-factors( -4) ==> 2     log2-binary-factors( 4) ==> 2
+    log2-binary-factors( -5) ==> 0     log2-binary-factors( 5) ==> 0
+    log2-binary-factors( -6) ==> 1     log2-binary-factors( 6) ==> 1
+    log2-binary-factors( -7) ==> 0     log2-binary-factors( 7) ==> 0
+    log2-binary-factors( -8) ==> 3     log2-binary-factors( 8) ==> 3
+    log2-binary-factors( -9) ==> 0     log2-binary-factors( 9) ==> 0
+    log2-binary-factors(-10) ==> 1     log2-binary-factors(10) ==> 1
+    log2-binary-factors(-11) ==> 0     log2-binary-factors(11) ==> 0
+    log2-binary-factors(-12) ==> 2     log2-binary-factors(12) ==> 2
+    log2-binary-factors(-13) ==> 0     log2-binary-factors(13) ==> 0
+    log2-binary-factors(-14) ==> 1     log2-binary-factors(14) ==> 1
+    log2-binary-factors(-15) ==> 0     log2-binary-factors(15) ==> 0
+    log2-binary-factors(-16) ==> 4     log2-binary-factors(16) ==> 4
+
+
+Bit Within Word
+
+Function: logbit? index n
+Function: bit-set? index n
+   
+    (logbit? index n) == (logtest (expt 2 index) n)
+
+    (logbit? 0 #b1101) => #t
+    (logbit? 1 #b1101) => #f
+    (logbit? 2 #b1101) => #t
+    (logbit? 3 #b1101) => #t
+    (logbit? 4 #b1101) => #f
+
+
+Function: copy-bit index from bit
+    Returns an integer the same as from except in the indexth bit, which is 1
+    if bit is #t and 0 if bit is #f.
+
+    Example:
+
+    (number->string (copy-bit 0 0 #t) 2)       => "1"
+    (number->string (copy-bit 2 0 #t) 2)       => "100"
+    (number->string (copy-bit 2 #b1111 #f) 2)  => "1011"
+
+
+Field of Bits
+
+Function: bit-field n start end
+    Returns the integer composed of the start (inclusive) through end
+    (exclusive) bits of n. The startth bit becomes the 0-th bit in the result.
+
+    Example:
+
+    (number->string (bit-field #b1101101010 0 4) 2)
+        => "1010"
+    (number->string (bit-field #b1101101010 4 9) 2)
+        => "10110"
+
+
+Function: copy-bit-field to from start end
+    Returns an integer the same as to except possibly in the start (inclusive)
+    through end (exclusive) bits, which are the same as those of from. The 0-th
+    bit of from becomes the startth bit of the result.
+
+    Example:
+
+    (number->string (copy-bit-field #b1101101010 0 0 4) 2)
+        => "1101100000"
+    (number->string (copy-bit-field #b1101101010 -1 0 4) 2)
+        => "1101101111"
+    (number->string (copy-bit-field #b110100100010000 -1 5 9) 2)
+        => "110100111110000"
+
+
+Function: ash n count
+Function: arithmetic-shift n count
+    Returns an integer equivalent to (inexact->exact (floor (* n (expt 2
+    count)))).
+
+    Example:
+
+    (number->string (ash #b1 3) 2)
+        => "1000"
+    (number->string (ash #b1010 -1) 2)
+        => "101"
+
+
+Function: rotate-bit-field n count start end
+    Returns n with the bit-field from start to end cyclically permuted by count
+    bits towards high-order.
+
+    Example:
+
+    (number->string (rotate-bit-field #b0100 3 0 4) 2)
+        => "10"
+    (number->string (rotate-bit-field #b0100 -1 0 4) 2)
+        => "10"
+    (number->string (rotate-bit-field #b110100100010000 -1 5 9) 2)
+        => "110100010010000"
+    (number->string (rotate-bit-field #b110100100010000 1 5 9) 2)
+        => "110100000110000"
+
+
+Function: reverse-bit-field n start end
+    Returns n with the order of bits start to end reversed.
+
+    (number->string (reverse-bit-field #xa7 0 8) 16)
+        => "e5"
+
+
+Bits as Booleans
+
+Function: integer->list k len
+Function: integer->list k
+    integer->list returns a list of len booleans corresponding to each bit of
+    the given integer. #t is coded for each 1; #f for 0. The len argument
+    defaults to (integer-length k).
+
+Function: list->integer list
+    list->integer returns an integer formed from the booleans in the list list,
+    which must be a list of booleans. A 1 bit is coded for each #t; a 0 bit for
+    #f.
+
+    integer->list and list->integer are inverses so far as equal? is concerned.
+
+Function: booleans->integer bool1 ...
+    Returns the integer coded by the bool1 ... arguments.
+
+Implementation
+
+slib/logical.scm implements the integers-as-bits procedures for R4RS or R5RS
+compliant Scheme implementations.
+
+;;;; "logical.scm", bit access and operations for integers for Scheme
+;;; Copyright (C) 1991, 1993, 2001, 2003, 2005 Aubrey Jaffer
+;
+;Permission to copy this software, to modify it, to redistribute it,
+;to distribute modified versions, and to use it for any purpose is
+;granted, subject to the following restrictions and understandings.
+;
+;1.  Any copy made of this software must include this copyright notice
+;in full.
+;
+;2.  I have made no warranty or representation that the operation of
+;this software will be error-free, and I am under no obligation to
+;provide any services, by way of maintenance, update, or otherwise.
+;
+;3.  In conjunction with products arising from the use of this
+;material, there shall be no use of my name in any advertising,
+;promotional, or sales literature without prior written consent in
+;each case.
+
+(define logical:boole-xor
+ '#(#(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15)
+    #(1 0 3 2 5 4 7 6 9 8 11 10 13 12 15 14)
+    #(2 3 0 1 6 7 4 5 10 11 8 9 14 15 12 13)
+    #(3 2 1 0 7 6 5 4 11 10 9 8 15 14 13 12)
+    #(4 5 6 7 0 1 2 3 12 13 14 15 8 9 10 11)
+    #(5 4 7 6 1 0 3 2 13 12 15 14 9 8 11 10)
+    #(6 7 4 5 2 3 0 1 14 15 12 13 10 11 8 9)
+    #(7 6 5 4 3 2 1 0 15 14 13 12 11 10 9 8)
+    #(8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7)
+    #(9 8 11 10 13 12 15 14 1 0 3 2 5 4 7 6)
+    #(10 11 8 9 14 15 12 13 2 3 0 1 6 7 4 5)
+    #(11 10 9 8 15 14 13 12 3 2 1 0 7 6 5 4)
+    #(12 13 14 15 8 9 10 11 4 5 6 7 0 1 2 3)
+    #(13 12 15 14 9 8 11 10 5 4 7 6 1 0 3 2)
+    #(14 15 12 13 10 11 8 9 6 7 4 5 2 3 0 1)
+    #(15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0)))
+
+(define logical:boole-and
+ '#(#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+    #(0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1)
+    #(0 0 2 2 0 0 2 2 0 0 2 2 0 0 2 2)
+    #(0 1 2 3 0 1 2 3 0 1 2 3 0 1 2 3)
+    #(0 0 0 0 4 4 4 4 0 0 0 0 4 4 4 4)
+    #(0 1 0 1 4 5 4 5 0 1 0 1 4 5 4 5)
+    #(0 0 2 2 4 4 6 6 0 0 2 2 4 4 6 6)
+    #(0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7)
+    #(0 0 0 0 0 0 0 0 8 8 8 8 8 8 8 8)
+    #(0 1 0 1 0 1 0 1 8 9 8 9 8 9 8 9)
+    #(0 0 2 2 0 0 2 2 8 8 10 10 8 8 10 10)
+    #(0 1 2 3 0 1 2 3 8 9 10 11 8 9 10 11)
+    #(0 0 0 0 4 4 4 4 8 8 8 8 12 12 12 12)
+    #(0 1 0 1 4 5 4 5 8 9 8 9 12 13 12 13)
+    #(0 0 2 2 4 4 6 6 8 8 10 10 12 12 14 14)
+    #(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15)))
+
+(define (logical:ash-4 x)
+  (if (negative? x)
+      (+ -1 (quotient (+ 1 x) 16))
+      (quotient x 16)))
+
+(define (logical:reduce op4 ident)
+  (lambda args
+    (do ((res ident (op4 res (car rgs) 1 0))
+         (rgs args (cdr rgs)))
+        ((null? rgs) res))))
+
+;@
+(define logand
+  (letrec
+      ((lgand
+        (lambda (n2 n1 scl acc)
+          (cond ((= n1 n2) (+ acc (* scl n1)))
+                ((zero? n2) acc)
+                ((zero? n1) acc)
+                (else (lgand (logical:ash-4 n2)
+                             (logical:ash-4 n1)
+                             (* 16 scl)
+                             (+ (* (vector-ref (vector-ref logical:boole-and
+                                                           (modulo n1 16))
+                                               (modulo n2 16))
+                                   scl)
+                                acc)))))))
+    (logical:reduce lgand -1)))
+;@
+(define logior
+  (letrec
+      ((lgior
+        (lambda (n2 n1 scl acc)
+          (cond ((= n1 n2) (+ acc (* scl n1)))
+                ((zero? n2) (+ acc (* scl n1)))
+                ((zero? n1) (+ acc (* scl n2)))
+                (else (lgior (logical:ash-4 n2)
+                             (logical:ash-4 n1)
+                             (* 16 scl)
+                             (+ (* (- 15 (vector-ref
+                                          (vector-ref logical:boole-and
+                                                      (- 15 (modulo n1 16)))
+                                          (- 15 (modulo n2 16))))
+                                   scl)
+                                acc)))))))
+    (logical:reduce lgior 0)))
+;@
+(define logxor
+  (letrec
+      ((lgxor
+        (lambda (n2 n1 scl acc)
+          (cond ((= n1 n2) acc)
+                ((zero? n2) (+ acc (* scl n1)))
+                ((zero? n1) (+ acc (* scl n2)))
+                (else (lgxor (logical:ash-4 n2)
+                             (logical:ash-4 n1)
+                             (* 16 scl)
+                             (+ (* (vector-ref (vector-ref logical:boole-xor
+                                                           (modulo n1 16))
+                                               (modulo n2 16))
+                                   scl)
+                                acc)))))))
+    (logical:reduce lgxor 0)))
+;@
+(define (lognot n) (- -1 n))
+;@
+(define (logtest n1 n2)
+  (not (zero? (logand n1 n2))))
+;@
+(define (logbit? index n)
+  (logtest (expt 2 index) n))
+;@
+(define (copy-bit index to bool)
+  (if bool
+      (logior to (arithmetic-shift 1 index))
+      (logand to (lognot (arithmetic-shift 1 index)))))
+;@
+(define (bitwise-if mask n0 n1)
+  (logior (logand mask n0)
+          (logand (lognot mask) n1)))
+;@
+(define (bit-field n start end)
+  (logand (lognot (ash -1 (- end start)))
+          (arithmetic-shift n (- start))))
+;@
+(define (copy-bit-field to from start end)
+  (bitwise-if (arithmetic-shift (lognot (ash -1 (- end start))) start)
+              (arithmetic-shift from start)
+              to))
+;@
+(define (rotate-bit-field n count start end)
+  (define width (- end start))
+  (set! count (modulo count width))
+  (let ((mask (lognot (ash -1 width))))
+    (define zn (logand mask (arithmetic-shift n (- start))))
+    (logior (arithmetic-shift
+             (logior (logand mask (arithmetic-shift zn count))
+                     (arithmetic-shift zn (- count width)))
+             start)
+            (logand (lognot (ash mask start)) n))))
+;@
+(define (arithmetic-shift n count)
+  (if (negative? count)
+      (let ((k (expt 2 (- count))))
+        (if (negative? n)
+            (+ -1 (quotient (+ 1 n) k))
+            (quotient n k)))
+      (* (expt 2 count) n)))
+;@
+(define integer-length
+  (letrec ((intlen (lambda (n tot)
+                     (case n
+                       ((0 -1) (+ 0 tot))
+                       ((1 -2) (+ 1 tot))
+                       ((2 3 -3 -4) (+ 2 tot))
+                       ((4 5 6 7 -5 -6 -7 -8) (+ 3 tot))
+                       (else (intlen (logical:ash-4 n) (+ 4 tot)))))))
+    (lambda (n) (intlen n 0))))
+;@
+(define logcount
+  (letrec ((logcnt (lambda (n tot)
+                     (if (zero? n)
+                         tot
+                         (logcnt (quotient n 16)
+                                 (+ (vector-ref
+                                     '#(0 1 1 2 1 2 2 3 1 2 2 3 2 3 3 4)
+                                     (modulo n 16))
+                                    tot))))))
+    (lambda (n)
+      (cond ((negative? n) (logcnt (lognot n) 0))
+            ((positive? n) (logcnt n 0))
+            (else 0)))))
+;@
+(define (log2-binary-factors n)
+  (+ -1 (integer-length (logand n (- n)))))
+
+(define (bit-reverse k n)
+  (do ((m (if (negative? n) (lognot n) n) (arithmetic-shift m -1))
+       (k (+ -1 k) (+ -1 k))
+       (rvs 0 (logior (arithmetic-shift rvs 1) (logand 1 m))))
+      ((negative? k) (if (negative? n) (lognot rvs) rvs))))
+;@
+(define (reverse-bit-field n start end)
+  (define width (- end start))
+  (let ((mask (lognot (ash -1 width))))
+    (define zn (logand mask (arithmetic-shift n (- start))))
+    (logior (arithmetic-shift (bit-reverse width zn) start)
+            (logand (lognot (ash mask start)) n))))
+;@
+(define (integer->list k . len)
+  (if (null? len)
+      (do ((k k (arithmetic-shift k -1))
+           (lst '() (cons (odd? k) lst)))
+          ((<= k 0) lst))
+      (do ((idx (+ -1 (car len)) (+ -1 idx))
+           (k k (arithmetic-shift k -1))
+           (lst '() (cons (odd? k) lst)))
+          ((negative? idx) lst))))
+;@
+(define (list->integer bools)
+  (do ((bs bools (cdr bs))
+       (acc 0 (+ acc acc (if (car bs) 1 0))))
+      ((null? bs) acc)))
+(define (booleans->integer . bools)
+  (list->integer bools))
+
+;;;;@ SRFI-60 aliases
+(define ash arithmetic-shift)
+(define bitwise-ior logior)
+(define bitwise-xor logxor)
+(define bitwise-and logand)
+(define bitwise-not lognot)
+(define bit-count logcount)
+(define bit-set?   logbit?)
+(define any-bits-set? logtest)
+(define first-set-bit log2-binary-factors)
+(define bitwise-merge bitwise-if)
+
+;;; Legacy
+;;(define (logical:rotate k count len) (rotate-bit-field k count 0 len))
+;;(define (logical:ones deg) (lognot (ash -1 deg)))
+;;(define integer-expt expt)            ; legacy name
+
+Copyright
+
+Copyright (C) Aubrey Jaffer (2004, 2005). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: David Van Horn
+Last modified: Sat Jan 29 13:16:05 EST 2005

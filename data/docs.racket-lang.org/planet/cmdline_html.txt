@@ -1,0 +1,204 @@
+▼  PLane T: Automatic Package Distribution
+1  Using PLane T
+2  The PLane T Search Order
+3  The raco planet Command-Line Tool
+4  The planet Language
+5  Utility Libraries
+6  Developing Packages for PLane T
+► 3  The raco planet Command-Line Tool
+ 3.1  create
+ 3.2  install
+ 3.3  remove
+ 3.4  show
+ 3.5  clearlinks
+ 3.6  fileinject
+ 3.7  link
+ 3.8  unlink
+ 3.9  fetch
+3.10  url
+3.11  open
+3.12  structure
+3.13  print
+On this page:
+3.1 create
+3.2 install
+3.3 remove
+3.4 show
+3.5 clearlinks
+3.6 fileinject
+3.7 link
+3.8 unlink
+3.9 fetch
+3.10 url
+3.11 open
+3.12 structure
+3.13 print
+[...search manuals...]
+  top← prev  up  next → 
+
+3 The raco planet Command-Line Tool
+
+The raco planet command-line tool allows a command-line interface to the most
+commonly-performed PLaneT tasks. It is invoked from the command line as
+
+  raco planet subcommand arg ...
+
+where subcommand is a subcommand from the following list, and arg is a sequence
+of arguments determined by that subcommand:
+
+  • create: create a PLaneT archive from a directory
+
+  • install: download and install a given package
+
+  • remove: remove the specified package from the local cache
+
+  • show: list the packages installed in the local cache
+
+  • clearlinks: clear the linkage table, allowing upgrades
+
+  • fileinject: install a local file to the planet cache
+
+  • link: create a development link
+
+  • unlink: remove development link associated with the given package
+
+  • fetch: download a package file without installing it
+
+  • url: get a URL for the given package
+
+  • open: unpack the contents of the given package
+
+  • structure: display the structure of a given .plt archive
+
+  • print: display a file within of the given .plt archive
+
+Each of these commands is described in more detail below. All the functionality
+of the command-line tool is also provided with a programmatic interface by the
+"util.rkt" library.
+
+3.1 create
+
+Usage:
+  raco planet create [ <option> ... ] <path>
+Create a PLaneT archive in the current directory whose contents are the
+directory <path>.
+
+<option> is one of:
+
+  • -f, --force: force a package to be created even if its info.rkt file
+    contains errors.
+
+3.2 install
+
+Usage:
+  raco planet install <owner> <pkg> <maj> <min>
+Download and install the package that (require (planet "file.rkt" (<owner>
+<pkg> <maj> <min>))) would install.
+
+3.3 remove
+
+Usage:
+  raco planet remove [ <option> ... ] <owner> <pkg> <maj> <min>
+Remove the specified package from the local cache, optionally also removing its
+distribution file.
+
+<option> is one of:
+
+  • -e, --erase: also remove the package’s distribution file from the
+    uninstalled-package cache
+
+3.4 show
+
+Usage:
+  raco planet show [ <option> ... ]
+List the packages installed in the local cache.
+
+<option> is one of:
+
+  • -p, --packages: show packages only (default)
+
+  • -l, --linkage: show linkage table only
+
+  • -a, --all: show packages and linkage
+
+3.5 clearlinks
+
+Usage:
+  raco planet clearlinks
+Clear the linkage table, allowing upgrades.
+
+3.6 fileinject
+
+Usage:
+  raco planet fileinject <owner> <plt-file> <maj> <min>
+Install local file <plt-file> into the planet cache as though it had been
+downloaded from the planet server. It is treated as though it had the given
+owner name as its owner name, the given file’s filename as the its package
+name, and the given major and minor version numbers.
+
+3.7 link
+
+Usage:
+  raco planet link <owner> <pkg> <maj> <min> <path>
+Create a development link (see Development Links) between the given package
+specifier and the specified directory name.
+
+3.8 unlink
+
+Usage:
+  raco planet unlink [ <option> ] <owner> <pkg> <maj> <min>
+Remove any development link (see Development Links) associated with the given
+package.
+
+<option> can only be:
+
+  • -q, --quiet: don’t signal an error on nonexistent links
+
+3.9 fetch
+
+Usage:
+  raco planet fetch <owner> <pkg> <maj> <min>
+Download the given package file from the central PLaneT repository without
+installing it.
+
+3.10 url
+
+Usage:
+  raco planet url <owner> <pkg> <maj> <min>
+Get a URL for the given package.
+
+This is never necessary for normal use of planet, but may be helpful in some
+circumstances for retrieving packages.
+
+3.11 open
+
+Usage:
+  raco planet open <plt-file> <target>
+Unpack the contents of the given package into the given directory without
+installing.
+
+This command is not necessary for normal use of planet. It is intended to allow
+you to inspect package contents offline without needing to install the package.
+
+3.12 structure
+
+Usage:
+  raco planet structure <plt-file>
+Print the structure of the PLaneT archive named by <plt-file> to the standard
+output port.
+
+This command does not unpack or install the named .plt file.
+
+3.13 print
+
+Usage:
+  raco planet print <plt-file> <path>
+
+Print the contents of the file named by <path>, which must be a relative path
+within the PLaneT archive named by <plt-file>, to the standard output port.
+
+This command does not unpack or install the named .plt file.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

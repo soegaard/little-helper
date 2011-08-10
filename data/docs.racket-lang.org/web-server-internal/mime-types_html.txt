@@ -1,0 +1,41 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 5  Internal APIs
+5.1  Timers
+5.2  Connection Manager
+5.3  Serializable Closures
+5.4  Cache Table
+5.5  MIME Types
+5.6  Serialization Utilities
+5.7  URL Param
+5.8  GZip
+On this page:
+read-mime-types
+make-path->mime-type
+[...search manuals...]
+  top← prev  up  next → 
+
+5.5 MIME Types
+
+ (require web-server/private/mime-types)
+This module provides function for dealing with "mime.types" files.
+
+(read-mime-types p) → (hash/c symbol? bytes?)
+  p : path-string?
+Reads the "mime.types" file from p and constructs a hash table mapping
+extensions to MIME types.
+
+(make-path->mime-type p) → (path? . -> . bytes?)
+  p : path-string?
+Uses a read-mime-types with p and constructs a function from paths to their
+MIME type.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

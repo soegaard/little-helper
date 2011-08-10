@@ -1,0 +1,270 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+On this page:
+<world>
+<world-tests>
+<world-struct>
+<cell-struct>
+<empty-board-test>
+<empty-board>
+<empty-world-test>
+<empty-world>
+<blocked-cells>
+<block-cell>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18.2 The World
+
+The main data structure for Chat Noir is world. It comes with a few functions
+that construct empty worlds and test cases for them.
+
+<world> ::=
+
+    <cell-struct> <world-struct> <empty-world> <empty-board>
+    <blocked-cells> <block-cell>
+
+<world-tests> ::=
+
+
+    <empty-world-test> <empty-board-test> <blocked-cells-tests>
+
+The main structure definition is the world struct.
+
+<world-struct> ::=
+
+    (define-struct/contract world ([board (listof cell?)]
+                                   [cat posn?]
+                                   [state (or/c 'playing
+                                                'cat-won
+                                                'cat-lost)]
+                                   [size (and/c natural-number/c
+                                                odd?
+                                                (>=/c 3))]
+                                   [mouse-posn (or/c #f posn?)]
+                                   [h-down? boolean?])
+      #:transparent)
+
+It consists of a structure with six fields:
+
+  • board: representing the state of the board as a list of cells, one for each
+    circle on the game.
+
+  • cat: a posn indicating the position of the cat (interpreting the posn in
+    the way that they are interpreted for the board field),
+
+  • 
+    state: the state of the game, which can be one of
+      □ 'playing, indicating that the game is still going; this is the initial
+        state.
+
+      □ 'cat-won, indicating that the game is over and the cat won, or
+
+      □ 'cat-lost, indicating that the game is over and the cat lost.
+
+  • size: an odd natural number indicating the size of the board
+
+  • mouse-posn: a posn for the location of the mouse (or #f if the mouse is not
+    in the window), and
+
+  • h-down?: a boolean indicating if the h key is being pushed down.
+
+A cell is a structure with two fields:
+
+<cell-struct> ::=
+
+    (define-struct/contract cell ([p posn?]
+                                  [blocked? boolean?])
+      #:transparent)
+
+The coordinates of the posn in the first field indicate a position on the
+hexagonal grid. This program reprsents the hexagon grid as a series of rows
+that are offset from each other by 1/2 the size of the each cell. The y field
+of the posn refers to the row of the cell, and the x coordinate the position in
+the row. This means that, for example, (make-posn 1 0) is centered above (
+make-posn 1 0) and (make-posn 1 1).
+
+The boolean in the blocked? field indicates if the cell has been clicked on,
+thus blocking the cat from stepping there.
+
+The empty-board function builds a list of cells that correspond to an empty
+board. For example, here’s what an empty 7x7 board looks like, as a list of
+cells.
+
+[7x7-empty-]
+
+It contains 7 rows and, with the exception of the first and last rows, each row
+contains 7 cells. Notice how the even and odd rows are offset from each other
+by 1/2 of the size of the cell. The first and last row are missing their
+left-most cells because those cells are useless, from the perspective of the
+gameplay, Specifically, all of the neighbors of the missing cells are also on
+the boundary and thus the cat would win if it ever steps on one of those
+neighboring cells, ending the game.
+
+The 3x3 board also has the same property that it consists of three rows, each
+with three cells, but where the first and last row are missing their left-most
+cells.
+
+[3x3-empty-]
+
+And here is how that board looks as a list of cells.
+
+<empty-board-test> ::=
+
+    (test (empty-board 3)
+          (list
+           (make-cell (make-posn 0 1) #f)
+           (make-cell (make-posn 1 0) #f)
+           (make-cell (make-posn 1 1) #f)
+           (make-cell (make-posn 1 2) #f)
+           (make-cell (make-posn 2 0) #f)
+           (make-cell (make-posn 2 1) #f)
+           (make-cell (make-posn 2 2) #f)))
+
+The empty-board function consists of two (nested) calls to build-list that
+build a list of lists of cells, one for each pair of coordinates between 0 and
+board-size. Then, append flattens the nested lists and the filter expression
+removes the corners.
+
+<empty-board> ::=
+
+    (define/contract (empty-board board-size)
+      (-> (and/c natural-number/c odd? (>=/c 3))
+          (listof cell?))
+      (filter
+       (not-corner? board-size)
+       (apply
+        append
+        (build-list
+         board-size
+         (lambda (i)
+           (build-list
+            board-size
+            (lambda (j)
+              (make-cell (make-posn i j)
+                         #f))))))))
+     
+    (define/contract ((not-corner? board-size) c)
+      (-> (and/c natural-number/c odd? (>=/c 3))
+          (-> cell?
+              boolean?))
+      (not (and (= 0 (posn-x (cell-p c)))
+                (or (= 0 (posn-y (cell-p c)))
+                    (= (- board-size 1)
+                       (posn-y (cell-p c)))))))
+
+Building an empty world is simply a matter of building an empty board, finding
+the initial position of the cat and filling in all of the fields of the world
+struct. For example, this is the empty world of size 3. It puts the cat at (
+make-posn 1 1), sets the state to 'playing, records the size 3, and sets the
+current mouse position to #f and the state of the “h” key to #f.
+
+<empty-world-test> ::=
+
+    (test (empty-world 3)
+          (make-world (empty-board 3)
+                      (make-posn 1 1)
+                      'playing
+                      3
+                      #f
+                      #f))
+
+The empty-world function generalizes the example by computing the cats initial
+position as the center spot on the board.
+
+<empty-world> ::=
+
+    (define/contract (empty-world board-size)
+      (-> (and/c natural-number/c odd? (>=/c 3))
+          world?)
+      (make-world (empty-board board-size)
+                  (make-posn (quotient board-size 2)
+                             (quotient board-size 2))
+                  'playing
+                  board-size
+                  #f
+                  #f))
+
+The add-n-random-blocked-cells function accepts a list of cells and returns a
+new list of cells where n of the unblocked cells in all-cells are now blocked.
+
+If n is zero, of course, no more cells should be blocked, so the result is just
+all-cells. Otherwise, the function computes unblocked-cells, a list of all of
+the unblocked cells (except the cat’s initial location), and then randomly
+picks a cell from it, calling block-cell to actually block that cell.
+
+<blocked-cells> ::=
+
+    (define/contract (add-n-random-blocked-cells n all-cells board-size)
+      (-> natural-number/c (listof cell?) (and/c natural-number/c odd? (>=/c
+     3))
+          (listof cell?))
+      (cond
+        [(zero? n) all-cells]
+        [else
+         (let* ([unblocked-cells
+                 (filter (lambda (x)
+                           (let ([cat-cell? (and (= (posn-x (cell-p x))
+                                                    (quotient board-size 2))
+                                                 (= (posn-y (cell-p x))
+                                                    (quotient board-size 2)))])
+     
+                             (and (not (cell-blocked? x))
+                                  (not cat-cell?))))
+                         all-cells)]
+                [to-block (list-ref unblocked-cells
+                                    (random (length unblocked-cells)))])
+           (add-n-random-blocked-cells
+            (sub1 n)
+            (block-cell (cell-p to-block) all-cells)
+            board-size))]))
+
+The block-cell function accepts a posn and a list of cell structs and updates
+the relevant cell, setting its blocked? field to #t.
+
+<block-cell> ::=
+
+    (define/contract (block-cell to-block board)
+      (-> posn? (listof cell?) (listof cell?))
+      (map (lambda (c) (if (equal? to-block (cell-p c))
+                           (make-cell to-block #t)
+                           c))
+           board))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

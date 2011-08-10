@@ -1,0 +1,89 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+[...search manuals...]
+  top← prev  up  next → 
+
+9 Set Predicates
+
+The goal
+
+    (%bag-of X G Bag)
+
+unifies with Bag the list of all instantiations of X for which G succeeds.
+Thus, the following query asks for all the things known — ie, the collection of
+things such that someone knows them:
+
+    > (%which (things-known)
+        (%let (someone x)
+          (%bag-of x (%knows someone x)
+            things-known)))
+    '((things-known TeX Racket Prolog Penelope TeX Prolog Odysseus TeX calculus
+    archery))
+
+
+This is the only solution for this goal:
+
+    > (%more)
+    #f
+
+
+Note that some things — eg, TeX — are enumerated more than once. This is
+because more than one person knows TeX. To remove duplicates, use the predicate
+%set-of instead of %bag-of:
+
+    > (%which (things-known)
+        (%let (someone x)
+          (%set-of x (%knows someone x)
+            things-known)))
+    '((things-known TeX Racket Prolog Penelope Odysseus calculus archery))
+
+
+In the above, the free variable someone in the %knows-goal is used as if it
+were existentially quantified. In contrast, Prolog’s versions of %bag-of and
+%set-of fix it for each solution of the set-predicate goal. We can do it too
+with some additional syntax that identifies the free variable. Eg,
+
+    > (%which (someone things-known)
+        (%let (x)
+          (%bag-of x
+            (%free-vars (someone)
+              (%knows someone x))
+            things-known)))
+    '((someone . Odysseus) (things-known TeX Racket Prolog Penelope))
+
+
+The bag of things known by one someone is returned. That someone is Odysseus.
+The query can be retried for more solutions, each listing the things known by a
+different someone:
+
+    > (%more)
+    '((someone . Penelope) (things-known TeX Prolog Odysseus))
+
+    > (%more)
+    '((someone . Telemachus) (things-known TeX calculus))
+
+    > (%more)
+    '((someone . Odysseus) (things-known archery))
+
+    > (%more)
+    #f
+
+
+Racklog also provides two variants of these set predicates, viz., %bag-of-1 and
+%set-of-1. These act like %bag-of and %set-of but fail if the resulting bag or
+set is empty.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

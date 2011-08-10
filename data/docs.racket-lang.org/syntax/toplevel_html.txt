@@ -1,0 +1,68 @@
+▼  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+On this page:
+expand-syntax-top-level-with-compile-time-evals
+expand-top-level-with-compile-time-evals
+expand-syntax-top-level-with-compile-time-evals/ flatten
+eval-compile-time-part-of-top-level
+eval-compile-time-part-of-top-level/ compile
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Non-Module Compilation And Expansion
+
+ (require syntax/toplevel)
+
+(expand-syntax-top-level-with-compile-time-evals stx) → syntax?
+  stx : syntax?
+Expands stx as a top-level expression, and evaluates its compile-time portion
+for the benefit of later expansions.
+
+The expander recognizes top-level begin expressions, and interleaves the
+evaluation and expansion of of the begin body, so that compile-time expressions
+within the begin body affect later expansions within the body. (In other words,
+it ensures that expanding a begin is the same as expanding separate top-level
+expressions.)
+
+The stx should have a context already, possibly introduced with
+namespace-syntax-introduce.
+
+(expand-top-level-with-compile-time-evals stx) → syntax?
+  stx : syntax?
+Like expand-syntax-top-level-with-compile-time-evals, but stx is first given
+context by applying namespace-syntax-introduce to it.
+
+(expand-syntax-top-level-with-compile-time-evals/flatten stx)
+ → (listof syntax?)
+  stx : syntax?
+Like expand-syntax-top-level-with-compile-time-evals, except that it returns a
+list of syntax objects, none of which have a begin. These syntax objects are
+the flattened out contents of any begins in the expansion of stx.
+
+(eval-compile-time-part-of-top-level stx) → void?
+  stx : syntax?
+Evaluates expansion-time code in the fully expanded top-level expression
+represented by stx (or a part of it, in the case of begin expressions). The
+expansion-time code might affect the compilation of later top-level
+expressions. For example, if stx is a require expression, then
+namespace-require/expansion-time is used on each require specification in the
+form. Normally, this function is used only by
+expand-top-level-with-compile-time-evals.
+
+(eval-compile-time-part-of-top-level/compile stx)
+ → (listof compiled-expression?)
+  stx : syntax?
+Like eval-compile-time-part-of-top-level, but the result is compiled code.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

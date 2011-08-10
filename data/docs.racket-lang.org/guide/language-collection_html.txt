@@ -1,0 +1,97 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 17  Creating Languages
+17.1  Module Languages
+17.2  Reader Extensions
+17.3  Defining new #lang Languages
+▼ 17.3  Defining new #lang Languages
+17.3.1  Designating a #lang Language
+17.3.2  Using #lang reader
+17.3.3  Using #lang s-exp syntax/ module-reader
+17.3.4  Installing a Language
+17.3.5  Source-Handling Configuration
+17.3.6  Module-Handling Configuration
+[...search manuals...]
+  top← prev  up  next → 
+
+17.3.4 Installing a Language
+
+So far, we have used the reader meta-language to access languages like
+"literal.rkt" and "dollar-racket.rkt". If you want to use something like #lang
+literal directly, then you must move "literal.rkt" into a Racket collection
+named "literal".
+
+To install a collection, you can create a directory either in the main Racket
+installation or in a user-specific directory. Use find-collects-dir or
+find-user-collects-dir from setup/dirs to find the directory:
+
+    > (require setup/dirs)
+    > (find-user-collects-dir)
+    #<path:/home/racketeer/.racket/5.1.2/collects>
+
+
+Move "literal.rkt" to "literal/lang/reader.rkt" within the directory reported
+by find-collects-dir or find-user-collects-dir. That is, the file "literal.rkt"
+must be renamed to "reader.rkt" and placed in a "lang" sub-directory of the
+"literal" collection.
+
+    .... (the main installation or the user’s space)
+     |- "collects"
+          |- "literal"
+               |- "lang"
+                    |- "reader.rkt"
+
+After moving the file, you can use literal directly after #lang:
+
+    #lang literal
+    Technology!
+    System!
+    Perfect!
+
+            See raco: Racket Command-Line Tools for more information on using
+            raco.
+
+You can also package a collection for others to install by using the raco pack
+command-line tool:
+
+  raco pack --collection literal.plt literal
+
+Then, others can install the "literal" collection using raco setup:
+
+  raco setup literal.plt
+
+            See PLaneT: Automatic Package Distribution for more information
+            about PLaneT packages.
+
+A better approach may be to distribute your language as a PLaneT package. A
+drawback of using a PLaneT package is that users must type #lang planet
+followed by a PLaneT path to access the language. The great advantages are that
+the PLaneT package can be installed automatically, it can be versioned, and it
+co-exists more easily with other packages.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

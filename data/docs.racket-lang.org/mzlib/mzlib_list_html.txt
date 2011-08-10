@@ -1,0 +1,151 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+first
+second
+third
+fourth
+fifth
+sixth
+seventh
+eighth
+rest
+last-pair
+merge-sorted-lists
+mergesort
+quicksort
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/list)
+
+The mzlib/list library re-exports several functions from scheme/base and scheme
+/list:
+
+    cons?
+    empty?
+    empty
+    foldl
+    foldr
+    remv
+    remq
+    remove
+    remv*
+    remq*
+    remove*
+    findf
+    memf
+    assf
+    filter
+    sort
+
+(first v) → any/c
+  v : pair?
+(second v) → any/c
+  v : (and/c pair? ....)
+(third v) → any/c
+  v : (and/c pair? ....)
+(fourth v) → any/c
+  v : (and/c pair? ....)
+(fifth v) → any/c
+  v : (and/c pair? ....)
+(sixth v) → any/c
+  v : (and/c pair? ....)
+(seventh v) → any/c
+  v : (and/c pair? ....)
+(eighth v) → any/c
+  v : (and/c pair? ....)
+Accesses the first, second, etc. elment of “list” v. The argument need not
+actually be a list; it is inspected only as far as necessary to obtain an
+element (unlike the same-named functions from scheme/list, which do require the
+argument to be a list).
+
+(rest v) → any/c
+  v : pair?
+The same as cdr.
+
+(last-pair v) → pair?
+  v : pair?
+Returns the last pair in v, raising an error if v is not a pair (but v does not
+have to be a proper list).
+
+(merge-sorted-lists lst1 lst2 less-than?) → list?
+  lst1 : list?
+  lst2 : lst?
+  less-than? : (any/c any/c . -> . any/c)
+Merges the two sorted input lists, creating a new sorted list. The merged
+result is stable: equal items in both lists stay in the same order, and these
+in lst1 precede lst2.
+
+(mergesort lst less-than?) → list?
+  lst : list?
+  less-than? : (any/c any/c . -> . any/c)
+The same as sort.
+
+(quicksort lst less-than?) → list?
+  lst : list?
+  less-than? : (any/c any/c . -> . any/c)
+The same as sort.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

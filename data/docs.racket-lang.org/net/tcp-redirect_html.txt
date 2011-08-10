@@ -1,0 +1,47 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+On this page:
+tcp-redirect
+[...search manuals...]
+  top← prev  up  next → 
+
+17 TCP Redirect: tcp^ via Channels
+
+ (require net/tcp-redirect)
+The net/tcp-redirect library provides a function for directing some TCP port
+numbers to use buffered channels instead of the TCP support from racket/tcp.
+
+(tcp-redirect port-numbers) → unit?
+  port-numbers : (listof (integer-in 0 65535))
+Returns a unit that implements tcp^. For port numbers not listed in
+port-numbers, the unit’s implementations are the racket/tcp implementations.
+
+For the port numbers listed in port-numbers and for connections to "127.0.0.1",
+the unit’s implementation does not use TCP connections, but instead uses
+internal buffered channels. Such channels behave exactly as TCP listeners and
+ports.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

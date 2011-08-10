@@ -1,0 +1,550 @@
+▼  PLane T: Automatic Package Distribution
+1  Using PLane T
+2  The PLane T Search Order
+3  The raco planet Command-Line Tool
+4  The planet Language
+5  Utility Libraries
+6  Developing Packages for PLane T
+► 5  Utility Libraries
+5.1  Resolver
+5.2  Client Configuration
+5.3  Package Archive
+5.4  Package Version
+5.5  Macros and Syntax Objects
+5.6  Scribble Documentation
+5.7  Terse Status Updates
+On this page:
+5.1 Resolver
+resolve-planet-path
+download?
+install?
+5.2 Client Configuration
+PLANET-DIR
+CACHE-DIR
+UNINSTALLED-PACKAGE-CACHE
+LINKAGE-FILE
+LOG-FILE
+USE-HTTP-DOWNLOADS?
+HTTP-DOWNLOAD-SERVLET-URL
+PLANET-SERVER-NAME
+PLANET-SERVER-PORT
+5.3 Package Archive
+download/ install-pkg
+install-pkg
+get-package-spec
+pkg-spec?
+current-cache-contents
+current-linkage
+make-planet-archive
+unpack-planet-archive
+remove-pkg
+display-plt-file-structure
+display-plt-archived-file
+unlink-all
+add-hard-link
+remove-hard-link
+resolve-planet-path
+this-package-version
+this-package-version-name
+this-package-version-owner
+this-package-version-maj
+this-package-version-min
+path->package-version
+exn: fail: planet?
+5.4 Package Version
+this-package-version
+this-package-version-symbol
+this-package-version-name
+this-package-version-owner
+this-package-version-maj
+this-package-version-min
+this-package-in
+5.5 Macros and Syntax Objects
+syntax-source-planet-package
+syntax-source-planet-package-owner
+syntax-source-planet-package-name
+syntax-source-planet-package-major
+syntax-source-planet-package-minor
+syntax-source-planet-package-symbol
+make-planet-require-spec
+5.6 Scribble Documentation
+this-package-in
+racketmod/ this-package
+racketmodname/ this-package
+racketmodlink/ this-package
+defmodule/ this-package
+defmodulelang/ this-package
+defmodulereader/ this-package
+defmodule*/ this-package
+defmodulelang*/ this-package
+defmodulereader*/ this-package
+defmodule*/ no-declare/ this-package
+defmodulelang*/ no-declare/ this-package
+defmodulereader*/ no-declare/ this-package
+declare-exporting/ this-package
+5.7 Terse Status Updates
+planet-terse-register
+planet-terse-log
+planet-terse-set-key
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Utility Libraries
+
+The planet collection provides configuration and utilities for using PLaneT.
+
+5.1 Resolver
+
+ (require planet/resolver)
+
+The primary purpose of this library to for require to find PLaneT packages. It
+also, however, provides some utilities for manipulating the resolvers behavior.
+
+(resolve-planet-path planet-path) → path?
+  planet-path : any/c
+Returns the path where the file named by the require spec planet-path is
+located in the current installation.
+
+(download?) → boolean?
+(download? dl?) → void?
+  dl? : boolean?
+A parameter that controls if PLaneT attempts to download a planet package that
+isn’t already present. If the package isn’t present, the resolver will raise
+the exn:fail:planet? exception instead of downloading it.
+
+(install?) → boolean?
+(install? inst?) → void?
+  inst? : boolean?
+A parameter that controls if PLaneT attempts to install a planet package that
+isn’t already installed. If the package isn’t installed, the resolver will
+raise the exn:fail:planet? exception instead of installing it.
+
+5.2 Client Configuration
+
+ (require planet/config)
+
+The planet/config library provides several parameters useful for configuring
+how PLaneT works.
+
+Note that while these parameters can be useful to modify programmatically,
+PLaneT code runs at module-expansion time, so most user programs cannot set
+them until PLaneT has already run. Therefore, to meaningfully change these
+settings, it is best to manually edit the config.rkt file.
+
+(PLANET-DIR) → path-string?
+(PLANET-DIR dir) → void?
+  dir : path-string?
+The root PLaneT directory. If the environment variable PLTPLANETDIR is set,
+default is its value; otherwise the default is the directory in which
+"config.rkt" is found.
+
+(CACHE-DIR) → path-string?
+(CACHE-DIR dir) → void?
+  dir : path-string?
+The root of the PLaneT client’s cache directory.
+
+(UNINSTALLED-PACKAGE-CACHE) → path-string?
+(UNINSTALLED-PACKAGE-CACHE dir) → void?
+  dir : path-string?
+The root of the PLaneT client’s uninstalled-packages cache. PLaneT stores
+package distribution files in this directory, and searches for them in this
+directory for them if necessary. Unlike the main PLaneT cache, which contains
+compiled files and is specific to each particular version of Racket, the
+uninstalled package cache is shared by all versions of Racket that use the same
+package repository, and it is searched if a package is not installed in the
+primary cache and cannot be downloaded from the central PLaneT repository (for
+instance due to a loss of Internet connectivity). This behavior is intended to
+primarily benefit users who upgrade their Racket installations frequently.
+
+(LINKAGE-FILE) → path-string?
+(LINKAGE-FILE file) → void?
+  file : path-string?
+The file to use as the first place PLaneT looks to determine how a particular
+PLaneT dependence in a file should be satisfied. The contents of this file are
+used to ensure that no "magic upgrades" occur after a package is installed. The
+default is the file "LINKAGE" in the root PLaneT directory.
+
+(LOG-FILE) → (or/c path-string? false?)
+(LOG-FILE file) → void?
+  file : (or/c path-string? false?)
+If #f, indicates that no logging should take place. Otherwise specifies the
+file into which logging should be written. The default is the file
+"INSTALL-LOG" in the root PLaneT directory.
+
+(USE-HTTP-DOWNLOADS?) → boolean?
+(USE-HTTP-DOWNLOADS? bool) → void?
+  bool : any/c
+PLaneT can use two different protocols to retrieve packages. If #t, PLaneT will
+use the HTTP protocol; if #f it will use the custom-built PLaneT protocol. The
+default value for this parameter is #t and setting this parameter to #f is not
+recommended.
+
+(HTTP-DOWNLOAD-SERVLET-URL) → string?
+(HTTP-DOWNLOAD-SERVLET-URL url) → void?
+  url : string?
+The URL for the servlet that will provide PLaneT packages if
+USE-HTTP-DOWNLOADS? is #t, represented as a string. This defaults to the value
+of the PLTPLANETURL environment variable if it is set and otherwise is "http://
+planet.racket-lang.org/servlets/planet-servlet.rkt".
+
+(PLANET-SERVER-NAME) → string?
+(PLANET-SERVER-NAME host) → void?
+  host : string?
+The name of the PLaneT server to which the client should connect if
+USE-HTTP-DOWNLOADS? is #f. The default value for this parameter is
+"planet.racket-lang.org".
+
+(PLANET-SERVER-PORT) → natural-number?
+(PLANET-SERVER-PORT port) → void?
+  port : natural-number?
+The port on the server the client should connect to if USE-HTTP-DOWNLOADS? is #
+f. The default value for this parameter is 270.
+
+5.3 Package Archive
+
+ (require planet/util)
+
+The planet/util library supports examination of the pieces of PLaneT. It is
+meant primarily to support debugging and to allow easier development of
+higher-level package-management tools. The functionality exposed by the raco
+planet command-line tool is also available programmatically through this
+library.
+
+(download/install-pkg owner pkg maj min) → (or/c pkg? #f)
+  owner : string?
+  pkg : (and/c string? #rx"[.]plt")
+  maj : natural-number/c
+  min : natural-number/c
+Downloads and installs the package specifed by the given owner name, package
+name, major and minor version number. Returns false if no such package is
+available; otherwise returns a package structure for the installed package.
+
+The pkg argument must end with ".plt".
+
+(install-pkg pkg-spec file maj min) → (or/c pkg-spec? #f)
+  pkg-spec : pkg-spec?
+  file : path-string?
+  maj : natural-number/c
+  min : natural-number/c
+Installs the package represented by the arguments, using the pkg-spec argument
+to find the path and name of the package to install.
+
+See get-package-spec to build a pkg-spec argument.
+
+Returns a new pkg-spec? corresponding to the package that was actually
+installed.
+
+(get-package-spec owner pkg [maj min]) → pkg-spec?
+  owner : string?
+  pkg : (and/c string? #rx"[.]plt")
+  maj : (or/c #f natural-number/c) = #f
+  min : (or/c #f natural-number/c) = #f
+Builds a pkg-spec? corresponding to the package specified by owner, pkg, maj,
+and min.
+
+The pkg argument must end with the string ".plt".
+
+(pkg-spec? v) → boolean?
+  v : any/c
+Recognizes the result of get-package-spec (and install-pkg).
+
+(current-cache-contents)
+      (listof
+       (list/c string?
+  →            (listof
+                (list/c string?
+                        (cons/c natural-number/c
+                                (listof natural-number/c))))))
+(current-cache-contents contents) → void?
+                  (listof
+                   (list/c string?
+   contents   :            (listof
+                            (list/c string?
+                                    (cons/c natural-number/c
+                                            (listof natural-number/c))))))
+Holds a listing of all package names and versions installed in the local cache.
+
+(current-linkage)
+      (listof (list/c path-string?
+                      (list/c string?
+  →                           (list/c string?)
+                              natural-number/c
+                              natural-number/c)))
+Returns the current linkage table.
+
+The linkage table is an association between file locations (encoded as path
+strings) and concrete planet package versions. If a require line in the
+associated file requests a package, this table is consulted to determine a
+particular concrete package to satisfy the request.
+
+(make-planet-archive directory [output-file]) → path-string?
+  directory : path-string?
+   output-file   :   (or/c path? path-string?)
+                 =   (string-append (path->string name) ".plt")
+Makes a .plt archive file suitable for PLaneT whose contents are all files in
+the given directory and returns that file’s name. If the optional filename
+argument is provided, that filename will be used as the output file’s name.
+
+(unpack-planet-archive plt-file output-dir) → any
+  plt-file : (or/c path? path-string?)
+  output-dir : (or/c path? path-string?)
+Unpacks the PLaneT archive with the given filename, placing its contents into
+the given directory (creating that path if necessary).
+
+(remove-pkg owner pkg maj min) → any
+  owner : string?
+  pkg : (and/c string? #rx"[.]plt")
+  maj : natural-number/c
+  min : natural-number/c
+Removes the specified package from the local planet cache.
+
+The pkg argument must end with the string ".plt".
+
+(display-plt-file-structure plt-file) → any
+  plt-file : (or/c path-string? path?)
+Print a tree representing the file and directory structure of the PLaneT
+archive .plt file named by plt-file to (current-output-port).
+
+(display-plt-archived-file   plt-file              
+                             file-to-print)   →   any
+  plt-file : (or/c path-string? path?)
+  file-to-print : string?
+Print the contents of the file named file-to-print within the PLaneT archive
+.plt file named by plt-file to (current-output-port).
+
+(unlink-all) → any
+Removes the entire linkage table from the system, which will force all modules
+to relink themselves to PLaneT modules the next time they run.
+
+(add-hard-link owner pkg maj min dir) → any
+  owner : string?
+  pkg : (and/c string? #rx"[.]plt$")
+  maj : natural-number/c
+  min : natural-number/c
+  dir : path?
+Adds a development link between the specified package and the given directory;
+once a link is established, PLaneT will treat the cache as having a package
+with the given owner, name, and version whose files are located in the given
+path. This is intended for package development; users only interested in using
+PLaneT packages available online should not need to create any development
+links.
+
+If the specified package already has a development link, this function first
+removes the old link and then adds the new one.
+
+The pkg argument must end with the string ".plt".
+
+(remove-hard-link    owner                    
+                     pkg                      
+                     maj                      
+                     min                      
+                   [ #:quiet? quiet?])   →   any
+  owner : string?
+  pkg : (and/c string? #rx"[.]plt")
+  maj : natural-number/c
+  min : natural-number/c
+  quiet? : boolean? = #false
+Removes any hard link that may be associated with the given package.
+
+The pkg argument must end with the string ".plt". The maj and min arguments
+must be integers. This procedure signals an error if no such link exists,
+unless #:quiet? is #t.
+
+(resolve-planet-path spec) → path?
+  spec : quoted-planet-require-spec?
+Returns the file system path to the file specified by the given quoted planet
+require specification. This function downloads and installs the specified
+package if necessary, but does not verify that the actual file within it
+actually exists.
+
+(this-package-version)
+(this-package-version-name)
+(this-package-version-owner)
+(this-package-version-maj)
+(this-package-version-min)
+Aliases of the same bindings from planet/version for backward compatibility.
+
+(path->package-version p)
+ → (or/c (list/c string? string? natural-number/c natural-number/c) #f)
+  p : path?
+Given a path that corresponds to a PLaneT package (or some part of one),
+produces a list corresponding to its name and version, exactly like (
+this-package-version). Given any other path, produces #f.
+
+(exn:fail:planet? val) → boolean?
+  val : any/c
+Returns #t if val is an exception indicating a planet-specific failure.
+
+5.4 Package Version
+
+Provides bindings for PLaneT developers that automatically produce references
+to the name and version of the containing PLaneT package so the same code may
+be reused across releases without accidentally referring to a different version
+of the same package.
+
+ (require planet/version)
+
+(this-package-version)
+(this-package-version-symbol)
+(this-package-version-symbol suffix-id)
+(this-package-version-name)
+(this-package-version-owner)
+(this-package-version-maj)
+(this-package-version-min)
+Macros that expand into expressions that evaluate to information about the
+name, owner, and version number of the package in which they appear.
+this-package-version returns a list consisting of a string naming the package’s
+owner, a string naming the package, a number indicating the package major
+version and a number indicating the package minor version, or #f if the
+expression appears outside the context of a package. The macros
+this-package-version-name, this-package-version-owner, this-package-version-maj
+, and this-package-version-min produce the relevant fields of the package
+version list.
+
+this-package-version-symbol produces a symbol suitable for use in planet module
+paths. For instance, in version 1:0 of the package package.plt owned by author,
+(this-package-version-symbol dir/file) produces 'author/package:1:0/dir/file.
+In the same package, (this-package-version-symbol) produces 'author/
+package:1:0.
+
+(this-package-in suffix-id ...)
+A require sub-form that requires modules from within the same PLaneT package
+version as the require, as referred to by each suffix-id. For instance, in
+version 1:0 of the package package.plt owned by author, (require (
+this-package-in dir/file)) is equivalent to (require (planet author/package:1:0
+/dir/file)).
+
+Note: Use this-package-in when documenting PLaneT packages with Scribble to
+associate each documented binding with the appropriate package.
+
+5.5 Macros and Syntax Objects
+
+ (require planet/syntax)
+
+Provides bindings useful for PLaneT-based macros.
+
+(syntax-source-planet-package stx) → (or/c list? #f)
+  stx : syntax?
+(syntax-source-planet-package-owner stx) → (or/c string? #f)
+  stx : syntax?
+(syntax-source-planet-package-name stx) → (or/c string? #f)
+  stx : syntax?
+(syntax-source-planet-package-major stx) → (or/c integer? #f)
+  stx : syntax?
+(syntax-source-planet-package-minor stx) → (or/c integer? #f)
+  stx : syntax?
+(syntax-source-planet-package-symbol    stx       
+                                      [ suffix])  
+ → (or/c symbol? #f)
+  stx : syntax?
+  suffix : (or/c symbol? #f) = #f
+Produce output analogous to this-package-version, this-package-version-owner,
+this-package-version-name, this-package-version-maj, this-package-version-min,
+and this-package-version-symbol based on the source location of stx.
+
+(make-planet-require-spec stx [suffix]) → syntax?
+  stx : syntax?
+  suffix : (or/c symbol? #f) = #f
+Produces a require sub-form for the module referred to by suffix in the PLaneT
+package containing the source location of stx.
+
+5.6 Scribble Documentation
+
+ (require planet/scribble)
+
+Provides bindings for documenting PLaneT packages.
+
+(this-package-in suffix-id ...)
+This binding from planet/version is also exported from planet/scribble, as it
+is useful for for-label imports in Scribble documentation.
+
+(racketmod/this-package maybe-file suffix-id datum ...)
+(racketmodname/this-package suffix-id)
+(racketmodname/this-package (unsyntax suffix-expr))
+(racketmodlink/this-package suffix-id pre-content-expr ...)
+(defmodule/this-package maybe-req suffix-id maybe-sources pre-flow ...)
+(defmodulelang/this-package suffix-id maybe-sources pre-flow ...)
+(defmodulelang/this-package suffix-id
+  #:module-paths (mod-suffix-id ...) maybe-sources
+  pre-flow ...)
+(defmodulereader/this-package suffix-id maybe-sources pre-flow ...)
+(defmodule*/this-package maybe-req (suffix-id ...+)
+  maybe-sources pre-flow ...)
+(defmodulelang*/this-package (suffix-id ...+)
+  maybe-sources pre-flow ...)
+(defmodulelang*/this-package (suffix-id ...+)
+  #:module-paths (mod-suffix-id ...) maybe-sources
+  pre-flow ...)
+(defmodulereader*/this-package (suffix-id ...+)
+  maybe-sources pre-flow ...)
+(defmodule*/no-declare/this-package maybe-req (suffix-id ...+)
+  maybe-sources pre-flow ...)
+(defmodulelang*/no-declare/this-package (suffix-id ...+)
+  maybe-sources pre-flow ...)
+(defmodulelang*/no-declare/this-package (suffix-id ...+)
+  #:module-paths (mod-suffix-id ...) maybe-sources pre-flow ...)
+(defmodulereader*/no-declare/this-package (suffix-id ...+)
+  maybe-sources pre-flow ...)
+(declare-exporting/this-package suffix-id ... maybe-sources)
+Variants of racketmod, racketmodname, racketmodlink, defmodule, defmodulereader
+, defmodulelang, defmodule*, defmodulelang*, defmodulereader*, defmodule*/
+no-declare, defmodulelang*/no-declare, defmodulereader*/no-declare, and
+declare-exporting, respectively, that implicitly refer to the PLaneT package
+that contains the enclosing module.
+
+The full module name passed to defmodule, etc is formed by appending the
+suffix-id or mod-suffix-id to the symbol returned by (
+this-package-version-symbol), separated by a / character, and tagging the
+resulting symbol as a planet module path. As a special case, if suffix-id is
+main, the suffix is omitted.
+
+For example, within a package named package.plt by author, version 1:0, the
+following are equivalent:
+
+    (defmodule/this-package dir/file)
+      = (defmodule (planet author/package:1:0/dir/file))
+
+and
+
+    (defmodule/this-package main)
+      = (defmodule (planet author/package:1:0))
+
+5.7 Terse Status Updates
+
+ (require planet/terse-info)
+
+This module provides access to some PLaneT status information. This module is
+first loaded by PLaneT in the initial namespace (when PLaneT’s resolver is
+loaded), but PLaneT uses dynamic-require to load this module each time it wants
+to announce information. Similarly, the state of which procedures are
+registered (via planet-terse-register) is saved in the namespace, making the
+listening and information producing namespace-specific.
+
+(planet-terse-register proc) → void?
+              (-> (or/c 'download 'install 'docs-build 'finish)
+   proc   :       string?
+                  any/c)
+Registers proc as a function to be called when planet-terse-log is called.
+
+Note that proc is called asynchronously (ie, on some thread other than the one
+calling planet-terse-register).
+
+(planet-terse-log id msg) → void?
+  id : (or/c 'download 'install 'finish)
+  msg : string?
+This function is called by PLaneT to announce when things are happening. See
+also planet-terse-set-key.
+
+(planet-terse-set-key key) → void?
+  key : any/c
+This sets a thread cell to the value of key. The value of the thread cell is
+used as an index into a table to determine which of the functions passed to
+planet-terse-register to call when planet-terse-log is called.
+
+The table holding the key uses ephemerons and a weak hash table to ensure that
+when the key is unreachable, then the procedures passed to planet-terse-log
+cannot be reached through the table.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

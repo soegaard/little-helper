@@ -1,0 +1,36 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+[...search manuals...]
+  top← prev  up  next → 
+
+9 Protecting Graphics Operations
+
+To guarantee the proper closing of viewports in cases of errors, especially
+when a program manages several viewports simultaneously, a programmer should
+use dynamic-wind:
+
+    (let ([w (open-viewport "hello" 100 100)])
+      (dynamic-wind
+        ; what we want to happen first: nothing
+        void
+        ; the main program (errors constrained to this piece)
+        (lambda () (draw-pixel 13))  ; an error
+        ; what we would like to happen, whether the main program
+        ; finishes normally or not
+        (lambda () (close-viewport w))))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

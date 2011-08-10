@@ -1,0 +1,139 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 6  Modules
+6.1  Module Basics
+6.2  Module Syntax
+6.3  Module Paths
+6.4  Imports: require
+6.5  Exports: provide
+6.6  Assignment and Redefinition
+[...search manuals...]
+  top← prev  up  next → 
+
+6.4 Imports: require
+
+The require form imports from another module. A require form can appear within
+a module, in which case it introduces bindings from the specified module into
+importing module. A require form can also appear at the top level, in which
+case it both imports bindings and instantiates the specified module; that is,
+it evaluates the body definitions and expressions of the specified module, if
+they have not been evaluated already.
+
+A single require can specify multiple imports at once:
+
+    (require require-spec ...)
+
+Specifying multiple require-specs in a single require is essentially the same
+as using multiple requires, each with a single require-spec. The difference is
+minor, and confined to the top-level: a single require can import a given
+identifier at most once, whereas a separate require can replace the bindings of
+a previous require (both only at the top level, outside of a module).
+
+The allowed shape of a require-spec is defined recursively:
+
+        module-path
+
+        In its simplest form, a require-spec is a module-path (as defined in
+        the previous section, Module Paths). In this case, the bindings
+        introduced by require are determined by provide declarations within
+        each module referenced by each module-path.
+
+        Examples:
+
+            > (module m racket
+                (provide color)
+                (define color "blue"))
+            > (module n racket
+                (provide size)
+                (define size 17))
+            > (require 'm 'n)
+            > (list color size)
+            '("blue" 17)
+
+
+
+        (only-in require-spec id-maybe-renamed ...)
+         
+        id-maybe-renamed   =   id
+                           |   [orig-id bind-id]
+
+        An only-in form limits the set of bindings that would be introduced by
+        a base require-spec. Also, only-in optionally renames each binding that
+        is preserved: in a [orig-id bind-id] form, the orig-id refers to a
+        binding implied by require-spec, and bind-id is the name that will be
+        bound in the importing context instead of bind-id.
+
+        Examples:
+
+            > (module m (lib "racket")
+                (provide tastes-great?
+                         less-filling?)
+                (define tastes-great? #t)
+                (define less-filling? #t))
+            > (require (only-in 'm tastes-great?))
+            > tastes-great?
+            #t
+
+            > less-filling?
+            reference to undefined identifier: less-filling?
+
+            > (require (only-in 'm [less-filling? lite?]))
+            > lite?
+            #t
+
+
+
+        (except-in require-spec id ...)
+
+        This form is the complement of only: it excludes specific bindings from
+        the set specified by require-spec.
+
+        (rename-in require-spec [orig-id bind-id] ...)
+
+        This form supports renaming like only-in, but leaving alone identifiers
+        from require-spec that are not mentioned as an orig-id.
+
+        (prefix-in prefix-id require-spec)
+
+        This is a shorthand for renaming, where prefix-id is added to the front
+        of each identifier specified by require-spec.
+
+The only-in, except-in, rename-in, and prefix-in forms can be nested to
+implement more complex manipulations of imported bindings. For example,
+
+    (require (prefix-in m: (except-in 'm ghost)))
+
+imports all bindings that m exports, except for the ghost binding, and with
+local names that are prefixed with m:.
+
+Equivalently, the prefix-in could be applied before except-in, as long as the
+omission with except-in is specified using the m: prefix:
+
+    (require (except-in (prefix-in m: 'm) m:ghost))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

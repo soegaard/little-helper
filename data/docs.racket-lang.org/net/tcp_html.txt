@@ -1,0 +1,141 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 16  TCP: Unit and Signature
+16.1  TCP Signature
+16.2  TCP Unit
+On this page:
+16.1 TCP Signature
+tcp^
+tcp-listen
+tcp-connect
+tcp-connect/ enable-break
+tcp-accept
+tcp-accept/ enable-break
+tcp-accept-ready?
+tcp-close
+tcp-listener?
+tcp-abandon-port
+tcp-addresses
+16.2 TCP Unit
+tcp@
+[...search manuals...]
+  top← prev  up  next → 
+
+16 TCP: Unit and Signature
+
+The net/tcp-sig and net/tcp-unit libraries define a tcp^ signature and tcp@
+implementation, where the implementation uses racket/tcp.
+
+Some units in the "net" collection import tcp^, so that they can be used with
+transports other than plain TCP. For example, url@ imports tcp^.
+
+See also tcp-redirect and make-ssl-tcp@.
+
+16.1 TCP Signature
+
+ (require net/tcp-sig)
+
+tcp^ : signature
+
+
+    (tcp-listen    port-no               
+                 [ max-allow-wait        
+                   reuse?                
+                   hostname])       →   tcp-listener?
+       port-no   :   (and/c exact-nonnegative-integer?
+                            (integer-in 1 65535))
+      max-allow-wait : exact-nonnegative-integer? = 4
+      reuse? : any/c = #f
+      hostname : (or/c string? false/c) = #f
+    Like tcp-listen from racket/tcp.
+
+    (tcp-connect    hostname               
+                    port-no                
+                  [ local-hostname         
+                    local-port-no])   →   input-port?   output-port?
+      hostname : string?
+       port-no   :   (and/c exact-nonnegative-integer?
+                           (integer-in 1 65535))
+      local-hostname : (or/c string? false/c) = #f
+                           (or/c (and/c exact-nonnegative-integer?
+       local-port-no   :                (integer-in 1 65535))        =   #f
+                                 false/c)
+    Like tcp-connect from racket/tcp.
+
+    (tcp-connect/enable-break    hostname         
+                                 port-no          
+                               [ local-hostname]  
+                                 local-port-no)   
+      →   input-port?   output-port?
+      hostname : string?
+       port-no   :   (and/c exact-nonnegative-integer?
+                           (integer-in 1 65535))
+      local-hostname : (or/c string? false/c) = #f
+                           (or/c (and/c exact-nonnegative-integer?
+       local-port-no   :                (integer-in 1 65535))
+                                 false/c)
+    Like tcp-connect/enable-break from racket/tcp.
+
+    (tcp-accept listener)   →   input-port?   output-port?
+      listener : tcp-listener?
+    Like tcp-accept from racket/tcp.
+
+    (tcp-accept/enable-break listener)   →   input-port?   output-port?
+      listener : tcp-listener?
+    Like tcp-accept/enable-break from racket/tcp.
+
+    (tcp-accept-ready? listener) → boolean?
+      listener : tcp-listener?
+    Like tcp-accept-ready? from racket/tcp.
+
+    (tcp-close listener) → void?
+      listener : tcp-listener?
+    Like tcp-close from racket/tcp.
+
+    (tcp-listener? v) → boolean?
+      v : any/c
+    Like tcp-listener? from racket/tcp.
+
+    (tcp-abandon-port tcp-port) → void?
+      tcp-port : port?
+    Like tcp-abandon-port from racket/tcp.
+
+    (tcp-addresses tcp-port [port-numbers?])
+          (or/c (values string? string?)
+      →         (values string? (integer-in 1 65535)
+                        string? (integer-in 1 65535)))
+      tcp-port : port?
+      port-numbers? : any/c = #f
+    Like tcp-addresses from racket/tcp.
+
+16.2 TCP Unit
+
+ (require net/tcp-unit)
+
+tcp@ : unit?
+Imports nothing and exports tcp^, implemented using racket/tcp.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

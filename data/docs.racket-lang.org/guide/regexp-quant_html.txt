@@ -1,0 +1,113 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 9  Regular Expressions
+ 9.1  Writing Regexp Patterns
+ 9.2  Matching Regexp Patterns
+ 9.3  Basic Assertions
+ 9.4  Characters and Character Classes
+ 9.5  Quantifiers
+ 9.6  Clusters
+ 9.7  Alternation
+ 9.8  Backtracking
+ 9.9  Looking Ahead and Behind
+9.10  An Extended Example
+[...search manuals...]
+  top← prev  up  next → 
+
+9.5 Quantifiers
+
+The quantifiers *, +, and ? match respectively: zero or more, one or more, and
+zero or one instances of the preceding subpattern.
+
+    > (regexp-match-positions #rx"c[ad]*r" "cadaddadddr")
+    '((0 . 11))
+
+    > (regexp-match-positions #rx"c[ad]*r" "cr")
+    '((0 . 2))
+
+    > (regexp-match-positions #rx"c[ad]+r" "cadaddadddr")
+    '((0 . 11))
+
+    > (regexp-match-positions #rx"c[ad]+r" "cr")
+    #f
+
+    > (regexp-match-positions #rx"c[ad]?r" "cadaddadddr")
+    #f
+
+    > (regexp-match-positions #rx"c[ad]?r" "cr")
+    '((0 . 2))
+
+    > (regexp-match-positions #rx"c[ad]?r" "car")
+    '((0 . 3))
+
+
+In #px syntax, you can use braces to specify much finer-tuned quantification
+than is possible with *, +, ?:
+
+  • The quantifier {m} matches exactly m instances of the preceding subpattern;
+    m must be a nonnegative integer.
+
+  • The quantifier {m,n} matches at least m and at most n instances. m and n
+    are nonnegative integers with m less or equal to n. You may omit either or
+    both numbers, in which case m defaults to 0 and n to infinity.
+
+It is evident that + and ? are abbreviations for {1,} and {0,1} respectively,
+and * abbreviates {,}, which is the same as {0,}.
+
+    > (regexp-match #px"[aeiou]{3}" "vacuous")
+    '("uou")
+
+    > (regexp-match #px"[aeiou]{3}" "evolve")
+    #f
+
+    > (regexp-match #px"[aeiou]{2,3}" "evolve")
+    #f
+
+    > (regexp-match #px"[aeiou]{2,3}" "zeugma")
+    '("eu")
+
+
+The quantifiers described so far are all greedy: they match the maximal number
+of instances that would still lead to an overall match for the full pattern.
+
+    > (regexp-match #rx"<.*>" "<tag1> <tag2> <tag3>")
+    '("<tag1> <tag2> <tag3>")
+
+
+To make these quantifiers non-greedy, append a ? to them. Non-greedy
+quantifiers match the minimal number of instances needed to ensure an overall
+match.
+
+    > (regexp-match #rx"<.*?>" "<tag1> <tag2> <tag3>")
+    '("<tag1>")
+
+
+The non-greedy quantifiers are respectively: *?, +?, ??, {m}?, {m,n}?. Note the
+two uses of the metacharacter ?.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

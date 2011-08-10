@@ -1,0 +1,134 @@
+▼  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 8  Running scribble
+8.1  Extra and Format-Specific Files
+8.2  Handling Cross-References
+On this page:
+8.1 Extra and Format-Specific Files
+8.2 Handling Cross-References
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Running scribble
+
+The scribble command-line tool (also available as raco scribble) runs a
+Scribble document and renders it to a specific format. Select a format with one
+of the following flags, where the output name fn is by default the document
+source name without its file suffix:
+
+  • --html — a single HTML page "fn.html", plus CSS sources and needed image
+    files; this mode is the default if no format is specified
+
+  • --htmls — multiple HTML pages (and associated files) in a "fn" directory,
+    starting with "fn/index.html"
+
+  • --latex — LaTeX source "fn.tex", plus any needed additional files (such as
+    non-standard class files) needed to run latex or pdflatex
+
+  • --pdf — PDF "fn.pdf" that is generated via pdflatex
+
+  • --latex-section ‹n› — LaTeX source "fn.tex" plus additional ".tex" files to
+    be included in the enclosing document’s preamble, where the enclosing
+    document must use the UTF-8 input encoding and T1 font encoding; use 1 for
+    ‹n› to make the rendered document a section, 2 for a subsection, etc.
+
+  • --text — plain text in a single file "fn.txt", with non-ASCII content
+    encoded as UTF-8
+
+Use --dest-name to specify a fn other than the default name, but only when a
+single source file is provided. Use the --dest flag to specify a destination
+directory (for any number of source files).
+
+After all flags, provide one or more document sources. When multiple documents
+are rendered at the same time, cross-reference information in one document is
+visible to the other documents. See Handling Cross-References for information
+on references that cross documents that are built separately.
+
+8.1 Extra and Format-Specific Files
+
+Use the --style flag to specify a format-specific file to adjust the output
+style file for certain formats. For HTML (single-page or multi-page) output,
+the style file should be a CSS file that is applied after all other CSS files,
+and that may therefore override some style properties. For Latex (or PDF)
+output, the style file should be a ".tex" file that can redefine Latex
+commands. When a particular Scribble function needs particular CSS or Latex
+support, however, a better option is to use a css-addition or tex-addition
+style property so that the support is included automatically; see Extending and
+Configuring Scribble Output for more information.
+
+In rare cases, use the --style flag to specify a format-specific base style
+file. For HTML (single-page or multi-page) output, the style file should be a
+CSS file to substitute for "scribble.css" in the "scribble" collection. For
+Latex (or PDF) output, the style file should be a ".tex" file to substitute for
+"scribble.tex" in the "scribble" collection. The --style flag is rarely useful,
+because the content of "scribble.css" or "scribble.tex" is weakly specified;
+replacements must define all of the same styles, and the set of styles can
+change across versions of Racket.
+
+Use --prefix to specify an alternate format-specific to start of the output
+file. For HTML output, the starting file specifies the DOCTYPE declaration of
+each output HTML file as a substitute for "scribble-prefix.html" in the
+"scribble" collection. For Latex (or PDF) output (but not Latex-section
+output), the starting file specifies the \documentclass declaration and initial
+\usepackage declarations as a substitute for "scribble-prefix.tex" in the
+"scribble" collection. See also html-defaults, latex-defaults, and Extending
+and Configuring Scribble Output.
+
+For any output form, use the ++extra flag to add a needed file to the build
+destination, such as an image file that is referenced in the generated output
+but not included via image (which copies the file automatically).
+
+8.2 Handling Cross-References
+
+Cross references within a document or documents rendered together are always
+resolved. When cross references span documents that are rendered separately,
+format-specific cross-reference information needs to be saved and loaded
+explicitly.
+
+A Racket installation includes HTML-format cross-reference information for all
+installed documentation. Each document’s information is in a separate file, so
+that loading all relevant files would be tedious. The ++xref-in flag loads
+cross-reference information by calling a specified module’s function; in
+particular, the setup/xref module provides load-collections-xref to load
+cross-reference information for all installed documentation. Thus,
+
+  scribble ++xref-in setup/xref load-collections-xref mine.scrbl
+
+renders "mine.scrbl" to "mine.html" with cross-reference links to the Racket
+installation’s documentation.
+
+The --redirect-main flag redirects links to the local installation’s
+documentation to a given URL, such as http://docs.racket-lang.org/. Beware that
+documentation links sometimes change (although Scribble generates HTML paths
+and anchors in a relatively stable way), so http://download.racket-lang.org/
+docs/version/html/ may be more reliable when building with an installation for
+version.
+
+The --redirect flag is similar to --redirect-main, except that it builds on the
+given URL to indicate a cross-reference tag that is more stable than an HTML
+path and anchor (in case the documentation for a function changes sections, for
+example). No server currently exists to serve such tag requests, however.
+
+For cross-references among documentation that is not part of the Racket
+installation, use --info-out to save information from a document build and use
+++info-in to load previously saved information. For example, if "c.scrbl"
+refers to information in "a.scrbl" and "b.scrbl", then
+
+  scribble --info-out a.sxref a.scrbl
+  scribble --info-out b.sxref b.scrbl
+  scribble ++info-in a.sxref ++info-in b.sxref c.scrbl
+
+builds "c.html" with cross-reference links into "a.html" and "b.html".
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

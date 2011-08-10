@@ -1,0 +1,80 @@
+▼  Errortrace: Debugging and Profiling
+1  Quick Instructions
+2  Installing Errortrace
+3  Using Errortrace
+4  Errortrace Library
+5  Re-using Errortrace Stack Tracing
+6  Errortrace Key
+On this page:
+errortrace-compile-handler
+make-errortrace-compile-handler
+errortrace-error-display-handler
+errortrace-annotate
+annotate-top
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Errortrace Library
+
+ (require errortrace/errortrace-lib)
+The errortrace/errortrace-lib module exports all of the exports of errortrace,
+plus a few more. It does not install any handlers.
+
+The additional exports are as follows:
+
+(errortrace-compile-handler   stx               
+                              immediate-eval?)  
+ → compiled-expression?
+  stx : any/c
+  immediate-eval? : any/c
+Compiles stx using the compilation handler that was active when the errortrace/
+errortrace-lib module was executed, but first instruments the code for
+Errortrace information. The code is instrumented only if
+
+
+    (namespace-module-registry (current-namespace))
+
+is the same as when the errortrace/errortrace-lib module was executed. This
+procedure is suitable for use as a compilation handler via current-compile.
+
+(make-errortrace-compile-handler)
+ → (-> any/c any/c compiled-expression)
+Produces a compile handler that is like errortrace-compile-handler, except that
+the code that it produces is instrumented if the value of
+
+
+    (namespace-module-registry (current-namespace))
+
+is the same as when the original thunk is invoked.
+
+In addition, when the thunk is invoked, it uses namespace-attach-module to
+attach the errortrace/errortrace-key module and the '#%kernel module to the
+current-namespace.
+
+(errortrace-error-display-handler   string        
+                                    exn)     →   void?
+  string : string?
+  exn : exn?
+Displays information about the exception; this procedure is suitable for use as
+an error display handler.
+
+(errortrace-annotate stx) → any/c
+  stx : any/c
+Macro-expands and instruments the given top-level form. If the form is a module
+named errortrace-key, no instrumentation is applied. This annotation function
+is used by errortrace-compile-handler.
+
+(annotate-top stx phase-level) → any/c
+  stx : any/c
+  phase-level : exact-integer?
+Like errortrace-annotate, but given an explicit phase level for stx; (
+namespace-base-phase) is typically the right value for the phase-level
+argument.
+
+Unlike errortrace-annotate, there no special case for a module named
+errortrace-key. Also, if stx is a module declaration, it is not enriched with
+imports to explicitly load Errortrace run-time support.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,510 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+keymap: aug-keymap<%>
+get-chained-keymaps
+get-map-function-table
+get-map-function-table/ ht
+keymap: aug-keymap-mixin
+chain-to-keymap
+remove-chained-keymap
+map-function
+keymap: aug-keymap%
+keymap: remove-user-keybindings-file
+keymap: add-user-keybindings-file
+keymap: add-to-right-button-menu
+keymap: add-to-right-button-menu/ before
+keymap: call/ text-keymap-initializer
+keymap: canonicalize-keybinding-string
+keymap: get-editor
+keymap: get-file
+keymap: get-user
+keymap: get-global
+keymap: get-search
+keymap: make-meta-prefix-list
+keymap: send-map-function-meta
+keymap: setup-editor
+keymap: setup-file
+keymap: setup-global
+keymap: setup-search
+keymap: set-chained-keymaps
+keymap: remove-chained-keymap
+[...search manuals...]
+  top← prev  up  next → 
+
+19 Keymap
+
+keymap:aug-keymap<%> : interface?
+  implements:  keymap%
+This keymap overrides some of the built in keymap% methods to be able to
+extract the keybindings from the keymap.
+
+
+    (send a-keymap:aug-keymap get-chained-keymaps)
+     → (listof (is-a?/c keymap%))
+    Returns the list of keymaps that are chained to this one.
+
+    (send a-keymap:aug-keymap get-map-function-table) → hash?
+    Returns a hash-table that maps symbols naming key sequences to the names of
+    the keymap functions the are bound to.
+
+    (send a-keymap:aug-keymap get-map-function-table/ht ht) → hash?
+      ht : hash?
+    This is a helper function for get-map-function-table that returns the same
+    result, except it accepts a hash-table that it inserts the bindings into.
+    It does not replace any bindings already in ht.
+
+keymap:aug-keymap-mixin : (class? . -> . class?)
+  argument extends/implements:  keymap%
+  result implements:  keymap:aug-keymap<%>
+
+
+    (send a-keymap:aug-keymap chain-to-keymap   next            
+                                                prefix?)   →   void
+      next : (is-a?/c keymap%)
+      prefix? : boolean?
+    Overrides chain-to-keymap in keymap%.
+    Keeps a list of the keymaps chained to this one.
+
+    (send a-keymap:aug-keymap remove-chained-keymap keymap) → void
+      keymap : (is-a?/c keymap)
+    Overrides remove-chained-keymap in keymap%.
+    Keeps the list of the keymaps chained to this one up to date.
+
+    (send a-keymap:aug-keymap map-function   key-name              
+                                             function-name)   →   void
+      key-name : string
+      function-name : string
+    Overrides map-function in keymap%.
+    Keeps a separate record of the key names and functions that they are bound
+    to in this keymap.
+
+keymap:aug-keymap% : class?
+  superclass: (keymap:aug-keymap-mixin keymap%)
+
+
+(keymap:remove-user-keybindings-file user-keybindings-path)
+ → any
+  user-keybindings-path : any/c
+Removes the keymap previously added by keymap:add-user-keybindings-file.
+(keymap:add-user-keybindings-file user-keybindings-path-or-require-spec)
+ → any
+  user-keybindings-path-or-require-spec : any/c
+Chains the keymap defined by user-keybindings-path-or-require-spec to the
+global keymap, returned by keymap:get-global.
+
+If user-keybindings-path-or-require-spec is a path, the module is loaded
+directly from that path. Otherwise, user-keybindings-path-or-require-spec is
+treated like an argument to require.
+                                        (-> (is-a?/c popup-menu%)
+(keymap:add-to-right-button-menu)   →       (is-a?/c editor<%>)
+                                            (is-a?/c event%)
+                                            void?)
+(keymap:add-to-right-button-menu proc) → void?
+              (-> (is-a?/c popup-menu%)
+   proc   :       (is-a?/c editor<%>)
+                  (is-a?/c event%)
+                  void?)
+When the keymap that keymap:get-global returns is installed into an editor,
+this parameter’s value is used for right button clicks.
+
+Before calling this procedure, the function append-editor-operation-menu-items
+is called.
+
+See also keymap:add-to-right-button-menu/before.
+(keymap:add-to-right-button-menu/before)
+ → (-> (is-a?/c popup-menu%) (is-a?/c editor<%>) (is-a?/c event%) void?)
+(keymap:add-to-right-button-menu/before proc) → void?
+  proc : (-> (is-a?/c popup-menu%) (is-a?/c editor<%>) (is-a?/c event%) void?)
+When the keymap that keymap:get-global returns is installed into an editor,
+this function is called for right button clicks.
+
+After calling this procedure, the function append-editor-operation-menu-items
+is called.
+
+See also keymap:add-to-right-button-menu.
+(keymap:call/text-keymap-initializer thunk-proc) → any/c
+  thunk-proc : (-> any/c)
+This function parameterizes the call to thunk-proc by setting the
+keymap-initialization procedure (see current-text-keymap-initializer) to
+install the framework’s standard text bindings.
+(keymap:canonicalize-keybinding-string keybinding-string)
+ → string?
+  keybinding-string : string?
+Returns a string that denotes the same keybindings as the input string, except
+that it is in canonical form; two canonical keybinding strings can be compared
+with string=?.
+(keymap:get-editor) → (is-a?/c keymap%)
+This returns a keymap for handling standard editing operations. It binds these
+keys:
+
+  • "z": undo
+
+  • "y": redo
+
+  • "x": cut
+
+  • "c": copy
+
+  • "v": paste
+
+  • "a": select all
+
+where each key is prefixed with the menu-shortcut key, based on the platform.
+Under Unix, the shortcut is "a:"; under windows the shortcut key is "c:" and
+under MacOS, the shortcut key is "d:".
+(keymap:get-file) → (is-a?/c keymap%)
+This returns a keymap for handling file operations.
+(keymap:get-user) → (is-a?/c keymap%)
+This returns a keymap that contains all of the keybindings in the keymaps
+loaded via keymap:add-user-keybindings-file
+(keymap:get-global) → (is-a?/c keymap%)
+This returns a keymap for general operations. See keymap:setup-global for a
+list of the bindings this keymap contains.
+(keymap:get-search) → (is-a?/c keymap%)
+This returns a keymap for searching operations.
+(keymap:make-meta-prefix-list key) → (listof string?)
+  key : string?
+This prefixes a key with all of the different meta prefixes and returns a list
+of the prefixed strings.
+
+Takes a keymap, a base key specification, and a function name; it prefixes the
+base key with all “meta” combination prefixes, and installs the new
+combinations into the keymap. For example, (keymap:send-map-function-meta
+keymap "a" func) maps "m:a" and "ESC;a" to func.
+(keymap:send-map-function-meta   keymap        
+                                 key           
+                                 func)    →   void?
+  keymap : (is-a?/c keymap%)
+  key : string?
+  func : string?
+Most keyboard and mouse mappings are inserted into a keymap by calling the
+keymap’s map-function method. However, “meta” combinations require special
+attention. The "m:" prefix recognized by map-function applies only to the Meta
+key that exists on some keyboards. By convention, however, “meta” combinations
+can also be accessed by using “ESC” as a prefix.
+
+This procedure binds all of the key-bindings obtained by prefixing key with a
+meta-prefix to func in keymap.
+(keymap:setup-editor keymap) → void?
+  keymap : (is-a?/c keymap%)
+This sets up the input keymap with the bindings described in keymap:get-editor.
+(keymap:setup-file keymap) → void?
+  keymap : (is-a?/c keymap%)
+This extends a keymap% with the bindings for files.
+(keymap:setup-global keymap) → void?
+  keymap : (is-a?/c keymap%)
+This function extends a keymap% with the following functions:
+
+  • ring-bell (any events) — Rings the bell (using bell) and removes the search
+    panel from the frame, if there.
+
+  • save-file (key events) — Saves the buffer. If the buffer has no name, then
+    finder:put-file is invoked.
+
+  • save-file-as (key events) — Calls finder:put-file to save the buffer.
+
+  • load-file (key events) — Invokes finder:open-file.
+
+  • find-string (key events) — Opens the search buffer at the bottom of the
+    frame, unless it is already open, in which case it searches for the text in
+    the search buffer.
+
+  • find-string-reverse (key events) — Same as “find-string”, but in the
+    reverse direction.
+
+  • find-string-replace (key events) — Opens a replace string dialog box.
+
+  • toggle-anchor (key events) — Turns selection-anchoring on or off.
+
+  • center-view-on-line (key events) — Centers the buffer in its display using
+    the currently selected line.
+
+  • collapse-space (key events) — Collapses all non-return whitespace around
+    the caret into a single space.
+
+  • remove-space (key events) — Removes all non-return whitespace around the
+    caret.
+
+  • collapse-newline (key events) — Collapses all empty lines around the caret
+    into a single empty line. If there is only one empty line, it is removed.
+
+  • open-line (key events) — Inserts a new line.
+
+  • transpose-chars (key events) — Transposes the characters before and after
+    the caret and moves forward one position.
+
+  • transpose-words (key events) — Transposes words before and after the caret
+    and moves forward one word.
+
+  • capitalize-word (key events) — Changes the first character of the next word
+    to a capital letter and moves to the end of the word.
+
+  • upcase-word (key events) — Changes all characters of the next word to
+    capital letters and moves to the end of the word.
+
+  • downcase-word (key events) — Changes all characters of the next word to
+    lowercase letters and moves to the end of the word.
+
+  • kill-word (key events) — Kills the next word.
+
+  • backward-kill-word (key events) — Kills the previous word.
+
+  • goto-line (any events) — Queries the user for a line number and moves the
+    caret there.
+
+  • goto-position (any events) — Queries the user for a position number and
+    moves the caret there.
+
+  • copy-clipboard (mouse events) — Copies the current selection to the
+    clipboard.
+
+  • cut-clipboard (mouse events) — Cuts the current selection to the clipboard.
+
+  • paste-clipboard (mouse events) — Pastes the clipboard to the current
+    selection.
+
+  • copy-click-region (mouse events) — Copies the region between the caret and
+    the input mouse event.
+
+  • cut-click-region (mouse events) — Cuts the region between the caret and the
+    input mouse event.
+
+  • paste-click-region (mouse events) — Pastes the clipboard into the position
+    of the input mouse event.
+
+  • select-click-word (mouse events) — Selects the word under the input mouse
+    event.
+
+  • select-click-line (mouse events) — Selects the line under the input mouse
+    event.
+
+  • start-macro (key events) – Starts recording a keyboard macro
+
+  • end-macro (key events) — Stops recording a keyboard macro
+
+  • do-macro (key events) — Executes the last keyboard macro
+
+  • toggle-overwrite (key events) — Toggles overwriting mode
+
+These functions are bound to the following keys (C = control, S = shift, A =
+alt, M = “meta”, D = command):
+
+  • C-g : “ring-bell”
+
+  • M-C-g : “ring-bell”
+
+  • C-c C-g : “ring-bell”
+
+  • C-x C-g : “ring-bell”
+
+  • C-p : “previous-line”
+
+  • S-C-p : “select-previous-line”
+
+  • C-n : “next-line”
+
+  • S-C-n : “select-next-line”
+
+  • C-e : “end-of-line”
+
+  • S-C-e : “select-to-end-of-line”
+
+  • D-RIGHT : “end-of-line”
+
+  • S-D-RIGHT : “select-to-end-of-line”
+
+  • M-RIGHT : “end-of-line”
+
+  • S-M-RIGHT : “select-to-end-of-line”
+
+  • C-a : “beginning-of-line”
+
+  • S-C-a : “select-to-beginning-of-line”
+
+  • D-LEFT : “beginning-of-line”
+
+  • D-S-LEFT : “select-to-beginning-of-line”
+
+  • M-LEFT : “beginning-of-line”
+
+  • M-S-LEFT : “select-to-beginning-of-line”
+
+  • C-h : “delete-previous-character”
+
+  • C-d : “delete-next-character”
+
+  • C-f : “forward-character”
+
+  • S-C-f : “select-forward-character”
+
+  • C-b : “backward-character”
+
+  • S-C-b : “select-backward-character”
+
+  • M-f : “forward-word”
+
+  • S-M-f : “select-forward-word”
+
+  • A-RIGHT : “forward-word”
+
+  • A-S-RIGHT : “forward-select-word”
+
+  • M-b : “backward-word”
+
+  • S-M-b : “select-backward-word”
+
+  • A-LEFT : “backward-word”
+
+  • A-S-LEFT : “backward-select-word”
+
+  • M-d : “kill-word”
+
+  • M-DELETE : “backward-kill-word”
+
+  • M-c : “capitalize-word”
+
+  • M-u : “upcase-word”
+
+  • M-l : “downcase-word”
+
+  • M-< : “beginning-of-file”
+
+  • S-M-< : “select-to-beginning-of-file”
+
+  • M-> : “end-of-file”
+
+  • S-M-> : “select-to-end-of-file”
+
+  • C-v : “next-page”
+
+  • S-C-v : “select-next-page”
+
+  • M-v : “previous-page”
+
+  • S-M-v : “select-previous-page”
+
+  • C-l : “center-view-on-line”
+
+  • C-k : “delete-to-end-of-line”
+
+  • C-y : “paste-clipboard” (Except Windows)
+
+  • A-v : “paste-clipboard”
+
+  • D-v : “paste-clipboard”
+
+  • C-_ : “undo”
+
+  • C-x u : “undo”
+
+  • C-+ : “redo”
+
+  • C-w : “cut-clipboard”
+
+  • M-w : “copy-clipboard”
+
+  • C-x C-s : “save-file”
+
+  • C-x C-w : “save-file-as”
+
+  • C-x C-f : “load-file”
+
+  • C-s : “find-string”
+
+  • C-r : “find-string-reverse”
+
+  • M-% : “find-string-replace”
+
+  • SPACE : “collapse-space”
+
+  • M-Backslash : “remove-space”
+
+  • C-x C-o : “collapse-newline”
+
+  • C-o : “open-line”
+
+  • C-t : “transpose-chars”
+
+  • M-t : “transpose-words”
+
+  • C-SPACE : “toggle-anchor”
+
+  • M-g : “goto-line”
+
+  • M-p : “goto-position”
+
+  • LEFTBUTTONTRIPLE : “select-click-line”
+
+  • LEFTBUTTONDOUBLE : “select-click-word”
+
+  • RIGHTBUTTON : “copy-click-region”
+
+  • RIGHTBUTTONDOUBLE : “cut-click-region”
+
+  • MIDDLEBUTTON : “paste-click-region”
+
+  • C-RIGHTBUTTON : “copy-clipboard”
+
+  • INSERT : “toggle-overwrite”
+
+  • M-o : “toggle-overwrite”
+
+(keymap:setup-search keymap) → void?
+  keymap : (is-a?/c keymap%)
+This extends a keymap% with the bindings for searching.
+(keymap:set-chained-keymaps   keymap                   
+                              children-keymaps)   →   void?
+  keymap : (is-a?/c keymap:aug-keymap<%>)
+  children-keymaps : (listof (is-a?/c keymap%))
+Sets keymap’s chained keymaps to children-keymaps, unchaining any keymaps that
+are currently chained to keymap.
+(keymap:remove-chained-keymap   editor         
+                                keymap)   →   void?
+  editor : (is-a?/c editor<%>)
+  keymap : (is-a?/c keymap:aug-keymap<%>)
+Removes keymap from the keymaps chained to editor. Also (indirectly) removes
+all keymaps chained to keymap from editor, since they are removed when
+unchaining keymap itself.
+
+Each of the keymaps chained to editor must be an keymap:aug-keymap% and keymap
+cannot be the result of (send editor get-keymap) That is, keymap must be
+chained to some keymap attached to the editor.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

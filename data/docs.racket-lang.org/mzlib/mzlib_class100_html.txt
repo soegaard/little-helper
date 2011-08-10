@@ -1,0 +1,138 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+class100*
+class100
+class100-asi
+class100*-asi
+super-init
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/class100)
+
+The class100 and class100* forms provide a syntax close to that of class and
+class* in Racket versions 100 through 103, but with the semantics of the
+current scheme/class-based class system. For a class defined with class100,
+keyword-based initialization arguments can be propagated to the superclass, but
+by-position arguments are not (i.e., the expansion of class100 to class always
+includes an init-rest clause).
+
+The class100 form uses keywords (e.g., public) that are defined by the mzlib/
+class library, so typically scheme/class must be imported into any context that
+imports mzlib/class100.
+
+(class100* superclass-expr (interface-expr ...) init-ids
+  class100-clause
+  ...)
+ 
+           init-ids   =   id
+                      |   (id ... id-with-default ...)
+                      |   (id ... id-with-default ... . id)
+                           
+    id-with-default   =   (id default-expr)
+                           
+    class100-clause   =   (sequence expr ...)
+                      |   (public public-method-decl ...)
+                      |   (override public-method-decl ...)
+                      |   (augment public-method-decl ...)
+                      |   (pubment public-method-decl ...)
+                      |   (overment public-method-decl ...)
+                      |   (augride public-method-decl ...)
+                      |   (private private-method-decl ...)
+                      |   (private-field private-var-decl ...)
+                      |   (inherit inherit-method-decl ...)
+                      |   (rename rename-method-decl ...)
+                           
+ public-method-decl   =   ((internal-id external-id) method-procedure)
+                      |   (id method-procedure)
+                           
+private-method-decl   =   (id method-procedure)
+                           
+   private-var-decl   =   (id initial-value-expr)
+                      |   (id)
+                      |   id
+                           
+inherit-method-decl   =   id
+                      |   (internal-instance-id external-inherited-id)
+                           
+ rename-method-decl   =   (internal-id external-id)
+
+(class100 superclass-expr init-ids
+    class100-clause
+    ...)
+Like class100*, but without interface-exprs.
+
+(class100-asi superclass instance-id-clause ...)
+Like class100, but all initialization arguments are automatically passed on to
+the superclass initialization procedure by position.
+
+(class100*-asi superclass interfaces instance-id-clause ...)
+Like class100*, but all initialization arguments are automatically passed on to
+the superclass initialization procedure by position.
+
+(super-init init-arg-expr ...)
+An alias for super-make-object.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,198 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+start-splash
+shutdown-splash
+close-splash
+add-splash-icon
+get-splash-bitmap
+set-splash-bitmap
+get-splash-canvas
+get-splash-eventspace
+get-splash-paint-callback
+set-splash-paint-callback
+set-splash-progress-bar?!
+set-splash-char-observer
+set-splash-event-callback
+get-splash-event-callback
+set-refresh-splash-on-gauge-change?!
+get-splash-width
+get-splash-height
+refresh-splash
+[...search manuals...]
+  top← prev  up  next → 
+
+30 Splash
+
+ (require framework/splash)
+
+This module helps support applications with splash screens like the one in
+DrRacket.
+
+When this module is invoked, it sets the current-load parameter to a procedure
+that counts how many files are loaded (until shutdown-splash is called) and
+uses that number to control the gauge along the bottom of the splash screen.
+
+(start-splash    draw-spec                            
+                 splash-title                         
+                 width-default                        
+               [ #:allow-funny? allow-funny?])   →   void?
+                   (or/c path-string?
+                         (vector/c (or/c (-> (is-a?/c dc<%>) void?)
+                                         (-> (is-a?/c dc<%>)
+                                             exact-nonnegative-integer?
+   draw-spec   :                             exact-nonnegative-integer?
+                                             exact-nonnegative-integer?
+                                             exact-nonnegative-integer?
+                                             void?))
+                                   exact-nonnegative-integer?
+                                   exact-nonnegative-integer?))
+  splash-title : string?
+  width-default : exact-nonnegative-integer?
+  allow-funny? : boolean? = #f
+Starts a new splash screen. The splash screen is created in its own, new
+eventspace. The progress gauge at the bottom of the window advances as files
+are loaded (monitored via the current-load parameter).
+
+The draw-spec determines what the splash window contains. The splash-title is
+used as the title of the window and the width-default determines how many
+progress steps the gauge in the splash screen should contain if there is no
+preference saved for the splash screen width. The splash library uses
+get-preference and put-preferences to store preferences, using
+
+
+    (string->symbol (format "plt:~a-splash-max-width" splash-title))
+
+as the key for the preference. Each time the app starts up, the maximum width
+is reset based on the number of files that were loaded that time.
+
+If the draw-spec is a path-string?, then the path is expected to be a file that
+contains a bitmap that is drawn as the contents of the splash screen. If
+draw-spec is a vector, then the vector’s first element is a procedure that is
+called to draw the splash screen and the other two integers are the size of the
+splash screen, width followed by height. If the procedure accepts only one
+argument, then it is called with a dc<%> object where the drawing should occur.
+If it accepts 5 arguments, it is called with the dc<%>, as well as (in order)
+the current value of the gauge, the maximum value of the gauge, and the width
+and the height of the area to draw.
+
+The allow-funny? argument determines if a special gauge is used on Christmas
+day.
+
+(shutdown-splash) → void?
+Stops the splash window’s gauge from advancing. Call this after all of the
+files have been loaded.
+
+(close-splash) → void?
+Closes the splash window. Call shutdown-splash first. You can leave some time
+between these two if there is more initialization work to be done where you do
+not want to count loaded files.
+
+(add-splash-icon bmp x y) → void?
+  bmp : (is-a?/c bitmap%)
+  x : exact-nonnegative-integer?
+  y : exact-nonnegative-integer?
+Adds an icon to the splash screen. (DrRacket uses this function to show the
+tools as they are loaded.)
+
+(get-splash-bitmap) → (or/c #f (is-a?/c bitmap%))
+Returns the splash bitmap unless one has not been set.
+(set-splash-bitmap bmp) → void?
+  bmp : (is-a?/c bitmap%)
+Sets the splash bitmap to bmp and triggers a redrawing of the splash screen.
+Don’t use this to set the initial bitmap, use start-splash instead.
+(get-splash-canvas) → (is-a?/c canvas%)
+Returns the canvas where the splash screen bitmap is drawn (if there is a
+bitmap); see start-splash for how the splash is drawn.
+(get-splash-eventspace) → eventspace?
+Returns the splash screen’s eventspace.
+                                  (-> (is-a?/c dc<%>)
+                                      exact-nonnegative-integer?
+(get-splash-paint-callback)   →       exact-nonnegative-integer?
+                                      exact-nonnegative-integer?
+                                      exact-nonnegative-integer?
+                                      void?)
+Returns the callback that is invoked when redrawing the splash screen.
+(set-splash-paint-callback cb) → void?
+            (-> (is-a?/c dc<%>)
+                exact-nonnegative-integer?
+   cb   :       exact-nonnegative-integer?
+                exact-nonnegative-integer?
+                exact-nonnegative-integer?
+                void?)
+Sets the callback that is invoked when redrawing the splash screen. See
+start-splash for what the arguments are.
+(set-splash-progress-bar?! b) → void?
+  b : boolean?
+Calling this procedure with #f removes the progress bar from the splash screen.
+Useful in conjunction with setting your own paint callback for the splash
+screen that measures progress in its own way, during drawing. DrRacket uses
+this on King Kamehameha and Prince Kuhio day.
+(set-splash-char-observer obs) → void?
+  obs : (-> (is-a?/c key-event%) any)
+Sets a procedure that is called whenever a user types a key with the splash
+screen as the focus.
+(set-splash-event-callback obj) → void?
+  obj : (-> (is-?/c mouse-event%) any)
+Sets a procedure that is called whenever a mouse event happens in the splash
+canvas.
+(get-splash-event-callback) → (-> (is-?/c mouse-event%) any)
+Returns the last procedure passed to set-splash-event-callback or void, if
+set-splash-event-callback has not been called.
+(set-refresh-splash-on-gauge-change?! proc) → void?
+              (-> exact-nonnegative-integer?
+   proc   :       exact-nonnegative-integer?
+                  any)
+Sets a procedure that is called each time the splash gauge changes. If the
+procedure returns a true value (i.e., not #f), then the splash screen is
+redrawn. The procedure is called with the current value of the gauge and the
+maximum value.
+
+The default function is (lambda (curr tot) #f).
+(get-splash-width) → exact-nonnegative-integer?
+Returns the width of the splash drawing area / bitmap. See start-splash for the
+details of the size and how things are drawn.
+(get-splash-height) → exact-nonnegative-integer?
+Returns the width of the splash drawing area / bitmap. See start-splash for the
+details of the size and how things are drawn.
+(refresh-splash) → void?
+Triggers a refresh of the splash, handling the details of double buffering and
+doing the drawing on the splash’s eventspace’s main thread.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

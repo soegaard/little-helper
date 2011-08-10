@@ -1,0 +1,770 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 11
+
+Arithmetic
+
+This chapter describes Scheme’s libraries for more specialized numerical
+operations: fixnum and flonum arithmetic, as well as bitwise operations on
+exact integer objects.
+
+11.1  Bitwise operations
+
+A number of procedures operate on the binary two’s-complement representations
+of exact integer objects: Bit positions within an exact integer object are
+counted from the right, i.e. bit 0 is the least significant bit. Some
+procedures allow extracting bit fields, i.e., number objects representing
+subsequences of the binary representation of an exact integer object. Bit
+fields are always positive, and always defined using a finite number of bits.
+
+11.2  Fixnums
+
+Every implementation must define its fixnum range as a closed interval
+
+[r6rs-lib-Z-G-4.gif]
+
+such that w is a (mathematical) integer w ≥ 24. Every mathematical integer
+within an implementation’s fixnum range must correspond to an exact integer
+object that is representable within the implementation. A fixnum is an exact
+integer object whose value lies within this fixnum range.
+
+This section describes the (rnrs arithmetic fixnums (6))library, which defines
+various operations on fixnums. Fixnum operations perform integer arithmetic on
+their fixnum arguments, but raise an exception with condition type &
+implementation-restriction if the result is not a fixnum.
+
+This section uses fx, fx[1], fx[2], etc., as parameter names for arguments that
+must be fixnums.
+
+(fixnum? obj)    procedure 
+
+Returns #t if obj is an exact integer object within the fixnum range, #f
+otherwise.
+
+(fixnum-width)    procedure 
+(least-fixnum)    procedure 
+(greatest-fixnum)    procedure 
+
+These procedures return w, - 2^w-1 and 2^w-1 - 1: the width, minimum and the
+maximum value of the fixnum range, respectively.
+
+(fx=? fx[1] fx[2] fx[3] ...)    procedure 
+(fx>? fx[1] fx[2] fx[3] ...)    procedure 
+(fx<? fx[1] fx[2] fx[3] ...)    procedure 
+(fx>=? fx[1] fx[2] fx[3] ...)    procedure 
+(fx<=? fx[1] fx[2] fx[3] ...)    procedure 
+
+These procedures return #t if their arguments are (respectively): equal,
+monotonically increasing, monotonically decreasing, monotonically
+nondecreasing, or monotonically nonincreasing, #f otherwise.
+
+(fxzero? fx)    procedure 
+(fxpositive? fx)    procedure 
+(fxnegative? fx)    procedure 
+(fxodd? fx)    procedure 
+(fxeven? fx)    procedure 
+
+These numerical predicates test a fixnum for a particular property, returning #
+t or #f. The five properties tested by these procedures are: whether the number
+object is zero, greater than zero, less than zero, odd, or even.
+
+(fxmax fx[1] fx[2] ...)    procedure 
+(fxmin fx[1] fx[2] ...)    procedure 
+
+These procedures return the maximum or minimum of their arguments.
+
+(fx+ fx[1] fx[2])    procedure 
+(fx* fx[1] fx[2])    procedure 
+
+These procedures return the sum or product of their arguments, provided that
+sum or product is a fixnum. An exception with condition type &
+implementation-restriction is raised if that sum or product is not a fixnum.
+
+(fx- fx[1] fx[2])    procedure 
+(fx- fx)    procedure 
+
+With two arguments, this procedure returns the difference fx[1] - fx[2],
+provided that difference is a fixnum.
+
+With one argument, this procedure returns the additive inverse of its argument,
+provided that integer object is a fixnum.
+
+An exception with condition type &assertion is raised if the mathematically
+correct result of this procedure is not a fixnum.
+
+(fx- (least-fixnum))     &assertion exception
+
+(fxdiv-and-mod fx[1] fx[2])    procedure 
+(fxdiv fx[1] fx[2])    procedure 
+(fxmod fx[1] fx[2])    procedure 
+(fxdiv0-and-mod0 fx[1] fx[2])    procedure 
+(fxdiv0 fx[1] fx[2])    procedure 
+(fxmod0 fx[1] fx[2])    procedure 
+
+Fx[2] must be nonzero. These procedures implement number-theoretic integer
+division and return the results of the corresponding mathematical operations
+specified in report section on “Integer division”.
+
+(fxdiv fx[1] fx[2])                 ⇒ fx[1] div fx[2]
+(fxmod fx[1] fx[2])                 ⇒ fx[1] mod fx[2]
+(fxdiv-and-mod fx[1] fx[2])     
+                ⇒ fx[1] div fx[2], fx[1] mod fx[2]
+; two return values
+(fxdiv0 fx[1] fx[2])                ⇒ fx[1] divsb0 fx[2]
+(fxmod0 fx[1] fx[2])                ⇒ fx[1] modsb0 fx[2]
+(fxdiv0-and-mod0 fx[1] fx[2])   
+                ⇒ fx[1] fx[1] divsb0 fx[2], fx[1] modsb0 fx[2]
+; two return values
+
+(fx+/carry fx[1] fx[2] fx[3])    procedure 
+
+Returns the two fixnum results of the following computation:
+
+(let* ((s (+ fx[1] fx[2] fx[3]))
+       (s0 (mod0 s (expt 2 (fixnum-width))))
+       (s1 (div0 s (expt 2 (fixnum-width)))))
+  (values s0 s1))
+
+(fx-/carry fx[1] fx[2] fx[3])    procedure 
+
+Returns the two fixnum results of the following computation:
+
+(let* ((d (- fx[1] fx[2] fx[3]))
+       (d0 (mod0 d (expt 2 (fixnum-width))))
+       (d1 (div0 d (expt 2 (fixnum-width)))))
+  (values d0 d1))
+
+(fx*/carry fx[1] fx[2] fx[3])    procedure 
+
+Returns the two fixnum results of the following computation:
+
+(let* ((s (+ (* fx[1] fx[2]) fx[3]))
+       (s0 (mod0 s (expt 2 (fixnum-width))))
+       (s1 (div0 s (expt 2 (fixnum-width)))))
+  (values s0 s1))
+
+(fxnot fx)    procedure 
+
+Returns the unique fixnum that is congruent mod 2^w to the one’s-complement of
+fx.
+
+(fxand fx[1] ...)    procedure 
+(fxior fx[1] ...)    procedure 
+(fxxor fx[1] ...)    procedure 
+
+These procedures return the fixnum that is the bit-wise “and”, “inclusive or”,
+or “exclusive or” of the two’s complement representations of their arguments.
+If they are passed only one argument, they return that argument. If they are
+passed no arguments, they return the fixnum (either - 1 or 0) that acts as
+identity for the operation.
+
+(fxif fx[1] fx[2] fx[3])    procedure 
+
+Returns the fixnum that is the bit-wise “if” of the two’s complement
+representations of its arguments, i.e. for each bit, if it is 1 in fx[1], the
+corresponding bit in fx[2] becomes the value of the corresponding bit in the
+result, and if it is 0, the corresponding bit in fx[3] becomes the
+corresponding bit in the value of the result. This is the fixnum result of the
+following computation:
+
+(fxior (fxand fx[1] fx[2])
+       (fxand (fxnot fx[1]) fx[3]))
+
+(fxbit-count fx)    procedure 
+
+If fx is non-negative, this procedure returns the number of 1 bits in the two’s
+complement representation of fx. Otherwise it returns the result of the
+following computation:
+
+(fxnot (fxbit-count (fxnot ei)))
+
+(fxlength fx)    procedure 
+
+Returns the number of bits needed to represent fx if it is positive, and the
+number of bits needed to represent (fxnot fx) if it is negative, which is the
+fixnum result of the following computation:
+
+(do ((result 0 (+ result 1))
+     (bits (if (fxnegative? fx)
+               (fxnot fx)
+               fx)
+           (fxarithmetic-shift-right bits 1)))
+    ((fxzero? bits)
+     result))
+
+(fxfirst-bit-set fx)    procedure 
+
+Returns the index of the least significant 1 bit in the two’s complement
+representation of fx. If fx is 0, then - 1 is returned.
+
+(fxfirst-bit-set 0)                ⇒  -1
+(fxfirst-bit-set 1)                ⇒  0
+(fxfirst-bit-set -4)               ⇒  2
+
+(fxbit-set? fx[1] fx[2])    procedure 
+
+Fx[2] must be non-negative and less than (fixnum-width). The fxbit-set?
+procedure returns #t if the fx[2]th bit is 1 in the two’s complement
+representation of fx[1], and #f otherwise. This is the fixnum result of the
+following computation:
+
+(not
+  (fxzero?
+    (fxand fx[1]
+           (fxarithmetic-shift-left 1 fx[2]))))
+
+(fxcopy-bit fx[1] fx[2] fx[3])    procedure 
+
+Fx[2] must be non-negative and less than (fixnum-width). Fx[3] must be 0 or 1.
+The fxcopy-bit procedure returns the result of replacing the fx[2]th bit of fx
+[1] by fx[3], which is the result of the following computation:
+
+(let* ((mask (fxarithmetic-shift-left 1 fx[2])))
+  (fxif mask
+        (fxarithmetic-shift-left fx[3] fx[2])
+        fx[1]))
+
+(fxbit-field fx[1] fx[2] fx[3])    procedure 
+
+Fx[2] and fx[3] must be non-negative and less than (fixnum-width). Moreover, fx
+[2] must be less than or equal to fx[3]. The fxbit-field procedure returns the
+number represented by the bits at the positions from fx[2] (inclusive) to fx[3]
+(exclusive), which is the fixnum result of the following computation:
+
+(let* ((mask (fxnot
+              (fxarithmetic-shift-left -1 fx[3]))))
+  (fxarithmetic-shift-right (fxand fx[1] mask)
+                            fx[2]))
+
+(fxcopy-bit-field fx[1] fx[2] fx[3] fx[4])    procedure 
+
+Fx[2] and fx[3] must be non-negative and less than (fixnum-width). Moreover, fx
+[2] must be less than or equal to fx[3]. The fxcopy-bit-field procedure returns
+the result of replacing in fx[1] the bits at positions from fx[2] (inclusive)
+to fx[3] (exclusive) by the corresponding bits in fx[4], which is the fixnum
+result of the following computation:
+
+(let* ((to    fx[1])
+       (start fx[2])
+       (end   fx[3])
+       (from  fx[4])
+       (mask1 (fxarithmetic-shift-left -1 start))
+       (mask2 (fxnot
+               (fxarithmetic-shift-left -1 end)))
+       (mask (fxand mask1 mask2)))
+  (fxif mask
+        (fxarithmetic-shift-left from start)
+        to))
+
+(fxarithmetic-shift fx[1] fx[2])    procedure 
+
+The absolute value of fx[2] must be less than (fixnum-width). If
+
+(floor (* fx[1] (expt 2 fx[2])))
+
+is a fixnum, then that fixnum is returned. Otherwise an exception with
+condition type &implementation-restriction is raised.
+
+(fxarithmetic-shift-left fx[1] fx[2])    procedure 
+(fxarithmetic-shift-right fx[1] fx[2])    procedure 
+
+Fx[2] must be non-negative, and less than (fixnum-width). The
+fxarithmetic-shift-left procedure behaves the same as fxarithmetic-shift, and
+(fxarithmetic-shift-right fx[1] fx[2]) behaves the same as (fxarithmetic-shift
+fx[1] (fx- fx[2])).
+
+(fxrotate-bit-field fx[1] fx[2] fx[3] fx[4])    procedure 
+
+Fx[2], fx[3], and fx[4] must be non-negative and less than (fixnum-width). Fx
+[2] must be less than or equal to fx[3]. Fx[4] must be less than the difference
+between fx[3] and fx[2]. The fxrotate-bit-field procedure returns the result of
+cyclically permuting in fx[1] the bits at positions from fx[2] (inclusive) to
+fx[3] (exclusive) by fx[4] bits towards the more significant bits, which is the
+result of the following computation:
+
+(let* ((n     fx[1])
+       (start fx[2])
+       (end   fx[3])
+       (count fx[4])
+       (width (fx- end start)))
+  (if (fxpositive? width)
+      (let* ((count (fxmod count width))
+             (field0
+               (fxbit-field n start end))
+             (field1
+               (fxarithmetic-shift-left
+                 field0 count))
+             (field2
+               (fxarithmetic-shift-right
+                 field0 (fx- width count)))
+             (field (fxior field1 field2)))
+        (fxcopy-bit-field n start end field))
+      n))
+
+(fxreverse-bit-field fx[1] fx[2] fx[3])    procedure 
+
+Fx[2] and fx[3] must be non-negative and less than (fixnum-width). Moreover, fx
+[2] must be less than or equal to fx[3]. The fxreverse-bit-field procedure
+returns the fixnum obtained from fx[1] by reversing the order of the bits at
+positions from fx[2] (inclusive) to fx[3] (exclusive).
+
+(fxreverse-bit-field #b1010010 1 4)    
+                ⇒  88 ; #b1011000
+
+11.3  Flonums
+
+This section describes the (rnrs arithmetic flonums (6))library.
+
+This section uses fl, fl[1], fl[2], etc., as parameter names for arguments that
+must be flonums, and ifl as a name for arguments that must be integer-valued
+flonums, i.e., flonums for which the integer-valued? predicate returns true.
+
+(flonum? obj)    procedure 
+
+Returns #t if obj is a flonum, #f otherwise.
+
+(real->flonum x)    procedure 
+
+Returns the best flonum representation of x.
+
+The value returned is a flonum that is numerically closest to the argument.
+
+    Note:   If flonums are represented in binary floating point, then
+    implementations should break ties by preferring the floating-point
+    representation whose least significant bit is zero.
+
+(fl=? fl[1] fl[2] fl[3] ...)    procedure 
+(fl<? fl[1] fl[2] fl[3] ...)    procedure 
+(fl<=? fl[1] fl[2] fl[3] ...)    procedure 
+(fl>? fl[1] fl[2] fl[3] ...)    procedure 
+(fl>=? fl[1] fl[2] fl[3] ...)    procedure 
+
+These procedures return #t if their arguments are (respectively): equal,
+monotonically increasing, monotonically decreasing, monotonically
+nondecreasing, or monotonically nonincreasing, #f otherwise. These predicates
+must be transitive.
+
+(fl= +inf.0 +inf.0)                   ⇒  #t
+(fl= -inf.0 +inf.0)                   ⇒  #f
+(fl= -inf.0 -inf.0)                   ⇒  #t
+(fl= 0.0 -0.0)                        ⇒  #t
+(fl< 0.0 -0.0)                        ⇒  #f
+(fl= +nan.0 fl)                       ⇒  #f
+(fl< +nan.0 fl)                       ⇒  #f
+
+(flinteger? fl)    procedure 
+(flzero? fl)    procedure 
+(flpositive? fl)    procedure 
+(flnegative? fl)    procedure 
+(flodd? ifl)    procedure 
+(fleven? ifl)    procedure 
+(flfinite? fl)    procedure 
+(flinfinite? fl)    procedure 
+(flnan? fl)    procedure 
+
+These numerical predicates test a flonum for a particular property, returning #
+t or #f. The flinteger? procedure tests whether the number object is an
+integer, flzero? tests whether it is fl=? to zero, flpositive? tests whether it
+is greater than zero, flnegative? tests whether it is less than zero, flodd?
+tests whether it is odd, fleven? tests whether it is even, flfinite? tests
+whether it is not an infinity and not a NaN, flinfinite? tests whether it is an
+infinity, and flnan? tests whether it is a NaN.
+
+(flnegative? -0.0)           ⇒ #f
+(flfinite? +inf.0)           ⇒ #f
+(flfinite? 5.0)              ⇒ #t
+(flinfinite? 5.0)            ⇒ #f
+(flinfinite? +inf.0)         ⇒ #t
+
+    Note:   (flnegative? -0.0) must return #f, else it would lose the
+    correspondence with (fl< -0.0 0.0), which is #f according to IEEE 754 [7].
+
+(flmax fl[1] fl[2] ...)    procedure 
+(flmin fl[1] fl[2] ...)    procedure 
+
+These procedures return the maximum or minimum of their arguments. They always
+return a NaN when one or more of the arguments is a NaN.
+
+(fl+ fl[1] ...)    procedure 
+(fl* fl[1] ...)    procedure 
+
+These procedures return the flonum sum or product of their flonum arguments. In
+general, they should return the flonum that best approximates the mathematical
+sum or product. (For implementations that represent flonums using IEEE binary
+floating point, the meaning of “best” is defined by the IEEE standards.)
+
+(fl+ +inf.0 -inf.0)              ⇒  +nan.0
+(fl+ +nan.0 fl)                  ⇒  +nan.0
+(fl* +nan.0 fl)                  ⇒  +nan.0
+
+(fl- fl[1] fl[2] ...)    procedure 
+(fl- fl)    procedure 
+(fl/ fl[1] fl[2] ...)    procedure 
+(fl/ fl)    procedure 
+
+With two or more arguments, these procedures return the flonum difference or
+quotient of their flonum arguments, associating to the left. With one argument,
+however, they return the additive or multiplicative flonum inverse of their
+argument. In general, they should return the flonum that best approximates the
+mathematical difference or quotient. (For implementations that represent
+flonums using IEEE binary floating point, the meaning of “best” is reasonably
+well-defined by the IEEE standards.)
+
+(fl- +inf.0 +inf.0)              ⇒  +nan.0
+
+For undefined quotients, fl/ behaves as specified by the IEEE standards:
+
+(fl/ 1.0 0.0)          ⇒ +inf.0
+(fl/ -1.0 0.0)         ⇒ -inf.0
+(fl/ 0.0 0.0)          ⇒ +nan.0
+
+(flabs fl)    procedure 
+
+Returns the absolute value of fl.
+
+(fldiv-and-mod fl[1] fl[2])    procedure 
+(fldiv fl[1] fl[2])    procedure 
+(flmod fl[1] fl[2])    procedure 
+(fldiv0-and-mod0 fl[1] fl[2])    procedure 
+(fldiv0 fl[1] fl[2])    procedure 
+(flmod0 fl[1] fl[2])    procedure 
+
+These procedures implement number-theoretic integer division and return the
+results of the corresponding mathematical operations specified in report
+section on “Integer division”. For zero divisors, these procedures may return a
+NaN or some unspecified flonum.
+
+(fldiv fl[1] fl[2])                 ⇒ fl[1] div fl[2]
+(flmod fl[1] fl[2])                 ⇒ fl[1] mod fl[2]
+(fldiv-and-mod fl[1] fl[2])     
+                ⇒ fl[1] div fl[2], fl[1] mod fl[2]
+; two return values
+(fldiv0 fl[1] fl[2])                ⇒ fl[1] div[0] fl[2]
+(flmod0 fl[1] fl[2])                ⇒ fl[1] mod[0] fl[2]
+(fldiv0-and-mod0 fl[1] fl[2])   
+                ⇒ fl[1] div[0] fl[2], fl[1] mod[0] fl[2]
+; two return values
+
+(flnumerator fl)    procedure 
+(fldenominator fl)    procedure 
+
+These procedures return the numerator or denominator of fl as a flonum; the
+result is computed as if fl was represented as a fraction in lowest terms. The
+denominator is always positive. The denominator of 0.0 is defined to be 1.0.
+
+(flnumerator +inf.0)                   ⇒  +inf.0
+(flnumerator -inf.0)                   ⇒  -inf.0
+(fldenominator +inf.0)                 ⇒  1.0
+(fldenominator -inf.0)                 ⇒  1.0
+(flnumerator 0.75)                     ⇒  3.0 ; probably
+(fldenominator 0.75)                   ⇒  4.0 ; probably
+
+Implementations should implement following behavior:
+
+(flnumerator -0.0)                     ⇒ -0.0
+
+(flfloor fl)    procedure 
+(flceiling fl)    procedure 
+(fltruncate fl)    procedure 
+(flround fl)    procedure 
+
+These procedures return integral flonums for flonum arguments that are not
+infinities or NaNs. For such arguments, flfloor returns the largest integral
+flonum not larger than fl. The flceiling procedure returns the smallest
+integral flonum not smaller than fl. The fltruncate procedure returns the
+integral flonum closest to fl whose absolute value is not larger than the
+absolute value of fl. The flround procedure returns the closest integral flonum
+to fl, rounding to even when fl represents a number halfway between two
+integers.
+
+Although infinities and NaNs are not integer objects, these procedures return
+an infinity when given an infinity as an argument, and a NaN when given a NaN:
+
+(flfloor +inf.0)                               ⇒  +inf.0
+(flceiling -inf.0)                             ⇒  -inf.0
+(fltruncate +nan.0)                            ⇒  +nan.0
+
+(flexp fl)    procedure 
+(fllog fl)    procedure 
+(fllog fl[1] fl[2])    procedure 
+(flsin fl)    procedure 
+(flcos fl)    procedure 
+(fltan fl)    procedure 
+(flasin fl)    procedure 
+(flacos fl)    procedure 
+(flatan fl)    procedure 
+(flatan fl[1] fl[2])    procedure 
+
+These procedures compute the usual transcendental functions. The flexp
+procedure computes the base-e exponential of fl. The fllog procedure with a
+single argument computes the natural logarithm of fl (not the base ten
+logarithm); (fllog fl[1] fl[2]) computes the base-fl[2] logarithm of fl[1]. The
+flasin, flacos, and flatan procedures compute arcsine, arccosine, and
+arctangent, respectively. (flatan fl[1] fl[2]) computes the arc tangent of fl
+[1]/fl[2].
+
+See report section on “Transcendental functions” for the underlying
+mathematical operations. In the event that these operations do not yield a real
+result for the given arguments, the result may be a NaN, or may be some
+unspecified flonum.
+
+Implementations that use IEEE binary floating-point arithmetic should follow
+the relevant standards for these procedures.
+
+(flexp +inf.0)                        ⇒ +inf.0
+(flexp -inf.0)                        ⇒ 0.0
+(fllog +inf.0)                        ⇒ +inf.0
+(fllog 0.0)                           ⇒ -inf.0
+(fllog -0.0)                          ⇒ unspecified
+; if -0.0 is distinguished
+(fllog -inf.0)                        ⇒ +nan.0
+(flatan -inf.0)               
+                ⇒ -1.5707963267948965
+; approximately
+(flatan +inf.0)               
+                ⇒ 1.5707963267948965
+; approximately
+
+(flsqrt fl)    procedure 
+
+Returns the principal square root of fl. For - 0.0, flsqrt should return - 0.0;
+for other negative arguments, the result may be a NaN or some unspecified
+flonum.
+
+(flsqrt +inf.0)                       ⇒  +inf.0
+(flsqrt -0.0)                         ⇒  -0.0
+
+(flexpt fl[1] fl[2])    procedure 
+
+Either fl[1] should be non-negative, or, if fl[1] is negative, fl[2] should be
+an integer object. The flexpt procedure returns fl[1] raised to the power fl
+[2]. If fl[1] is negative and fl[2] is not an integer object, the result may be
+a NaN, or may be some unspecified flonum. If fl[1] is zero, then the result is
+zero.
+
+&no-infinities    condition type 
+(make-no-infinities-violation obj)    procedure 
+(no-infinities-violation? obj)    procedure 
+&no-nans    condition type 
+(make-no-nans-violation obj)    procedure 
+(no-nans-violation? obj)    procedure 
+
+These condition types could be defined by the following code:
+
+(define-condition-type &no-infinities
+    &implementation-restriction
+  make-no-infinities-violation
+  no-infinities-violation?)
+
+(define-condition-type &no-nans
+    &implementation-restriction
+  make-no-nans-violation no-nans-violation?)
+
+These types describe that a program has executed an arithmetic operations that
+is specified to return an infinity or a NaN, respectively, on a Scheme
+implementation that is not able to represent the infinity or NaN. (See report
+section on “Representability of infinities and NaNs”.)
+
+(fixnum->flonum fx)    procedure 
+
+Returns a flonum that is numerically closest to fx.
+
+    Note:   The result of this procedure may not be numerically equal to fx,
+    because the fixnum precision may be greater than the flonum precision.
+
+11.4  Exact bitwise arithmetic
+
+This section describes the (rnrs arithmetic bitwise (6))library. The exact
+bitwise arithmetic provides generic operations on exact integer objects. This
+section uses ei, ei[1], ei[2], etc., as parameter names that must be exact
+integer objects.
+
+(bitwise-not ei)    procedure 
+
+Returns the exact integer object whose two’s complement representation is the
+one’s complement of the two’s complement representation of ei.
+
+(bitwise-and ei[1] ...)    procedure 
+(bitwise-ior ei[1] ...)    procedure 
+(bitwise-xor ei[1] ...)    procedure 
+
+These procedures return the exact integer object that is the bit-wise “and”,
+“inclusive or”, or “exclusive or” of the two’s complement representations of
+their arguments. If they are passed only one argument, they return that
+argument. If they are passed no arguments, they return the integer object
+(either - 1 or 0) that acts as identity for the operation.
+
+(bitwise-if ei[1] ei[2] ei[3])    procedure 
+
+Returns the exact integer object that is the bit-wise “if” of the two’s
+complement representations of its arguments, i.e. for each bit, if it is 1 in
+ei[1], the corresponding bit in ei[2] becomes the value of the corresponding
+bit in the result, and if it is 0, the corresponding bit in ei[3] becomes the
+corresponding bit in the value of the result. This is the result of the
+following computation:
+
+(bitwise-ior (bitwise-and ei[1] ei[2])
+             (bitwise-and (bitwise-not ei[1]) ei[3]))
+
+(bitwise-bit-count ei)    procedure 
+
+If ei is non-negative, this procedure returns the number of 1 bits in the two’s
+complement representation of ei. Otherwise it returns the result of the
+following computation:
+
+(bitwise-not (bitwise-bit-count (bitwise-not ei)))
+
+(bitwise-length ei)    procedure 
+
+Returns the number of bits needed to represent ei if it is positive, and the
+number of bits needed to represent (bitwise-not ei) if it is negative, which is
+the exact integer object that is the result of the following computation:
+
+(do ((result 0 (+ result 1))
+     (bits (if (negative? ei)
+               (bitwise-not ei)
+               ei)
+           (bitwise-arithmetic-shift bits -1)))
+    ((zero? bits)
+     result))
+
+(bitwise-first-bit-set ei)    procedure 
+
+Returns the index of the least significant 1 bit in the two’s complement
+representation of ei. If ei is 0, then - 1 is returned.
+
+(bitwise-first-bit-set 0)                ⇒  -1
+(bitwise-first-bit-set 1)                ⇒  0
+(bitwise-first-bit-set -4)               ⇒  2
+
+(bitwise-bit-set? ei[1] ei[2])    procedure 
+
+Ei[2] must be non-negative. The bitwise-bit-set? procedure returns #t if the ei
+[2]th bit is 1 in the two’s complement representation of ei[1], and #f
+otherwise. This is the result of the following computation:
+
+(not (zero?
+       (bitwise-and
+         (bitwise-arithmetic-shift-left 1 ei[2])
+         ei[1])))
+
+(bitwise-copy-bit ei[1] ei[2] ei[3])    procedure 
+
+Ei[2] must be non-negative, and ei[3] must be either 0 or 1. The
+bitwise-copy-bit procedure returns the result of replacing the ei[2]th bit of
+ei[1] by the ei[2]th bit of ei[3], which is the result of the following
+computation:
+
+(let* ((mask (bitwise-arithmetic-shift-left 1 ei[2])))
+  (bitwise-if mask
+            (bitwise-arithmetic-shift-left ei[3] ei[2])
+            ei[1]))
+
+(bitwise-bit-field ei[1] ei[2] ei[3])    procedure 
+
+Ei[2] and ei[3] must be non-negative, and ei[2] must be less than or equal to
+ei[3]. The bitwise-bit-field procedure returns the number represented by the
+bits at the positions from ei[2] (inclusive) to ei[3] (exclusive), which is the
+result of the following computation:
+
+(let ((mask
+       (bitwise-not
+        (bitwise-arithmetic-shift-left -1 ei[3]))))
+  (bitwise-arithmetic-shift-right
+    (bitwise-and ei[1] mask)
+    ei[2]))
+
+(bitwise-copy-bit-field ei[1] ei[2] ei[3] ei[4])    procedure 
+
+Ei[2] and ei[3] must be non-negative, and ei[2] must be less than or equal to
+ei[3]. The bitwise-copy-bit-field procedure returns the result of replacing in
+ei[1] the bits at positions from ei[2] (inclusive) to ei[3] (exclusive) by the
+corresponding bits in ei[4], which is the fixnum result of the following
+computation:
+
+(let* ((to    ei[1])
+       (start ei[2])
+       (end   ei[3])
+       (from  ei[4])
+       (mask1
+         (bitwise-arithmetic-shift-left -1 start))
+       (mask2
+         (bitwise-not
+           (bitwise-arithmetic-shift-left -1 end)))
+       (mask (bitwise-and mask1 mask2)))
+  (bitwise-if mask
+              (bitwise-arithmetic-shift-left from
+                                             start)
+              to))
+
+(bitwise-arithmetic-shift ei[1] ei[2])    procedure 
+
+Returns the result of the following computation:
+
+(floor (* ei[1] (expt 2 ei[2])))
+
+Examples:
+
+(bitwise-arithmetic-shift -6 -1) 
+                ⇒ -3
+(bitwise-arithmetic-shift -5 -1) 
+                ⇒ -3
+(bitwise-arithmetic-shift -4 -1) 
+                ⇒ -2
+(bitwise-arithmetic-shift -3 -1) 
+                ⇒ -2
+(bitwise-arithmetic-shift -2 -1) 
+                ⇒ -1
+(bitwise-arithmetic-shift -1 -1) 
+                ⇒ -1
+
+(bitwise-arithmetic-shift-left ei[1] ei[2])    procedure 
+(bitwise-arithmetic-shift-right ei[1] ei[2])    procedure 
+
+Ei[2] must be non-negative. The bitwise-arithmetic-shift-left procedure returns
+the same result as bitwise-arithmetic-shift, and
+
+(bitwise-arithmetic-shift-right ei[1] ei[2])
+
+returns the same result as
+
+(bitwise-arithmetic-shift ei[1] (- ei[2])).
+
+(bitwise-rotate-bit-field ei[1] ei[2] ei[3] ei[4])    procedure 
+
+Ei[2], ei[3], ei[4] must be non-negative, ei[2] must be less than or equal to
+ei[3], and ei[4] must be non-negative. procedure returns the result of
+cyclically permuting in ei[1] the bits at positions from ei[2] (inclusive) to
+ei[3] (exclusive) by ei[4] bits towards the more significant bits, which is the
+result of the following computation:
+
+(let* ((n     ei[1])
+       (start ei[2])
+       (end   ei[3])
+       (count ei[4])
+       (width (- end start)))
+  (if (positive? width)
+      (let* ((count (mod count width))
+             (field0
+               (bitwise-bit-field n start end))
+             (field1 (bitwise-arithmetic-shift-left
+                       field0 count))
+             (field2 (bitwise-arithmetic-shift-right
+                       field0
+                       (- width count)))
+             (field (bitwise-ior field1 field2)))
+        (bitwise-copy-bit-field n start end field))
+      n))
+
+(bitwise-reverse-bit-field ei[1] ei[2] ei[3])    procedure 
+
+Ei[2] and ei[3] must be non-negative, and ei[2] must be less than or equal to
+ei[3]. The bitwise-reverse-bit-field procedure returns the result obtained from
+ei[1] by reversing the order of the bits at positions from ei[2] (inclusive) to
+ei[3] (exclusive).
+
+(bitwise-reverse-bit-field #b1010010 1 4)   
+                ⇒  88 ; #b1011000
+
+                        [Go to first, previous, next page;   contents;   index]
+

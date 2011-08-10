@@ -1,0 +1,59 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 12  Input and Output
+ 12.1  Ports
+ 12.2  Byte and String Input
+ 12.3  Byte and String Output
+ 12.4  Reading
+ 12.5  Writing
+ 12.6  The Reader
+ 12.7  The Printer
+ 12.8  Pretty Printing
+ 12.9  Reader Extension
+12.10  Printer Extension
+12.11  Serialization
+12.12  Fast-Load Serialization
+▼ 12.9  Reader Extension
+12.9.1  Readtables
+12.9.2  Reader-Extension Procedures
+12.9.3  Special Comments
+[...search manuals...]
+  top← prev  up  next → 
+
+12.9 Reader Extension
+
+Racket’s reader can be extended in three ways: through a reader-macro procedure
+in a readtable (see Readtables), through a #reader form (see Reading via an
+Extension), or through a custom-port byte reader that returns a “special”
+result procedure (see Custom Ports). All three kinds of reader extension
+procedures accept similar arguments, and their results are treated in the same
+way by read and read-syntax (or, more precisely, by the default read handler;
+see port-read-handler).
+
+    12.9.1 Readtables
+
+    12.9.2 Reader-Extension Procedures
+
+    12.9.3 Special Comments
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

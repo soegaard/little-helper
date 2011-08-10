@@ -1,0 +1,64 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 6  Units
+ 6.1  Creating Units
+ 6.2  Invoking Units
+ 6.3  Linking Units and Creating Compound Units
+ 6.4  Inferred Linking
+ 6.5  Generating A Unit from Context
+ 6.6  Structural Matching
+ 6.7  Extending the Syntax of Signatures
+ 6.8  Unit Utilities
+ 6.9  Unit Contracts
+6.10  Single-Unit Modules
+6.11  Single-Signature Modules
+6.12  Transformer Helpers
+[...search manuals...]
+  top← prev  up  next → 
+
+6.10 Single-Unit Modules
+
+When racket/unit is used as a language name with #lang, the module body is
+treated as a unit body. The body must match the following module-body grammar:
+
+   module-body   =   require-decl ...
+                     (import tagged-sig-expr ...)
+                     (export tagged-sig-expr ...)
+                     init-depends-decl
+                     unit-body-expr-or-defn
+                     ...
+                      
+  require-decl   =   (require require-spec ...)
+                 |   (begin require-decl ...)
+                 |   derived-require-form
+
+After any number of require-decls, the content of the module is the same as a
+unit body.
+
+The resulting unit is exported as base@, where base is derived from the
+enclosing module’s name (i.e., its symbolic name, or its path without the
+directory and file suffix). If the module name ends in -unit, then base
+corresponds to the module name before -unit. Otherwise, the module name serves
+as base.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

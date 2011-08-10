@@ -1,0 +1,858 @@
+▼  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 2  @ Syntax
+2.1  The Scribble Syntax at a Glance
+2.2  The Command Part
+2.3  The Datum Part
+2.4  The Body Part
+On this page:
+2.1 The Scribble Syntax at a Glance
+2.2 The Command Part
+2.3 The Datum Part
+2.4 The Body Part
+2.4.1 Alternative Body Syntax
+2.4.2 Racket Expression Escapes
+2.4.3 Comments
+2.4.4 Spaces, Newlines, and Indentation
+[...search manuals...]
+  top← prev  up  next → 
+
+2 @ Syntax
+
+The Scribble @ notation is designed to be a convenient facility for free-form
+text in Racket code, where “@” was chosen as one of the least-used characters
+in existing Racket code. An @-expression is simply an S-expression in disguise.
+
+Typically, @ notation is enabled through scribble/base or similar languages,
+but you can also add @ notation to an S-expression-based language using the
+at-exp meta-language. For example,
+
+  #lang at-exp racket
+
+  (define v '@op{str})
+
+
+is equivalent to
+
+    #lang racket
+    (define v '(op "str"))
+
+Using #lang at-exp racket is probably the easiest way to try the examples in
+this chapter.
+
+2.1 The Scribble Syntax at a Glance
+
+To review @ Syntax Basics, the concrete syntax of @-forms is roughly
+
+    @ ‹cmd› [ ‹datum›* ] { ‹text-body›* }
+
+where all three parts after @ are optional, but at least one should be present.
+(Spaces are not allowed between the three parts.) Roughly, a form matching the
+above grammar is read as
+
+    (‹cmd› ‹datum›* ‹parsed-body›*)
+
+where ‹parsed-body› is the translation of each ‹text-body› in the input. Thus,
+the initial ‹cmd› determines the Racket code that the input is translated into.
+The common case is when ‹cmd› is a Racket identifier, which reads as a plain
+Racket form, with datum arguments and/or string arguments.
+
+Here is one example:
+
+   @foo{blah blah blah}   reads as   (foo "blah blah blah")
+
+
+The example shows how an input syntax is read as Racket syntax, not what it
+evaluates to. If you want to see the translation of an example into
+S-expression form, add a quote in front of it in a #lang at-exp racket module.
+For example, running
+
+  #lang at-exp racket
+
+  '@foo{blah blah blah}
+
+
+in DrRacket prints the output
+
+    (foo "blah blah blah")
+
+while omitting the quote
+
+  #lang at-exp racket
+
+  @foo{blah blah blah}
+
+
+triggers a syntax error because foo is not bound, and
+
+  #lang at-exp racket
+
+  (define (foo str) (printf "He wrote ~s.\n" str))
+
+  @foo{blah blah blah}
+
+
+prints the output
+
+    He wrote "blah blah blah".
+
+Here are more examples of @-forms:
+
+   @foo{blah "blah" (`blah'?)}   reads as   (foo "blah \"blah\" (`blah'?)")
+
+  
+
+   @foo[1 2]{3 4}                reads as   (foo 1 2 "3 4")
+
+  
+
+   @foo[1 2 3 4]                 reads as   (foo 1 2 3 4)
+
+  
+
+   @foo[#:width 2]{blah blah}    reads as   (foo #:width 2 "blah blah")
+
+  
+
+   @foo{blah blah
+                                 reads as   (foo "blah blah" "\n"
+        yada yada}                               "yada yada")
+
+  
+
+   @foo{
+
+     blah blah                              (foo
+                                 reads as     "blah blah" "\n"
+     yada yada                                "yada yada")
+
+   }
+
+
+As seen in the last example, multiple lines and the newlines that separate them
+are parsed to multiple Racket strings. More generally, a ‹text-body› is made of
+text, newlines, and nested @-forms, where the syntax for @-forms is the same
+whether it’s in a ‹text-body› context as in a Racket context. A ‹text-body›
+that isn’t an @-form is converted to a string expression for its ‹parsed-body›;
+newlines and following indentations are converted to "\n" and all-space string
+expressions.
+
+   @foo{bar @baz{3}
+                          reads as   (foo "bar " (baz "3") "\n"
+        blah}                             "blah")
+
+  
+
+   @foo{@b{@u[3] @u{4}}
+                          reads as   (foo (b (u 3) " " (u "4")) "\n"
+        blah}                              "blah")
+
+  
+
+   @C{while (*(p++))
+                          reads as   (C "while (*(p++))" "\n" "  "
+        *p = '\n';}                     "*p = '\\n';")
+
+
+The command part of an @-form is optional as well. In that case, the @ form is
+read as a list, which usually counts as a function application, but it also
+useful when quoted with the usual Racket quote:
+
+   @{blah blah}   reads as   ("blah blah")
+
+  
+
+   @{blah @[3]}   reads as   ("blah " (3))
+
+  
+
+   '@{foo
+                             '("foo" "\n"
+      bar         reads as           "bar" "\n"
+                                     "baz")
+      baz}
+
+
+Finally, we can also drop the datum and text parts, which leaves us with only
+the command—which is read as is, not within a parenthesized form. This is not
+useful when reading Racket code, but it can be used inside a text block to
+escape a Racket identifier. A vertical bar (|) can be used to delimit the
+escaped identifier when needed.
+
+   @foo                   reads as   foo
+
+   @{blah @foo blah}      reads as   ("blah " foo " blah")
+
+   @{blah @foo: blah}     reads as   ("blah " foo: " blah")
+
+   @{blah @|foo|: blah}   reads as   ("blah " foo ": blah")
+
+
+Actually, the command part can be any Racket expression (that does not start
+with [, {, or |), which is particularly useful with such escapes since they can
+be used with any expression.
+
+   @foo{(+ 1 2) -> @(+ 1 2)!}   reads as   (foo "(+ 1 2) -> " (+ 1 2) "!")
+
+   @foo{A @"string" escape}     reads as   (foo "A string escape")
+
+
+Note that an escaped Racket string is merged with the surrounding text as a
+special case. This is useful if you want to use the special characters in your
+string, but escaping braces are not necessary if they are balanced.
+
+   @foo{eli@"@"barzilay.org}     reads as   (foo "eli@barzilay.org")
+
+  
+
+   @foo{A @"{" begins a block}   reads as   (foo "A { begins a block")
+
+  
+
+   @C{while (*(p++)) {
+                                            (C "while (*(p++)) {" "\n" "  "
+        *p = '\n';               reads as      "*p = '\\n';" "\n"
+                                               "}")
+      }}
+
+
+In some cases, a text contains many literal @s, which can be cumbersome to
+quote individually. For such case, braces have an alternative syntax: A block
+of text can begin with a “|{” and terminated accordingly with a “}|”.
+Furthermore, any nested @ forms must begin with a “|@”.
+
+   @foo|{bar}@{baz}|          reads as   (foo "bar}@{baz")
+
+   @foo|{bar |@x{X} baz}|     reads as   (foo "bar " (x "X") " baz")
+
+   @foo|{bar |@x|{@}| baz}|   reads as   (foo "bar " (x "@") " baz")
+
+
+In cases when even this is not convenient enough, punctuation characters can be
+added between the | and the braces and the @ in nested forms. (The punctuation
+is mirrored for parentheses and <>s.) With this extension, Scribble syntax can
+be used as a “here string” replacement.
+
+   @foo|--{bar}@|{baz}--|   reads as   (foo "bar}@|{baz")
+
+   @foo|<<{bar}@|{baz}>>|   reads as   (foo "bar}@|{baz")
+
+
+On the flip side of this is, how can an @ sign be used in Racket code? This is
+almost never an issue, because Racket strings and characters are still read the
+same, and @ is set as a non-terminating reader macro so it can be used in
+Racket identifiers anywhere except in the first character of an identifier.
+When @ must appear as the first character of an identifier, you must quote the
+identifier just like other non-standard characters in normal S-expression
+syntax: with a backslash or with vertical bars.
+
+   (define \@email "foo@bar.com")   reads as   (define @email "foo@bar.com")
+
+   (define |@atchar| #\@)           reads as   (define @atchar #\@)
+
+
+Note that spaces are not allowed before a [ or a {, or they will be part of the
+following text (or Racket code). (More on using braces in body texts below.)
+
+   @foo{bar @baz[2 3] {4 5}}   reads as   (foo "bar " (baz 2 3) " {4 5}")
+
+
+Finally, remember that the Scribble is just an alternate for S-expressions.
+Identifiers still get their meaning, as in any Racket code, through the lexical
+context in which they appear. Specifically, when the above @-form appears in a
+Racket expression context, the lexical environment must provide bindings for
+foo as a procedure or a macro; it can be defined, required, or bound locally
+(with let, for example).
+
+    > (let* ([formatter (lambda (fmt)
+              (lambda args (format fmt (apply string-append args))))]
+             [bf (formatter "*~a*")]
+             [it (formatter "/~a/")]
+             [ul (formatter "_~a_")]
+             [text string-append])
+        @text{@it{Note}: @bf{This is @ul{not} a pipe}.})
+    "/Note/: *This is _not_ a pipe*."
+
+
+2.2 The Command Part
+
+Besides being a Racket identifier, the ‹cmd› part of an @-form can have Racket
+punctuation prefixes, which will end up wrapping the whole expression.
+
+   @`',@foo{blah}      reads as   `',@(foo "blah")
+
+   @#`#'#,@foo{blah}   reads as   #`#'#,@(foo "blah")
+
+
+When writing Racket code, this means that @`',@foo{blah} is exactly the same as
+`@',@foo{blah} and `',@@foo{blah}, but unlike the latter two, the first
+construct can appear in body texts with the same meaning, whereas the other two
+would not work (see below).
+
+After the optional punctuation prefix, the ‹cmd› itself is not limited to
+identifiers; it can be any Racket expression.
+
+   @(lambda (x) x){blah}   reads as   ((lambda (x) x) "blah")
+
+   @`(unquote foo){blah}   reads as   `(,foo  "blah")
+
+
+In addition, the command can be omitted altogether, which will omit it from the
+translation, resulting in an S-expression that usually contains, say, just
+strings:
+
+   @{foo bar
+                reads as   ("foo bar" "\n"
+     baz}                             "baz")
+
+  
+
+   @'{foo bar
+                reads as   '("foo bar" "\n"
+      baz}                             "baz")
+
+
+If the command part begins with a ; (with no newline between the @ and the ;),
+then the construct is a comment. There are two comment forms, one for
+arbitrary-text and possibly nested comments, and another one for line comments:
+
+    @;{ ‹any›* }
+     
+    @; ‹anything-else-without-newline›*
+
+In the first form, the commented body must still parse correctly; see the
+description of the body syntax below. In the second form, all text from the @;
+to the end of the line and all following spaces (or tabs) are part of the
+comment (similar to % comments in TeX).
+
+   @foo{bar @; comment
+
+        baz@;            reads as   (foo "bar bazblah")
+
+        blah}
+
+
+Tip: if you use an editor in some Scheme mode without support for @-forms,
+balanced comments can be confusing, since the open brace looks commented out,
+and the closing one isn’t. In such cases it is useful to “comment” out the
+closing brace too:
+
+  @;{
+
+    ...
+
+  ;}
+
+
+so the editor does not treat the file as having unbalanced parentheses.
+
+If only the ‹cmd› part of an @-form is specified, then the result is the
+command part only, without an extra set of parenthesis. This makes it suitable
+for Racket escapes in body texts. (More on this below, in the description of
+the body part.)
+
+   @foo{x @y z}         reads as   (foo "x " y " z")
+
+   @foo{x @(* y 2) z}   reads as   (foo "x " (* y 2) " z")
+
+   @{@foo bar}          reads as   (foo " bar")
+
+
+Finally, note that there are currently no special rules for using @ in the
+command itself, which can lead to things like:
+
+   @@foo{bar}{baz}   reads as   ((foo "bar") "baz")
+
+
+2.3 The Datum Part
+
+The datum part can contains arbitrary Racket expressions, which are simply
+stacked before the body text arguments:
+
+   @foo[1 (* 2 3)]{bar}    reads as   (foo 1 (* 2 3) "bar")
+
+   @foo[@bar{...}]{blah}   reads as   (foo (bar "...") "blah")
+
+
+The body part can still be omitted, which is essentially an alternative syntax
+for plain (non-textual) S-expressions:
+
+   @foo[bar]             reads as   (foo bar)
+
+   @foo{bar @f[x] baz}   reads as   (foo "bar " (f x) " baz")
+
+
+The datum part can be empty, which makes no difference, except when the body is
+omitted. It is more common, however, to use an empty body for the same purpose.
+
+   @foo[]{bar}   reads as   (foo "bar")
+
+   @foo[]        reads as   (foo)
+
+   @foo          reads as   foo
+
+   @foo{}        reads as   (foo)
+
+
+The most common use of the datum part is for Racket forms that expect
+keyword-value arguments that precede the body of text arguments.
+
+   @foo[#:style 'big]{bar}   reads as   (foo #:style 'big  "bar")
+
+
+2.4 The Body Part
+
+The syntax of the body part is intended to be as convenient as possible for
+free text. It can contain almost any text—the only characters with special
+meaning is @ for sub-@-forms, and } for the end of the text. In addition, a {
+is allowed as part of the text, and it makes the matching } be part of the text
+too—so balanced braces are valid text.
+
+   @foo{f{o}o}    reads as   (foo "f{o}o")
+
+   @foo{{{}}{}}   reads as   (foo "{{}}{}")
+
+
+As described above, the text turns to a sequence of string arguments for the
+resulting form. Spaces at the beginning and end of lines are discarded, and
+newlines turn to individual "\n" strings (i.e., they are not merged with other
+body parts); see also the information about newlines and indentation below.
+Spaces are not discarded if they appear after the open { (before the closing })
+when there is also text that follows (precedes) it; specifically, they are
+preserved in a single-line body.
+
+   @foo{bar}        reads as   (foo "bar")
+
+   @foo{ bar }      reads as   (foo " bar ")
+
+   @foo[1]{ bar }   reads as   (foo 1 " bar ")
+
+
+If @ appears in a body, then it is interpreted as Racket code, which means that
+the @-reader is applied recursively, and the resulting syntax appears as part
+of the S-expression, among other string contents.
+
+   @foo{a @bar{b} c}   reads as   (foo "a " (bar "b") " c")
+
+
+If the nested @ construct has only a command—no body or datum parts—it will not
+appear in a subform. Given that the command part can be any Racket expression,
+this makes @ a general escape to arbitrary Racket code.
+
+   @foo{a @bar c}       reads as   (foo "a " bar " c")
+
+   @foo{a @(bar 2) c}   reads as   (foo "a " (bar 2) " c")
+
+
+This is particularly useful with strings, which can be used to include
+arbitrary text.
+
+   @foo{A @"}" marks the end}   reads as   (foo "A } marks the end")
+
+
+Note that the escaped string is (intentionally) merged with the rest of the
+text. This works for @ too:
+
+   @foo{The prefix: @"@".}      reads as   (foo "The prefix: @.")
+
+   @foo{@"@x{y}" --> (x "y")}   reads as   (foo "@x{y} --> (x \"y\")")
+
+
+2.4.1 Alternative Body Syntax
+
+In addition to the above, there is an alternative syntax for the body, one that
+specifies a new marker for its end: use |{ for the opening marker to have the
+text terminated by a }|.
+
+   @foo|{...}|                 reads as   (foo "...")
+
+   @foo|{"}" follows "{"}|     reads as   (foo "\"}\" follows \"{\"")
+
+   @foo|{Nesting |{is}| ok}|   reads as   (foo "Nesting |{is}| ok")
+
+
+This applies to sub-@-forms too—the @ must be prefixed with a |:
+
+   @foo|{Maze
+                                              (foo "Maze" "\n"
+         |@bar{is}                 reads as        (bar "is") "\n"
+                                                    "Life!")
+         Life!}|
+
+  
+
+   @t|{In |@i|{sub|@"@"s}| too}|   reads as   (t "In " (i "sub@s") " too")
+
+
+Note that the subform uses its own delimiters, {...} or |{...}|. This means
+that you can copy and paste Scribble text with @-forms freely, just prefix the
+@ if the immediate surrounding text has a prefix.
+
+For even better control, you can add characters in the opening delimiter,
+between the | and the {. Characters that are put there (non alphanumeric ASCII
+characters only, excluding { and @) should also be used for sub-@-forms, and
+the end-of-body marker should have these characters in reverse order with
+paren-like characters ((, [, <) mirrored.
+
+   @foo|<<<{@x{foo} |@{bar}|.}>>>|   reads as   (foo "@x{foo} |@{bar}|.")
+
+   @foo|!!{X |!!@b{Y}...}!!|         reads as   (foo "X " (b "Y") "...")
+
+
+Finally, remember that you can use an expression escape with a Racket string
+for confusing situations. This works well when you only need to quote short
+pieces, and the above works well when you have larger multi-line body texts.
+
+2.4.2 Racket Expression Escapes
+
+In some cases, you may want to use a Racket identifier (or a number or a
+boolean etc.) in a position that touches the following text; in these
+situations you should surround the escaped Racket expression by a pair of |
+characters. The text inside the bars is parsed as a Racket expression.
+
+   @foo{foo@bar.}     reads as   (foo "foo" bar.)
+
+   @foo{foo@|bar|.}   reads as   (foo "foo" bar ".")
+
+   @foo{foo@3.}       reads as   (foo "foo" 3.0)
+
+   @foo{foo@|3|.}     reads as   (foo "foo" 3 ".")
+
+
+This form is a generic Racket expression escape, there is no body text or datum
+part when you use this form.
+
+   @foo{foo@|(f 1)|{bar}}    reads as   (foo "foo" (f 1) "{bar}")
+
+   @foo{foo@|bar|[1]{baz}}   reads as   (foo "foo" bar "[1]{baz}")
+
+
+This works for string expressions too, but note that unlike the above, the
+string is (intentionally) not merged with the rest of the text:
+
+   @foo{x@"y"z}     reads as   (foo "xyz")
+
+   @foo{x@|"y"|z}   reads as   (foo "x" "y" "z")
+
+
+Expression escapes also work with any number of expressions,
+
+   @foo{x@|1 (+ 2 3) 4|y}   reads as   (foo "x" 1 (+ 2 3) 4 "y")
+
+  
+
+   @foo{x@|*
+                            reads as   (foo "x" *
+           *|y}                             * "y")
+
+
+It seems that @|| has no purpose—but remember that these escapes are never
+merged with the surrounding text, which can be useful when you want to control
+the sub expressions in the form.
+
+   @foo{Alice@||Bob@|
+                        reads as   (foo "Alice" "Bob"
+        |Carol}                         "Carol")
+
+
+Note that @|{...}| can be parsed as either an escape expression or as the
+Racket command part of a @-form. The latter is used in this case (since there
+is little point in Racket code that uses braces.
+
+   @|{blah}|   reads as   ("blah")
+
+
+2.4.3 Comments
+
+As noted above, there are two kinds of Scribble comments: @;{...} is a
+(nestable) comment for a whole body of text (following the same rules for
+@-forms), and @;... is a line-comment.
+
+   @foo{First line@;{there is still a
+                                                   (foo "First line"
+                     newline here;}     reads as        "\n"
+                                                        "Second line")
+        Second line}
+
+
+One useful property of line-comments is that they continue to the end of the
+line and all following spaces (or tabs). Using this, you can get further
+control of the subforms.
+
+   @foo{A long @;
+
+        single-@;      reads as   (foo "A long single-string arg.")
+
+        string arg.}
+
+
+Note how this is different from using @||s in that strings around it are not
+merged.
+
+2.4.4 Spaces, Newlines, and Indentation
+
+The Scribble syntax treats spaces and newlines in a special way is meant to be
+sensible for dealing with text. As mentioned above, spaces at the beginning and
+end of body lines are discarded, except for spaces between a { and text, or
+between text and a }.
+
+   @foo{bar}     reads as   (foo "bar")
+
+  
+
+   @foo{ bar }   reads as   (foo " bar ")
+
+  
+
+   @foo{ bar
+                 reads as   (foo " bar" "\n"
+        baz }                    "baz ")
+
+
+A single newline that follows an open brace or precedes a closing brace is
+discarded, unless there are only newlines in the body; other newlines are read
+as a "\n" string
+
+   @foo{bar
+                reads as   (foo "bar")
+   }
+
+  
+
+   @foo{
+
+     bar        reads as   (foo
+                             "bar")
+   }
+
+  
+
+   @foo{
+
+    
+                           (foo
+     bar        reads as     "\n"
+                             "bar" "\n")
+    
+
+   }
+
+  
+
+   @foo{
+
+     bar
+                           (foo
+                reads as     "bar" "\n"
+                             "\n"
+     baz                     "baz")
+
+   }
+
+  
+
+   @foo{
+                reads as   (foo "\n")
+   }
+
+  
+
+   @foo{
+
+                reads as   (foo "\n"
+                                "\n")
+   }
+
+  
+
+   @foo{ bar
+                reads as   (foo " bar" "\n"
+        baz }                   "baz ")
+
+
+In the parsed S-expression syntax, a single newline string is used for all
+newlines; you can use eq? to identify this line. This can be used to identify
+newlines in the original ‹text-body›.
+
+    > (let ([nl (car @’{
+                       })])
+        (for-each (lambda (x) (display (if (eq? x nl) "\n... " x)))
+                  @`{foo
+                     @,@(list "bar" "\n" "baz")
+                     blah}})
+        (newline))
+    foo
+
+    ... bar
+
+    baz
+
+    ... blah
+
+
+Spaces at the beginning of body lines do not appear in the resulting
+S-expressions, but the column of each line is noticed, and all-space
+indentation strings are added so the result has the same indentation. A
+indentation string is added to each line according to its distance from the
+leftmost syntax object (except for empty lines). (Note: if you try these
+examples on a Racket REPL, you should be aware that the reader does not know
+about the “> ” prompt.)
+
+   @foo{
+
+     bar
+                         (foo
+     baz      reads as     "bar" "\n"
+                           "baz" "\n"
+     blah                  "blah")
+
+   }
+
+  
+
+   @foo{
+
+     begin               (foo
+              reads as     "begin" "\n" "  "
+       x++;                "x++;" "\n"
+                           "end")
+     end}
+
+  
+
+   @foo{
+
+       a                 (foo "  "
+              reads as        "a" "\n" " "
+      b                       "b" "\n"
+                              "c")
+     c}
+
+
+If the first string came from the opening { line, it is not prepended with an
+indentation (but it can affect the leftmost syntax object used for
+indentation). This makes sense when formatting structured code as well as text
+(see the last example in the following block).
+
+   @foo{bar
+                                   (foo "bar" "\n" "  "
+          baz           reads as        "baz" "\n"
+                                        "bbb")
+        bbb}
+
+  
+
+   @foo{ bar
+                                   (foo " bar" "\n" "   "
+           baz          reads as        "baz" "\n" " "
+                                        "bbb")
+         bbb}
+
+  
+
+   @foo{bar
+                                   (foo "bar" "\n"
+      baz               reads as        "baz" "\n"
+                                        "bbb")
+      bbb}
+
+  
+
+   @foo{ bar
+                                   (foo " bar" "\n"
+      baz               reads as        "baz" "\n"
+                                        "bbb")
+      bbb}
+
+  
+
+   @foo{ bar
+                                   (foo " bar" "\n"
+      baz               reads as        "baz" "\n" "  "
+                                        "bbb")
+        bbb}
+
+  
+
+   @text{Some @b{bold
+                                   (text "Some " (b "bold" "\n"
+     text}, and         reads as                    "text")", and" "\n"
+                                                           "more text.")
+     more text.}
+
+
+Note that each @-form is parsed to an S-expression that has its own
+indentation. This means that Scribble source can be indented like code, but if
+indentation matters then you may need to apply indentation of the outer item to
+all lines of the inner one. For example, in
+
+@code{
+
+  begin
+
+    i = 1, r = 1
+
+    @bold{while i < n do
+
+            r *= i++
+
+          done}
+
+  end
+
+}
+
+
+a formatter will need to apply the 2-space indentation to the rendering of the
+bold body.
+
+Note that to get a first-line text to be counted as a leftmost line, line and
+column accounting should be on for the input port (use-at-readtable turns them
+on for the current input port). Without this,
+
+@foo{x1
+
+       x2
+
+       x3}
+
+
+will not have 2-space indentations in the parsed S-expression if source
+accounting is not on, but
+
+@foo{x1
+
+       x2
+
+     x3}
+
+
+will (due to the last line). Pay attention to this, as it can be a problem with
+Racket code, for example:
+
+@code{(define (foo x)
+
+        (+ x 1))}
+
+
+For rare situations where spaces at the beginning (or end) of lines matter, you
+can begin (or end) a line with a @||.
+
+   @foo{
+                              (foo
+     @|| bar @||   reads as     " bar " "\n"
+                                " baz")
+     @|| baz}
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

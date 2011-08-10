@@ -1,0 +1,674 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+[...search manuals...]
+  top← prev  up  next → 
+
+Index
+
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+ 
+
+"escheme.h"
+"libmzgc.a"
+"libmzgc.la"
+"libmzgc.so"
+"libracket.a"
+"libracket.la"
+"libracket.so"
+"libracket3m.a"
+"libracket3m.la"
+"libracket3m.so"
+"mzdyn.o"
+"mzdyn.obj"
+"mzdyn3m.o"
+"mzdyn3m.obj"
+“Scheme” versus “Racket”
+"scheme.h"
+#%variable-reference
+--3m
+--cc
+--cgc
+--ld
+--xform
+3m
+3m Embedding
+3m Extensions
+_scheme_apply
+_scheme_apply_multi
+_scheme_eval_compiled
+_scheme_eval_compiled_multi
+allocation
+allocation
+Allowing Thread Switches
+arity
+Bignums, Rationals, and Complex Numbers
+Blocking the Current Thread
+Callbacks for Blocked Threads
+CGC
+CGC Embedding
+CGC Extensions
+CGC versus 3m
+Continuation Marks
+continuations
+Cooperating with 3m
+current working directory
+Custodians
+Declaring a Module in an Extension
+embedding Racket
+Embedding Racket into a Program
+Enabling and Disabling Breaks
+Evaluation
+Evaluation Functions
+Exception Functions
+Exceptions and Escape Continuations
+extending Racket
+Flags and Hooks
+garbage collection
+GC_fixup_self
+GC_register_traversers
+GC_resolve
+Global Constants
+globals, in extension code
+globals
+Guiding raco ctool --xform
+header files
+Inside: Racket C API
+Integers
+Integration with Threads
+Local Pointers
+Local Pointers and raco ctool --xform
+memory
+Memory Allocation
+Memory Functions
+Miscellaneous Utilities
+module
+Multiple Values
+MZ_GC_ARRAY_VAR_IN_REG
+MZ_GC_DECL_REG
+MZ_GC_NO_VAR_IN_REG
+MZ_GC_REG
+MZ_GC_UNREG
+MZ_GC_VAR_IN_REG
+MZCONFIG_ALLOW_SET_UNDEFINED
+MZCONFIG_CAN_READ_BOX
+MZCONFIG_CAN_READ_COMPILED
+MZCONFIG_CAN_READ_GRAPH
+MZCONFIG_CAN_READ_PIPE_QUOTE
+MZCONFIG_CASE_SENS
+MZCONFIG_COLLECTION_PATHS
+MZCONFIG_CURLY_BRACES_ARE_PARENS
+MZCONFIG_CUSTODIAN
+MZCONFIG_ENV
+MZCONFIG_ERROR_DISPLAY_HANDLER
+MZCONFIG_ERROR_PORT
+MZCONFIG_ERROR_PRINT_VALUE_HANDLER
+MZCONFIG_ERROR_PRINT_WIDTH
+MZCONFIG_EVAL_HANDLER
+MZCONFIG_EXIT_HANDLER
+MZCONFIG_INIT_EXN_HANDLER
+MZCONFIG_INPUT_PORT
+MZCONFIG_LOAD_DIRECTORY
+MZCONFIG_LOAD_EXTENSION_HANDLER
+MZCONFIG_LOAD_HANDLER
+MZCONFIG_OUTPUT_PORT
+MZCONFIG_PORT_PRINT_HANDLER
+MZCONFIG_PRINT_BOX
+MZCONFIG_PRINT_GRAPH
+MZCONFIG_PRINT_HANDLER
+MZCONFIG_PRINT_STRUCT
+MZCONFIG_PROMPT_READ_HANDLER
+MZCONFIG_SQUARE_BRACKETS_ARE_PARENS
+MZCONFIG_USE_COMPILED_KIND
+Namespaces and Modules
+Overview
+Parameterizations
+Ports and the Filesystem
+Procedures
+Racket and Places
+Racket and Threads
+Racket, Unicode, Characters, and Strings
+raco ctool
+scheme_add_atexit_closer
+scheme_add_evt
+scheme_add_evt_through_sema
+scheme_add_fd_eventmask
+scheme_add_fd_handle
+scheme_add_finalizer
+scheme_add_finalizer_once
+scheme_add_gc_callback
+scheme_add_global
+scheme_add_global_symbol
+scheme_add_managed
+scheme_add_scheme_finalizer
+scheme_add_scheme_finalizer_once
+scheme_add_swap_callback
+scheme_add_swap_out_callback
+scheme_add_to_table
+scheme_alloc_byte_string
+scheme_alloc_char_string
+scheme_allow_set_undefined
+scheme_append
+scheme_append_byte_string
+scheme_append_char_string
+scheme_apply
+scheme_apply_multi
+scheme_apply_to_list
+scheme_banner
+scheme_basic_env
+scheme_bignum_from_double
+scheme_bignum_from_float
+scheme_bignum_normalize
+scheme_bignum_to_double
+scheme_bignum_to_float
+scheme_bignum_to_string
+scheme_bignum_type
+SCHEME_BIGNUMP
+scheme_block_until
+scheme_block_until_enable_break
+scheme_block_until_unless
+scheme_bool_type
+SCHEME_BOOLP
+scheme_box
+scheme_box_type
+SCHEME_BOX_VAL
+SCHEME_BOXP
+scheme_break_thread
+scheme_break_waiting
+scheme_bucket_from_table
+scheme_bucket_table_type
+SCHEME_BUCKTP
+scheme_build_list
+scheme_build_mac_filename
+scheme_builtin_value
+scheme_byte_ready
+SCHEME_BYTE_STR_VAL
+scheme_byte_string_to_char_string
+scheme_byte_string_to_char_string_locale
+scheme_byte_string_type
+SCHEME_BYTE_STRINGP
+SCHEME_BYTE_STRLEN_VAL
+scheme_caddr
+scheme_cadr
+scheme_call_enable_break
+scheme_calloc
+SCHEME_CAR
+scheme_car
+scheme_case_closure_type
+scheme_case_sensitive
+SCHEME_CDR
+scheme_cdr
+scheme_change_in_table
+scheme_char_ready
+SCHEME_CHAR_STR_VAL
+scheme_char_string_to_byte_string
+scheme_char_string_to_byte_string_locale
+scheme_char_string_to_path
+scheme_char_string_type
+SCHEME_CHAR_STRINGP
+SCHEME_CHAR_STRLEN_VAL
+scheme_char_type
+SCHEME_CHAR_VAL
+SCHEME_CHARP
+scheme_check_for_break
+scheme_check_proc_arity
+scheme_check_threads
+scheme_clear_escape
+scheme_close_input_port
+scheme_close_managed
+scheme_close_output_port
+scheme_close_should_force_port_closed
+scheme_closed_prim_type
+scheme_collect_garbage
+scheme_compile
+scheme_compiled_closure_type
+scheme_complex_imaginary_part
+scheme_complex_izi_type
+SCHEME_COMPLEX_IZIP
+scheme_complex_real_part
+scheme_complex_type
+SCHEME_COMPLEXP
+scheme_console_output
+scheme_console_printf
+scheme_cont_type
+scheme_count_lines
+scheme_cpointer_type
+SCHEME_CPTR_TYPE
+SCHEME_CPTR_VAL
+SCHEME_CPTRP
+scheme_current_argument_stack
+scheme_current_continuation_marks
+scheme_custodian_check_available
+SCHEME_DBL_VAL
+SCHEME_DBLP
+scheme_debug_print
+scheme_detach_multiple_array
+scheme_directory_exists
+scheme_display
+scheme_display_to_string
+scheme_display_to_string_w_max
+scheme_display_w_max
+scheme_dont_gc_ptr
+scheme_double_to_int
+scheme_double_type
+scheme_dynamic_require
+scheme_dynamic_wind
+scheme_enable_garbage_collection
+scheme_end_atomic
+scheme_end_atomic_no_swap
+scheme_end_stubborn_change
+scheme_eof
+SCHEME_EOFP
+scheme_eq
+scheme_equal
+scheme_equal_hash_key
+scheme_equal_hash_key2
+scheme_eqv
+scheme_escaping_cont_type
+scheme_eval
+scheme_eval_compiled
+scheme_eval_compiled_multi
+scheme_eval_string
+scheme_eval_string_all
+scheme_eval_string_multi
+SCHEME_EXACT_INTEGERP
+SCHEME_EXACT_REALP
+scheme_exit
+scheme_expand
+scheme_expand_filename
+scheme_expand_string_filename
+scheme_extend_config
+scheme_false
+SCHEME_FALSEP
+scheme_file_exists
+scheme_finish_primitive_module
+scheme_float_type
+SCHEME_FLOAT_VAL
+SCHEME_FLOATP
+SCHEME_FLT_VAL
+SCHEME_FLTP
+scheme_flush_output
+scheme_format
+scheme_format_utf8
+scheme_free_code
+scheme_free_immobile_box
+scheme_free_key
+scheme_gc_ptr_ok
+scheme_get_byte
+scheme_get_byte_string
+scheme_get_byte_string_output
+scheme_get_bytes
+scheme_get_char_string
+scheme_get_env
+scheme_get_fdset
+scheme_get_int_val
+scheme_get_long_long_val
+scheme_get_milliseconds
+scheme_get_param
+scheme_get_place_table
+scheme_get_port_fd
+scheme_get_port_file_descriptor
+scheme_get_port_socket
+scheme_get_process_milliseconds
+scheme_get_sized_byte_string_output
+scheme_get_thread_param
+scheme_get_unsigned_int_val
+scheme_get_unsigned_long_long_val
+scheme_getc
+scheme_global_bucket
+scheme_hash_get
+scheme_hash_set
+scheme_hash_table_type
+SCHEME_HASHTP
+scheme_inherit_cells
+scheme_init_collection_paths
+scheme_init_collection_paths_post
+SCHEME_INPORT_VAL
+SCHEME_INPORTP
+scheme_input_port_record
+scheme_input_port_type
+SCHEME_INPUT_PORTP
+scheme_install_config
+SCHEME_INT_VAL
+scheme_integer_type
+scheme_intern_exact_char_keyword
+scheme_intern_exact_char_symbol
+scheme_intern_exact_keyword
+scheme_intern_exact_symbol
+scheme_intern_symbol
+SCHEME_INTP
+scheme_is_exact
+scheme_is_inexact
+scheme_is_struct_instance
+SCHEME_KEYWORD_LEN
+scheme_keyword_type
+SCHEME_KEYWORD_VAL
+SCHEME_KEYWORDP
+scheme_list_length
+scheme_list_to_vector
+scheme_load
+scheme_load_extension
+scheme_lookup_global
+scheme_lookup_in_table
+scheme_mac_path_to_spec
+scheme_main_setup
+scheme_main_stack_setup
+scheme_make_args_string
+scheme_make_ascii_character
+scheme_make_bignum
+scheme_make_bignum_from_unsigned
+scheme_make_bucket_table
+scheme_make_byte_string
+scheme_make_byte_string_input_port
+scheme_make_byte_string_output_port
+scheme_make_byte_string_without_copying
+scheme_make_char
+scheme_make_char_or_null
+scheme_make_char_string
+scheme_make_char_string_without_copying
+scheme_make_character
+scheme_make_closed_prim
+scheme_make_closed_prim_w_arity
+scheme_make_complex
+scheme_make_cptr
+scheme_make_custodian
+scheme_make_double
+scheme_make_exact_symbol
+scheme_make_external_cptr
+scheme_make_fd_input_port
+scheme_make_fd_output_port
+scheme_make_file_input_port
+scheme_make_file_output_port
+scheme_make_float
+scheme_make_folding_prim
+scheme_make_hash_table
+scheme_make_hash_table_equal
+scheme_make_input_port
+scheme_make_integer
+scheme_make_integer_value
+scheme_make_integer_value_from_long_halves
+scheme_make_integer_value_from_long_long
+scheme_make_integer_value_from_unsigned
+scheme_make_integer_value_from_unsigned_long_halves
+scheme_make_integer_value_from_unsigned_long_long
+scheme_make_locale_string
+scheme_make_named_file_input_port
+scheme_make_namespace
+scheme_make_offset_cptr
+scheme_make_offset_external_cptr
+scheme_make_output_port
+scheme_make_pair
+scheme_make_path
+scheme_make_path_without_copying
+scheme_make_port_type
+scheme_make_prim
+scheme_make_prim_closure_w_arity
+scheme_make_prim_w_arity
+scheme_make_provided_string
+scheme_make_rational
+scheme_make_sema
+scheme_make_sized_byte_string
+scheme_make_sized_char_string
+scheme_make_sized_offset_byte_string
+scheme_make_sized_offset_char_string
+scheme_make_sized_offset_path
+scheme_make_sized_offset_utf8_string
+scheme_make_sized_path
+scheme_make_sized_utf8_string
+scheme_make_stderr
+scheme_make_stdin
+scheme_make_stdout
+scheme_make_struct_instance
+scheme_make_struct_names
+scheme_make_struct_type
+scheme_make_struct_values
+scheme_make_symbol
+scheme_make_thread_cell
+scheme_make_type
+scheme_make_utf8_string
+scheme_make_vector
+scheme_make_weak_box
+scheme_making_progress
+scheme_malloc
+scheme_malloc_allow_interior
+scheme_malloc_atomic
+scheme_malloc_atomic_allow_interior
+scheme_malloc_code
+scheme_malloc_eternal
+scheme_malloc_fail_ok
+scheme_malloc_immobile_box
+scheme_malloc_key
+scheme_malloc_stubborn
+scheme_malloc_tagged
+scheme_malloc_uncollectable
+SCHEME_MCAR
+SCHEME_MCDR
+scheme_module_bucket
+SCHEME_MPAIRP
+scheme_mutable_pair_type
+scheme_namespace_require
+scheme_namespace_type
+SCHEME_NAMESPACEP
+scheme_native_closure_type
+scheme_need_wakeup
+scheme_new_param
+scheme_null
+SCHEME_NULLP
+SCHEME_NUMBERP
+scheme_open_input_file
+scheme_open_output_file
+scheme_os_getcwd
+scheme_os_setcwd
+SCHEME_OUTPORT_VAL
+SCHEME_OUTPORTP
+scheme_output_port_record
+scheme_output_port_type
+SCHEME_OUTPUT_PORTP
+scheme_pair_type
+SCHEME_PAIRP
+scheme_param_config
+SCHEME_PATH_LEN
+scheme_path_to_char_string
+scheme_path_type
+SCHEME_PATH_VAL
+SCHEME_PATHP
+scheme_peek_byte
+scheme_peek_byte_skip
+scheme_peekc
+scheme_peekc_skip
+scheme_pipe
+scheme_pipe_with_limit
+scheme_pop_break_enable
+scheme_pop_continuation_frame
+scheme_port_count_lines
+scheme_post_sema
+scheme_prim_type
+scheme_primitive_module
+scheme_print_bytes
+scheme_print_string
+scheme_printf
+scheme_printf_utf8
+SCHEME_PROCP
+scheme_proper_list_length
+scheme_push_break_enable
+scheme_push_continuation_frame
+scheme_put_byte_string
+scheme_put_char_string
+scheme_raise_exn
+scheme_rational_denominator
+scheme_rational_from_double
+scheme_rational_from_float
+scheme_rational_numerator
+scheme_rational_to_double
+scheme_rational_to_float
+scheme_rational_type
+SCHEME_RATIONALP
+scheme_read
+scheme_read_bignum
+scheme_read_bignum_bytes
+scheme_real_to_double
+SCHEME_REALP
+scheme_recur_equal
+scheme_recur_equal_hash_key
+scheme_recur_equal_hash_key2
+scheme_register_extension_global
+scheme_register_finalizer
+scheme_register_parameter
+scheme_register_process_global
+scheme_register_static
+scheme_register_tls_space
+scheme_remove_all_finalization
+scheme_remove_gc_callback
+scheme_remove_managed
+scheme_seal_parameters
+scheme_security_check_file
+scheme_security_check_network
+scheme_sema_type
+SCHEME_SEMAP
+scheme_set_addon_path
+scheme_set_box
+scheme_set_can_break
+scheme_set_collects_path
+scheme_set_cont_mark
+scheme_set_file_position
+scheme_set_global_bucket
+scheme_set_param
+scheme_set_port_count_lines_fun
+scheme_set_port_location_fun
+scheme_set_stack_base
+scheme_set_stack_bounds
+scheme_set_thread_param
+scheme_set_type_equality
+scheme_set_type_printer
+scheme_signal_error
+scheme_signal_received
+scheme_socket_to_ports
+scheme_strdup
+scheme_strdup_eternal
+scheme_struct_property_type
+scheme_struct_ref
+scheme_struct_set
+scheme_struct_type_type
+SCHEME_STRUCT_TYPEP
+SCHEME_STRUCTP
+scheme_structure_type
+scheme_subtract_finalizer
+scheme_swap_thread
+SCHEME_SYM_LEN
+SCHEME_SYM_VAL
+scheme_symbol_type
+SCHEME_SYMBOLP
+scheme_tail_apply
+scheme_tail_apply_no_copy
+scheme_tail_apply_to_list
+scheme_tell
+scheme_tell_line
+scheme_thread
+scheme_thread_block
+scheme_thread_block_enable_break
+scheme_thread_type
+scheme_thread_w_details
+SCHEME_THREADP
+scheme_tls_allocate
+scheme_tls_get
+scheme_tls_set
+scheme_true
+SCHEME_TRUEP
+SCHEME_TYPE
+scheme_ucs4_to_utf16
+scheme_unbound_global
+scheme_unbox
+scheme_undefined
+scheme_ungetc
+scheme_utf16_to_ucs4
+scheme_utf8_decode
+scheme_utf8_decode_all
+scheme_utf8_decode_as_prefix
+scheme_utf8_decode_count
+scheme_utf8_decode_prefix
+scheme_utf8_decode_to_buffer
+scheme_utf8_decode_to_buffer_len
+scheme_utf8_encode
+scheme_utf8_encode_all
+scheme_utf8_encode_to_buffer
+scheme_utf8_encode_to_buffer_len
+scheme_values
+SCHEME_VEC_ELS
+SCHEME_VEC_SIZE
+scheme_vector_to_list
+scheme_vector_type
+SCHEME_VECTORP
+scheme_version
+scheme_void
+SCHEME_VOIDP
+scheme_wait_sema
+scheme_wake_up
+scheme_warning
+scheme_weak_box_type
+SCHEME_WEAK_PTR
+scheme_weak_reference
+scheme_weak_reference_indirect
+SCHEME_WEAKP
+scheme_write
+scheme_write_byte_string
+scheme_write_char_string
+scheme_write_to_string
+scheme_write_to_string_w_max
+scheme_write_w_max
+scheme_wrong_count
+scheme_wrong_return_arity
+scheme_wrong_type
+Security Guards
+Sleeping by Embedded Racket
+Standard Types
+String Encodings
+strings, conversion to C
+strings, conversion to C
+Strings
+Structures
+sync
+Tagged Objects
+Tail Evaluation
+tail recursion
+Temporarily Catching Error Escapes
+Thread Functions
+Threads
+Threads in Embedded Racket with Event Loops
+Top-level Evaluation Functions
+types, creating
+Value Functions
+Values and Types
+Writing Racket Extensions
+XFORM_CAN_IGNORE
+XFORM_END_SKIP
+XFORM_END_SUSPEND
+XFORM_END_TRUST_ARITH
+XFORM_HIDE_EXPR
+XFORM_SKIP_PROC
+XFORM_START_SKIP
+XFORM_START_SUSPEND
+XFORM_START_TRUST_ARITH
+XFORM_TRUST_MINUS
+XFORM_TRUST_PLUS
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

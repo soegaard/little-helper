@@ -1,0 +1,98 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 5  Snip and Style Classes
+ 5.1  add-color<%>
+ 5.2  image-snip%
+ 5.3  mult-color<%>
+ 5.4  readable-snip<%>
+ 5.5  snip%
+ 5.6  snip-admin%
+ 5.7  snip-class%
+ 5.8  snip-class-list<%>
+ 5.9  string-snip%
+5.10  style<%>
+5.11  style-delta%
+5.12  style-list%
+5.13  tab-snip%
+Inherited methods:
+from string-snip%
+insert
+read
+from snip%
+adjust-cursor
+blink-caret
+can-do-edit-operation?
+copy
+do-edit-operation
+draw
+equal-hash-code-of
+equal-secondary-hash-code-of
+equal-to?
+find-scroll-step
+get-admin
+get-count
+get-extent
+get-flags
+get-num-scroll-steps
+get-scroll-step-offset
+get-snipclass
+get-style
+get-text
+get-text!
+is-owned?
+match?
+merge-with
+next
+on-char
+on-event
+other-equal-to?
+own-caret
+partial-offset
+previous
+release-from-owner
+resize
+set-admin
+set-count
+set-flags
+set-snipclass
+set-style
+set-unmodified
+size-cache-invalid
+split
+write
+[...search manuals...]
+  top← prev  up  next → 
+
+tab-snip% : class?
+  superclass: string-snip%
+
+An instance of tab-snip% is created automatically when a tab is inserted into
+an editor.
+
+(new tab-snip%) → (is-a?/c tab-snip%)
+Creates a snip for a single tab, though the tab is initially empty.
+
+Normally, a single tab is inserted into a tab-snip% object using the insert
+method.
+
+The tab’s content is not drawn, through it is used when determining the size of
+a single character in editors where tabbing is determined by the character
+width (see set-tabs); if the content is a single tab character (the normal
+case), then the average character width of snip’s font is used as the tab’s
+width.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

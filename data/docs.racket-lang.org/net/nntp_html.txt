@@ -1,0 +1,210 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 15  NNTP: Newsgroup Protocol
+15.1  Connection and Operations
+15.2  Exceptions
+15.3  NNTP Unit
+15.4  NNTP Signature
+On this page:
+15.1 Connection and Operations
+communicator
+connect-to-server
+disconnect-from-server
+open-news-group
+authenticate-user
+head-of-message
+body-of-message
+newnews-since
+generic-message-command
+make-desired-header
+extract-desired-headers
+15.2 Exceptions
+nntp
+unexpected-response
+bad-status-line
+premature-close
+bad-newsgroup-line
+non-existent-group
+article-not-in-group
+no-group-selected
+article-not-found
+authentication-rejected
+15.3 NNTP Unit
+nntp@
+15.4 NNTP Signature
+nntp^
+[...search manuals...]
+  top← prev  up  next → 
+
+15 NNTP: Newsgroup Protocol
+
+ (require net/nntp)
+The net/nntp module provides tools to access Usenet group via NNTP [RFC977].
+
+15.1 Connection and Operations
+
+(struct   communicator (sender receiver server port)
+          #:extra-constructor-name make-communicator)
+  sender : output-port?
+  receiver : input-port?
+  server : string?
+  port : (integer-in 0 65535)
+Once a connection to a Usenet server has been established, its state is stored
+in a communicator, and other procedures take communicators as an argument.
+
+(connect-to-server server [port-number]) → communicator?
+  server : string?
+  port-number : (integer-in 0 65535) = 119
+Connects to server at port-number.
+
+(disconnect-from-server communicator) → void?
+  communicator : communicator?
+Disconnects an NNTP communicator.
+
+(open-news-group communicator newsgroup)
+      exact-nonnegative-integer?
+  →   exact-nonnegative-integer?
+      exact-nonnegative-integer?
+  communicator : communicator?
+  newsgroup : string?
+Selects the newsgroup of an NNTP connection. The returned values are the total
+number of articles in the group, the first available article, and the last
+available article.
+
+(authenticate-user   communicator        
+                     username            
+                     password)      →   void?
+  communicator : communicator?
+  username : string?
+  password : string?
+Tries to authenticate a user with the original authinfo command (uses
+cleartext). The password argument is ignored if the server does not ask for it.
+
+(head-of-message   communicator          
+                   message-index)   →   (listof string?)
+  communicator : communicator?
+  message-index : exact-nonnegative-integer?
+Given a message number, returns its header lines.
+
+(body-of-message   communicator          
+                   message-index)   →   (listof string?)
+  communicator : communicator?
+  message-index : exact-nonnegative-integer?
+Given a message number, returns the body of the message.
+
+(newnews-since communicator message-index) → (listof string?)
+  communicator : communicator?
+  message-index : exact-nonnegative-integer?
+Implements the NEWNEWS command (often disabled on servers).
+
+((generic-message-command   command               
+                            ok-code)              
+                            communicator          
+                            message-index)   →   (listof string?)
+  command : string?
+  ok-code : exact-integer?
+  communicator : communicator?
+  message-index : exact-nonnegative-integer?
+Useful primitive for implementing head-of-message, body-of-message and other
+similar commands.
+
+(make-desired-header tag-string) → regexp?
+  tag-string : string?
+Takes a header field’s tag and returns a regexp to match the field
+
+(extract-desired-headers header desireds) → (listof string?)
+  header : (listof string?)
+  desireds : (listof regexp?)
+Given a list of header lines and of desired regexps, returns the header lines
+that match any of the desireds.
+
+15.2 Exceptions
+
+(struct   nntp exn ()
+          #:extra-constructor-name make-nntp)
+The supertype of all NNTP exceptions.
+
+(struct   unexpected-response nntp (code text)
+          #:extra-constructor-name make-unexpected-response)
+  code : exact-integer?
+  text : string?
+Raised whenever an unexpected response code is received. The text field holds
+the response text sent by the server.
+
+(struct   bad-status-line nntp (line)
+          #:extra-constructor-name make-bad-status-line)
+  line : string?
+Raised for mal-formed status lines.
+
+(struct   premature-close nntp (communicator)
+          #:extra-constructor-name make-premature-close)
+  communicator : communicator?
+Raised when a remote server closes its connection unexpectedly.
+
+(struct   bad-newsgroup-line nntp (line)
+          #:extra-constructor-name make-bad-newsgroup-line)
+  line : string?
+Raised when the newsgroup line is improperly formatted.
+
+(struct   non-existent-group nntp (group)
+          #:extra-constructor-name make-non-existent-group)
+  group : string?
+Raised when the server does not recognize the name of the requested group.
+
+(struct   article-not-in-group nntp (article)
+          #:extra-constructor-name make-article-not-in-group)
+  article : exact-integer?
+Raised when an article is outside the server’s range for that group.
+
+(struct   no-group-selected nntp ()
+          #:extra-constructor-name make-no-group-selected)
+Raised when an article operation is used before a group has been selected.
+
+(struct   article-not-found nntp (article)
+          #:extra-constructor-name make-article-not-found)
+  article : exact-integer?
+Raised when the server is unable to locate the article.
+
+(struct   authentication-rejected nntp ()
+          #:extra-constructor-name make-authentication-rejected)
+Raised when the server reject an authentication attempt.
+
+15.3 NNTP Unit
+
+ (require net/nntp-unit)
+
+nntp@ : unit?
+Imports nothing, exports nntp^.
+
+15.4 NNTP Signature
+
+ (require net/nntp-sig)
+
+nntp^ : signature
+
+Includes everything exported by the net/nntp module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,296 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 5  Snip and Style Classes
+ 5.1  add-color<%>
+ 5.2  image-snip%
+ 5.3  mult-color<%>
+ 5.4  readable-snip<%>
+ 5.5  snip%
+ 5.6  snip-admin%
+ 5.7  snip-class%
+ 5.8  snip-class-list<%>
+ 5.9  string-snip%
+5.10  style<%>
+5.11  style-delta%
+5.12  style-list%
+5.13  tab-snip%
+On this page:
+get-dc
+get-editor
+get-view
+get-view-size
+modified
+needs-update
+popup-menu
+recounted
+release-snip
+resized
+scroll-to
+set-caret-owner
+update-cursor
+get-line-spacing
+get-selected-text-color
+call-with-busy-cursor
+get-tabs
+[...search manuals...]
+  top← prev  up  next → 
+
+snip-admin% : class?
+  superclass: object%
+
+See Administrators for information about the role of administrators. The
+snip-admin% class is never instantiated directly. It is not even instantiated
+through derived classes by most programmers; each text% or pasteboard% object
+creates its own administrator. However, it may be useful to derive a new
+instance of this class to display snips in a new context. Also, it may be
+useful to call the methods of an existing administrator from an owned snip.
+
+To create a new snip-admin% class, all methods described here must be
+overridden. They are all invoked by the administrator’s snip.
+
+Because a snip-admin% object typically owns more than one snip, many methods
+require a snip% object as an argument.
+
+(new snip-admin%) → (is-a?/c snip-admin%)
+Creates a (useless) editor administrator.
+
+(send a-snip-admin get-dc) → (or/c (is-a?/c dc<%>) false/c)
+Gets a drawing context suitable for determining display size information. If
+the snip is not displayed, #f is returned.
+
+(send a-snip-admin get-editor)
+ → (or/c (is-a?/c text%) (is-a?/c pasteboard%))
+Returns the editor that this administrator reports to (directly or indirectly).
+
+(send a-snip-admin get-view x y w h [snip]) → void?
+  x : (or/c (box/c real?) false/c)
+  y : (or/c (box/c real?) false/c)
+  w : (or/c (box/c (and/c real? (not/c negative?))) false/c)
+  h : (or/c (box/c (and/c real? (not/c negative?))) false/c)
+  snip : (or/c (is-a?/c snip%) false/c) = #f
+Specification: Gets the location and size of the visible region of a snip in
+snip coordinates. The result is undefined if the given snip is not managed by
+this administrator.
+
+If snip is not #f, the current visible region of the snip is installed in the
+boxes x, y, w, and h. The x and y values are relative to the snip’s top-left
+corner. The w and h values may be larger than the snip itself.
+
+If snip is #f, the total visible region of the snip’s top-level display is
+returned in editor coordinates. Using #f for snip is analogous to using #t for
+full? in get-view in editor-admin%.
+
+If no snip is specified, then the location and size of the snip’s editor are
+returned, instead, in editor coordinates.
+
+See also get-view in editor-admin%.
+
+Default implementation: Fills all boxes with 0.0.
+
+(send a-snip-admin get-view-size h w) → void?
+  h : (or/c (box/c (and/c real? (not/c negative?))) false/c)
+  w : (or/c (box/c (and/c real? (not/c negative?))) false/c)
+Specification: Gets the visible size of the administrator’s display region.
+
+If the display is an editor canvas, see also reflow-container.
+
+Default implementation: Fills all boxes with 0.0.
+
+(send a-snip-admin modified snip modified?) → void?
+  snip : (is-a?/c snip%)
+  modified? : any/c
+Specification: Called by a snip to report that its modification state has
+changed to either modified or unmodified.
+
+Default implementation: Does nothing.
+
+(send a-snip-admin needs-update   snip          
+                                  localx        
+                                  localy        
+                                  w             
+                                  h)       →   void?
+  snip : (is-a?/c snip%)
+  localx : real?
+  localy : real?
+  w : (and/c real? (not/c negative?))
+  h : (and/c real? (not/c negative?))
+Specification: Called by the snip to request that the snip’s display needs to
+be updated. The administrator determines when to actually update the snip; the
+snip’s draw method is eventually called.
+
+The localx, localy, w, and h arguments specify a region of the snip to be
+refreshed (in snip coordinates).
+
+No update occurs if the given snip is not managed by this administrator.
+
+Default implementation: Does nothing.
+
+(send a-snip-admin popup-menu menu snip x y) → boolean?
+  menu : (is-a?/c popup-menu%)
+  snip : (is-a?/c snip%)
+  x : real?
+  y : real?
+Specification: Opens a popup menu in the display for this snip’s editor. The
+result is #t if the popup succeeds, #f otherwise (independent of whether the
+user selects an item in the popup menu).
+
+The menu is placed at x and y in snip coordinates.
+
+While the menu is popped up, its target is set to the top-level editor in the
+display for this snip’s editor. See get-popup-target for more information.
+
+Default implementation: Returns #f.
+
+(send a-snip-admin recounted snip refresh?) → void?
+  snip : (is-a?/c snip%)
+  refresh? : any/c
+Specification: Called by a snip to notify the administrator that the specified
+snip has changed its count. The snip generally needs to be updated after
+changing its count, but the snip decides whether the update should occur
+immediately.
+
+If refresh? is not #f, then the snip is requesting to be updated immediately.
+Otherwise, needs-update must eventually be called as well.
+
+The method call is ignored if the given snip is not managed by this
+administrator.
+
+Default implementation: Does nothing.
+
+(send a-snip-admin release-snip snip) → boolean?
+  snip : (is-a?/c snip%)
+Specification: Requests that the specified snip be released. If this
+administrator is not the snip’s owner or if the snip cannot be released, then #
+f is returned. Otherwise, #t is returned and the snip is no longer owned.
+
+See also release-snip in editor<%> .
+
+The result is #f if the given snip is not managed by this administrator.
+
+Default implementation: Returns #f.
+
+(send a-snip-admin resized snip refresh?) → void?
+  snip : (is-a?/c snip%)
+  refresh? : any/c
+Specification: Called by a snip to notify the administrator that the specified
+snip has changed its display size. The snip generally needs to be updated after
+a resize, but the snip decides whether the update should occur immediately.
+
+If refresh? is not #f, then the snip is requesting to be updated immediately,
+as if calling needs-update. Otherwise, needs-update must eventually be called
+as well.
+
+The method call is ignored if the given snip is not managed by this
+administrator.
+
+Default implementation: Does nothing.
+
+(send a-snip-admin scroll-to    snip            
+                                localx          
+                                localy          
+                                w               
+                                h               
+                                refresh?        
+                              [ bias])     →   boolean?
+  snip : (is-a?/c snip%)
+  localx : real?
+  localy : real?
+  w : (and/c real? (not/c negative?))
+  h : (and/c real? (not/c negative?))
+  refresh? : any/c
+  bias : (one-of/c 'start 'end 'none) = 'none
+Specification: Called by the snip to request scrolling so that the given region
+is visible. The snip generally needs to be updated after a scroll, but the snip
+decides whether the update should occur immediately.
+
+The localx, localy, w, and h arguments specify a region of the snip to be made
+visible by the scroll (in snip coordinates).
+
+If refresh? is not #f, then the editor is requesting to be updated immediately.
+
+The bias argument is one of:
+
+  • 'start — if the range doesn’t fit in the visible area, show the top-left
+    region
+
+  • 'none — no special scrolling instructions
+
+  • 'end — if the range doesn’t fit in the visible area, show the bottom-right
+    region
+
+The result is #t if the editor is scrolled, #f otherwise.
+
+The method call is ignored (and the result is #f) if the given snip is not
+managed by this administrator.
+
+Default implementation: Returns #f.
+
+(send a-snip-admin set-caret-owner   snip           
+                                     domain)   →   void?
+  snip : (is-a?/c snip%)
+  domain : (one-of/c 'immediate 'display 'global)
+Specification: Requests that the keyboard focus is assigned to the specified
+snip. If the request is granted, the own-caret method of the snip is called.
+
+See set-caret-owner for information about the possible values of domain.
+
+The method call is ignored if the given snip is not managed by this
+administrator.
+
+Default implementation: Does nothing.
+
+(send a-snip-admin update-cursor) → void?
+Specification: Queues an update for the cursor in the display for this snip’s
+editor. The actual cursor used will be determined by calling the snip’s
+adjust-cursor method as appropriate.
+
+Default implementation: Does nothing.
+
+(send a-snip-admin get-line-spacing)
+ → (and/c real? (not/c negative?))
+Specification: Returns the spacing inserted by the snip’s editor between each
+line. Default implementation: Returns 0.0
+
+(send a-snip-admin get-selected-text-color) → void?
+Specification: Returns the color that is used to draw selected text or #f if
+selected text is drawn with its usual color. Default implementation: Returns #
+f.
+
+(send a-snip-admin call-with-busy-cursor thunk) → any
+  thunk : (-> any)
+Specification: Calls thunk while changing the cursor to a watch cursor for all
+windows in the current eventspace.
+
+Default implementation: Does nothing.
+
+(send a-snip-admin get-tabs  [ length            
+                               tab-width         
+                               in-units])   →   (listof real?)
+  length : (or/c (box/c exact-nonnegative-integer?) #f) = #f
+  tab-width : (or/c (box/c real?) #f) = #f
+  in-units : (or/c (box/c any/c) #f) = #f
+Specification: Returns the current tab-position array as a list.
+
+The length box is filled with the length of the tab array (and therefore the
+returned list), unless length is #f. The tab-width box is filled with the width
+used for tabs past the end of the tab array, unless tab-width is #f. The
+in-units box is filled with #t if the tabs are specified in canvas units or #f
+if they are specified in space-widths, unless in-units is #f.
+
+Default implementation: Returns null.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

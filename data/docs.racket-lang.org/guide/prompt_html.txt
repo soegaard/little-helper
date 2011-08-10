@@ -1,0 +1,87 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 10  Exceptions and Control
+10.1  Exceptions
+10.2  Prompts and Aborts
+10.3  Continuations
+[...search manuals...]
+  top← prev  up  next → 
+
+10.2 Prompts and Aborts
+
+When an exception is raised, control escapes out of an arbitrary deep
+evaluation context to the point where the exception is caught—or all the way
+out if the expression is never caught:
+
+    > (+ 1 (+ 1 (+ 1 (+ 1 (+ 1 (+ 1 (/ 1 0)))))))
+    /: division by zero
+
+
+But if control escapes “all the way out,” why does the REPL keep going after an
+error is printed? You might think that it’s because the REPL wraps every
+interaction in a with-handlers form that catches all exceptions, but that’s not
+quite the reason.
+
+The actual reason is that the REPL wraps the interaction with a prompt, which
+effectively marks the evaluation context with an escape point. If an exception
+is not caught, then information about the exception is printed, and then
+evaluation aborts to the nearest enclosing prompt. More precisely, each prompt
+has a prompt tag, and there is a designated default prompt tag that the
+uncaught-exception handler uses to abort.
+
+The call-with-continuation-prompt function installs a prompt with a given
+prompt tag, and then it evaluates a given thunk under the prompt. The
+default-continuation-prompt-tag function returns the default prompt tag. The
+abort-current-continuation function escapes to the nearest enclosing prompt
+that has a given prompt tag.
+
+    > (define (escape v)
+        (abort-current-continuation
+         (default-continuation-prompt-tag)
+         (lambda () v)))
+    > (+ 1 (+ 1 (+ 1 (+ 1 (+ 1 (+ 1 (escape 0)))))))
+    0
+
+    > (+ 1
+         (call-with-continuation-prompt
+          (lambda ()
+            (+ 1 (+ 1 (+ 1 (+ 1 (+ 1 (+ 1 (escape 0))))))))
+          (default-continuation-prompt-tag)))
+    1
+
+
+In escape above, the value v is wrapped in a procedure that is called after
+escaping to the enclosing prompt.
+
+Prompts and aborts look very much like exception handling and raising. Indeed,
+prompts and aborts are essentially a more primitive form of exceptions, and
+with-handlers and raise are implemented in terms of prompts and aborts. The
+power of the more primitive forms is related to the word “continuation” in the
+operator names, as we discuss in the next section.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

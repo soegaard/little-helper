@@ -1,0 +1,401 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+color: text<%>
+start-colorer
+stop-colorer
+force-stop-colorer
+is-stopped?
+is-frozen?
+freeze-colorer
+thaw-colorer
+reset-region
+reset-regions
+get-regions
+skip-whitespace
+backward-match
+backward-containing-sexp
+forward-match
+insert-close-paren
+classify-position
+get-token-range
+on-lexer-valid
+is-lexer-valid?
+color: text-mixin
+lock
+on-focus
+after-edit-sequence
+after-set-position
+after-change-style
+on-set-size-constraint
+after-insert
+after-delete
+color: text%
+color: text-mode<%>
+color: text-mode-mixin
+on-disable-surrogate
+on-enable-surrogate
+color: text-mode%
+color: get-parenthesis-colors-table
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Color
+
+color:text<%> : interface?
+  implements:  text:basic<%>
+This interface describes how coloring is stopped and started for text that
+knows how to color itself. It also describes how to query the lexical and
+s-expression structure of the text.
+
+
+    (send a-color:text start-colorer   token-sym->style        
+                                       get-token               
+                                       pairs)             →   void?
+      token-sym->style : (-> symbol? string?)
+                       (or/c (-> input-port?
+                                 (values any/c
+                                         symbol?
+                                         (or/c symbol? #f)
+                                         (or/c exact-nonnegative-integer? #f)
+                                         (or/c exact-nonnegative-integer? #f)))
+                             (-> input-port?
+       get-token   :             exact-nonnegative-integer?
+                                 any/c
+                                 (values any/c
+                                         symbol?
+                                         (or/c symbol? #f)
+                                         (or/c exact-nonnegative-integer? #f)
+                                         (or/c exact-nonnegative-integer? #f)
+                                         exact-nonnegative-integer?
+                                         any/c)))
+      pairs : (listof (list/c symbol? symbol?))
+    Starts tokenizing the buffer for coloring and parenthesis matching.
+
+    The token-sym->style argument will be passed the first return symbol from
+    get-token, and it should return the style-name that the token should be
+    colored.
+
+    The get-token argument takes an input port and optionally an offset and
+    mode value. When it accepts just an input port, get-token returns the next
+    token as 5 values:
+
+      □ An unused value. This value is intended to represent the textual
+        component of the token and may be used as such in the future.
+
+      □ A symbol describing the type of the token. This symbol is transformed
+        into a style-name via the token-sym->style argument. The symbols
+        'white-space and 'comment have special meaning and should always be
+        returned for white space and comment tokens respectively. The symbol
+        'no-color can be used to indicate that although the token is not white
+        space, it should not be colored. The symbol 'eof must be used to
+        indicate when all the tokens have been consumed.
+
+      □ A symbol indicating how the token should be treated by the paren
+        matcher or #f. This symbol should be in the pairs argument.
+
+      □ The starting position of the token (or #f if eof).
+
+      □ The ending position of the token (or #f if eof).
+
+    When get-token accepts an offset and mode value in addition to an input
+    port, it must also return two extra results, which are a backup distance
+    and new mode. The offset given to get-token can be added to the position of
+    the input port to obtain absolute coordinates within a text stream. The
+    mode argument allows get-token to communicate information from earlier
+    parsing to later. When get-token is called for the beginning on a stream,
+    the mode argument is #f; thereafter, the mode returned for the previous
+    token is provided to get-token for the next token. The mode should not be a
+    mutable value; if part of the stream is re-tokenized, the mode saved from
+    the immediately preceding token is given again to the get-token function.
+    The backup distance returned by get-token indicates the maximum number of
+    characters to back up (counting from the start of the token) and for
+    re-parsing after a change to the editor within the token’s region.
+
+    The get-token function is usually be implemented with a lexer using the
+    parser-tools/lex library. The get-token function must obey the following
+    invariants:
+      □ Every position in the buffer must be accounted for in exactly one
+        token, and every token must have a non-zero width.
+
+      □ The token returned by get-token must rely only on the contents of the
+        input port argument plus the mode argument. This constraint means that
+        the tokenization of some part of the input cannot depend on earlier
+        parts of the input except through the mode (and implicitly through the
+        starting positions for tokens).
+
+      □ 
+        A change to the stream must not change the tokenization of the stream
+        prior to the token immediately preceding the change plus the backup
+        distance. In the following example, this invariant does not hold for a
+        zero backup distance: If the buffer contains
+          " 1 2 3
+
+        and the tokenizer treats the unmatched " as its own token (a string
+        error token), and separately tokenizes the 1 2 and 3, an edit to make
+        the buffer look like
+          " 1 2 3"
+
+        would result in a single string token modifying previous tokens. To
+        handle these situations, get-token can treat the first line as a single
+        token, or it can precisely track backup distances.
+
+    The pairs argument is a list of different kinds of matching parens. The
+    second value returned by get-token is compared to this list to see how the
+    paren matcher should treat the token. An example: Suppose pairs is '((|(|
+    |)|) (|[| |]|) (begin end)). This means that there are three kinds of
+    parens. Any token which has 'begin as its second return value will act as
+    an open for matching tokens with 'end. Similarly any token with '|]| will
+    act as a closing match for tokens with '|[|. When trying to correct a
+    mismatched closing parenthesis, each closing symbol in pairs will be
+    converted to a string and tried as a closing parenthesis.
+    (send a-color:text stop-colorer [clear-colors]) → void?
+      clear-colors : boolean? = #t
+    Stops coloring and paren matching the buffer.
+
+    If clear-colors is true all the text in the buffer will have its style set
+    to Standard.
+    (send a-color:text force-stop-colorer stop?) → void?
+      stop? : boolean?
+    Causes the entire tokenizing/coloring system to become inactive. Intended
+    for debugging purposes only.
+
+    stop? determines whether the system is being forced to stop or allowed to
+    wake back up.
+    (send a-color:text is-stopped?) → boolean?
+    Indicates if the colorer for this editor has been stopped, or not.
+
+    (send a-color:text is-frozen?) → boolean?
+    Indicates if this editor’s colorer is frozen. See also freeze-colorer and
+    thaw-colorer.
+
+    (send a-color:text freeze-colorer) → void?
+    Keep the text tokenized and paren matched, but stop altering the colors.
+
+    freeze-colorer will not return until the coloring/tokenization of the
+    entire text is brought up-to-date. It must not be called on a locked text.
+    (send a-color:text thaw-colorer  [ recolor             
+                                       retokenize])   →   void?
+      recolor : boolean? = #t
+      retokenize : boolean? = #f
+    Start coloring a frozen buffer again.
+
+    If recolor? is #t, the text is re-colored. If it is #f the text is not
+    recolored. When recolor? is #t, retokenize? controls how the text is
+    recolored. #f causes the text to be entirely re-colored before thaw-colorer
+    returns using the existing tokenization. #t causes the entire text to be
+    retokenized and recolored from scratch. This will happen in the background
+    after the call to thaw-colorer returns.
+
+    (send a-color:text reset-region start end) → void?
+      start : natural-number/c
+      end : (or/c 'end  natural-number/c)
+    Set the region of the text that is tokenized.
+
+    (send a-color:text reset-regions regions) → void?
+      regions : (listof (list/c number? (or/c 'end  number?)))
+    Sets the currently active regions to be regions.
+    (send a-color:text get-regions)
+     → (listof (list/c number? (or/c 'end  number?)))
+    This returns the list of regions that are currently being colored in the
+    editor.
+
+    (send a-color:text skip-whitespace   position    
+                                         direction   
+                                         comments?)  
+     → natural-number/c
+      position : natural-number/c
+      direction : (symbols 'forward  'backward)
+      comments? : boolean?
+    Returns the next non-whitespace character.
+
+    Starts from position and skips whitespace in the direction indicated by
+    direction. If comments? is true, comments are skipped as well as
+    whitespace. skip-whitespace determines whitespaces and comments by
+    comparing the token type to 'white-space and 'comment.
+
+    Must only be called while the tokenizer is started.
+    (send a-color:text backward-match   position  
+                                        cutoff)   
+     → (or/c natural-number/c false?)
+      position : natural-number/c
+      cutoff : natural-number/c
+    Skip all consecutive whitespaces and comments (using skip-whitespace)
+    immediately preceding the position. If the token at this position is a
+    close, return the position of the matching open, or #f if there is none. If
+    the token was an open, return #f. For any other token, return the start of
+    that token.
+
+    Must only be called while the tokenizer is started.
+    (send a-color:text backward-containing-sexp   position  
+                                                  cutoff)   
+     → (or/c natural-number/c false?)
+      position : natural-number/c
+      cutoff : natural-number/c
+    Return the starting position of the interior of the (non-atomic)
+    s-expression containing position, or #f is there is none.
+
+    Must only be called while the tokenizer is started.
+    (send a-color:text forward-match   position  
+                                       cutoff)   
+     → (or/c natural-number/c false?)
+      position : natural-number/c
+      cutoff : natural-number/c
+    Skip all consecutive whitespaces and comments (using skip-whitespace)
+    immediately following position. If the token at this position is an open,
+    return the position of the matching close, or #f if there is none. For any
+    other token, return the end of that token.
+
+    Must only be called while the tokenizer is started.
+    (send a-color:text insert-close-paren   position        
+                                            char            
+                                            flash?          
+                                            fixup?)    →   void?
+      position : natural-number/c
+      char : char?
+      flash? : boolean?
+      fixup? : boolean?
+    The position is the place to put the parenthesis, and char is the
+    parenthesis to be added (e.g., that the user typed). If fixup? is true, the
+    right kind of closing parenthesis will be chosen from the set previously
+    passed to start-colorer—but only if an inserted char would be colored as a
+    parenthesis (i.e., with the 'parenthesis classification). Otherwise, char
+    will be inserted, even if it is not the right kind. If flash? is true, the
+    matching open parenthesis will be flashed.
+    (send a-color:text classify-position position)
+     → (or/c symbol? #f)
+      position : exact-nonnegative-integer?
+    Return a symbol for the lexer-determined token type for the token that
+    contains the item after position.
+
+    Must only be called while the tokenizer is started.
+
+    (send a-color:text get-token-range position)
+      →   (or/c #f exact-nonnegative-integer?)
+          (or/c #f exact-nonnegative-integer?)
+      position : exact-nonnegative-integer?
+    Returns the range of the token surrounding position, if there is a token
+    there.
+
+    This method must be called only when the tokenizer is started.
+
+    (send a-color:text on-lexer-valid valid?) → any
+      valid? : boolean?
+    Augments <method not found>.
+    This method is an observer for when the lexer is working. It is called when
+    the lexer’s state changes from valid to invalid (and back). The valid?
+    argument indicates if the lexer has finished running over the editor (or
+    not).
+
+    The default method just returns (void?).
+
+    (send a-color:text is-lexer-valid?) → boolean?
+    Indicates if the lexer is currently valid for this editor.
+
+color:text-mixin : (class? . -> . class?)
+  argument extends/implements:  text:basic<%>
+  result implements:  color:text<%>
+Adds the functionality needed for on-the-fly coloring and parenthesis matching
+based on incremental tokenization of the text.
+
+
+    (send a-color:text lock) → void?
+    Overrides lock in editor<%>.
+
+    (send a-color:text on-focus) → void?
+    Overrides on-focus in editor<%>.
+
+    (send a-color:text after-edit-sequence) → void?
+    Augments after-edit-sequence in editor<%>.
+
+    (send a-color:text after-set-position) → void?
+    Augments after-set-position in text%.
+
+    (send a-color:text after-change-style) → void?
+    Augments after-change-style in text%.
+
+    (send a-color:text on-set-size-constraint) → void?
+    Augments on-set-size-constraint in text%.
+
+    (send a-color:text after-insert) → void?
+    Augments after-insert in text%.
+
+    (send a-color:text after-delete) → void?
+    Augments after-delete in text%.
+
+color:text% : class?
+  superclass: (color:text-mixin text:keymap%)
+
+
+color:text-mode<%> : interface?
+
+color:text-mode-mixin : (class? . -> . class?)
+  argument extends/implements:  mode:surrogate-text<%>
+  result implements:  color:text-mode<%>
+This mixin adds coloring functionality to the mode.
+
+
+    (new color:text-mode-mixin                
+       [ [get-token get-token]                
+         [token-sym->style token-sym->style]  
+         [matches matches]])                  
+     → (is-a?/c color:text-mode-mixin)
+      get-token : lexer = default-lexer
+       token-sym->style   :   (symbol? . -> . string?)
+                          =   (λ (x) "Standard")
+      matches : (listof (list/c symbol? symbol?)) = null
+    The arguments are passed to start-colorer.
+    (send a-color:text-mode on-disable-surrogate) → void?
+    Overrides on-disable-surrogate in mode:surrogate-text<%>.
+
+    (send a-color:text-mode on-enable-surrogate) → void?
+    Overrides on-enable-surrogate in mode:surrogate-text<%>.
+
+color:text-mode% : class?
+  superclass: (color:text-mode-mixin mode:surrogate-text%)
+
+
+(color:get-parenthesis-colors-table)
+ → (listof (list/c symbol? string? (vectorof (is-a?/c color%))))
+Returns a table of colors that get used for parenthesis highlighting. Each
+entry in the table consists of a symbolic name, a name to show in a GUI, and
+the color to use. The colors are used to show the nesting structure in the
+parens.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

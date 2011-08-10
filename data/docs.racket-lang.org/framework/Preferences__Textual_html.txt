@@ -1,0 +1,220 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+preferences: get
+preferences: set
+preferences: add-callback
+preferences: set-default
+preferences: set-un/ marshall
+preferences: restore-defaults
+preferences: register-save-callback
+preferences: unregister-save-callback
+exn: make-unknown-preference
+exn: unknown-preference?
+exn: struct: unknown-preference
+preferences: low-level-put-preferences
+preferences: low-level-get-preference
+preferences: snapshot?
+preferences: restore-prefs-snapshot
+preferences: get-prefs-snapshot
+[...search manuals...]
+  top← prev  up  next → 
+
+27 Preferences, Textual
+
+ (require framework/preferences)
+
+(preferences:get symbol) → any/c
+  symbol : symbol?
+See also preferences:set-default.
+
+preferences:get returns the value for the preference symbol. It raises 
+exn:unknown-preference if the preference’s default has not been set.
+(preferences:set symbol value) → void?
+  symbol : symbol?
+  value : any/c
+See also preferences:set-default.
+
+preferences:set-preference sets the preference symbol to value. This should be
+called when the users requests a change to a preference.
+
+This function immediately writes the preference value to disk.
+
+It raises exn:unknown-preference if the preference’s default has not been set.
+(preferences:add-callback p f [weak?]) → (-> void?)
+  p : symbol?
+           (let ([procedure-with-arity2? (λ (x) (and (procedure? x) (
+   f   :   procedure-arity-includes? x 2)))])
+             procedure-with-arity2?)
+  weak? : boolean? = #f
+This function adds a callback which is called with a symbol naming a preference
+and its value, when the preference changes. preferences:add-callback returns a
+thunk, which when invoked, removes the callback from this preference.
+
+If weak? is true, the preferences system will only hold on to the callback
+weakly.
+
+The callbacks will be called in the order in which they were added.
+
+If you are adding a callback for a preference that requires marshalling and
+unmarshalling, you must set the marshalling and unmarshalling functions by
+calling preferences:set-un/marshall before adding a callback.
+
+This function raises exn:unknown-preference exn:unknown-preference if the
+preference has not been set.
+(preferences:set-default    symbol                               
+                            value                                
+                            test                                 
+                          [ #:aliases aliases                    
+                            #:rewrite-aliases rewrite-aliases])  
+ → void?
+  symbol : symbol?
+  value : any/c
+  test : (any/c . -> . any)
+  aliases : (listof symbol?) = '()
+   rewrite-aliases   :   (listof (-> any/c any))
+                     =   (map (lambda (x) values) aliases)
+This function must be called every time your application starts up, before any
+call to preferences:get or preferences:set (for any given preference).
+
+If you use preferences:set-un/marshall, you must call this function before
+calling it.
+
+This sets the default value of the preference symbol to value. If the user has
+chosen a different setting, the user’s setting will take precedence over the
+default value.
+
+The test argument is used as a safeguard. That function is called to determine
+if a preference read in from a file is a valid preference. If test returns #t,
+then the preference is treated as valid. If test returns #f then the default is
+used.
+
+The aliases and rewrite-aliases arguments aids in renaming preferences. If
+aliases is present, it is expected to be a list of symbols that correspond to
+old versions of the preferences. It defaults to '(). If rewrite-aliases is
+present, it is used to adjust the old values of the preferences when they are
+present in the saved file.
+(preferences:set-un/marshall   symbol             
+                               marshall           
+                               unmarshall)   →   void?
+  symbol : symbol?
+  marshall : (any/c . -> . printable/c)
+  unmarshall : (printable/c . -> . any/c)
+preferences:set-un/marshall is used to specify marshalling and unmarshalling
+functions for the preference symbol. marshall will be called when the users
+saves their preferences to turn the preference value for symbol into a
+printable value. unmarshall will be called when the user’s preferences are read
+from the file to transform the printable value into its internal
+representation. If preferences:set-un/marshall is never called for a particular
+preference, the values of that preference are assumed to be printable.
+
+If the unmarshalling function returns a value that does not meet the guard
+passed to preferences:set-default for this preference, the default value is
+used.
+
+The marshall function might be called with any value returned from read and it
+must not raise an error (although it can return arbitrary results if it gets
+bad input). This might happen when the preferences file becomes corrupted, or
+is edited by hand.
+
+preferences:set-un/marshall must be called before calling preferences:get,
+preferences:set.
+
+See also serialize and deserialize.
+(preferences:restore-defaults) → void?
+(preferences:restore-defaults) restores the users’ configuration to the default
+preferences.
+(preferences:register-save-callback callback) → symbol?
+  callback : (-> boolean? any)
+Registers callback to run twice for each call to preferences:set—once before
+the preferences file is written, with #t, and once after it is written, with #
+f. Registration returns a key for use with preferences:unregister-save-callback
+. Caveats:
+
+  • The callback occurs on whichever thread happened to call preferences:set.
+
+  • Pre- and post-write notifications are not necessarily paired;
+    unregistration may cancel the post-write notification before it occurs.
+
+(preferences:unregister-save-callback key) → void?
+  key : symbol?
+Unregisters the save callback associated with key.
+(exn:make-unknown-preference   message              
+                               continuation-marks)  
+ → exn:unknown-preference?
+  message : string?
+  continuation-marks : continuation-mark-set?
+Creates an unknown preference exception.
+(exn:unknown-preference? exn) → boolean?
+  exn : any/c
+Determines if a value is an unknown preference exn.
+exn:struct:unknown-preference : struct-type?
+The struct type for the unknown preference exn.
+(preferences:low-level-put-preferences)
+ → ((listof symbol?) (listof any/c) . -> . any)
+(preferences:low-level-put-preferences put-preferences) → void?
+  put-preferences : ((listof symbol?) (listof any/c) . -> . any)
+This parameter’s value is called to save preference the preferences file. Its
+interface should be just like mzlib’s put-preferences.
+(preferences:low-level-get-preference)
+ → (->* (symbol?) [(-> any)] any)
+(preferences:low-level-get-preference get-preference) → void?
+  get-preference : (->* (symbol?) [(-> any)] any)
+This parameter’s value is called to get a preference from the preferences file.
+Its interface should be just like get-preference.
+(preferences:snapshot? arg) → boolean?
+  arg : any/c
+Determines if its argument is a preferences snapshot.
+
+See also preferences:get-prefs-snapshot and preferences:restore-prefs-snapshot.
+(preferences:restore-prefs-snapshot snapshot) → void?
+  snapshot : preferences:snapshot?
+Restores the preferences saved in snapshot.
+
+See also preferences:get-prefs-snapshot.
+(preferences:get-prefs-snapshot) → preferences:snapshot?
+Caches all of the current values of the preferences and returns them. For any
+preference that has marshalling and unmarshalling set (see preferences:set-un/
+marshall), the preference value is copied by passing it through the marshalling
+and unmarshalling process. Other values are not copied, but references to them
+are instead saved.
+
+See also preferences:restore-prefs-snapshot.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

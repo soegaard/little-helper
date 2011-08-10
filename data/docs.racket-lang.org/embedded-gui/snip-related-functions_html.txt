@@ -1,0 +1,76 @@
+▼  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+On this page:
+snip-width
+snip-height
+snip-min-width
+snip-min-height
+snip-parent
+fold-snip
+for-each-snip
+map-snip
+stretchable-width?
+stretchable-height?
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Snip Functions
+
+(snip-width snip) → real?
+  snip : (is-a?/c snip%)
+The width of a snip in the parent pasteboard.
+
+(snip-height snip) → real?
+  snip : (is-a?/c snip%)
+The height of a snip in the parent pasteboard.
+
+(snip-min-width snip) → real?
+  snip : (is-a?/c snip%)
+The minimum width of the snip
+
+(snip-min-height snip) → real?
+  snip : (is-a?/c snip%)
+The minimum height of the snip.
+
+(snip-parent snip) → (is-a?/c pasteboard%)
+  snip : (is-a?/c snip%)
+The pasteboard that contains the snip.
+
+(fold-snip f init-acc snip) → any/c
+  f : ((is-a?/c snip%) any/c . -> . any/c)
+  init-acc : any/c
+  snip : (is-a?/c snip%)
+Applies f to all snips in the parent of snip, starting with snip.
+
+(for-each-snip f first-snip more ...) → void?
+  f : ((is-a?/c snip%) . -> . any/c)
+  first-snip : (is-a?/c snip%)
+  more : list?
+Applies the function to each snip in the parent of first-snip, starting with
+first-snip. If more lists are supplied, they are used for extra arguments to f,
+just like extra lists provided to for-each.
+
+(map-snip f first-snip more ...) → void?
+  f : ((is-a?/c snip%) . -> . any/c)
+  first-snip : (is-a?/c snip%)
+  more : list?
+Applies the function to each snip in the parent of first-snip, starting with
+first-snip, and accumulates the results into a list. If more lists are
+supplied, they are used for extra arguments to f, just like extra lists
+provided to map.
+
+(stretchable-width? snip) → boolean?
+  snip : (is-a?/c snip%)
+True if the snip can be resized in the X dimension.
+
+(stretchable-height? snip) → boolean?
+  snip : (is-a?/c snip%)
+True if the snip can be resized in the Y dimension.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

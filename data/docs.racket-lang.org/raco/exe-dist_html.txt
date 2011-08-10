@@ -1,0 +1,138 @@
+▼  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+► 3  raco distribute: Sharing Stand-Alone Executables
+3.1  API for Distributing Executables
+3.2  API for Bundling Distributions
+On this page:
+3.1 API for Distributing Executables
+assemble-distribution
+3.2 API for Bundling Distributions
+bundle-directory
+bundle-put-file-extension+ style+ filters
+[...search manuals...]
+  top← prev  up  next → 
+
+3 raco distribute: Sharing Stand-Alone Executables
+
+The raco distribute command combines a stand-alone executable created by raco
+exe with all of the shared libraries that are needed to run it, along with any
+run-time files declared via define-runtime-path. The resulting package can be
+moved to other machines that run the same operating system.
+
+After the raco distribute command, supply a directory to contain the combined
+files for a distribution. Each command-line argument is an executable to
+include in the distribution, so multiple executables can be packaged together.
+For example, on Windows,
+
+  raco distribute greetings hello.exe goodbye.exe
+
+creates a directory "greetings" (if the directory doesn’t exist already), and
+it copies the executables "hello.exe" and "goodbye.exe" into "greetings". It
+also creates a "lib" sub-directory in "greetings" to contain DLLs, and it
+adjusts the copied "hello.exe" and "goodbye.exe" to use the DLLs in "lib".
+
+The layout of files within a distribution directory is platform-specific:
+
+  • On Windows, executables are put directly into the distribution directory,
+    and DLLs and other run-time files go into a "lib" sub-directory.
+
+  • On Mac OS X, GUI executables go into the distribution directory, other
+    executables go into a "bin" subdirectory, and frameworks (i.e., shared
+    libraries) go into a "lib" sub-directory along with other run-time files.
+    As a special case, if the distribution has a single --gui-exe executable,
+    then the "lib" directory is hidden inside the application bundle.
+
+  • On Unix, executables go into a "bin" subdirectory, shared libraries (if
+    any) go into a "lib" subdirectory along with other run-time files, and
+    wrapped executables are placed into a "lib/plt" subdirectory with
+    version-specific names. This layout is consistent with Unix installation
+    conventions; the version-specific names for shared libraries and wrapped
+    executables means that distributions can be safely unpacked into a standard
+    place on target machines without colliding with an existing Racket
+    installation or other executables created by raco exe.
+
+A distribution also has a "collects" directory that is used as the main library
+collection directory for the packaged executables. By default, the directory is
+empty. Use the ++copy-collects flag of raco distribute to supply a directory
+whose content is copied into the distribution’s "collects" directory. The
+++copy-collects flag can be used multiple times to supply multiple directories.
+
+When multiple executables are distributed together, then separately creating
+the executables with raco exe can generate multiple copies of collection-based
+libraries that are used by multiple executables. To share the library code,
+instead, specify a target directory for library copies using the 
+--collects-dest flag with raco exe, and specify the same directory for each
+executable (so that the set of libraries used by all executables are pooled
+together). Finally, when packaging the distribution with raco distribute, use
+the ++copy-collects flag to include the copied libraries in the distribution.
+
+3.1 API for Distributing Executables
+
+ (require compiler/distribute)
+The compiler/distribute library provides a function to perform the same work as
+raco distribute.
+
+(assemble-distribution    dest-dir                      
+                          exec-files                    
+                        [ #:collects-path path          
+                          #:copy-collects dirs])   →   void?
+  dest-dir : path-string?
+  exec-files : (listof path-string?)
+  path : (or/c false/c (and/c path-string? relative-path?)) = #f
+  dirs : (listof path-string?) = null
+Copies the executables in exec-files to the directory dest-dir, along with
+DLLs, frameworks, and/or shared libraries that the executables need to run a
+different machine.
+
+The arrangement of the executables and support files in dest-dir depends on the
+platform. In general assemble-distribution tries to do the Right Thing.
+
+If a #:collects-path argument is given, it overrides the default location of
+the main "collects" directory for the packaged executables. It should be
+relative to the dest-dir directory (typically inside it).
+
+The content of each directory in the #:copy-collects argument is copied into
+the main "collects" directory for the packaged executables.
+
+3.2 API for Bundling Distributions
+
+ (require compiler/bundle-dist)
+The compiler/bundle-dist library provides a function to pack a directory
+(usually assembled by assemble-distribution) into a distribution file. On
+Windows, the result is a ".zip" archive; on Mac OS X, it’s a ".dmg" disk image;
+on Unix, it’s a ".tgz" archive.
+
+(bundle-directory dist-file dir [for-exe?]) → void?
+  dist-file : file-path?
+  dir : file-path?
+  for-exe? : any/c = #f
+Packages dir into dist-file. If dist-file has no extension, a file extension is
+added automatcially (using the first result of
+bundle-put-file-extension+style+filters).
+
+The created archive contains a directory with the same name as dir—except on
+Mac OS X when for-exe? is true and dir contains a single a single file or
+directory, in which case the created disk image contains just the file or
+directory. The default for for-exe? is #f.
+
+Archive creation fails if dist-file exists.
+
+(bundle-put-file-extension+style+filters)
+      (or/c string? false/c)
+  →   (listof (one-of/c 'packages 'enter-packages))
+      (listof (list/c string? string?))
+Returns three values suitable for use as the extension, style, and filters
+arguments to put-file, respectively to select a distribution-file name.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

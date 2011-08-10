@@ -1,0 +1,42 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 5  Internal APIs
+5.1  Timers
+5.2  Connection Manager
+5.3  Serializable Closures
+5.4  Cache Table
+5.5  MIME Types
+5.6  Serialization Utilities
+5.7  URL Param
+5.8  GZip
+On this page:
+compress-serial
+decompress-serial
+[...search manuals...]
+  top← prev  up  next → 
+
+5.6 Serialization Utilities
+
+ (require web-server/private/mod-map)
+The racket/serialize library provides the functionality of serializing values.
+This module compresses the serialized representation.
+
+(compress-serial sv) → list?
+  sv : list?
+Collapses multiple occurrences of the same module in the module map of the
+serialized representation, sv.
+
+(decompress-serial csv) → list?
+  csv : list?
+Expands multiple occurrences of the same module in the module map of the
+compressed serialized representation, csv.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

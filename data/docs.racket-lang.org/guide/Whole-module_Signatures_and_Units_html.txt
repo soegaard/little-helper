@@ -1,0 +1,83 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 14  Units (Components)
+14.1  Signatures and Units
+14.2  Invoking Units
+14.3  Linking Units
+14.4  First-Class Units
+14.5  Whole-module Signatures and Units
+14.6  Contracts for Units
+14.7  unit versus module
+[...search manuals...]
+  top← prev  up  next → 
+
+14.5 Whole-module Signatures and Units
+
+In programs that use units, modules like "toy-factory-sig.rkt" and
+"simple-factory-unit.rkt" are common. The racket/signature and racket/unit
+module names can be used as languages to avoid much of the boilerplate module,
+signature, and unit declaration text.
+
+For example, "toy-factory-sig.rkt" can be written as
+
+    #lang racket/signature
+     
+    build-toys  ; (integer? -> (listof toy?))
+    repaint     ; (toy? symbol? -> toy?)
+    toy?        ; (any/c -> boolean?)
+    toy-color   ; (toy? -> symbol?)
+
+The signature toy-factory^ is automatically provided from the module, inferred
+from the filename "toy-factory-sig.rkt" by replacing the "-sig.rkt" suffix with
+^.
+
+Similarly, "simple-factory-unit.rkt" module can be written
+
+    #lang racket/unit
+     
+    (require "toy-factory-sig.rkt")
+     
+    (import)
+    (export toy-factory^)
+     
+    (printf "Factory started.\n")
+     
+    (define-struct toy (color) #:transparent)
+     
+    (define (build-toys n)
+      (for/list ([i (in-range n)])
+        (make-toy 'blue)))
+     
+    (define (repaint t col)
+      (make-toy col))
+
+The unit simple-factory@ is automatically provided from the module, inferred
+from the filename "simple-factory-unit.rkt" by replacing the "-unit.rkt" suffix
+with @.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

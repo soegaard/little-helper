@@ -1,0 +1,327 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+On this page:
+set
+seteqv
+seteq
+set-empty?
+set-count
+set-member?
+set-add
+set-remove
+set-union
+set-intersect
+set-subtract
+set-symmetric-difference
+set=?
+subset?
+proper-subset?
+set-map
+set-for-each
+set?
+set-equal?
+set-eqv?
+set-eq?
+set/ c
+in-set
+for/ set
+for/ seteq
+for/ seteqv
+for*/ set
+for*/ seteq
+for*/ seteqv
+list->set
+list->seteq
+list->seteqv
+set->list
+[...search manuals...]
+  top← prev  up  next → 
+
+3.16 Sets
+
+A set represents a set of distinct elements. For a given set, elements are
+equivalent via equal?, eqv?, or eq?. Two sets are equal? when they use the same
+element-comparison procedure (equal?, eqv?, or eq?) and have equivalent
+elements.
+
+A set can be used as a single-valued sequence (see Sequences). The elements of
+the set serve as elements of the sequence. See also in-set.
+
+Operations on sets that contain elements that are mutated are unpredictable in
+much the same way that hash table operations are unpredictable when keys are
+mutated.
+
+ (require racket/set)
+The bindings documented in this section are provided by the racket/set and
+racket libraries, but not racket/base.
+
+(set v ...) → set?
+  v : any/c
+(seteqv v ...) → set?
+  v : any/c
+(seteq v ...) → set?
+  v : any/c
+Creates a set that uses equal?, eq?, or eqv?, respectively, to compare
+elements. The given vs are added to the set. The elements are added in the
+order that they appear as vs, so in the first two cases, an earlier element
+that is equal? or eqv? but not eq? to a later element takes precedence over the
+later element.
+
+(set-empty? st) → boolean?
+  st : set?
+Returns #t if st has no members, #f otherwise.
+
+(set-count st) → exact-nonnegative-integer?
+  st : set?
+Returns the number of elements in st.
+
+(set-member? st v) → boolean?
+  st : set?
+  v : any/c
+Returns #t if v is in st, #f otherwise.
+
+(set-add st v) → set?
+  st : set?
+  v : any/c
+
+
+            Like operations on immutable hash tables, “constant time” set
+            operations actually require O(log N) time for a set of size N.
+
+Produces a set that includes v plus all elements of st. This operation runs in
+constant time.
+
+(set-remove st v) → set?
+  st : set?
+  v : any/c
+Produces a set that includes all elements of st except v. This operation runs
+in constant time.
+
+(set-union st ...+) → set?
+  st : set?
+Produces a set that includes all elements of all given sts, which must all use
+the same equivalence predicate (equal?, eq?, or eqv?). This operation runs in
+time proportional to the total size of all given sts except for the largest.
+
+At least one set must be provided to set-union even though mathematically
+set-union could accept zero arguments. Since there are multiple types of sets (
+eq?, eqv?, and equal?) there is no obvious choice for a default empty set to be
+returned. If there is a case where set-union may be applied to zero arguments,
+instead pass an empty set of the type you desire.
+
+Examples:
+
+    > (set-union (set))
+    #<set:>
+
+    > (set-union (seteq))
+    #<seteq:>
+
+    > (set-union (set 1) (set 2))
+    #<set: 1 2>
+
+    > (set-union (set 1) (seteq 2))
+    set-union: set's equivalence predicate is not the same as
+
+    the first set: (seteq 2)
+
+    ; Sets of different types cannot be unioned
+
+
+(set-intersect st ...+) → set?
+  st : set?
+Produces a set that includes only the elements in all of the given sts, which
+must all use the same equivalence predicate (equal?, eq?, or eqv?). This
+operation runs in time proportional to the total size of all given sts except
+for the largest.
+
+(set-subtract st ...+) → set?
+  st : set?
+Produces a set that includes all elements the first sts that are not present in
+any of the other given stss. All of the given sts must use the same equivalence
+predicate (equal?, eq?, or eqv?). This operation runs in time proportional to
+the total size of all given sts except the first one.
+
+(set-symmetric-difference st ...+) → set?
+  st : set?
+Produces a set containing only those elements found in each st an odd number of
+times. All of the given sts must use the same equivalence predicate (equal?,
+eq?, or eqv?). This operation runs in time proportional to the total size of
+all given sts except the first one.
+
+Example:
+
+    > (set-symmetric-difference (set 1) (set 1 2) (set 1 2 3))
+    #<set: 1 3>
+
+
+
+(set=? st st2) → boolean?
+  st : set?
+  st2 : set?
+Returns #t if st and st2 contain the same members, #f otherwise. The st and st2
+must use the same equivalence predicate (equal?, eq?, or eqv?). This operation
+runs in time proportional to the size of st.
+
+Equivalent to (equal? st st2).
+
+Examples:
+
+    > (set=? (set 1) (set 1 2 3))
+    #f
+
+    > (set=? (set 1 2 3) (set 1))
+    #f
+
+    > (set=? (set 1 2 3) (set 1 2 3))
+    #t
+
+
+
+(subset? st st2) → boolean?
+  st : set?
+  st2 : set?
+Returns #t if every member of st is in st2, #f otherwise. The st and st2 must
+use the same equivalence predicate (equal?, eq?, or eqv?). This operation runs
+in time proportional to the size of st.
+
+Examples:
+
+    > (subset? (set 1) (set 1 2 3))
+    #t
+
+    > (subset? (set 1 2 3) (set 1))
+    #f
+
+    > (subset? (set 1 2 3) (set 1 2 3))
+    #t
+
+
+
+(proper-subset? st st2) → boolean?
+  st : set?
+  st2 : set?
+Returns #t if every member of st is in st2 and there is some member of st2 that
+is not a member of st, #f otherwise. The st and st2 must use the same
+equivalence predicate (equal?, eq?, or eqv?). This operation runs in time
+proportional to the size of st.
+
+Examples:
+
+    > (proper-subset? (set 1) (set 1 2 3))
+    #t
+
+    > (proper-subset? (set 1 2 3) (set 1))
+    #f
+
+    > (proper-subset? (set 1 2 3) (set 1 2 3))
+    #f
+
+
+
+(set-map st proc) → (listof any/c)
+  st : set?
+  proc : (any/c . -> . any/c)
+Applies the procedure proc to each element in st in an unspecified order,
+accumulating the results into a list.
+
+(set-for-each st proc) → void?
+  st : set?
+  proc : (any/c . -> . any)
+Applies proc to each element in st (for the side-effects of proc) in an
+unspecified order.
+
+(set? v) → boolean?
+  v : any/c
+Returns #t if v is a set, #f otherwise.
+
+(set-equal? st) → boolean?
+  st : set?
+Returns #t if st compares elements with equal?, #f if it compares with eqv? or
+eq?.
+
+(set-eqv? st) → boolean?
+  st : set?
+Returns #t if st compares elements with eqv?, #f if it compares with equal? or
+eq?.
+
+(set-eq? st) → boolean?
+  st : set?
+Returns #t if st compares elements with eq?, #f if it compares with equal? or
+eqv?.
+
+(set/c contract [#:cmp cmp]) → contract?
+  contract : contract?
+  cmp : (or/c 'dont-care 'equal 'eqv 'eq) = 'dont-care
+Constructs a contract that recognizes sets whose elements match contract.
+
+If cmp is 'dont-care, then the equality notion of the set is not considered
+when checking the contract. Otherwise, the contract accepts only sets with the
+corresponding notion of equality.
+
+(in-set st) → sequence?
+  st : set?
+Explicitly converts a set to a sequence for use with for and other forms.
+
+(for/set (for-clause ...) body ...+)
+(for/seteq (for-clause ...) body ...+)
+(for/seteqv (for-clause ...) body ...+)
+(for*/set (for-clause ...) body ...+)
+(for*/seteq (for-clause ...) body ...+)
+(for*/seteqv (for-clause ...) body ...+)
+Analogous to for/list and for*/list, but to construct a set instead of a list.
+
+(list->set lst) → set?
+  lst : list?
+(list->seteq lst) → set?
+  lst : list?
+(list->seteqv lst) → set?
+  lst : list?
+Produces the appropriate type of set containing the elements of the given list.
+Equivalent to (apply set lst), (apply seteq lst), and (apply seteqv lst),
+respectively.
+
+(set->list st) → list?
+  st : set?
+Produces a list containing the elements of st.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

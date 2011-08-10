@@ -1,0 +1,28 @@
+▼  R5RS: Legacy Scheme
+1  Running R5RS Programs
+2  plt-r5rs
+3  R5RS Module Language
+4  R5RS Initialization Library
+[...search manuals...]
+  top← prev  up  next → 
+
+4 R5RS Initialization Library
+
+ (require r5rs/init)
+
+The r5rs/init module re-exports r5rs, and also sets parameters as follows:
+
+    (read-case-sensitive #f)
+    (read-accept-infix-dot #f)
+    (read-curly-brace-as-paren #f)
+    (read-square-bracket-as-paren #f)
+    (print-mpair-curly-braces #f)
+
+The side-effect of setting these parameters is useful when the module is
+required before loading an R5RS program, so that the reader and printer behave
+more as specified in R5RS. In particular, the plt-r5rs executable initializes
+by importing r5rs/init.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,157 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+▼ 4.3  Manual Forms
+ 4.3.1  Typesetting Code
+ 4.3.2  Documenting Modules
+ 4.3.3  Documenting Forms, Functions, Structure Types, and Values
+ 4.3.4  Documenting Classes and Interfaces
+ 4.3.5  Documenting Signatures
+ 4.3.6  Various String Forms
+ 4.3.7  Links
+ 4.3.8  Indexing
+ 4.3.9  Images
+4.3.10  Bibliography
+4.3.11  Miscellaneous
+4.3.12  Index-Entry Descriptions
+On this page:
+defmodule
+defmodulelang
+defmodulereader
+defmodule*
+defmodulelang*
+defmodulereader*
+defmodule*/ no-declare
+defmodulelang*/ no-declare
+defmodulereader*/ no-declare
+declare-exporting
+[...search manuals...]
+  top← prev  up  next → 
+
+4.3.2 Documenting Modules
+
+(defmodule maybe-req id maybe-sources pre-flow ...)
+ 
+    maybe-req   =  
+                |   #:require-form expr
+                     
+maybe-sources   =  
+                |   #:use-sources (mod-path ...)
+Produces a sequence of flow elements (encaptured in a splice) to start the
+documentation for a module that can be required using the path id. The decoded
+pre-flows introduce the module, but need not include all of the module content.
+
+Besides generating text, this form expands to a use of declare-exporting with
+id; the #:use-sources clause, if provided, is propagated to declare-exporting.
+Consequently, defmodule should be used at most once in a section, though it can
+be shadowed with defmodules in sub-sections.
+
+If a #:require-form clause is provided, the given expression produces an
+element to use instead of (racket require) for the declaration of the module.
+This is useful to suggest a different way of accessing the module instead of
+through require.
+
+Hyperlinks created by racketmodname are associated with the enclosing section,
+rather than the local id text.
+
+(defmodulelang id maybe-sources pre-flow ...)
+(defmodulelang content-expr #:module-paths (mod-path ...)
+               maybe-sources pre-flow ...)
+Like defmodule, but documents id as a module path suitable for use by either
+require or #lang. If the module path for require is syntactically different
+from the #lang form, use the #:module-paths to provide them separately.
+
+(defmodulereader id maybe-sources pre-flow ...)
+Like defmodule, but documents id as a module path suitable for use with #
+reader.
+
+(defmodule* maybe-req  (id ...+) maybe-sources pre-flow ...)
+(defmodulelang* (id ...+) maybe-sources pre-flow ...)
+(defmodulelang* (content-expr ...+) #:module-paths (mod-path ...+)
+                maybe-sources pre-flow ...)
+(defmodulereader* (id ...+) maybe-sources pre-flow ...)
+Like defmodule, etc., but introduces multiple module paths instead of just one.
+
+(defmodule*/no-declare maybe-req (id ...) pre-flow ...)
+(defmodulelang*/no-declare (id ...) pre-flow ...)
+(defmodulelang*/no-declare (content-expr ...)
+                           #:module-paths (mod-path ...+) pre-flow ...)
+(defmodulereader*/no-declare (id ...) pre-flow ...)
+Like defmodule*, etc., but without expanding to declare-exporting. Use this
+form when you want to provide a more specific list of modules (e.g., to name
+both a specific module and one that combines several modules) via your own
+declare-exporting declaration.
+
+(declare-exporting mod-path ... maybe-sources)
+ 
+maybe-sources   =  
+                |   #:use-sources (mod-path ...)
+Associates the mod-paths to all bindings defined within the enclosing section,
+except as overridden by other declare-exporting declarations in nested
+sub-sections. The list of mod-paths before #:use-sources is shown, for example,
+when the user hovers the mouse over one of the bindings defined within the
+section.
+
+More significantly, the first mod-path before #:use-sources plus the mod-paths
+after #:use-sources determine the binding that is documented by each defform,
+defproc, or similar form within the section that contains the declare-exporting
+declaration:
+
+  • If no #:use-sources clause is supplied, then the documentation applies to
+    the given name as exported by the first mod-path.
+
+  • If #:use-sources mod-paths are supplied, then they are tried in order
+    before the first mod-path. The mod-path that provides an export with the
+    same symbolic name and free-label-identifier=? to the given name is used as
+    the documented binding. This binding is assumed to be the same as the
+    identifier as exported by the first mod-path in the declare-exporting
+    declaration.
+
+Use #:use-sources sparingly, but it is needed when
+
+  • bindings are documented as originating from a module M, but the bindings
+    are actually re-exported from some module P; and
+
+  • other documented modules also re-export the bindings from P, but they are
+    documented as re-exporting from M.
+
+For example, the parameterize binding of mzscheme is documented as re-exported
+from racket/base, but parameterize happens to be implemented in a private
+module and re-exported by both racket/base and mzscheme. Importing parameterize
+from mzscheme does not go through racket/base, so a search for documentation on
+parameterize in mzscheme would not automatically connect to the documentation
+of racket/base. To make the connection, the documentation of racket/base
+declares the private module to be a source through #:use-sources, so that any
+re-export of parameterize from the private module connects to the documentation
+for racket/base (unless a re-export has its own documentation, which would
+override the automatic connection when searching for documentation).
+
+The initial mod-paths sequence can be empty if mod-paths are given with
+#:use-sources. In that case, the rendered documentation never reports an
+exporting module for identifiers that are documented within the section, but
+the mod-paths in #:use-sources provide a binding context for connecting (via
+hyperlinks) definitions and uses of identifiers.
+
+The declare-exporting form should be used no more than once per section, since
+the declaration applies to the entire section, although overriding
+declare-exporting forms can appear in sub-sections.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

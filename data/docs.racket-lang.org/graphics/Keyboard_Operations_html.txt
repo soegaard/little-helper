@@ -1,0 +1,50 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+On this page:
+get-key-press
+ready-key-press
+key-value
+[...search manuals...]
+  top← prev  up  next → 
+
+11 Keyboard Operations
+
+The graphics library contains functions that report key presses from the
+keyboard. The functions get-key-press and ready-key-press return a “key-press
+descriptor,” and then key-value takes the descriptor and returns a character or
+symbol (usually a character) representing the key that was pressed. Key presses
+are buffered and returned in the same order in which they occurred. Thus, the
+descriptors returned by get-key-press and ready-key-press may be from presses
+that occurred long before these functions were called.
+
+(get-key-press viewport) → key-press?
+  viewport : viewport?
+Returns the next key press in the viewport, waiting for a key press if
+necessary.
+
+(ready-key-press viewport) → key-press?
+  viewport : viewport?
+Returns the next key press in the viewport or returns #f if none is available.
+Unlike get-key-press, ready-key-press always returns immediately.
+
+(key-value key-press) → (or/c character? symbol?)
+  key-press : key-press?
+Returns a character or special symbol for the key that was pressed. For
+example, the Enter key generates #\return, and the up-arrow key generates 'up.
+For a complete list of possible return values, see get-key-code.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

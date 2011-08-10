@@ -1,0 +1,104 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+get-circles
+get-stops
+[...search manuals...]
+  top← prev  up  next → 
+
+radial-gradient% : class?
+  superclass: object%
+
+A radial gradient is used with a brush% to fill areas, such as the interior of
+a rectangle or ellipse, with smooth color transitions.
+
+Colors transitions are based on two circles and the sequence of circles that
+“morph” from the starting circle to the ending circle. Colors are assigned to
+stop circles in the sequence, and the colors of the start and end circles
+radiate inward and outward to points that are not on any intermediate circles.
+
+(new radial-gradient%   [x0 x0]         
+                        [y0 y0]         
+                        [r0 r0]         
+                        [x1 x1]         
+                        [y1 y1]         
+                        [r1 r1]         
+                        [stops stops])  
+ → (is-a?/c radial-gradient%)
+  x0 : real?
+  y0 : real?
+  r0 : real?
+  x1 : real?
+  y1 : real?
+  r1 : real?
+  stops : (listof (list/c (real-in 0 1) (is-a?/c color%)))
+Creates a radial gradient with the starting circle as the one with radius r0
+centered at (x0, y0) and the ending circle as the one with radius r1 centered
+at (x1, y1). The stops list assigns colors to circles, where 0.0 corresponds to
+the starting circle, 1.0 corresponds to the ending circle, and numbers in
+between correspond to circles in between.
+
+Examples:
+
+    > (define no-pen (make-object pen% "BLACK" 1 'transparent))
+    > (define brush-grad (new brush% [gradient (new radial-gradient%
+        [x0 400] [y0 150] [r0 10] [x1 400] [y1 150] [r1 100]
+        [stops
+          (list (list 0   (make-object color% 255 0 0))
+                (list 0.5 (make-object color% 0 255 0))
+                (list 1   (make-object color% 0 0 255)))])]))
+    > (define brush-grad2 (new brush% [gradient
+        (make-object radial-gradient% 150 150 0 150 150 100
+                     (list (list 0   (make-object color% 0 0 255))
+                           (list 0.5 (make-object color% 0 255 0))
+                           (list 1   (make-object color% 255 0 0))))]))
+    > (dc (lambda (dc x y)
+        (send dc set-pen no-pen)
+        (send dc set-brush brush-grad2)
+        (send dc draw-ellipse 50 50 200 200)
+      
+        (send dc set-brush brush-grad)
+        (send dc draw-rectangle 300 50 200 200)) 550 300)
+    image
+
+
+
+(send a-radial-gradient get-circles)
+  →   real?   real?   real?   real?   real?   real?
+Returns the gradient’s boundary circles as x0, y0, r0, x1, y1, and r1.
+
+(send a-radial-gradient get-stops)
+ → (listof (list/c (real-in 0 1) (is-a?/c color%)))
+Returns the gradient’s list of color stops.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

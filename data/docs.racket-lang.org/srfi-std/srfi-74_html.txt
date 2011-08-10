@@ -1,0 +1,306 @@
+Title
+
+Octet-Addressed Binary Blocks
+
+Authors
+
+Michael Sperber
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. To provide input on this SRFI, please
+mailto:srfi-74@srfi.schemers.org. See instructions here to subscribe to the
+list. You can access previous messages via the archive of the mailing list.
+
+  • Received: 2005/07/06
+  • Draft: 2005/07/06 - 2005/09/04
+  • Revised: 2005/07/22
+  • Revised: 2005/12/04
+  • Final: 2005/12/15
+
+Abstract
+
+This SRFI defines a set of procedures for creating, accessing, and manipulating
+octet-addressed blocks of binary data, in short, blobs. The SRFI provides
+access primitives for fixed-length integers of arbitrary size, with specified
+endianness, and a choice of unsigned and two's complement representations.
+
+Rationale
+
+Many applications must deal with blocks of binary data by accessing them in
+various ways---extracting signed or unsigned numbers of various sizes. Such an
+application can use octet vectors as in SRFI 66 or any of the other types of
+homogeneous vectors in SRFI 4, but these both only allow retrieving the binary
+data of one type.
+
+This is awkward in many situations, because an application might access
+different kinds of entities from a single binary block. Even for uniform
+blocks, the disjointness of the various vector data types in SRFI 4 means that,
+say, an I/O API needs to provide an army of procedures for each of them in
+order to provide efficient access to binary data.
+
+Therefore, this SRFI provides a single type for blocks of binary data with
+multiple ways to access that data. It deals only with integers in various sizes
+with specified endianness, because these are the most frequent applications.
+Dealing with other kinds of binary data, such as floating-point numbers or
+variable-size integers would be natural extensions, but are left for a future
+SRFI.
+
+Specification
+
+General remarks
+
+Blobs are objects of a new type. Conceptually, a blob represents a sequence of
+octets.
+
+Scheme systems implementing both SRFI 4 and/or SRFI 66 and this SRFI may or may
+not use the same type for u8vector and blobs. They are encouraged to do so,
+however.
+
+As with u8vectors, the length of a blob is the number of octets it contains.
+This number is fixed. A valid index into a blob is an exact, non-negative
+integer. The first octet of a blob has index 0, the last octet has an index one
+less than the length of the blob.
+
+Generally, the access procedures come in different flavors according to the
+size of the represented integer, and the endianness of the representation. The
+procedures also distinguish signed and unsigned representations. The signed
+representations all use two's complement.
+
+For procedures that have no "natural" return value, this SRFI often uses the
+sentence
+
+The return values are unspecified.
+
+This means that number of return values and the return values are unspecified.
+However, the number of return values is such that it is accepted by a
+continuation created by begin. Specifically, on Scheme implementations where
+continuations created by begin accept an arbitrary number of arguments (this
+includes most implementations), it is suggested that the procedure return zero
+return values.
+
+Interface
+
+(endianness big) (syntax)
+(endianness little) (syntax)
+(endianness native) (syntax)
+
+    (endianness big) and (endianness little) evaluate to two distinct and
+    unique objects representing an endianness. The native endianness evaluates
+    to the endianness of the underlying machine architecture, and must be eq?
+    to either (endianness big) or (endianness little).
+
+(blob? obj)
+
+    Returns #t if obj is a blob, otherwise returns #f.
+
+(make-blob k)
+
+    Returns a newly allocated blob of k octets, all of them 0.
+
+(blob-length blob)
+
+    Returns the number of octets in blob as an exact integer.
+
+(blob-u8-ref blob k)
+(blob-s8-ref blob k)
+
+    K must be a valid index of blob.
+
+    Blob-u8-ref returns the octet at index k of blob.
+
+    Blob-s8-ref returns the exact integer corresponding to the two's complement
+    representation at index k of blob.
+
+(blob-u8-set! blob k octet)
+(blob-s8-set! blob k byte)
+
+    K must be a valid index of blob.
+
+    Blob-u8-set! stores octet in element k of blob.
+
+    Byte, must be an exact integer in the interval {-128, ..., 127}.
+    Blob-u8-set! stores the two's complement representation of byte in element
+    k of blob.
+
+    The return values are unspecified.
+
+(blob-uint-ref size endianness blob k)
+(blob-sint-ref size endianness blob k)
+(blob-uint-set! size endianness blob k n)
+(blob-sint-set! size endianness blob k n)
+
+    Size must be a positive exact integer. K must be a valid index of blob; so
+    must the indices {k, ..., k + size - 1}. Endianness must be an endianness
+    object.
+
+    Blob-uint-ref retrieves the exact integer corresponding to the unsigned
+    representation of size size and specified by endianness at indices {k, ...,
+    k + size - 1}.
+
+    Blob-sint-ref retrieves the exact integer corresponding to the two's
+    complement representation of size size and specified by endianness at
+    indices {k, ..., k + size - 1}.
+
+    For blob-uint-set!, n must be an exact integer in the interval [0, (256^
+    size)-1]. Blob-uint-set! stores the unsigned representation of size size
+    and specified by endianness into the blob at indices {k, ..., k + size -
+    1}.
+
+    For blob-uint-set!, n must be an exact integer in the interval [-256^
+    (size-1), (256^(size-1))-1]. Blob-sint-set! stores the two's complement
+    representation of size size and specified by endianness into the blob at
+    indices {k, ..., k + size - 1}.
+
+(blob-u16-ref endianness blob k)
+(blob-s16-ref endianness blob k)
+(blob-u16-native-ref blob k)
+(blob-s16-native-ref blob k)
+(blob-u16-set! endianness blob k n)
+(blob-s16-set! endianness blob k n)
+(blob-u16-native-set! blob k n)
+(blob-s16-native-set! blob k n)
+
+    K must be a valid index of blob; so must the index k+ 1. Endianness must be
+    an endianness object.
+
+    These retrieve and set two-octet representations of numbers at indices k
+    and k+1, according to the endianness specified by endianness. The
+    procedures with u16 in their names deal with the unsigned representation,
+    those with s16 with the two's complement representation.
+
+    The procedures with native in their names employ the native endianness, and
+    only work at aligned indices: k must be a multiple of 2. It is an error to
+    use them at non-aligned indices.
+
+(blob-u32-ref endianness blob k)
+(blob-s32-ref endianness blob k)
+(blob-u32-native-ref blob k)
+(blob-s32-native-ref blob k)
+(blob-u32-set! endianness blob k n)
+(blob-s32-set! endianness blob k n)
+(blob-u32-native-set! blob k n)
+(blob-s32-native-set! blob k n)
+
+    K must be a valid index of blob; so must the indices {k, ..., k+ 3}.
+    Endianness must be an endianness object.
+
+    These retrieve and set four-octet representations of numbers at indices {k,
+    ..., k+ 3}, according to the endianness specified by endianness. The
+    procedures with u32 in their names deal with the unsigned representation,
+    those with s32 with the two's complement representation.
+
+    The procedures with native in their names employ the native endianness, and
+    only work at aligned indices: k must be a multiple of 4. It is an error to
+    use them at non-aligned indices.
+
+(blob-u64-ref endianness blob k)
+(blob-s64-ref endianness blob k)
+(blob-u64-native-ref blob k)
+(blob-s64-native-ref blob k)
+(blob-u64-set! endianness blob k n)
+(blob-s64-set! endianness blob k n)
+(blob-u64-native-set! blob k n)
+(blob-s64-native-set! blob k n)
+
+    K must be a valid index of blob; so must the indices {k, ..., k+ 7}.
+    Endianness must be an endianness object.
+
+    These retrieve and set eight-octet representations of numbers at indices
+    {k, ..., k+ 7}, according to the endianness specified by endianness. The
+    procedures with u64 in their names deal with the unsigned representation,
+    those with s64 with the two's complement representation.
+
+    The procedures with native in their names employ the native endianness, and
+    only work at aligned indices: k must be a multiple of 8. It is an error to
+    use them at non-aligned indices.
+
+(blob=? blob-1 blob-2)
+
+    Returns #t if blob-1 and blob-2 are equal---that is, if they have the same
+    length and equal octets at all valid indices.
+
+(blob-copy! source source-start target target-start n)
+
+    Copies data from blob source to blob target. Source-start, target-start,
+    and n must be non-negative exact integers that satisfy
+
+    0 <= source-start <= source-start + n <= (blob-length source)
+
+    0 <= target-start <= target-start + n <= (blob-length target)
+
+    This copies the octets from source at indices [source-start, source-start +
+    n) to consecutive indices in target starting at target-index.
+
+    This must work even if the memory regions for the source and the target
+    overlap, i.e., the octets at the target location after the copy must be
+    equal to the octets at the source location before the copy.
+
+    The return values are unspecified.
+
+(blob-copy blob)
+
+    Returns a newly allocated copy of blob blob.
+
+(blob->u8-list blob)
+(u8-list->blob blob)
+
+    blob->u8-listreturns a newly allocated list of the octets of blob in the
+    same order.
+
+    U8-list->blob returns a newly allocated blob whose elements are the
+    elements of list octets, which must all be octets, in the same order.
+    Analogous to list->vector.
+
+(blob->uint-list size endianness blob)
+(blob->sint-list size endianness blob)
+(uint-list->blob size endianness list)
+(sint-list->blob size endianness list)
+
+    Size must be a positive exact integer. Endianness must be an endianness
+    object.
+
+    These convert between lists of integers and their consecutive
+    representations according to size and endianness in blobs in the same way
+    as blob->u8-list, blob->s8-list, u8-list->blob, and s8-list->blob do for
+    one-octet representations.
+
+Reference Implementation
+
+This reference implementation makes use of SRFI 23 (Error reporting mechanism),
+SRFI 26 (Notation for Specializing Parameters without Currying), SRFI 60
+(Integers as Bits), and SRFI 66 (Octet Vectors) .
+
+Examples
+
+The test suite doubles as a source of examples.
+
+References
+
+  • SRFI 4 (Homogeneous numeric vector datatypes)
+  • SRFI 56 (Binary I/O)
+  • SRFI 66 (Octet Vectors)
+
+Copyright
+
+Copyright (C) Michael Sperber (2005). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: David Van Horn

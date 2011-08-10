@@ -1,0 +1,35 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 9  raco ctool: Working with C Code
+9.1  Compiling and Linking C Extensions
+9.2  Embedding Modules via C
+9.3  Compiling to Native Code via C
+9.4  API for Raw Compilation
+[...search manuals...]
+  top← prev  up  next → 
+
+9.2 Embedding Modules via C
+
+The --c-mods mode for raco ctool takes a set of Racket modules and generates a
+C source file that can be used as part of program that embeds the Racket
+run-time system. See Embedding Racket into a Program in Inside: Racket C API
+for an explanation of embedding programs.
+
+The generated source file embeds the specified modules, and it defines a
+declare_modules function that puts the module declarations into a namespace.
+Thus, using the output of raco ctool --c-mods, a program can embed Racket with
+a set of modules so that it does not need a "collects" directory to load
+modules at run time.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

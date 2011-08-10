@@ -1,0 +1,114 @@
+▼  Scheme: Compatibility Libraries and Executables
+ 1  scheme
+ 2  scheme/ base
+ 3  scheme/ async-channel
+ 4  scheme/ bool
+ 5  scheme/ class
+ 6  scheme/ cmdline
+ 7  scheme/ contract
+ 8  scheme/ control
+ 9  scheme/ date
+10  scheme/ dict
+11  scheme/ file
+12  scheme/ fixnum
+13  scheme/ flonum
+14  scheme/ foreign
+15  scheme/ function
+16  scheme/ future
+17  scheme/ generator
+18  scheme/ gui
+19  scheme/ gui/ base
+20  scheme/ gui/ dynamic
+21  scheme/ help
+22  scheme/ include
+23  scheme/ init
+24  scheme/ language-info
+25  scheme/ list
+26  scheme/ load
+27  scheme/ local
+28  scheme/ match
+29  scheme/ math
+30  scheme/ mpair
+31  scheme/ nest
+32  scheme/ package
+33  scheme/ path
+34  scheme/ port
+35  scheme/ pretty
+36  scheme/ promise
+37  scheme/ provide
+38  scheme/ provide-syntax
+39  scheme/ provide-transform
+40  scheme/ require
+41  scheme/ require-syntax
+42  scheme/ require-transform
+43  scheme/ runtime-config
+44  scheme/ runtime-path
+45  scheme/ sandbox
+46  scheme/ serialize
+47  scheme/ set
+48  scheme/ signature
+49  scheme/ shared
+50  scheme/ splicing
+51  scheme/ string
+52  scheme/ struct-info
+53  scheme/ stxparam
+54  scheme/ stxparam-exptime
+55  scheme/ surrogate
+56  scheme/ system
+57  scheme/ tcp
+58  scheme/ trait
+59  scheme/ udp
+60  scheme/ unit
+61  scheme/ unit-exptime
+62  scheme/ unsafe/ ops
+63  scheme/ vector
+64  mred
+65  Compatibility Executables
+On this page:
+nest
+[...search manuals...]
+  top← prev  up  next → 
+
+31 scheme/nest
+
+ (require scheme/nest)
+
+(nest ([datum ...+] ...) body ...+)
+Combines nested expressions that syntactically drift to the right into a more
+linear textual format, much in the same way that let* linearizes a sequence of
+nested let expressions.
+
+For example,
+
+    (nest ([let ([x 10]
+                 [y 6])]
+           [with-handlers ([exn:fail? (lambda (x) 15)])]
+           [parameterize ([current-output-port (current-error-port)])]
+           [let-values ([(d r) (quotient/remainder x y)])])
+      (display (+ d r)))
+
+is equivalent to
+
+    (let ([x 10]
+          [y 6])
+      (with-handlers ([exn:fail? (lambda (x) 15)])
+        (parameterize ([current-output-port (current-error-port)])
+          (let-values ([(d r) (quotient/remainder x y)])
+            (display (+ d r))))))
+
+The nest form is unusual in that it has no semantics apart from its expansion,
+and its implementation is easier to understand than a precise prose
+description:
+
+    (define-syntax nest
+      (syntax-rules ()
+        [(nest () body0 body ...)
+         (let () body0 body ...)]
+        [(nest ([form forms ...]) body0 body ...)
+         (form forms ... (let () body0 body ...))]
+        [(nest ([form forms ...] . more) body0 body ...)
+         (form forms ... (nest more body0 body ...))]))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

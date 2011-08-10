@@ -1,0 +1,102 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+▼ 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Parsing and specifying syntax
+
+The syntax/parse library provides a framework for writing macros and processing
+syntax. The library provides a powerful language of syntax patterns, used by
+the pattern-matching form syntax-parse and the specification form
+define-syntax-class. Macros that use syntax-parse automatically generate error
+messages based on descriptions and messages embedded in the macro’s syntax
+patterns.
+ (require syntax/parse)
+
+    8.1 Introduction
+
+    8.2 Examples
+
+      8.2.1 Modules and reusable syntax classes
+
+      8.2.2 Optional keyword arguments
+
+      8.2.3 Variants with uniform meanings
+
+      8.2.4 Variants with varied meanings
+
+        8.2.4.1 Syntactic normalization
+
+        8.2.4.2 Non-syntax-valued attributes
+
+      8.2.5 More keyword arguments
+
+      8.2.6 Contracts on macro sub-expressions
+
+    8.3 Parsing syntax
+
+    8.4 Specifying syntax with syntax classes
+
+      8.4.1 Pattern directives
+
+      8.4.2 Pattern variables and attributes
+
+    8.5 Syntax patterns
+
+      8.5.1 Single-term patterns
+
+      8.5.2 Head patterns
+
+      8.5.3 Ellipsis-head patterns
+
+      8.5.4 Action patterns
+
+    8.6 Defining simple macros
+
+    8.7 Literal sets and Conventions
+
+    8.8 Library syntax classes and literal sets
+
+      8.8.1 Syntax classes
+
+      8.8.2 Literal sets
+
+    8.9 Debugging and inspection tools
+
+    8.10 Experimental
+
+      8.10.1 Contracts for macro sub-expressions
+
+      8.10.2 Contracts for syntax classes
+
+      8.10.3 Reflection
+
+      8.10.4 Procedural splicing syntax classes
+
+      8.10.5 Ellipsis-head alternative sets
+
+      8.10.6 Syntax class specialization
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

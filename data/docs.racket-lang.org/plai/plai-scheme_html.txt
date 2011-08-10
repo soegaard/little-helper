@@ -1,0 +1,188 @@
+▼  Programming Languages: Application and Interpretation
+1  PLAI Scheme
+2  GC Collector Scheme
+3  GC Mutator Scheme
+4  Web Application Scheme
+► 1  PLAI Scheme
+1.1  Defining Types: define-type
+1.2  Deconstructing Data Structures: type-case
+1.3  Testing Infrastructure
+On this page:
+1.1 Defining Types: define-type
+define-type
+1.2 Deconstructing Data Structures: type-case
+type-case
+1.3 Testing Infrastructure
+test
+test/ pred
+error
+test/ exn
+test/ regexp
+1.3.1 Test Flags
+abridged-test-output
+plai-catch-test-exn
+halt-on-errors
+print-only-errors
+test-inexact-epsilon
+plai-ignore-exn-strings
+plai-all-test-results
+[...search manuals...]
+  top← prev  up  next → 
+
+1 PLAI Scheme
+
+ #lang plai
+
+PLAI Scheme is derived from the scheme langauge. In addition, it includes the
+define-type and type-case forms and testing support.
+
+1.1 Defining Types: define-type
+
+(define-type type-id variant ...)
+ 
+variant   =   (variant-id (field-id contract-expr) ...)
+Defines the datatype type-id. A constructor variant-id is defined for each
+variant. Each constructor takes an argument for each field of its variant.
+
+The value of each field is checked by its associated contract-expr. A
+contract-expr may be an arbitrary predicate or a contract.
+
+In addition to the contructors, a define-type expression also defines:
+
+  • a predicate type-id? that returns true for instances of the datatype, and
+    false for any other value,
+
+  • for each variant, a predicate variant-id? that returns true when applied to
+    a value of the same variant and false for any other value,
+
+  • for each field of each variant, an accessor variant-id-field-id that
+    returns the value of the field, and
+
+  • for each field of each variant, a mutator set-variant-id-field-id! that set
+    the value of the field.
+
+1.2 Deconstructing Data Structures: type-case
+
+(type-case datatype-id expr
+   branch ...)
+ 
+branch   =   (variant-id (field-id ...) result-expr ...)
+         |   (else result-expr ...)
+Branches on the datatype instance produced by expr, which must be an instance
+of datatype-id (previously defined with define-type) Each branch extracts the
+values of the fields, and binds them to field-id ....
+
+If a branch is not specified for each variant, you may use an else branch to
+create a catch-all branch. An else branch must be the last branch in the
+sequence of branches. type-case signals a compile-time error if all variants
+are not covered and the else branch is missing. Similarly, type-case signals a
+compile-time error if an else branch is unreachable because a branch exists for
+all variants.
+
+1.3 Testing Infrastructure
+
+PLAI Scheme provides the following syntactic forms for testing.
+
+(test result-expr expected-expr)
+If result-expr and expected-expr evaluate to the same value, result-value, the
+test prints
+
+(good result-expr result-value expected-value location).
+
+If they do not evaluate to the same value, the test prints
+
+(bad result-expr result-value expected-value location).
+
+If evaluating result-expr signals an error, the test prints
+
+(exception result-expr exception-message <no-expected-value> location)
+
+If evaluating expected-expr signals an error, the test prints
+
+(pred-exception result-expr exception-message <no-expected-value> location)
+
+(test/pred result-expr pred?)
+Similar to test, but instead of supplying an expected value, the predicate
+pred? is applied to result-expr.
+
+If evaluating pred? signals an error, the test prints
+
+(pred-exception result-expr exception-message <no-expected-value> location)
+
+The syntax of pred? is considered expected-value for the purposes of test
+reporting.
+
+error : procedure?
+Like scheme’s scheme:error, but generates exceptions that are caught by test/
+exn.
+
+(test/exn result-expr error-message)
+This test succeeds if the expression evaluates to a call to error. Moreover,
+the error message contained in the exception must contain the string
+error-message. Note that test/exn only succeeds if the exception was explicitly
+raised by the user.
+
+For example, the following test succeeds:
+
+    (test/exn (error "/: division by zero") "by zero")
+
+The error message is "/: division by zero", and "by zero" is a substring of the
+error message. However, the following test fails:
+
+    (test/exn (/ 25 0) "by zero")
+
+Although the expression raises an exception and the error string contains "by
+zero", since the error was not explicitly raised by user-written code, the test
+fails.
+
+The evaluation of error-message is considered expected-value for the purposes
+of test reporting.
+
+(test/regexp result-expr error-message-regexp)
+This test is similar to test/exn,but the error message is matched against a
+regular expression instead.
+
+The evaluation of error-message-regexp is considered expected-value for the
+purposes of test reporting.
+
+1.3.1 Test Flags
+
+(abridged-test-output [abridge?]) → void?
+  abridge? : boolean? = false
+When this flag is set to true, the test forms never prints result-expr or
+location.
+
+(plai-catch-test-exn [catch?]) → void?
+  catch? : boolean? = true
+When this flag is set to true, exceptions from tests will be caught. By
+default, exceptions are caught.
+
+(halt-on-errors [halt?]) → void?
+  halt? : boolean? = true
+This flag determines whether the program immediately halts when a test fails.
+By default, programs do not halt on failures.
+
+(print-only-errors [print?]) → void?
+  print? : boolean? = true
+When this flag is set to true, only tests that fail will be printed. By
+default, the results of all tests are printed.
+
+(test-inexact-epsilon epsilon) → void?
+  epsilon : number?
+When testing inexact values for equality, test permits them to differ by
+epsilon. The default value of epsilon is 0.01.
+
+(plai-ignore-exn-strings ignore?) → void?
+  ignore? : boolean?
+If this flag is set to true, when testing for exceptions with test/exn and test
+/regexp, the message of the exception is ignored. By default, test/exn and test
+/regexp only succeed when the message of the exception matches the supplied
+string or regular expression.
+
+plai-all-test-results
+This variable is the list of all tests that have been run so far, with the most
+recent test at the head.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

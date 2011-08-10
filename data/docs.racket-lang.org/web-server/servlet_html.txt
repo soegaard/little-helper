@@ -1,0 +1,569 @@
+▼  Web Applications in Racket
+1  Running Web Servlets
+2  Stateful Servlets
+3  Stateless Servlets
+4  HTTP: Hypertext Transfer Protocol
+5  URL-Based Dispatch
+6  Formlets: Functional Form Abstraction
+7  Templates: Separation of View
+8  Page: Short-hand for Common Patterns
+9  Troubleshooting and Tips
+   Index
+► 2  Stateful Servlets
+2.1  Example
+2.2  Responses
+2.3  Web Interaction
+2.4  Web Cells
+2.5  Continuation Managers
+On this page:
+2.1 Example
+interface-version
+manager
+start
+2.2 Responses
+can-be-response?
+any->response
+set-any->response!
+2.3 Web Interaction
+send/ back
+send/ suspend
+send/ suspend/ url
+send/ suspend/ dispatch
+send/ suspend/ url/ dispatch
+send/ forward
+send/ finish
+redirect/ get
+redirect/ get/ forget
+current-servlet-continuation-expiration-handler
+clear-continuation-table!
+with-errors-to-browser
+adjust-timeout!
+continuation-url?
+servlet-prompt
+2.4 Web Cells
+web-cell?
+make-web-cell
+web-cell-ref
+web-cell-shadow
+2.5 Continuation Managers
+2.5.1 General
+manager
+exn: fail: servlet-manager: no-instance
+exn: fail: servlet-manager: no-continuation
+2.5.2 No Continuations
+create-none-manager
+2.5.3 Timeouts
+create-timeout-manager
+2.5.4 LRU
+create-LRU-manager
+make-threshold-LRU-manager
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Stateful Servlets
+
+ (require web-server/servlet)
+
+A stateful servlet should provide the following exports:
+
+interface-version : (one-of/c 'v2)
+This indicates that the servlet is a version two servlet.
+
+manager : manager?
+The manager for the continuations of this servlet. See Continuation Managers
+for options.
+
+(start initial-request) → can-be-response?
+  initial-request : request?
+This function is called when an instance of this servlet is started. The
+argument is the HTTP request that initiated the instance.
+
+An example version 2 module:
+
+    #lang racket
+    (require web-server/managers/none)
+    (provide interface-version manager start)
+     
+    (define interface-version 'v2)
+    (define manager
+      (create-none-manager
+       (lambda (req)
+         (response/xexpr
+          `(html (head (title "No Continuations Here!"))
+                 (body (h1 "No Continuations Here!")))))))
+    (define (start req)
+      (response/xexpr
+       `(html (head (title "Hello World!"))
+              (body (h1 "Hi Mom!")))))
+
+These servlets have an extensive API available to them: net/url, web-server/
+http, web-server/http/bindings, web-server/servlet/servlet-structs, web-server/
+servlet/web, web-server/servlet/web-cells, and web-server/dispatch. Some of
+these are documented in the subsections that follow.
+
+2.2 Responses
+
+ (require web-server/servlet/servlet-structs)
+Servlets communicate to the Web Server by returning HTTP responses. In order to
+accommodate lightweight programs (and backwards compatibility), the Web Server
+provides an indirection from application-specific response formats and the
+internal HTTP response format, response.
+
+(can-be-response? x) → boolean?
+  x : any/c
+(any->response x) → (or/c false/c response?)
+  x : any/c
+(set-any->response! new-any->response) → void
+  new-any->response : (-> any/c (or/c false/c response?))
+any->response coerces any value into a response or returns #f if coercion is
+not possible. any->response guarantees that any response? input must always be
+returned exactly (i.e. eq?.) The default always returns #f, signifying that no
+coercion is possible.
+
+can-be-response? returns #t if x is a response or can be turned into a response
+by calling any->response.
+Users of any->response should protect themselves by using can-be-response? as a
+contract. If they do so, they can safely ignore the #f return case of any->
+response.
+set-any->response! replaces the global any->response with the supplied
+argument. This function should return the same value for eq? inputs to ensure
+that can-be-response? is any accurate predicate. Similarly, this function
+should be cheap to call multiple times on the same input, since it will be used
+in contract checking as well as coercion before transmission. You may want to
+use a weak eq?-based hash-table to cache the results for this purpose. (See
+make-weak-hasheq.)
+
+2.3 Web Interaction
+
+ (require web-server/servlet/web)
+The web-server/servlet/web library provides the primary functions of interest
+for the servlet developer.
+
+(send/back response) → void?
+  response : can-be-response?
+Sends response to the client. No continuation is captured, so the servlet is
+done.
+
+Example:
+
+    (send/back
+     (response/xexpr
+      `(html
+        (body
+         (h1 "The sum is: "
+             ,(+ first-number
+                 second-number))))))
+
+(send/suspend make-response) → request?
+  make-response : (string? . -> . can-be-response?)
+Captures the current continuation, stores it with exp as the expiration
+handler, and binds it to a URL. make-response is called with this URL and is
+expected to generate a can-be-response?, which is sent to the client. If the
+continuation URL is invoked, the captured continuation is invoked and the
+request is returned from this call to send/suspend.
+
+Example:
+
+    (send/suspend
+     (lambda (k-url)
+       (response/xexpr
+        `(html (head (title "Enter a number"))
+               (body
+                (form ([action ,k-url])
+                      "Enter a number: "
+                      (input ([name "number"]))
+                      (input ([type "submit"]))))))))
+
+When this form is submitted by the browser, the request will be sent to the URL
+generated by send/suspend. Thus, the request will be “returned” from send/
+suspend to the continuation of this call.
+
+(send/suspend/url make-response) → request?
+  make-response : (url? . -> . can-be-response?)
+Like send/suspend but with a URL struct.
+
+(send/suspend/dispatch make-response) → any
+  make-response : (((request? . -> . any) . -> . string?) . -> . 
+can-be-response?)
+Calls make-response with a function (embed/url) that, when called with a
+procedure from request? to any/c will generate a URL, that when invoked will
+call the function with the request? object and return the result to the caller
+of send/suspend/dispatch. Therefore, if you pass embed/url the identity
+function, send/suspend/dispatch devolves into send/suspend:
+
+    (define (send/suspend response-generator)
+      (send/suspend/dispatch
+       (lambda (embed/url)
+         (response-generator (embed/url (lambda (x) x))))))
+
+Use send/suspend/dispatch when there are multiple `logical’ continuations of a
+page. For example, we could either add to a number or subtract from it:
+
+    (define (count-dot-com i)
+      (count-dot-com
+       (send/suspend/dispatch
+        (lambda (embed/url)
+          (response/xexpr
+           `(html
+             (head (title "Count!"))
+             (body
+              (h2 (a ([href
+                       ,(embed/url
+                         (lambda (req)
+                           (sub1 i)))])
+                     "-"))
+              (h1 ,(number->string i))
+              (h2 (a ([href
+                       ,(embed/url
+                         (lambda (req)
+                           (add1 i)))])
+                     "+")))))))))
+
+Notice that in this example the result of the handlers are returned to the
+continuation of send/suspend/dispatch. However, it is very common that the
+return value of send/suspend/dispatch is irrelevant in your application and you
+may think of it as “embedding” value-less callbacks. Here is the same example
+in this style:
+
+    (define (count-dot-com i)
+      (send/suspend/dispatch
+       (lambda (embed/url)
+         (response/xexpr
+          `(html
+            (head (title "Count!"))
+            (body
+             (h2 (a ([href
+                      ,(embed/url
+                        (lambda (req)
+                          (count-dot-com (sub1 i))))])
+                    "-"))
+             (h1 ,(number->string i))
+             (h2 (a ([href
+                      ,(embed/url
+                        (lambda (req)
+                          (count-dot-com (add1 i))))])
+                    "+"))))))))
+
+(send/suspend/url/dispatch make-response) → any
+  make-response : (((request? . -> . any) . -> . url?) . -> . can-be-response?)
+Like send/suspend/dispatch, but with a URL struct.
+
+(send/forward make-response) → request?
+  make-response : (string? . -> . can-be-response?)
+Calls clear-continuation-table!, then send/suspend.
+
+Use this if the user can logically go `forward’ in your application, but cannot
+go backward.
+
+(send/finish response) → void?
+  response : can-be-response?
+Calls clear-continuation-table!, then send/back.
+
+Use this if the user is truly `done’ with your application. For example, it may
+be used to display the post-logout page:
+
+    (send/finish
+     (response/xexpr
+      `(html (head (title "Logged out"))
+             (body (p "Thank you for using the services "
+                      "of the Add Two Numbers, Inc.")))))
+
+(redirect/get [#:headers hs]) → request?
+  hs : (listof header?) = empty
+Calls send/suspend with redirect-to, passing hs as the headers.
+
+This implements the Post-Redirect-Get pattern. Use this to prevent the Refresh
+button from duplicating effects, such as adding items to a database.
+
+(redirect/get/forget [#:headers hs]) → request?
+  hs : (listof header?) = empty
+Calls send/forward with redirect-to, passing hs as the headers.
+
+                                                    (parameter/c (or/c false/c
+current-servlet-continuation-expiration-handler  :                     (
+                                                    request? . -> . 
+                                                    can-be-response?)))
+Holds the expiration handler to be used when a continuation captured in this
+context is expired, then looked up.
+
+Example:
+
+    (parameterize
+        ([current-servlet-continuation-expiration-handler
+          (lambda (req)
+            (response/xexpr
+             `(html (head (title "Custom Expiration!")))))])
+      (send/suspend
+       ....))
+
+(clear-continuation-table!) → void?
+Calls the servlet’s manager’s clear-continuation-table! function. Normally,
+this deletes all the previously captured continuations.
+
+(with-errors-to-browser   send/finish-or-back        
+                          thunk)                →   any
+  send/finish-or-back : (can-be-response? . -> . request?)
+  thunk : (-> any)
+Calls thunk with an exception handler that generates an HTML error page and
+calls send/finish-or-back.
+
+Example:
+
+    (with-errors-to-browser
+     send/back
+     (lambda ()
+       (/ 1 (get-number (request-number)))))
+
+(adjust-timeout! t) → void?
+  t : number?
+Calls the servlet’s manager’s adjust-timeout! function.
+
+Warning: This is deprecated and will be removed in a future release.
+
+(continuation-url? u)
+ → (or/c false/c (list/c number? number? number?))
+  u : url?
+Checks if u is a URL that refers to a continuation, if so returns the instance
+id, continuation id, and nonce.
+
+servlet-prompt : continuation-prompt-tag?
+The tag used for Web interaction continuation capture.
+
+2.4 Web Cells
+
+ (require web-server/servlet/web-cells)
+The web-server/servlet/web-cells library provides the interface to Web cells.
+A Web cell is a kind of state defined relative to the frame tree. The
+frame-tree is a mirror of the user’s browsing session. Every time a
+continuation is invoked, a new frame (called the current frame) is created as a
+child of the current frame when the continuation was captured.
+You should use Web cells if you want an effect to be encapsulated in all
+interactions linked from (in a transitive sense) the HTTP response being
+generated. For more information on their semantics, consult the paper
+"Interaction-Safe State for the Web".
+
+(web-cell? v) → boolean?
+  v : any/c
+Determines if v is a web-cell.
+
+(make-web-cell v) → web-cell?
+  v : any/c
+Creates a web-cell with a default value of v.
+
+(web-cell-ref wc) → any/c
+  wc : web-cell?
+Looks up the value of wc found in the nearest frame.
+
+(web-cell-shadow wc v) → void
+  wc : web-cell?
+  v : any/c
+Binds wc to v in the current frame, shadowing any other bindings to wc in the
+current frame.
+
+Below is an extended example that demonstrates how Web cells allow the creation
+of reusable Web abstractions without requiring global transformations of the
+program into continuation or store passing style.
+
+    #lang web-server/insta
+     
+    (define (start initial-request)
+     (define counter1 (make-counter))
+     (define counter2 (make-counter))
+     (define include1 (include-counter counter1))
+     (define include2 (include-counter counter2))
+     (send/suspend/dispatch
+      (lambda (embed/url)
+        (response/xexpr
+         `(html
+           (body (h2 "Double Counters")
+                 (div (h3 "First")
+                      ,(include1 embed/url))
+                 (div (h3 "Second")
+                      ,(include2 embed/url))))))))
+     
+    (define (make-counter)
+     (make-web-cell 0))
+     
+    (define (include-counter a-counter)
+     (call-with-current-continuation
+      (λ (k)
+        (let loop ()
+          (k
+           (lambda (embed/url)
+             `(div (h3 ,(number->string (web-cell-ref a-counter)))
+                   (a ([href
+                        ,(embed/url
+                          (lambda _
+     
+                            (define last (web-cell-ref a-counter))
+     
+                            (web-cell-shadow a-counter (add1 last))
+     
+                            (loop)))])
+                      "+"))))))
+      servlet-prompt))
+
+2.5 Continuation Managers
+
+Since Racket servlets store their continuations on the server, they take up
+memory on the server. Furthermore, garbage collection can not be used to free
+this memory, because there are roots outside the system: users’ browsers,
+bookmarks, brains, and notebooks. Therefore, some other strategy must be used
+if memory usage is to be controlled. This functionality is pluggable through
+the manager interface.
+
+2.5.1 General
+
+ (require web-server/managers/manager)
+This module defines the manager interface. It is required by the users and
+implementers of managers.
+
+(struct   manager   ( create-instance
+                      adjust-timeout!
+                      clear-continuations!
+                      continuation-store!
+                      continuation-lookup
+                      continuation-peek)
+          #:extra-constructor-name make-manager)
+  create-instance : ((-> void) . -> . number?)
+  adjust-timeout! : (number? number? . -> . void)
+  clear-continuations! : (number? . -> . void)
+                             (number? any/c
+   continuation-store!   :            (or/c false/c
+                                            (request? . -> . can-be-response?))
+                                      . -> . (list/c number? number?))
+  continuation-lookup : (number? number? number? . -> . any/c)
+  continuation-peek : (number? number? number? . -> . any/c)
+create-instance is called to initialize a instance, to hold the continuations
+of one servlet session. It is passed a function to call when the instance is
+expired. It runs the id of the instance.
+
+adjust-timeout! is a to-be-deprecated function that takes an instance-id and a
+number. It is specific to the timeout-based manager and will be removed.
+clear-continuations! expires all the continuations of an instance.
+continuation-store! is given an instance-id, a continuation value, and a
+function to include in the exception thrown if the continuation is looked up
+and has been expired. The two numbers returned are a continuation-id and a
+nonce.
+continuation-lookup finds the continuation value associated with the
+instance-id, continuation-id, and nonce triple it is given.
+continuation-peek is identical to continuation-lookup except that its use must
+not affect the resource management policy decisions on the instance or
+continuation accessed. It is intended to be used by debuggers and benchmarks.
+
+(struct   exn:fail:servlet-manager:no-instance exn:fail  ( expiration-handler
+          #:extra-constructor-name make-exn:fail:servlet-manager:no-instance)
+   expiration-handler   :   (or/c false/c
+                                  (request? . -> . can-be-response?))
+This exception should be thrown by a manager when an instance is looked up that
+does not exist.
+
+(struct   exn:fail:servlet-manager:no-continuation exn:fail  ( expiration-handler
+          #:extra-constructor-name make-exn:fail:servlet-manager:no-continuation)
+   expiration-handler   :   (or/c false/c
+                                  (request? . -> . can-be-response?))
+This exception should be thrown by a manager when a continuation is looked up
+that does not exist.
+
+2.5.2 No Continuations
+
+ (require web-server/managers/none)
+This module defines a manager constructor:
+
+(create-none-manager instance-expiration-handler) → manager?
+   instance-expiration-handler   :   (or/c false/c
+                                           (request? . -> . can-be-response?))
+This manager does not actually store any continuation or instance data. You
+could use it if you know your servlet does not use the continuation capturing
+functions and want the server to not allocate meta-data structures for each
+instance.
+
+If you do use a continuation capturing function, the continuation is simply not
+stored. If the URL is visited, the instance-expiration-handler is called with
+the request.
+If you are considering using this manager, also consider using the Web
+Language. (See Stateless Servlets.)
+
+2.5.3 Timeouts
+
+ (require web-server/managers/timeouts)
+This module defines a manager constructor:
+
+(create-timeout-manager   instance-exp-handler         
+                          instance-timeout             
+                          continuation-timeout)   →   manager?
+   instance-exp-handler   :   (or/c false/c
+                                    (request? . -> . can-be-response?))
+  instance-timeout : number?
+  continuation-timeout : number?
+Instances managed by this manager will be expired instance-timeout seconds
+after the last time it is accessed. If an expired instance is looked up, the
+exn:fail:servlet-manager:no-instance exception is thrown with
+instance-exp-handler as the expiration handler.
+
+Continuations managed by this manager will be expired continuation-timeout
+seconds after the last time it is accessed. If an expired continuation is
+looked up, the exn:fail:servlet-manager:no-continuation exception is thrown
+with instance-exp-handler as the expiration handler, if no expiration-handler
+was passed to continuation-store!.
+adjust-timeout! corresponds to reset-timer! on the timer responsible for the
+servlet instance.
+This manager has been found to be... problematic... in large-scale deployments
+of the Web Server .
+
+2.5.4 LRU
+
+ (require web-server/managers/lru)
+This module defines a manager constructor:
+
+(create-LRU-manager    instance-expiration-handler          
+                       check-interval                       
+                       collect-interval                     
+                       collect?                             
+                     [ #:initial-count initial-count        
+                       #:inform-p inform-p])           →   manager?
+   instance-expiration-handler   :   (or/c false/c
+                                           (request? . -> . can-be-response?))
+  check-interval : integer?
+  collect-interval : integer?
+  collect? : (-> boolean?)
+  initial-count : integer? = 1
+  inform-p : (integer? . -> . void) = (lambda _ (void))
+Instances managed by this manager will be expired if there are no continuations
+associated with them, after the instance is unlocked. If an expired instance is
+looked up, the exn:fail:servlet-manager:no-instance exception is thrown with
+instance-exp-handler as the expiration handler.
+
+Continuations managed by this manager are given a "Life Count" of initial-count
+initially. If an expired continuation is looked up, the
+exn:fail:servlet-manager:no-continuation exception is thrown with
+instance-exp-handler as the expiration handler, if no expiration-handler was
+passed to continuation-store!.
+Every check-interval seconds collect? is called to determine if the collection
+routine should be run. Every collect-interval seconds the collection routine is
+run.
+Every time the collection routine runs, the "Life Count" of every continuation
+is decremented by 1. If a continuation’s count reaches 0, it is expired. The
+inform-p function is called if any continuations are expired, with the number
+of continuations expired.
+The recommended usage of this manager is codified as the following function:
+
+(make-threshold-LRU-manager   instance-expiration-handler  
+                              memory-threshold)            
+ → manager?
+   instance-expiration-handler   :   (or/c false/c
+                                           (request? . -> . can-be-response?))
+  memory-threshold : number?
+This creates an LRU manager with the following behavior: The memory limit is
+set to memory-threshold bytes. Continuations start with 24 life points. Life
+points are deducted at the rate of one every 10 minutes, or one every 5 seconds
+when the memory limit is exceeded. Hence the maximum life time for a
+continuation is 4 hours, and the minimum is 2 minutes.
+
+If the load on the server spikes—as indicated by memory usage—the server will
+quickly expire continuations, until the memory is back under control. If the
+load stays low, it will still efficiently expire old continuations.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

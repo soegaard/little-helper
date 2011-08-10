@@ -1,0 +1,30 @@
+▼  Parser Tools: lex and yacc-style Parsing
+1  Lexers
+2  Parsers
+3  Converting yacc or bison Grammars
+   Index
+On this page:
+trans
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Converting yacc or bison Grammars
+
+ (require parser-tools/yacc-to-scheme)
+
+(trans file) → any/c
+  file : path-string?
+Reads a C yacc/bison grammar from file and produces an s-expression that
+represents a Racket parser for use with parser.
+
+This function is intended to assist in the manual conversion of grammars for
+use with parser, and not as a fully automatic conversion tool. It is not
+entirely robust. For example, if the C actions in the original grammar have
+nested blocks, the tool will fail.
+
+Annotated examples are in the "examples" subdirectory of the "parser-tools"
+collection.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

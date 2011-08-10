@@ -1,0 +1,46 @@
+►  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+▼ 1  Containers
+1.1  aligned-pasteboard%
+1.2  alignment<%>
+1.3  alignment-parent<%>
+1.4  stretchable-snip<%>
+1.5  horizontal-alignment%
+1.6  vertical-alignment%
+1.7  dllist<%>
+On this page:
+next
+prev
+for-each
+map-to-list
+[...search manuals...]
+  top← prev  up  next → 
+
+dllist<%> : interface?
+Defines a doubly-linked.
+
+(send a-dllist next) → (is-a?/c dllist<%>)
+(send a-dllist next new-next) → void?
+  new-next : (is-a?/c dllist<%>)
+Gets/sets the next field to be the given dllist.
+
+(send a-dllist prev) → (is-a?/c dllist<%>)
+(send a-dllist prev new-prev) → void?
+  new-prev : (is-a?/c dllist<%>)
+Gets/sets the previous item in the list.
+
+(send a-dllist for-each f) → void?
+  f : ((is-a?/c dllist<%>) . -> . void?)
+Applies f to every element of the dllist.
+
+(send a-dllist map-to-list f) → (listof any/c)
+  f : ((is-a?/c dllist<%>) . -> . any/c)
+Creates a Scheme list by applying f to every element of a-dllist.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

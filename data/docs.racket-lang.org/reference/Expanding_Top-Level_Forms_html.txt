@@ -1,0 +1,157 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 11  Macros
+ 11.1  Pattern-Based Syntax Matching
+ 11.2  Syntax Object Content
+ 11.3  Syntax Object Bindings
+ 11.4  Syntax Transformers
+ 11.5  Syntax Parameters
+ 11.6  Local Binding with Splicing Body
+ 11.7  Syntax Object Properties
+ 11.8  Syntax Taints
+ 11.9  Expanding Top-Level Forms
+11.10  File Inclusion
+11.11  Syntax Utilities
+► 11.9  Expanding Top-Level Forms
+11.9.1  Information on Expanded Modules
+On this page:
+expand
+expand-syntax
+expand-once
+expand-syntax-once
+expand-to-top-form
+expand-syntax-to-top-form
+11.9.1 Information on Expanded Modules
+[...search manuals...]
+  top← prev  up  next → 
+
+11.9 Expanding Top-Level Forms
+
+(expand top-level-form) → syntax?
+  top-level-form : any/c
+Expands all non-primitive syntax in top-level-form, and returns a syntax object
+for the expanded form that contains only core forms, matching the grammar
+specified by Fully Expanded Programs.
+
+Before top-level-form is expanded, its lexical context is enriched with
+namespace-syntax-introduce, just as for eval. Use syntax->datum to convert the
+returned syntax object into a printable datum.
+
+Here’s an example of using expand on a module:
+
+    (parameterize ([current-namespace (make-base-namespace)])
+     (expand
+      (datum->syntax
+       #f
+       '(module foo scheme
+          (define a 3)
+          (+ a 4)))))
+
+Here’s an example of using expand on a non-top-level form:
+
+    (define-namespace-anchor anchor)
+    (parameterize ([current-namespace
+                    (namespace-anchor->namespace anchor)])
+     (expand
+      (datum->syntax
+       #f
+       '(delay (+ 1 2)))))
+
+(expand-syntax stx) → syntax?
+  stx : syntax?
+Like (expand stx), except that the argument must be a syntax object, and its
+lexical context is not enriched before expansion.
+
+(expand-once top-level-form) → syntax?
+  top-level-form : any/c
+Partially expands top-level-form and returns a syntax object for the
+partially-expanded expression. Due to limitations in the expansion mechanism,
+some context information may be lost. In particular, calling expand-once on the
+result may produce a result that is different from expansion via expand.
+
+Before top-level-form is expanded, its lexical context is enriched with
+namespace-syntax-introduce, as for eval.
+
+(expand-syntax-once stx) → syntax?
+  stx : syntax?
+Like (expand-once stx), except that the argument must be a syntax object, and
+its lexical context is not enriched before expansion.
+
+(expand-to-top-form top-level-form) → syntax?
+  top-level-form : any/c
+Partially expands top-level-form to reveal the outermost syntactic form. This
+partial expansion is mainly useful for detecting top-level uses of begin.
+Unlike the result of expand-once, expanding the result of expand-to-top-form
+with expand produces the same result as using expand on the original syntax.
+
+Before stx-or-sexpr is expanded, its lexical context is enriched with
+namespace-syntax-introduce, as for eval.
+
+(expand-syntax-to-top-form stx) → syntax?
+  stx : syntax?
+Like (expand-to-top-form stx), except that the argument must be a syntax object
+, and its lexical context is not enriched before expansion.
+
+11.9.1 Information on Expanded Modules
+
+Information for an expanded module declaration is stored in a set of syntax
+properties (see Syntax Object Properties) attached to the syntax object:
+
+  • 'module-direct-requires — a list of module path indexes (or symbols)
+    representing the modules explicitly imported into the module.
+
+  • 'module-direct-for-syntax-requires — a list of module path indexes (or
+    symbols) representing the modules explicitly for-syntax imported into the
+    module.
+
+  • 'module-direct-for-template-requires — a list of module path indexes (or
+    symbols) representing the modules explicitly for-template imported into the
+    module.
+
+  • 'module-variable-provides — a list of provided items, where each item is
+    one of the following:
+
+      □ symbol — represents a locally defined variable that is provided with
+        its defined name.
+
+      □ (cons provided-sym defined-sym) — represents a locally defined variable
+        that is provided with renaming; the first symbol is the exported name,
+        and the second symbol is the defined name.
+
+      □ (list* module-path-index provided-sym defined-sym) — represents a
+        re-exported and possibly re-named variable from the specified module;
+        module-path-index is either a module path index or symbol (see Compiled
+        Modules and References), indicating the source module for the binding.
+        The provided-sym is the external name for the re-export, and
+        defined-sym is the originally defined name in the module specified by
+        module-path-index.
+
+  • 'module-syntax-provides — like 'module-variable-provides, but for syntax
+    exports instead of variable exports.
+
+  • 'module-indirect-provides — a list of symbols for variables that are
+    defined in the module but not exported; they may be exported indirectly
+    through macro expansions. Definitions of macro-generated identifiers create
+    uninterned symbols in this list.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

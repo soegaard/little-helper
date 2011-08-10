@@ -1,0 +1,611 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 3  High-Level Scribble API
+3.1  Base Document Format
+3.2  Racket Manual Format
+3.3  SIGPLAN Paper Format
+3.4  JFP Paper Format
+3.5  LNCS Paper Format
+► 3.1  Base Document Format
+3.1.1  Document Structure
+3.1.2  Blocks
+3.1.3  Text Styles and Content
+3.1.4  Spacing
+3.1.5  Links
+3.1.6  Indexing
+3.1.7  Tables of Contents
+On this page:
+3.1.1 Document Structure
+title
+section
+subsection
+subsubsection
+subsubsub*section
+include-section
+author
+author+ email
+3.1.2 Blocks
+para
+nested
+centered
+margin-note
+margin-note*
+itemlist
+item
+item?
+tabular
+verbatim
+3.1.3 Text Styles and Content
+elem
+italic
+bold
+tt
+subscript
+superscript
+smaller
+larger
+emph
+literal
+image
+3.1.4 Spacing
+linebreak
+nonbreaking
+hspace
+~
+-~-
+?-
+._
+._ _
+3.1.5 Links
+hyperlink
+url
+secref
+Secref
+seclink
+other-doc
+elemtag
+elemref
+module-path-prefix->string
+3.1.6 Indexing
+index
+index*
+as-index
+section-index
+index-section
+3.1.7 Tables of Contents
+table-of-contents
+local-table-of-contents
+[...search manuals...]
+  top← prev  up  next → 
+
+3.1 Base Document Format
+
+ #lang scribble/base
+The scribble/base language provides functions and forms that can be used from
+code written either in Racket or with @ expressions. It essentially extends
+racket/base, except that top-level forms within a module using the scribble/
+base language are treated as document content (like scribble/doclang).
+The scribble/base name can also be used as a library with require, in which
+case it provides only the bindings defined in this section, and it also does
+not set the reader or set the default rendering format to the Racket manual
+format.
+
+Functions provided by this library, such as title and italic, might be called
+from Racket as
+
+    (title #:tag "how-to"
+           "How to Design " (italic "Great") " Programs")
+
+They can also be called with @ notation as
+
+  @title[#:tag "how-to"]{How to Design @italic{Great} Programs}
+
+
+Although the procedures are mostly design to be used from @ mode, they are
+easier to document in Racket mode (partly because we have scribble/manual).
+
+3.1.1 Document Structure
+
+(title  [ #:tag tag                      
+          #:tag-prefix tag-prefix        
+          #:style style                  
+          #:version vers                 
+          #:date date]                   
+          pre-content ...+)         →   title-decl?
+  tag : (or/c false/c string? (listof string?)) = #f
+  tag-prefix : (or/c false/c string? module-path?) = #f
+  style : (or/c style? #f string? symbol? (listof symbol?)) = #f
+  vers : (or/c string? false/c) = #f
+  date : (or/c string? false/c) = #f
+  pre-content : pre-content?
+Generates a title-decl to be picked up by decode or decode-part. The decoded
+pre-content (i.e., parsed with decode-content) supplies the title content. If
+tag is #f, a tag string is generated automatically from the content. The tag
+string is combined with the symbol 'part to form the full tag.
+
+The style argument can be a style structure, or it can be one of the following:
+a #f that corresponds to a “plain” style, a string that is used as a style name
+, a symbol that is used as a style property, or a list of symbols to be used as
+style properties. For information on styles, see part. For example, a style of
+'toc causes sub-sections to be generated as separate pages in multi-page HTML
+output.
+
+The tag-prefix argument is propagated to the generated structure (see Tags). If
+tag-prefix is a module path, it is converted to a string using
+module-path-prefix->string.
+
+The vers argument is propagated to the title-decl structure. Use "" as vers to
+suppress version rendering in the output.
+
+The date argument is propagated to the title-decl structure via a document-date
+style property. Use "" as date to suppress date rendering in Latex output.
+
+The section title is automatically indexed by decode-part. For the index key,
+leading whitespace and a leading “A”, “An”, or “The” (followed by more
+whitespace) is removed.
+
+(section  [ #:tag tag                      
+            #:tag-prefix tag-prefix        
+            #:style style]                 
+            pre-content ...+)         →   part-start?
+  tag : (or/c false/c string? (listof string?)) = #f
+  tag-prefix : (or/c false/c string? module-path?) = #f
+  style : (or/c style? #f string? symbol? (listof symbol?)) = #f
+  pre-content : pre-content?
+Like title, but generates a part-start of depth 0 to be by decode or
+decode-part.
+
+(subsection  [ #:tag tag                      
+               #:tag-prefix tag-prefix        
+               #:style style]                 
+               pre-content ...+)         →   part-start?
+  tag : (or/c false/c string? (listof string?)) = #f
+  tag-prefix : (or/c false/c string? module-path?) = #f
+  style : (or/c style? #f string? symbol? (listof symbol?)) = #f
+  pre-content : pre-content?
+Like section, but generates a part-start of depth 1.
+
+(subsubsection  [ #:tag tag                      
+                  #:tag-prefix tag-prefix        
+                  #:style style]                 
+                  pre-content ...+)         →   part-start?
+  tag : (or/c false/c string? (listof string?)) = #f
+  tag-prefix : (or/c false/c string? module-path?) = #f
+  style : (or/c style? #f string? symbol? (listof symbol?)) = #f
+  pre-content : pre-content?
+Like section, but generates a part-start of depth 2.
+
+(subsubsub*section  [ #:tag tag                      
+                      #:tag-prefix tag-prefix        
+                      #:style style]                 
+                      pre-content ...+)         →   paragraph?
+  tag : (or/c false/c string? (listof string?)) = #f
+  tag-prefix : (or/c false/c string? module-path?) = #f
+  style : (or/c style? #f string? symbol? (listof symbol?)) = #f
+  pre-content : pre-content?
+Similar to section, but merely generates a paragraph that looks like an
+unnumbered section heading (for when the nesting gets too deep to include in a
+table of contents).
+
+(include-section module-path)
+Requires module-path and returns its doc export (without making any imports
+visible to the enclosing context). Since this form expands to require, it must
+be used in a module or top-level context.
+
+(author auth ...) → block?
+  auth : content?
+Generates a paragraph with style name 'author to show the author(s) of a
+document, where each author is represented by content. Normally, this function
+is used after title for the beginning of a document. See also author+email.
+
+(author+email    author                           
+                 email                            
+               [ #:obfuscate? obfuscate?])   →   element?
+  author : elem
+  email : string?
+  obfuscate? : any/c = #f
+Combines an author name with an e-mail address. If obfuscate? is true, then the
+result obscures the e-mail address slightly to avoid address-harvesting robots.
+
+3.1.2 Blocks
+
+(para #:style style pre-content ...) → paragraph?
+  style : (or/c style? string? symbol? #f)
+  pre-content : pre-content?
+Creates a paragraph containing the decoded pre-content (i.e., parsed with
+decode-paragraph).
+
+The style argument can be a style, #f to indicate a “plain” style, a string
+that is used as a style name, or a symbol that is used as a style name. (Note
+that section and para treat symbols differently as style arguments.)
+
+(nested #:style style pre-flow ...) → nested-flow?
+  style : (or/c style? string? symbol? #f)
+  pre-flow : pre-flow?
+Creates a nested flow containing the decoded pre-flow (i.e., parsed with
+decode-flow).
+
+The style argument is handled the same as para. The 'inset and 'code-inset
+styles cause the nested flow to be inset compared to surrounding text, with the
+latter particularly intended for insetting code.
+
+(centered pre-flow ...) → nested-flow?
+  pre-flow : pre-flow?
+Produces a nested flow whose content is centered.
+
+(margin-note pre-flow ... [#:left? left?]) → block?
+  pre-flow : pre-flow?
+  left? : any/c = #f
+Produces a nested flow that is typeset in the margin, instead of inlined.
+
+If left? is true, then the note is shown on the opposite as it would normally
+be shown (which is the left-hand side for HTML output). Beware of colliding
+with output for a table of contents.
+
+(margin-note* pre-content ... [#:left? left?]) → element?
+  pre-content : pre-content?
+  left? : any/c = #f
+Produces an element that is typeset in the margin, instead of inlined. Unlike
+margin-note, margin-note* can be used in the middle of a paragraph; at the same
+time, its content is constrained to form a single paragraph in the margin.
+
+(itemlist itm ... [#:style style]) → itemization?
+  itm : item?
+  style : (or/c style? string? symbol? #f) = #f
+Constructs an itemization given a sequence of items constructed by item.
+
+The style argument is handled the same as para. The 'ordered style numbers
+items, instead of just using a bullet.
+
+(item pre-flow ...) → item?
+  pre-flow : pre-flow?
+Creates an item for use with itemlist. The decoded pre-flow (i.e., parsed with
+decode-flow) is the item content.
+
+(item? v) → boolean?
+  v : any/c
+Returns #t if v is an item produced by item, #f otherwise.
+
+(tabular cells [#:style style]) → table?
+  cells : (listof (listof (or/c block? content? 'cont)))
+  style : (or/c style? string? symbol? #f) = #f
+Creates a table with the given content, which is supplies as a list of rows,
+where each row has a list of cells. The length of all rows must match.
+
+Use 'cont as a cell to continue the content of the preceding cell in a row in
+the space that would otherwise be used for a new cell. A 'cont must not appear
+as the first cell in a row.
+
+The style argument is handled the same as para.
+
+(verbatim [#:indent indent] str ...+) → block?
+  indent : exact-nonnegative-integer? = 0
+  str : string?
+Typesets strs in typewriter font with the linebreaks specified by newline
+characters in str. Consecutive spaces in the strs are converted to hspace to
+ensure that they are all preserved in the output. Additional space (via hspace)
+as specified by indent is added to the beginning of each line.
+
+The strs are not decoded with decode-content, so (verbatim "---") renders with
+three hyphens instead of an em dash. Beware, however, that reading @verbatim
+converts @ syntax within the argument, and such reading occurs well before
+arguments to verbatim are delivered at run-time. To disable simple @ notation
+within the verbatim argument, verbatim is typically used with |{...}| or
+similar brackets, like this:
+
+  @verbatim|{
+
+    Use @bold{---} like this...
+
+  }|
+
+
+which renders as
+
+  Use @bold{---} like this...
+
+
+Even with |{...}|, beware that consistent leading whitespace is removed by the
+parser; see Alternative Body Syntax for more information.
+
+See also literal.
+
+3.1.3 Text Styles and Content
+
+(elem pre-content ... [#:style style]) → element?
+  pre-content : pre-content?
+  style : (or style? string? symbol? #f) = #f
+Wraps the decoded pre-content as an element with style style.
+
+(italic pre-content ...) → element?
+  pre-content : pre-content?
+Like elem, but with style 'italic.
+(bold pre-content ...) → element?
+  pre-content : pre-content?
+Like elem, but with style 'bold.
+(tt pre-content ...) → element?
+  pre-content : pre-content?
+Like elem, but with style 'tt.
+(subscript pre-content ...) → element?
+  pre-content : pre-content?
+Like elem, but with style 'subscript.
+(superscript pre-content ...) → element?
+  pre-content : pre-content?
+Like elem, but with style 'superscript.
+
+(smaller pre-content ...) → element?
+  pre-content : pre-content?
+Like elem, but with style 'smaller. When uses of smaller are nested, text gets
+progressively smaller.
+
+(larger pre-content ...) → element?
+  pre-content : pre-content?
+Like elem, but with style 'larger. When uses of larger are nested, text gets
+progressively larger.
+
+(emph pre-content ...) → element?
+  pre-content : pre-content?
+The same as italic.
+
+(literal str ...+) → element?
+  str : string?
+Produces an element containing literally strs with no decoding via
+decode-content.
+
+Beware that @ for a literal call performs some processing before delivering
+arguments to literal. The literal form can be used with |{...}| or similar
+brackets to disable @ notation within the literal argument, like this:
+
+  @literal|{@bold{---}}|
+
+
+which renders as
+
+  @literal|{@bold{---}}|
+
+
+See also verbatim.
+
+(image    path                        
+        [ #:scale scale               
+          #:suffixes suffixes]        
+          pre-content ...)       →   element?
+  path : (or/c path-string? (cons/c 'collects (listof bytes?)))
+  scale : real? = 1.0
+  suffixes : (listof #rx"^[.]") = null
+  pre-content : pre-content?
+Creates an image element from the given path. The decoded pre-content serves as
+the alternate text for contexts where the image cannot be displayed.
+
+The path is relative to the current directory, which is set by setup-plt and
+scribble to the directory of the main document file. The path argument also can
+be a result of path->main-collects-relative.
+
+The strings in suffixes are filtered to those supported by given renderer, and
+then the acceptable suffixes are tried in order. The HTML renderer supports
+".png", ".gif", and ".svg", while the Latex renderer supports ".png", ".pdf",
+and ".ps" (but ".ps" works only when converting Latex output to DVI, and ".png"
+and ".pdf" work only for converting Latex output to PDF).
+
+Note that when the suffixes library is non-empty, then the path argument should
+not have a suffix.
+
+3.1.4 Spacing
+
+(linebreak) → element?
+Produces an element that forces a line break.
+
+(nonbreaking pre-content ...) → element?
+  pre-content : pre-content?
+Like elem, but line breaks are suppressed while rendering the content.
+
+(hspace n) → element?
+  n : exact-nonnegative-integer?
+Produces an element containing n spaces and style 'hspace.
+
+~ : string?
+A string containing the non-breaking space character, which is equivalent to
+'nbsp as an element.
+
+-~- : string?
+A string containing the non-breaking hyphen character.
+
+?- : string?
+A string containing the soft-hyphen character (i.e., a suggestion of where to
+hyphenate a word to break it across lines when rendering).
+
+._ : element?
+Generates a period that ends an abbreviation in the middle of a sentence, as
+opposed to a period that ends a sentence (since the latter may be typeset with
+extra space). Use @._ in a document instead of just . for an
+abbreviation-ending period that is preceded by a lowercase letter and followed
+by a space.
+
+See .__ for an example.
+
+.__ : element?
+Generates a period that ends a sentence (which may be typeset with extra
+space), as opposed to a period that ends an abbreviation in the middle of a
+sentence. Use @.__ in a document instead of just . for a sentence-ending period
+that is preceded by an uppercase letter.
+
+The following example illustrates both ._ and .__:
+
+    #lang scribble/base
+    My name is Mr@._ T@.__ I pity the fool who can't typeset punctuation.
+
+3.1.5 Links
+
+(hyperlink    url                            
+              pre-content ...                
+            [ #:underline? underline?        
+              #:style style])           →   element?
+  url : string?
+  pre-content : pre-content?
+  underline? : any/c = #t
+   style   :   (or/c style? string? symbol? #f)
+           =   (if underline? #f "plainlink")
+The decoded pre-content is hyperlinked to url. If style is not supplied, then
+underline? determines how the link is rendered.
+
+(url dest) → element?
+  dest : string?
+Generates a literal hyperlinked URL.
+
+(secref    tag                              
+         [ #:doc module-path                
+           #:tag-prefixes prefixes          
+           #:underline? underline?])   →   element?
+  tag : string?
+  module-path : (or/c module-path? false/c) = #f
+  prefixes : (or/c (listof string?) false/c) = #f
+  underline? : any/c = #t
+Inserts a reference to the section tagged tag.
+
+If #:doc module-path is provided, the tag refers to a tag with a prefix
+determined by module-path. When setup-plt renders documentation, it
+automatically adds a tag prefix to the document based on the source module.
+Thus, for example, to refer to a section of the Racket reference, module-path
+would be '(lib "scribblings/reference/reference.scrbl").
+
+The #:tag-prefixes prefixes argument similarly supports selecting a particular
+section as determined by a path of tag prefixes. When a #:doc argument is
+provided, then prefixes should trace a path of tag-prefixed subsections to
+reach the tag section. When #:doc is not provided, the prefixes path is
+relative to any enclosing section (i.e., the youngest ancestor that produces a
+match).
+
+For HTML output, the generated reference is the hyperlinked title of the
+elements in the section’s title content, except that elements with the 'aux
+style property are omitted in the hyperlink label. If underline? is #f, then
+the hyperlink is rendered in HTML without an underline.
+
+For Latex output, the generated reference’s format depends on the document
+style. By default, only the section number is shown in the reference, but the
+scribble/manual style shows the title after the section number. Customize the
+output (see Extending and Configuring Scribble Output) by redefining the \
+BookRef, etc., macros (see Predefined Latex Macros).
+
+(Secref    tag                              
+         [ #:doc module-path                
+           #:tag-prefixes prefixes          
+           #:underline? underline?])   →   element?
+  tag : string?
+  module-path : (or/c module-path? false/c) = #f
+  prefixes : (or/c (listof string?) false/c) = #f
+  underline? : any/c = #t
+Like secref, but if the rendered form of the reference starts with a word
+(e.g., “section”), then the word is capitalized.
+
+(seclink    tag                             
+          [ #:doc module-path               
+            #:tag-prefixes prefixes         
+            #:underline? underline?]        
+            pre-content ...)           →   element?
+  tag : string?
+  module-path : (or/c module-path? false/c) = #f
+  prefixes : (or/c (listof string?) false/c) = #f
+  underline? : any/c = #t
+  pre-content : pre-content?
+Like secref, but the link label is the decoded pre-content instead of the
+target section’s name.
+
+(other-doc    module-path                      
+            [ #:underline? underline?])   →   element?
+  module-path : module-path?
+  underline? : any/c = #t
+Like secref for the document’s implicit "top" tag. Use this function to refer
+to a whole manual instead of secref, in case a special style in the future is
+used for manual titles.
+
+(elemtag t pre-content ...) → element?
+  t : (or/c tag? string?)
+  pre-content : pre-content?
+The tag t refers to the content form of pre-content.
+
+(elemref    t                                
+            pre-content ...                  
+          [ #:underline? underline?])   →   element?
+  t : (or/c tag? string?)
+  pre-content : pre-content?
+  underline? : any/c = #t
+The decoded pre-content is hyperlinked to t, which is normally defined using
+elemtag.
+
+(module-path-prefix->string mod-path) → string?
+  mod-path : module-path?
+Converts a module path to a string by resolving it to a path, and using path->
+main-collects-relative.
+
+3.1.6 Indexing
+
+(index words pre-content ...) → index-element?
+  words : (or/c string? (listof string?))
+  pre-content : pre-content?
+Creates an index element given a plain-text string—or list of strings for a
+hierarchy, such as '("strings" "plain") for a “plain” entry below a more
+general “strings” entry. As index keys, the strings are “cleaned” using
+clean-up-index-strings. The strings (without clean-up) also serve as the text
+to render in the index. The decoded pre-content is the text to appear inline as
+the index target.
+
+Use index when an index entry should point to a specific word or phrase within
+the typeset document (i.e., the pre-content). Use section-index, instead, to
+create an index entry that leads to a section, instead of a specific word or
+phrase within the section.
+
+(index* words word-contents pre-content ...) → index-element?
+  words : (listof string?)
+  word-contents : (listof list?)
+  pre-content : pre-content?
+Like index, except that words must be a list, and the list of contents render
+in the index (in parallel to words) is supplied as word-contents.
+
+(as-index pre-content ...) → index-element?
+  pre-content : pre-content?
+Like index, but the word to index is determined by applying content->string on
+the decoded pre-content.
+
+(section-index word ...) → part-index-decl?
+  word : string?
+Creates a part-index-decl to be associated with the enclosing section by decode
+. The words serve as both the keys and as the rendered forms of the keys within
+the index.
+
+(index-section [#:tag tag]) → part?
+  tag : (or/c false/c string?) = "doc-index"
+Produces a part that shows the index the enclosing document. The optional tag
+argument is used as the index section’s tag.
+
+3.1.7 Tables of Contents
+
+(table-of-contents) → delayed-block?
+Returns a delayed flow element that expands to a table of contents for the
+enclosing section. For Latex output, however, the table of contents currently
+spans the entire enclosing document.
+
+(local-table-of-contents [#:style style]) → delayed-block?
+  style : (or/c symbol? #f) = #f
+Returns a delayed flow element that may expand to a table of contents for the
+enclosing section, depending on the output type. For multi-page HTML output,
+the flow element is a table of contents; for Latex output, the flow element is
+empty.
+
+The meaning of the style argument depends on the output type, but
+'immediate-only normally creates a table of contents that contains only
+immediate sub-sections of the enclosing section. See also the 'quiet style of
+part (i.e., in a part structure, not supplied as the style argument to
+local-table-of-contents), which normally suppresses sub-part entries in a table
+of contents.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

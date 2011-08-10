@@ -1,0 +1,189 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+get-clipboard-bitmap
+get-clipboard-data
+get-clipboard-string
+same-clipboard-client?
+set-clipboard-bitmap
+set-clipboard-client
+set-clipboard-string
+[...search manuals...]
+  top← prev  up  next → 
+
+clipboard<%> : interface?
+A single clipboard<%> object, the-clipboard, manages the content of the
+system-wide clipboard for cut and paste.
+
+On Unix, a second clipboard<%> object, the-x-selection-clipboard, manages the
+content of the system-wide X11 selection. If the 'GRacket:selectionAsClipboard
+preference preference (see Preferences) is set to a non-zero true value,
+however, then the-clipboard is always the same as the-x-selection-clipboard,
+and the system-wide X11 clipboard is not used.
+
+On Windows and Mac OS X, the-x-selection-clipboard is always the same as
+the-clipboard.
+
+Data can be entered into a clipboard in one of two ways: by setting the current
+clipboard string or byte string, or by installing a clipboard-client% object.
+When a client is installed, requests for clipboard data are directed to the
+client.
+
+Generic data is always retrieved from the clipboard as a byte string. When
+retrieving clipboard data, a data type string specifies the format of the data
+string. The availability of different clipboard formats is determined by the
+current clipboard owner.
+
+(send a-clipboard get-clipboard-bitmap time)
+ → (or/c (is-a?/c bitmap%) false/c)
+  time : exact-integer?
+Gets the current clipboard contents as a bitmap (Windows, Mac OS X), returning
+#f if the clipboard does not contain a bitmap.
+
+See get-clipboard-data for information on eventspaces and the current clipboard
+client.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+(send a-clipboard get-clipboard-data   format  
+                                       time)   
+ → (or/c bytes? string? false/c)
+  format : string
+  time : exact-integer?
+Gets the current clipboard contents in a specific format, returning #f if the
+clipboard does not contain data in the requested format.
+
+If the clipboard client is associated to an eventspace that is not the current
+one, the data is retrieved through a callback event in the client’s eventspace.
+If no result is available within one second, the request is abandoned and #f is
+returned.
+
+See add-type in clipboard-client% for information on format.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+(send a-clipboard get-clipboard-string time)
+ → (or/c string false/c)
+  time : exact-integer?
+Gets the current clipboard contents as simple text, returning #f if the
+clipboard does not contain any text.
+
+See get-clipboard-data for information on eventspaces and the current clipboard
+client.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+(send a-clipboard same-clipboard-client? owner) → boolean?
+  owner : (is-a?/c clipboard-client%)
+Returns #t if owner currently owns the clipboard, #f otherwise.
+
+(send a-clipboard set-clipboard-bitmap   new-bitmap        
+                                         time)        →   void?
+  new-bitmap : (is-a?/c bitmap%)
+  time : exact-integer?
+Changes the current clipboard contents to new-bitmap (Windows, Mac OS X) and
+releases the current clipboard client (if any).
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+(send a-clipboard set-clipboard-client   new-owner        
+                                         time)       →   void?
+  new-owner : (is-a?/c clipboard-client%)
+  time : exact-integer?
+Changes the clipboard-owning client: sets the client to new-owner and
+associates new-owner with the current eventspace (as determined by
+current-eventspace). The eventspace association is removed when the client is
+no longer the current one.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+(send a-clipboard set-clipboard-string   new-text        
+                                         time)      →   void?
+  new-text : string
+  time : exact-integer?
+Changes the current clipboard contents to new-text, and releases the current
+clipboard client (if any).
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

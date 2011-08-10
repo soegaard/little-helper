@@ -1,0 +1,335 @@
+▼  PLane T: Automatic Package Distribution
+1  Using PLane T
+2  The PLane T Search Order
+3  The raco planet Command-Line Tool
+4  The planet Language
+5  Utility Libraries
+6  Developing Packages for PLane T
+► 6  Developing Packages for PLane T
+6.1  Write Your Package
+6.2  Prepare Your Distribution
+6.3  Build a Distribution Archive
+6.4  Determine Your Package’s Backwards-Compatibility
+6.5  Submit Your Package
+On this page:
+6.1 Write Your Package
+6.1.1 Development Links
+6.2 Prepare Your Distribution
+6.2.1 Arrange Files Into a Directory
+6.2.2 Create Documentation [Optional]
+6.2.3 Create an "info.rkt" File [Optional]
+6.3 Build a Distribution Archive
+6.4 Determine Your Package’s Backwards-Compatibility
+6.5 Submit Your Package
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Developing Packages for PLaneT
+
+To put a package on PLaneT, or release an upgrade to an already-existing
+package:
+
+6.1 Write Your Package
+
+PLaneT can distribute whatever programs you write, but keep these guidelines in
+mind as you write:
+
+  • Organize your code into modules. Since the PLaneT client is integrated into
+    the require form, it works best if your code is arranged into modules.
+
+  • When one module in your program depends on another, it is best to require
+    it using the relative-file-name form rather than the planet require form.
+    For instance, if your program contains files primary.rkt and helper.rkt
+    where primary.rkt requires helper, use the form
+
+    (require "helper.rkt")
+
+    instead of
+
+    (require (planet "helper.rkt" ("username" "packagename.plt" 1 0)))
+
+    in files that will also be a part of the package.
+
+6.1.1 Development Links
+
+To aid development, PLaneT allows users to establish direct associations
+between a particular planet package with an arbitrary directory on the
+filesystem, for instance connecting the package named by the require line
+
+(require (planet "file.rkt" ("my" "mypackage.plt" 1 0)))
+
+to the directory "/home/myname/svn/mypackages/devel/".
+
+These associations are intended to allow developers to use their own directory
+structures, version control systems, and so on while still being able to use
+the packages they create as though they were distributed directly by PLaneT.
+Development links are local to a particular user and repository (but not to a
+particular Racket minor revision).
+
+To establish a development link, use the raco planet command-line tool:
+
+  raco planet link myname mypackage.plt 1 0 ~/svn/mypackages/devel
+
+Once you are finished developing a package, you should remove any development
+links you have established for it, again using the planet command-line tool:
+
+  raco planet unlink myname mypackage.plt 1 0
+
+You may alternately use the functions add-hard-link and remove-hard-link.
+
+6.2 Prepare Your Distribution
+
+6.2.1 Arrange Files Into a Directory
+
+Make sure that all source files, documentation, etc. that you want to be a part
+of the package are in a single directory and its subdirectories. Furthermore
+make sure that nothing else, e.g. unneeded backup files, is in that directory
+(with the exception that the meta-subdirectories and files Git/Subversion/CVS
+uses are automatically skipped by the packaging tool).
+
+6.2.2 Create Documentation [Optional]
+
+Use Scribble to write documentation for your package. See Scribble
+Documentation for macros that ensure proper bindings and version numbers in
+documentation for PLaneT packages, and Scribble: The Racket Documentation Tool
+for instructions on how to write Scribble documentation.
+
+Note: Always use this-package-in in for-label bindings when documenting PLaneT
+packages, and always use the bindings in planet/scribble rather than scribble/
+manual. These macros automatically produce planet-based module paths with
+appropriate version numbers. Other require subforms and Scribble declarations
+may refer to the wrong version of a package, or may not be recognized as part
+of a PLaneT package at all when documentation is produced.
+
+6.2.3 Create an "info.rkt" File [Optional]
+
+If you put a file named "info.rkt" in your package’s root directory, the PLaneT
+system (as well as the rest of the Racket tool suite) will look in it for
+descriptive metadata about your package. The PLaneT system looks for certain
+names in that file:
+
+  • The 'blurb field: If present, the blurb field should contain a list of
+    XHTML fragments encoded as x-expressions (see the xml collection for
+    details) that PLaneT will use as a short description of your project.
+
+  • The 'release-notes field: If present, the release-notes field should
+    contain a list of XHTML fragments encoded as x-expressions (see the xml
+    collection for details) that PLaneT will use as a short description of
+    what’s new in this release of your package.
+
+  • The 'categories field: If present, the categories field should be a list of
+    symbols corresponding to the categories under which this package should be
+    listed.
+
+    The valid categories are:
+
+      □ 'devtools: Development Tools
+
+      □ 'net: Networking and Protocols
+
+      □ 'media: Graphics and Audio
+
+      □ 'xml: XML-Related
+
+      □ 'datastructures: Data Structures and Algorithms
+
+      □ 'io: Input/Output and Filesystem
+
+      □ 'scientific: Mathematical and Scientific
+
+      □ 'system: Hardware/Operating System-Specific Tools
+
+      □ 'ui: Textual and Graphical User Interface
+
+      □ 'metaprogramming: Metaprogramming Tools
+
+      □ 'planet: PLaneT-Related
+
+      □ 'misc: Miscellaneous
+
+    If you put symbols other than these the categories field, they will be
+    ignored. If you put no legal symbols in the categories field or do not
+    include this field in your info.rkt file, your package will be categorized
+    as "Miscellaneous."
+
+  • The 'can-be-loaded-with field: If present, the can-be-loaded-with field
+    should be a quoted datum of one of the following forms:
+
+      can-be-loaded-with   =   (quoteall)
+                           |   (quotenone)
+                           |   (list (quoteall-except)VER-SPEC ...)
+                           |   (list (quoteonly)VER-SPEC ...)
+
+    where VER-SPEC is a PLaneT package version specification.
+
+    Depending on your package’s behavior, it may or may not be okay for
+    multiple versions of the same package to be loaded at one time on the
+    entire system — for instance, if your package relies on writing to a
+    particular file and assumes that nothing else writes to that same file,
+    then multiple versions of the same package being loaded simultaneously may
+    be a problem. This field allows you to specify whether your package can be
+    loaded simultaneously with older versions of itself. If its value is 'all,
+    then the package may be loaded with any older version. If it is 'none, then
+    it may not be loaded with older versions at all. If it is (list 'all-except
+    VER-SPEC ...) then any package except those that match one of the given
+    VER-SPEC forms may be loaded with this package; if it is (list 'only
+    VER-SPEC ...) then only packages that match one of the given VER-SPEC forms
+    may be loaded with this package.
+
+    When checking to see if a package may be loaded, PLaneT compares it to all
+    other currently-loaded instances of the same package with any version: for
+    each comparison, it checks to see if the newer package’s can-be-loaded-with
+    field allows the older package to be loaded. If all such comparisons
+    succeed then the new package may be loaded; otherwise PLaneT signals an
+    error.
+
+    The default for this field is 'none as a conservative protection measure.
+    For many packages it is safe to set this field to 'any.
+
+  • The 'homepage field: If present, the URL field should be a string
+    corresponding to a URL for the package. PLaneT provides this link with the
+    description of your package on the main PLaneT web page.
+
+  • The 'primary-file field: If present, the primary-file field should be a
+    either a string corresponding to the name (without path) of the main Racket
+    source file of your package, or a list of such strings. The PLaneT web page
+    corresponding to this package will present all files listed here as
+    interface files for your package; it will give direct links to each package
+    and a listing of all names provided by the package along with their
+    contracts (if present).
+
+    If you include only a single string, it will be used as the require line
+    printed on your package’s page. If you include a list of strings, then the
+    first legal file string in the list will be used.
+
+  • The 'required-core-version field: If present, the required-core-version
+    field should be a string with the same syntax as the output of the version
+    function. Defining this field indicates that PLaneT should only allow users
+    of a version of Racket equal to or more recent than the version specified
+    by this field. This allows you finer-grained control of your package’s
+    core-language requirements than its inclusion in a particular repository;
+    for instance, setting this field to "300.2" would cause the PLaneT server
+    not to serve it to Racket v300.1 or older clients.
+
+  • The 'version field: If present, the version field should be a string that
+    describes the version number of this code that should be presented to users
+    (e.g., "0.15 alpha"). This field does not override or in any way interact
+    with your package’s package version number, which is assigned by PLaneT,
+    but may be useful to users.
+
+  • The 'repositories field: If present, the repositories field should be a
+    list consisting of some subset of the strings "4.x" and "3xx". The string
+    "4.x" indicates that this package should be included in the v4.x repository
+    (which contains packages that are intended to run in Racket and PLT Scheme
+    versions at or above version 4.0), and the string "3xx" indicates that the
+    package should be included in the v3xx repository (containing packages
+    intended to run in PLT Scheme versions in the 3xx series). A single package
+    (and a single version of a package) may be included in multiple
+    repositories with the same PLaneT version number.
+
+In addition, PLaneT uses the setup-plt installer to install packages on client
+machines, so most fields it looks for can be included with their usual effects.
+In particular, adding a 'name field indicates that the Racket files in the
+package should be compiled during installation; it is a good idea to add it.
+
+An example info.rkt file looks like this:
+
+    #lang setup/infotab
+    (define name "My Application")
+    (define blurb
+      '("My application runs 60% faster on 20% less peanut "
+        "butter. It even shows a fancy graphic!"))
+    (define primary-file "my-app.rkt")
+    (define categories '(system xml))
+
+See "info.rkt" File Format for more information on "info.rkt" files.
+
+6.3 Build a Distribution Archive
+
+Use the planet command-line tool in its archive-creation mode to create a
+planet archive:
+
+  raco planet create /home/jacob/my-app/
+
+This will create a planet archive named "my-app.plt" in the current directory
+whose contents are the contents of "/home/jacobm/my-app" and all its
+subdirectories.
+
+Alternately, you can run make-planet-archive with the name of the directory
+you’ve prepared as its argument:
+
+(make-planet-archive "/home/jacob/my-app/")
+
+This function will build a packaged version of your directory and return the
+path to that package. The path will always be a file named "X.plt", where "X"
+is the name of the directory you gave to make-planet-archive, located in that
+same directory.
+
+You can now test that your archive file works as intended using the planet
+command-line tool in its install mode:
+  raco planet fileinject <owner> <path to your .plt file> <maj> <min>
+installs the specified file into your local PLaneT cache as though it had been
+downloaded from the PLaneT server with the given owner name and major and minor
+versions. After you run this command, you can require your package on your
+local machine using
+
+(require (planet <file> (<owner> <.plt file name without path> <maj> <min>)))
+
+to verify everything works. After you do so, you can use
+  raco planet remove <owner> <.plt file name without path> <maj> <min>
+to remove the test package from your local cache. (Not removing it is safe as
+long as you use the same name and version numbers the package will have on the
+PLaneT server; otherwise you may experience problems.)
+
+6.4 Determine Your Package’s Backwards-Compatibility
+
+If you are updating a previously-released package, you must decide whether your
+package is a backwards-compatible change or not. A rule of thumb is to remember
+that modules written to work with the previously-released version of your
+package should unmodified with the new package. This means that at a minimum, a
+backwards compatible update should:
+
+  • Contain all the same Racket source files in that the previous version
+    contained in directories intended for public access
+
+  • In each public file, provide at least all the bindings that the previous
+    version provided
+
+  • For each name provided with a contract (see Contracts), provide it with a
+    contract that is at least as permissive as the previous contract
+
+A backwards-compatible upgrade may, however:
+
+  • Change any behavior that reasonable consumers of your package would not
+    consider guaranteed (e.g., by fixing bugs or improving the efficiency of
+    operations).
+
+  • Remove files in clearly-marked private sections. By convention, the
+    contents of any directory called "private" are considered private and
+    should not be relied upon by external users of your package.
+
+  • Extend the set of names exported by a module.
+
+Currently these rules are guidelines only, but in the future some or all of
+them may be enforced programmatically. Ultimately, though, no technical device
+can precisely capture what it means for a package to be backwards-compatible
+with a previous version, so you should use your best judgment.
+
+6.5 Submit Your Package
+
+Go to the central PLaneT package repository web page and click on the link
+marked "contribute a package / log in" in the upper-right-hand corner. If you
+have not yet created an account, then do so on that page by providing your
+name, a user name, an email address, and a password and then responding to the
+confirmation message delivered to the email address you provide.
+
+Once you have an account, then if this is a new package then upload it using
+the "Contribute a package" section in your user account page. If this is a
+package update then click "update this package" next to its name in the "Manage
+your packages" section of your user account page, then upload the .plt file and
+indicate on the form whether your update is backwards-compatible with the prior
+version or not.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

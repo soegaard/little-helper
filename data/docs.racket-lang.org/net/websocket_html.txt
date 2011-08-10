@@ -1,0 +1,186 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 3  Web Socket
+3.1  Client API
+3.2  Server API
+3.3  Connections
+3.4  Example
+On this page:
+3.1 Client API
+ws-url?
+wss-url?
+ws-connect
+3.2 Server API
+ws-serve
+3.3 Connections
+framing-mode
+ws-conn?
+open-ws-conn?
+ws-conn-line
+ws-conn-closed?
+ws-conn-headers
+ws-send!
+ws-recv
+ws-close!
+3.4 Example
+[...search manuals...]
+  top← prev  up  next → 
+
+3 WebSocket
+
+ (require net/websocket)
+
+The net/websocket library provides utilities to run and communicate with
+WebSocket servers, as specified in the WebSocket protocol IETF draft as of
+August 16th, 2010.
+
+This module provides the exports from net/websocket/client and net/websocket/
+server.
+
+3.1 Client API
+
+ (require net/websocket/client)
+
+(ws-url? x) → boolean?
+  x : any/c
+Returns true if x is a url? and has a url-scheme equal to ws or wss.
+
+(wss-url? x) → boolean?
+  x : any/c
+Returns true if x is a url? and has a url-scheme equal to wss.
+
+(ws-connect u [#:headers headers]) → open-ws-conn?
+  u : ws-url?
+  headers : (listof header?) = empty
+Connects to the WebSocket server specified by u, providing headers as
+additional headers. Returns the connection handle.
+
+This module also provides the exports from net/websocket/conn.
+
+3.2 Server API
+
+ (require net/websocket/server)
+
+(ws-serve    conn-handle                                
+           [ #:conn-headers conn-headers                
+             #:tcp@ tcp@                                
+             #:port port                                
+             #:listen-ip listen-ip                      
+             #:max-waiting max-waiting                  
+             #:timeout timeout                          
+             #:confirmation-channel confirm-ch])   →   (-> void)
+  conn-handle : (open-ws-conn? any/c . -> . void)
+   conn-headers   :   (bytes? (listof header?) . -> . (values (listof header?) 
+                      any/c))
+                  =   (λ (b hs) (values empty (void)))
+  tcp@ : (unit/c (import) (export tcp^)) = raw:tcp@
+  port : tcp-listen-port? = 80
+  listen-ip : (or/c string? false/c) = #f
+  max-waiting : integer? = 4
+  timeout : integer? = (* 60 60)
+  confirm-ch : (or/c false/c async-channel?) = #f
+Starts a WebSocket server where each new connection uses conn-headers to
+compute what headers the client receives based on the client’s request line and
+headers. conn-headers also returns a piece of state that will be passed to
+conn-handle as its second argument. After the connection handshake is finished,
+conn-handle receives the connection and is in sole control until the WebSocket
+connection completes.
+
+All other arguments are used as in a Dispatching Server.
+
+The #:tcp@ keyword is provided for building an SSL server.
+
+This module also provides the exports from net/websocket/conn.
+
+3.3 Connections
+
+ (require net/websocket/conn)
+
+(framing-mode) → (symbols 'old 'new)
+(framing-mode mode) → void?
+  mode : (symbols 'old 'new)
+Controls whether framing is as before August 16th, 2010 or after. (Most Web
+browsers currently support only 'old and they are incompatible, so you must
+choose the correct one.) Defaults to 'old.
+
+(ws-conn? x) → boolean?
+  x : any/c
+Returns true if x is a WebSocket connection.
+
+(open-ws-conn? x) → boolean?
+  x : any/c
+Returns true if x is an open WebSocket connection.
+
+(ws-conn-line ws) → bytes?
+  ws : ws-conn?
+Returns the request/response line of the WebSocket connection.
+(ws-conn-closed? ws) → boolean?
+  ws : ws-conn?
+Returns true if the WebSocket connection has been closed.
+(ws-conn-headers ws) → (listof header?)
+  ws : ws-conn?
+Returns the headers of the WebSocket connection.
+
+WebSocket connection support only blocking calls:
+
+(ws-send! ws s) → void
+  ws : open-ws-conn?
+  s : string?
+Sends s over ws.
+(ws-recv ws) → (or/c string? eof-object?)
+  ws : open-ws-conn?
+Receives a string from ws. Returns eof if the other end closes the connection.
+
+(ws-close! ws) → void
+  ws : open-ws-conn?
+Closes ws.
+
+3.4 Example
+
+This is a WebSocket echo server compatible with the browser origin security
+model:
+
+    (ws-serve
+     #:port 8080
+     (λ (wsc _)
+       (let loop ()
+         (define m (ws-recv wsc))
+         (printf "~a\n" m)
+         (unless (eof-object? m)
+           (ws-send! wsc m)
+           (loop))))
+     #:conn-headers
+     (λ (_ hs)
+       (define origin
+         (header-value (headers-assq* #"Origin" hs)))
+       (values
+        (list
+         (make-header #"Sec-WebSocket-Origin" origin)
+         (make-header #"Sec-WebSocket-Location"
+                      #"ws://localhost:8080/"))
+        #f)))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

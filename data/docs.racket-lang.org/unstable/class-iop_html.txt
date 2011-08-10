@@ -1,0 +1,174 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+define-interface
+define-interface/ dynamic
+send/ i
+send*/ i
+send/ apply/ i
+define/ i
+init/ i
+init-field/ i
+init-private/ i
+define-interface-expander
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+17 Interface-Oriented Programming for Classes
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require unstable/class-iop)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(define-interface name-id (super-ifc-id ...) (method-id ...))
+Defines name-id as a static interface extending the interfaces named by the
+super-ifc-ids and containing the methods specified by the method-ids.
+
+A static interface name is used by the checked method call variants (send/i,
+send*/i, and send/apply/i). When used as an expression, a static interface name
+evaluates to an interface value.
+
+Examples:
+
+    > (define-interface stack<%> () (empty? push pop))
+    > stack<%>
+    #<|interface:stack<%>|>
+
+    > (define stack%
+        (class* object% (stack<%>)
+          (define items null)
+          (define/public (empty?) (null? items))
+          (define/public (push x) (set! items (cons x items)))
+          (define/public (pop) (begin (car items) (set! items (cdr items))))
+          (super-new)))
+
+
+(define-interface/dynamic name-id ifc-expr (method-id ...))
+Defines name-id as a static interface with dynamic counterpart ifc-expr, which
+must evaluate to an interface value. The static interface contains the methods
+named by the method-ids. A run-time error is raised if any method-id is not a
+member of the dynamic interface ifc-expr.
+
+Use define-interface/dynamic to wrap interfaces from other sources.
+
+Examples:
+
+    > (define-interface/dynamic object<%> (class->interface object%) ())
+    > object<%>
+    #<interface:object%>
+
+
+
+(send/i obj-exp static-ifc-id method-id arg-expr ...)
+Checked variant of send.
+
+The argument static-ifc-id must be defined as a static interface. The method
+method-id must be a member of the static interface static-ifc-id; otherwise a
+compile-time error is raised.
+
+The value of obj-expr must be an instance of the interface static-ifc-id;
+otherwise, a run-time error is raised.
+
+Examples:
+
+    > (define s (new stack%))
+    > (send/i s stack<%> push 1)
+    > (send/i s stack<%> popp)
+    eval:9:0: send/i: method not in static interface in: popp
+
+    > (send/i (new object%) stack<%> push 2)
+    send/i: interface check failed on: (object)
+
+
+
+(send*/i obj-expr static-ifc-id (method-id arg-expr ...) ...)
+Checked variant of send*.
+
+Example:
+
+    > (send*/i s stack<%>
+        (push 2)
+        (pop))
+
+
+(send/apply/i obj-expr static-ifc-id method-id arg-expr ... list-arg-expr)
+Checked variant of send/apply.
+
+Example:
+
+    > (send/apply/i s stack<%> push (list 5))
+
+
+(define/i id static-ifc-id expr)
+Checks that expr evaluates to an instance of static-ifc-id before binding it to
+id. If id is subsequently changed (with set!), the check is performed again.
+
+No dynamic object check is performed when calling a method (using send/i, etc)
+on a name defined via define/i.
+
+(init/i (id static-ifc-id maybe-default-expr) ...)
+(init-field/i (id static-ifc-id maybe-default-expr) ...)
+(init-private/i (id static-ifc-id maybe-default-expr) ...)
+ 
+maybe-default-expr   =   ()
+                     |   default-expr
+Checked versions of init and init-field. The value attached to each id is
+checked against the given interface.
+
+No dynamic object check is performed when calling a method (using send/i, etc)
+on a name bound via one of these forms. Note that in the case of init-field/i
+this check omission is unsound in the presence of mutation from outside the
+class. This should be fixed.
+
+(define-interface-expander id transformer-expr)
+Defines id as a macro that can be used within define-interface forms.
+
+Examples:
+
+    > (define-interface-expander stack-methods
+        (lambda (stx) #'[empty? push pop]))
+    > (define-interface stack<%> ()
+        ((stack-methods)))
+    > (interface->method-names stack<%>)
+    '(pop push empty?)
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

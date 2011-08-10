@@ -1,0 +1,283 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+get-cap
+get-color
+get-join
+get-stipple
+get-style
+get-width
+set-cap
+set-color
+set-join
+set-stipple
+set-style
+set-width
+[...search manuals...]
+  top← prev  up  next → 
+
+pen% : class?
+  superclass: object%
+
+A pen is a drawing tool with a color, width, and style. A pen draws lines and
+outlines, such as the outline of a rectangle. In a monochrome destination, all
+non-white pens are drawn as black.
+
+In addition to its color, width, and style, a pen can have a stipple bitmap.
+Painting with a stipple pen is similar to calling draw-bitmap with the stipple
+bitmap in region painted by the pen.
+
+A pen’s style is one of the following:
+
+  • 'transparent — Draws with no effect (on the outline of the drawn shape).
+
+  • 'solid — Draws using the pen’s color. If a (monochrome) stipple is
+    installed into the pen, black pixels from the stipple are transferred to
+    the destination using the brush’s color, and white pixels from the stipple
+    are not transferred.
+
+  • 'xor — The same as 'solid, accepted only for partial backward
+    compatibility.
+
+  • 'hilite — Draws with black and a 0.3 alpha.
+
+  • 
+    The following special pen modes use the pen’s color, and they only apply
+    when a stipple is not used:
+      □ 'dot
+
+      □ 'long-dash
+
+      □ 'short-dash
+
+      □ 'dot-dash
+
+      □ 'xor-dot
+
+      □ 'xor-long-dash
+
+      □ 'xor-short-dash
+
+      □ 'xor-dot-dash
+
+To avoid creating multiple pens with the same characteristics, use the global
+pen-list% object the-pen-list, or provide a color, width, and style to set-pen
+in dc<%>.
+
+When drawing in 'smoothed or 'aligned mode, a pen’s size is truncated after
+scaling to an integral size. A pen of size 0 (after truncation, if applicable)
+uses a non-zero, scale-insensitive line size for the destination drawing
+context: 1/4 unit (after scaling) for post-script-dc% or pdf-dc% contexts in
+'smoothed mode, or 1 unit (after scaling) for any other context. For example,
+in unscaled canvas and bitmap contexts, a zero-width pen behaves the same as a
+pen of size 1.
+
+(new pen%  [ [color color]              
+             [width width]              
+             [style style]              
+             [cap cap]                  
+             [join join]                
+             [stipple stipple]])   →   (is-a?/c pen%)
+  color : (or/c string? (is-a?/c color%)) = "black"
+  width : (real-in 0 255) = 0
+               (one-of/c 'transparent 'solid 'xor 'hilite
+   style   :             'dot 'long-dash 'short-dash 'dot-dash
+                         'xor-dot 'xor-long-dash 'xor-short-dash
+                         'xor-dot-dash)
+           =   'solid
+  cap : (one-of/c 'round 'projecting 'butt) = 'round
+  join : (one-of/c 'round 'bevel 'miter) = 'round
+  stipple : (or/c #f (is-a?/c bitmap%)) = #f
+Creates a pen with the given color, width, style, cap style (see get-cap), join
+style (see get-join), and stipple. For the case that the color is specified
+using a name, see color-database<%> for information about color names; if the
+name is not known, the pen’s color is black.
+
+(send a-pen get-cap) → (one-of/c 'round 'projecting 'butt)
+Returns the pen cap style, which determines the shape of a line at each of its
+ending points when drawn by draw-line or at the non-connecting ends of lines
+when drawn by draw-lines or draw-path. The default is 'round, which draws the
+end of a line as a semi-circle. The 'projecting style draws a square in place
+of the semi-circle (i.e., past the point at which the line stops). The 'butt
+style ends the line with a straight edge, instead of projecting past the ending
+point of the line.
+
+This code draws three diagonal lines, one with each of the possible caps
+('round, 'butt, and then 'projecting) and puts a little red dot on the end
+points of the line.
+
+Examples:
+
+    > (define (plot-line dc x1 y1 x2 y2 cap)
+        (send dc set-pen
+              (send the-pen-list find-or-create-pen
+                    "black" 40 'solid cap))
+        (send dc draw-line x1 y1 x2 y2)
+        (send dc set-brush "red" 'solid)
+        (send dc set-pen "black" 1 'transparent)
+        (send dc draw-ellipse (- x1 4) (- y1 4) 8 8)
+        (send dc draw-ellipse (- x2 4) (- y2 4) 8 8))
+    > (dc
+       (λ (dc dx dy)
+         (define old-pen (send dc get-pen))
+         (define old-brush (send dc get-brush))
+      
+         (plot-line dc 20 30 80 90 'round)
+         (plot-line dc 100 30 160 90 'butt)
+         (plot-line dc 180 30 240 90 'projecting)
+      
+         (send dc set-pen old-pen)
+         (send dc set-brush old-brush))
+       270 120)
+    image
+
+
+
+(send a-pen get-color) → (is-a?/c color%)
+Returns the pen’s color object.
+
+(send a-pen get-join) → (one-of/c 'round 'bevel 'miter)
+Returns the pen join style that is used between multiple lines connected
+through draw-lines, draw-rectangle, draw-polygon, or draw-path. The join style
+fills the space that would be left at the outside corner of two lines if they
+were draw separately with 'butt line endings. The default join style is 'round,
+which fills under an arc that lines up with the outside of each of the two
+lines. The 'bevel style fills in the gap without adding extra pixels (i.e., it
+makes a blunt corner). The 'miter style fills the gap by adding pixels that
+would be covered by both lines if they were extended past the corner (i.e., it
+makes a sharp corner).
+
+This code shows the three join styles ('round, 'bevel and then 'miter) by
+drawing a sequence of lines, first with a sharp corner and then with a
+right-angle. Each of the end points of the lines i with a red dot.
+
+Examples:
+
+    > (define points '((100 . 100)
+                       (0 . 0)
+                       (0 . 100)
+                       (40 . 100)))
+    > (define (connect-points dc dx dy join)
+        (send dc set-pen
+              (send the-pen-list find-or-create-pen
+                    "black" 40 'solid 'round join))
+        (send dc draw-lines points dx dy)
+        (send dc set-brush "red" 'solid)
+        (send dc set-pen "black" 1 'transparent)
+        (for ([pt (in-list points)])
+          (send dc draw-ellipse
+                (+ dx (car pt) -4) (+ dy (cdr pt) -4)
+                8 8)))
+    > (dc
+       (λ (dc dx dy)
+         (define old-pen (send dc get-pen))
+         (define old-brush (send dc get-brush))
+      
+         (connect-points dc 20 50 'round)
+         (connect-points dc 180 50 'bevel)
+         (connect-points dc 340 50 'miter)
+      
+         (send dc set-pen old-pen)
+         (send dc set-brush old-brush))
+       460 170)
+    image
+
+
+
+(send a-pen get-stipple) → (or/c (is-a?/c bitmap%) #f)
+Gets the current stipple bitmap, or returns #f if no stipple bitmap is
+installed.
+
+(send a-pen get-style)
+      (one-of/c 'transparent 'solid 'xor 'hilite
+  →             'dot 'long-dash 'short-dash 'dot-dash
+                'xor-dot 'xor-long-dash 'xor-short-dash
+                'xor-dot-dash)
+Returns the pen style. See pen% for information about possible styles.
+
+(send a-pen get-width) → (real-in 0 255)
+Returns the pen width.
+
+(send a-pen set-cap cap-style) → void?
+  cap-style : (one-of/c 'round 'projecting 'butt)
+Sets the pen cap style. See get-cap for information about cap styles.
+
+A pen cannot be modified if it was obtained from a pen-list% or while it is
+selected into a drawing context.
+
+(send a-pen set-color color) → void?
+  color : (is-a?/c color%)
+(send a-pen set-color color-name) → void?
+  color-name : string?
+(send a-pen set-color red green blue) → void?
+  red : (integer-in 0 255)
+  green : (integer-in 0 255)
+  blue : (integer-in 0 255)
+Sets the pen color.
+
+A pen cannot be modified if it was obtained from a pen-list% or while it is
+selected into a drawing context.
+
+(send a-pen set-join join-style) → void?
+  join-style : (one-of/c 'round 'bevel 'miter)
+Sets the pen join style. See get-join for information about join styles.
+
+A pen cannot be modified if it was obtained from a pen-list% or while it is
+selected into a drawing context.
+
+(send a-pen set-stipple bitmap) → void?
+  bitmap : (or/c (is-a?/c bitmap%) #f)
+Sets the pen stipple bitmap, where #f turns off the stipple bitmap.
+
+If bitmap is modified while is associated with a pen, the effect on the pen is
+unspecified. A pen cannot be modified if it was obtained from a pen-list% or
+while it is selected into a drawing context.
+
+(send a-pen set-style style) → void?
+               (one-of/c 'transparent 'solid 'xor 'hilite
+   style   :             'dot 'long-dash 'short-dash 'dot-dash
+                         'xor-dot 'xor-long-dash 'xor-short-dash
+                         'xor-dot-dash)
+Sets the pen style. See pen% for information about the possible styles.
+
+A pen cannot be modified if it was obtained from a pen-list% or while it is
+selected into a drawing context.
+
+(send a-pen set-width width) → void?
+  width : (real-in 0 255)
+Sets the pen width.
+
+A pen cannot be modified if it was obtained from a pen-list% or while it is
+selected into a drawing context.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

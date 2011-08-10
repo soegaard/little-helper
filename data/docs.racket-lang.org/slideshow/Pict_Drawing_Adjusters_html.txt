@@ -1,0 +1,120 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 2  Making Pictures
+2.1  Pict Datatype
+2.2  Basic Pict Constructors
+2.3  Pict Combiners
+2.4  Pict Drawing Adjusters
+2.5  Bounding-Box Adjusters
+2.6  Pict Finders
+2.7  More Pict Constructors
+2.8  Miscellaneous
+2.9  Rendering
+On this page:
+scale
+rotate
+ghost
+linewidth
+colorize
+cellophane
+clip
+inset/ clip
+scale/ improve-new-text
+black-and-white
+[...search manuals...]
+  top← prev  up  next → 
+
+2.4 Pict Drawing Adjusters
+
+(scale pict factor) → pict?
+  pict : pict?
+  factor : real?
+(scale pict w-factor h-factor) → pict?
+  pict : pict?
+  w-factor : real?
+  h-factor : real?
+Scales a pict drawing, as well as its bounding-box. The drawing is scaled by
+adjusting the destination dc<%>’s scale while drawing the original pict.
+
+(rotate pict theta) → pict?
+  pict : pict?
+  theta : real?
+Rotates a pict’s drawing by theta radians counter-clockwise.
+
+The bounding box of the resulting pict is the box encloses the rotated corners
+of pict (which inflates the area of the bounding box, unless theta is a
+multiple of half of pi). The ascent and descent lines of the result’s bounding
+box are the horizontal lines that bisect the rotated original lines; if the
+ascent line drops below the descent line, the two lines are flipped.
+
+(ghost pict) → pict?
+  pict : pict?
+Creats a container picture that doesn’t draw the child picture, but uses the
+child’s size.
+
+(linewidth w pict) → pict?
+  w : (or/c real? #f)
+  pict : pict?
+Selects a specific pen width for drawing, which applies to pen drawing for pict
+that does not already use a specific pen width. A #f value for w makes the pen
+transparent (in contrast to a zero value, which means “as thin as possible for
+the target device”).
+
+(colorize pict color) → pict?
+  pict : pict?
+               (or/c string?
+                     (is-a?/c color%)
+   color   :         (list (integer-in 0 255)
+                           (integer-in 0 255)
+                           (integer-in 0 255)))
+Selects a specific color drawing, which applies to drawing in pict that does
+not already use a specific color. The black-and-white parameter causes all
+non-white colors to be converted to black.
+
+(cellophane pict opacity) → pict?
+  pict : pict?
+  opacity : (real-in 0 1)
+Makes the given pict semi-transparent, where an opacity of 0 is fully
+transparent, and an opacity of 1 is fully opaque. See set-alpha for information
+about the contexts and cases when semi-transparent drawing works.
+
+(clip pict) → pict
+  pict : pict?
+Clips a pict’s drawing to its bounding box.
+
+(inset/clip pict amt) → pict?
+  pict : pict?
+  amt : real?
+(inset/clip pict h-amt v-amt) → pict?
+  pict : pict?
+  h-amt : real?
+  v-amt : real?
+(inset/clip pict l-amt t-amt r-amt b-amt) → pict?
+  pict : pict?
+  l-amt : real?
+  t-amt : real?
+  r-amt : real?
+  b-amt : real?
+Insets and clips the pict’s drawing to its bounding box. Usually, the inset
+amounts are negative.
+
+(scale/improve-new-text pict-expr scale-expr)
+(scale/improve-new-text pict-expr x-scale-expr y-scale-expr)
+Like the scale procedure, but also sets current-expected-text-scale while
+evaluating pict-expr.
+
+(black-and-white) → boolean?
+(black-and-white on?) → void?
+  on? : any/c
+A parameter that determines whether colorize uses color or black-and-white
+colors.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

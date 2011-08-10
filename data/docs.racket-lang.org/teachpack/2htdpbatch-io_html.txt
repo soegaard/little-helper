@@ -1,0 +1,208 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 2  Ht DP/ 2e Teachpacks
+2.1  Batch Input/ Output: "batch-io.ss"
+2.2  Images: "image.ss"
+2.3  Worlds and the Universe: "universe.ss"
+2.4  Porting World Programs to Universe
+► 2.1  Batch Input/ Output: "batch-io.ss"
+2.1.1  Testing
+On this page:
+read-file
+read-1strings
+read-lines
+read-words
+read-words/ line
+read-csv-file
+read-csv-file/ rows
+write-file
+2.1.1 Testing
+simulate-file
+[...search manuals...]
+  top← prev  up  next → 
+
+2.1 Batch Input/Output: "batch-io.ss"
+
+Matthias Felleisen
+
+ (require 2htdp/batch-io)
+
+The batch-io teachpack introduces several functions and a form for reading
+content from files and one function for writing to a file.
+
+All functions that read a file consume the name of a file and possibly
+additional arguments. They assume that the specified file exists in the same
+folder as the program; if not they signal an error:
+
+  • 
+    (read-file f) → string?
+      f : (and/c string? file-exists?)
+    reads the content of file f and produces it as a string, including newlines
+    .
+
+    Example:
+
+        > (read-file "data.txt")
+        "hello world \n good bye \n\ni am done "
+
+
+    assuming the file named "data.txt" has this shape:
+
+        hello world
+
+         good bye
+
+         
+
+        i am done
+
+
+    Note how the leading space in the second line translates into the space
+    between the newline indicator and the word "good" in the result.
+
+  • 
+    (read-1strings f) → (listof 1string?)
+      f : (and/c string? file-exists?)
+    reads the content of file f and produces it as a list of one-char strings,
+    one per character .
+
+    Example:
+
+        > (read-1strings "data.txt")
+        '("h" "e" "l" "l" "o" " " "w" "o" "r" "l" "d" " " "\n" " " "g" "o" "o"
+        "d" " " "b" "y" "e" " " "\n" "\n" "i" " " "a" "m" " " "d" "o" "n" "e" "
+        ")
+
+
+    Note how this function reproduces all parts of the file faithfully,
+    including spaces and newlines.
+
+  • 
+    (read-lines f) → (listof string?)
+      f : (and/c string? file-exists?)
+    reads the content of file f and produces it as a list of strings, one per
+    line .
+    Example:
+
+        > (read-lines "data.txt")
+        '("hello world " " good bye " "" "i am done ")
+
+
+    when "data.txt" is the name of the same file as in the preceding item. And
+    again, the leading space of the second line shows up in the second string
+    in the list.
+
+  • 
+    (read-words f) → (listof string?)
+      f : (and/c string? file-exists?)
+    reads the content of file f and produces it as a list of strings, one per
+    white-space separated token in the file .
+
+    Example:
+
+        > (read-words "data.txt")
+        '("hello" "world" "good" "bye" "i" "am" "done")
+
+
+    This time, however, the extra leading space of the second line of
+    "data.txt" has disappeared in the result. The space is considered a part of
+    the separator that surrounds the word "good".
+
+  • 
+    (read-words/line f) → (listof string?)
+      f : (and/c string? file-exists?)
+    reads the content of file f and produces it as a list of lists, one per
+    line; each line is represented as a list of white-space separated tokens .
+
+    Example:
+
+        > (read-words/line "data.txt")
+        '(("hello" "world") ("good" "bye") () ("i" "am" "done"))
+
+
+    The results is similar to the one that read-words produces, except that the
+    organization of the file into lines is preserved. In particular, the empty
+    third line is represented as an empty list of words.
+
+  • 
+    (read-csv-file f) → (listof (listof any/c))
+      f : (and/c string? file-exists?)
+    reads the content of file f and produces it as a list of lists of
+    comma-separated values .
+
+    Example:
+
+        > (read-csv-file "data.csv")
+        '(("hello" "world") ("good" "bye") ("i" "am" "done"))
+
+
+    where the file named "data.csv" has this shape:
+
+        hello, world
+
+         good, bye
+
+        i, am, done
+
+
+    It is important to understand that the rows don’t have to have the same
+    length. Here the third line of the file turns into a row of three elements.
+
+  • 
+    (read-csv-file/rows f s) → (listof X?)
+      f : (and/c string? exists?)
+      s : (-> (listof any/c) X?)
+    reads the content of file f and produces it as list of rows, each
+    constructed via s
+
+    Examples:
+
+        > (read-csv-file/rows "data.csv" (lambda (x) x))
+        '(("hello" "world") ("good" "bye") ("i" "am" "done"))
+
+        > (read-csv-file/rows "data.csv" length)
+        '(2 2 3)
+
+
+    The first example shows how read-csv-file is just a short form for
+    read-csv-file/rows; the second one simply counts the number of separated
+    tokens and the result is just a list of numbers. In many cases, the
+    function argument is used to construct a structure from a row.
+
+There is only one writer function at the moment:
+
+  • 
+    (write-file f cntnt) → string?
+      f : string?
+      cntnt : string?
+    turns cntnt into the content of file f, located in the same folder
+    (directory) as the program. If the write succeeds, the function produces
+    the name of the file (f); otherwise it signals an error.
+
+    Example:
+
+        > (if (string=? (write-file "output.txt" "good bye") "output.txt")
+              (write-file "output.txt" "cruel world")
+              (write-file "output.txt" "cruel world"))
+        "output.txt"
+
+
+    After evaluating this examples, the file named "output.txt" looks like
+    this:
+
+        cruel world
+
+
+    Explain why.
+
+2.1.1 Testing
+
+(simulate-file process str ...)
+simulates a file system for the function process, which reads a file and may
+produce one. Note: this form is under development and will be documented in a
+precise manner after it is finalized and useful for a wide audience.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,108 @@
+▼  Data: Data Structures
+1  Imperative Queues
+2  Growable Vectors
+3  Orders and Ordered Dictionaries
+4  Splay Trees
+5  Skip Lists
+6  Interval Maps
+7  Binary Heaps
+On this page:
+make-gvector
+gvector
+gvector?
+gvector-ref
+gvector-add!
+gvector-set!
+gvector-remove!
+gvector-count
+gvector->vector
+in-gvector
+for/ gvector
+for*/ gvector
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Growable Vectors
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require data/gvector)
+
+A growable vector (gvector) is a mutable sequence whose length can change over
+time. A gvector also acts as a dictionary (dict? from racket/dict), where the
+keys are zero-based indexes and the values are the elements of the gvector. A
+gvector can be extended by adding an element to the end, and it can be shrunk
+by removing any element, although removal can take time linear in the number of
+elements in the gvector.
+
+Two gvectors are equal? if they contain the same number of elements and if the
+contain equal elements at each index.
+
+(make-gvector [#:capacity capacity]) → gvector?
+  capacity : exact-positive-integer? = 10
+Creates a new empty gvector with an initial capacity of capacity.
+
+(gvector elem ...) → gvector?
+  elem : any/c
+Creates a new gvector containing each elem in order.
+
+(gvector? x) → boolean?
+  x : any/c
+Returns #t if x is a gvector, #f otherwise.
+
+(gvector-ref gv index [default]) → any/c
+  gv : gvector?
+  index : exact-nonnegative-integer?
+  default : any/c = (error ....)
+Returns the element at index index, if index is less than (gvector-count gv).
+Otherwise, default is invoked if it is a procedure, returned otherwise.
+
+(gvector-add! gv value ...) → void?
+  gv : gvector?
+  value : any/c
+Adds each value to the end of the gvector gv.
+
+(gvector-set! gv index value) → void?
+  gv : gvector?
+   index   :   (and/c exact-nonnegative-integer?
+                      (</c (+ 1 (gvector-count gv))))
+  value : any/c
+Sets the value at index index to be value. If index is (gvector-count gv)—that
+is, one more than the greatest used index—the effect is the same as (
+gvector-add! gv value).
+
+(gvector-remove! gv index) → void?
+  gv : gvector?
+   index   :   (and/c exact-nonnegative-integer?
+                      (</c (gvector-count gv)))
+Removes the item at index, shifting items at higher indexes down. Takes time
+proportional to (- (gvector-count gv) index).
+
+(gvector-count gv) → exact-nonnegative-integer?
+  gv : gvector?
+Returns the number of items in gv.
+
+(gvector->vector gv) → vector?
+  gv : gvector?
+Returns a vector of length (gvector-count gv) containing the elements of gv in
+order.
+
+(in-gvector gv) → sequence?
+  gv : gvector?
+Returns a sequence whose elements are the elements of gv. Mutation of gv while
+the sequence is running changes the elements produced by the sequence. To
+obtain a sequence from a snapshot of gv, use (in-vector (gvector->vector gv))
+instead.
+
+(for/gvector (for-clause ...) body ...+)
+(for*/gvector (for-clause ...) body ...+)
+Analogous to for/list and for*/list, but constructs a gvector instead of a
+list.
+
+Unlike for/list, the body may return zero or multiple values; all returned
+values are added to the gvector, in order, on each iteration.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

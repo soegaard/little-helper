@@ -1,0 +1,101 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+On this page:
+define-serializable-class*
+define-serializable-class
+externalizable<%>
+[...search manuals...]
+  top← prev  up  next → 
+
+5.9 Object Serialization
+
+(define-serializable-class* class-id superclass-expr
+                                     (interface-expr ...)
+  class-clause ...)
+Binds class-id to a class, where superclass-expr, the interface-exprs, and the
+class-clauses are as in class*.
+
+This form can only be used at the top level, either within a module or outside.
+The class-id identifier is bound to the new class, and
+deserialize-info:class-id is also defined; if the definition is within a
+module, then the latter is provided from the module.
+
+Serialization for the class works in one of two ways:
+
+  • If the class implements the built-in interface externalizable<%>, then an
+    object is serialized by calling its externalize method; the result can be
+    anything that is serializable (but, obviously, should not be the object
+    itself). Deserialization creates an instance of the class with no
+    initialization arguments, and then calls the object’s internalize method
+    with the result of externalize (or, more precisely, a deserialized version
+    of the serialized result of a previous call).
+
+    To support this form of serialization, the class must be instantiable with
+    no initialization arguments. Furthermore, cycles involving only instances
+    of the class (and other such classes) cannot be serialized.
+
+  • If the class does not implement externalizable<%>, then every superclass of
+    the class must be either serializable or transparent (i.e,. have #f as its
+    inspector). Serialization and deserialization are fully automatic, and may
+    involve cycles of instances.
+
+    To support cycles of instances, deserialization may create an instance of
+    the call with all fields as the undefined value, and then mutate the object
+    to set the field values. Serialization support does not otherwise make an
+    object’s fields mutable.
+
+In the second case, a serializable subclass can implement externalizable<%>, in
+which case the externalize method is responsible for all serialization (i.e.,
+automatic serialization is lost for instances of the subclass). In the first
+case, all serializable subclasses implement externalizable<%>, since a subclass
+implements all of the interfaces of its parent class.
+
+In either case, if an object is an immediate instance of a subclass (that is
+not itself serializable), the object is serialized as if it was an immediate
+instance of the serializable class. In particular, overriding declarations of
+the externalize method are ignored for instances of non-serializable
+subclasses.
+
+(define-serializable-class class-id superclass-expr
+  class-clause ...)
+Like define-serializable-class*, but without interface expressions (analogous
+to class).
+
+externalizable<%> : interface?
+The externalizable<%> interface includes only the externalize and internalize
+methods. See define-serializable-class* for more information.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

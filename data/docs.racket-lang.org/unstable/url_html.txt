@@ -1,0 +1,60 @@
+►  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+▼ 22  Net
+ 22.1  URLs
+On this page:
+url-replace-path
+url-path->string
+[...search manuals...]
+  top← prev  up  next → 
+
+22.1 URLs
+
+ (require unstable/net/url)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(url-replace-path proc u) → url?
+  proc : ((listof path/param?) . -> . (listof path/param?))
+  u : url?
+Replaces the URL path of u with proc of the former path.
+
+(url-path->string url-path) → string?
+  url-path : (listof path/param?)
+Formats url-path as a string with "/" as a delimiter and no params.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

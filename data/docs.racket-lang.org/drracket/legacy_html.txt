@@ -1,0 +1,36 @@
+►  Dr Racket: The Racket Programming Environment
+1  Interface Essentials
+2  Languages
+3  Interface Reference
+4  Extending Dr Racket
+   Index
+▼ 2  Languages
+2.1  Language Declared in Source
+2.2  Legacy Languages
+2.3  How to Design Programs Teaching Languages
+2.4  Other Experimental Languages
+2.5  Output Printing Styles
+[...search manuals...]
+  top← prev  up  next → 
+
+2.2 Legacy Languages
+
+DrRacket supports several historically useful variants of Scheme without a #
+lang prefix:
+
+  • The R5RS language contains those primitives and syntax defined in the R5RS
+    Scheme standard. See the r5rs library for details.
+
+  • The PLT Pretty Big language provides a language roughly compatible with a
+    language in earlier versions of DrRacket. It evaluates a program in the
+    same way as load, and it starts by importing the following modules:
+    mzscheme, racket/gui/base, mzlib/class, mzlib/etc, mzlib/file, mzlib/list,
+    mzlib/unit, mzlib/include, mzlib/defmacro, mzlib/pretty, mzlib/string,
+    mzlib/thread, mzlib/math, mzlib/match, and mzlib/shared.
+
+  • The Swindle language starts with the same bindings as swindle, and
+    evaluates the program like load.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

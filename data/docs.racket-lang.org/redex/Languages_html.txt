@@ -1,0 +1,97 @@
+▼  Redex: Practical Semantics Engineering
+1  Patterns
+2  Terms
+3  Languages
+4  Reduction Relations
+5  Metafunctions and Relations
+6  Testing
+7  GUI
+8  Typesetting
+   Index
+On this page:
+define-language
+: : =
+define-extended-language
+language-nts
+compiled-lang?
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Languages
+
+(define-language lang-name
+  non-terminal-def ...)
+ 
+non-terminal-def   =   (non-terminal-name ...+ ::= pattern ...+)
+                   |   (non-terminal-name pattern ...+)
+                   |   ((non-terminal-name ...+) pattern ...+)
+This form defines the grammar of a language. It allows the definition of
+recursive patterns, much like a BNF, but for regular-tree grammars. It goes
+beyond their expressive power, however, because repeated name patterns and
+side-conditions can restrict matches in a context-sensitive way.
+
+A non-terminal-def comprises one or more non-terminal names (considered
+aliases) followed by one or more productions.
+
+For example, the following defines lc-lang as the grammar of the lambda
+calculus:
+
+    (define-language lc-lang
+      (e (e e ...)
+         x
+         v)
+      (c (v ... c e ...)
+         hole)
+      (v (lambda (x ...) e))
+      (x variable-not-otherwise-mentioned))
+
+with non-terminals e for the expression language, x for variables, c for the
+evaluation contexts and v for values.
+
+::=
+A non-terminal’s names and productions may be separated by the keyword ::=. Use
+of the ::= keyword outside a language definition is a syntax error.
+
+(define-extended-language extended-lang base-lang
+  non-terminal-def ...)
+ 
+non-terminal-def   =   (non-terminal-name ...+ ::= pattern ...+)
+                   |   (non-terminal-name pattern ...+)
+                   |   ((non-terminal-name ...+) pattern ...+)
+This form extends a language with some new, replaced, or extended
+non-terminals. For example, this language:
+
+    (define-extended-language lc-num-lang
+      lc-lang
+      (v ....     ; extend the previous `v' non-terminal
+         +
+         number)
+      (x (variable-except lambda +)))
+
+extends lc-lang with two new alternatives for the v non-terminal, carries
+forward the e and c non-terminals, and replaces the x non-terminal with a new
+one (which happens to be equivalent to the one that would have been inherited).
+
+The four-period ellipses indicates that the new language’s non-terminal has all
+of the alternatives from the original language’s non-terminal, as well as any
+new ones. If a non-terminal occurs in both the base language and the extension,
+the extension’s non-terminal replaces the originals. If a non-terminal only
+occurs in either the base language, then it is carried forward into the
+extension. And, of course, extend-language lets you add new non-terminals to
+the language.
+
+If a language is has a group of multiple non-terminals defined together,
+extending any one of those non-terminals extends all of them.
+
+(language-nts lang) → (listof symbol?)
+  lang : compiled-lang?
+Returns the list of non-terminals (as symbols) that are defined by this
+language.
+
+(compiled-lang? l) → boolean?
+  l : any/c
+Returns #t if its argument was produced by language, #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,97 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+icon: get-paren-highlight-bitmap
+icon: get-eof-bitmap
+icon: get-autowrap-bitmap
+icon: get-lock-bitmap
+icon: get-unlock-bitmap
+icon: get-anchor-bitmap
+icon: get-left/ right-cursor
+icon: get-up/ down-cursor
+icon: get-gc-on-bitmap
+icon: get-gc-off-bitmap
+[...search manuals...]
+  top← prev  up  next → 
+
+18 Icon
+
+(icon:get-paren-highlight-bitmap) → (is-a?/c bitmap%)
+This returns the parenthesis highlight bitmap%. It is only used on black and
+white screens.
+(icon:get-eof-bitmap) → (is-a?/c bitmap%)
+This returns the bitmap% used for the clickable “eof” icon from text:ports.
+(icon:get-autowrap-bitmap) → (is-a?/c bitmap%)
+This returns the autowrap’s bitmap%.
+
+The bitmap may not respond #t to the ok? method.
+(icon:get-lock-bitmap) → (is-a?/c bitmap%)
+This returns the lock’s bitmap.
+
+The bitmap may not respond #t to the ok? method.
+(icon:get-unlock-bitmap) → (is-a?/c bitmap%)
+This returns the reset unlocked bitmap.
+
+The bitmap may not respond #t to the ok? method.
+(icon:get-anchor-bitmap) → (is-a?/c bitmap%)
+This returns the anchor’s bitmap.
+
+The bitmap may not respond #t to the ok? method.
+(icon:get-left/right-cursor) → (is-a?/c cursor%)
+This function returns a cursor% object that indicates left/right sizing is
+possible, for use with columns inside a window.
+
+The cursor may not respond #t to the ok? method.
+(icon:get-up/down-cursor) → (is-a?/c cursor%)
+This function returns a cursor% object that indicates up/down sizing is
+possible, for use with columns inside a window.
+
+The cursor may not respond #t to the ok? method.
+(icon:get-gc-on-bitmap) → (is-a?/c bitmap%)
+This returns a bitmap to be displayed in an frame:info<%> frame when garbage
+collection is taking place.
+
+The bitmap may not respond #t to the ok? method.
+(icon:get-gc-off-bitmap) → (is-a?/c bitmap%)
+This returns a bitmap to be displayed in an frame:info<%> frame when garbage
+collection is not taking place.
+
+The bitmap may not respond #t to the ok? method.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,66 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 5  Internal APIs
+5.1  Timers
+5.2  Connection Manager
+5.3  Serializable Closures
+5.4  Cache Table
+5.5  MIME Types
+5.6  Serialization Utilities
+5.7  URL Param
+5.8  GZip
+On this page:
+timer
+start-timer-manager
+start-timer
+reset-timer!
+increment-timer!
+cancel-timer!
+[...search manuals...]
+  top← prev  up  next → 
+
+5.1 Timers
+
+ (require web-server/private/timer)
+This module provides a functionality for running procedures after a given
+amount of time, that may be extended.
+
+(struct   timer (evt expire-seconds action)
+          #:extra-constructor-name make-timer)
+  evt : evt?
+  expire-seconds : number?
+  action : (-> void)
+evt is an alarm-evt that is ready at expire-seconds. action should be called
+when this evt is ready.
+
+(start-timer-manager) → void
+Handles the execution and management of timers.
+
+(start-timer s action) → timer?
+  s : number?
+  action : (-> void)
+Registers a timer that runs action after s seconds.
+
+(reset-timer! t s) → void
+  t : timer?
+  s : number?
+Changes t so that it will fire after s seconds.
+
+(increment-timer! t s) → void
+  t : timer?
+  s : number?
+Changes t so that it will fire after s seconds from when it does now.
+
+(cancel-timer! t) → void
+  t : timer?
+Cancels the firing of t ever and frees resources used by t.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,75 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+bad?
+seek
+tell
+write
+write-bytes
+[...search manuals...]
+  top← prev  up  next → 
+
+editor-stream-out-base% : class?
+  superclass: object%
+
+An editor-stream-out-base% object is used by an editor-stream-out% object to
+perform low-level writing of data.
+
+The editor-stream-out-base% class is never instantiated directly, but the
+derived class editor-stream-out-bytes-base% can be instantiated. New derived
+classes must override all of the methods described in this section.
+
+(send an-editor-stream-out-base bad?) → boolean?
+Returns #t if there has been an error writing to the stream, #f otherwise.
+
+(send an-editor-stream-out-base seek pos) → void?
+  pos : exact-nonnegative-integer?
+Moves to the specified absolute position in the stream.
+
+(send an-editor-stream-out-base tell)
+ → exact-nonnegative-integer?
+Returns the current stream position.
+
+(send an-editor-stream-out-base write data) → void?
+  data : (listof char?)
+Writes data (encoded as Latin-1 characters) to the stream. This method is
+implemented by default via write-bytes.
+
+(send an-editor-stream-out-base write-bytes bstr) → void?
+  bstr : bytes?
+Writes data to the stream.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

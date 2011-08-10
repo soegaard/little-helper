@@ -1,0 +1,200 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+On this page:
+trait
+trait?
+trait->mixin
+trait-sum
+trait-exclude
+trait-exclude-field
+trait-alias
+trait-rename
+trait-rename-field
+[...search manuals...]
+  top← prev  up  next → 
+
+5.6 Traits
+
+ (require racket/trait)
+The bindings documented in this section are provided by the racket/trait
+library, not racket/base or racket.
+
+A trait is a collection of methods that can be converted to a mixin and then
+applied to a class. Before a trait is converted to a mixin, the methods of a
+trait can be individually renamed, and multiple traits can be merged to form a
+new trait.
+
+(trait trait-clause ...)
+ 
+trait-clause   =   (public maybe-renamed ...)
+               |   (pubment maybe-renamed ...)
+               |   (public-final maybe-renamed ...)
+               |   (override maybe-renamed ...)
+               |   (overment maybe-renamed ...)
+               |   (override-final maybe-renamed ...)
+               |   (augment maybe-renamed ...)
+               |   (augride maybe-renamed ...)
+               |   (augment-final maybe-renamed ...)
+               |   (inherit maybe-renamed ...)
+               |   (inherit/super maybe-renamed ...)
+               |   (inherit/inner maybe-renamed ...)
+               |   method-definition
+               |   (field field-declaration ...)
+               |   (inherit-field maybe-renamed ...)
+Creates a trait. The body of a trait form is similar to the body of a class*
+form, but restricted to non-private method definitions. In particular, the
+grammar of maybe-renamed, method-definition, and field-declaration are the same
+as for class*, and every method-definition must have a corresponding
+declaration (one of public, override, etc.). As in class, uses of method names
+in direct calls, super calls, and inner calls depend on bringing method names
+into scope via inherit, inherit/super, inherit/inner, and other method
+declarations in the same trait; an exception, compared to class is that
+overment binds a method name only in the corresponding method, and not in other
+methods of the same trait. Finally, macros such as public* and define/public
+work in trait as in class.
+
+External identifiers in trait, trait-exclude, trait-exclude-field, trait-alias,
+trait-rename, and trait-rename-field forms are subject to binding via
+define-member-name and define-local-member-name. Although private methods or
+fields are not allowed in a trait form, they can be simulated by using a public
+or field declaration and a name whose scope is limited to the trait form.
+
+(trait? v) → boolean?
+  v : any/c
+Returns #t if v is a trait, #f otherwise.
+
+(trait->mixin tr) → (class? . -> . class?)
+  tr : trait?
+Converts a trait to a mixin, which can be applied to a class to produce a new
+class. An expression of the form
+
+    (trait->mixin
+     (trait
+       trait-clause ...))
+
+is equivalent to
+
+    (lambda (%)
+      (class %
+        trait-clause ...
+        (super-new)))
+
+Normally, however, a trait’s methods are changed and combined with other traits
+before converting to a mixin.
+
+(trait-sum tr ...+) → trait?
+  tr : trait?
+Produces a trait that combines all of the methods of the given trs. For
+example,
+
+    (define t1
+     (trait
+      (define/public (m1) 1)))
+    (define t2
+     (trait
+      (define/public (m2) 2)))
+    (define t3 (trait-sum t1 t2))
+
+creates a trait t3 that is equivalent to
+
+    (trait
+     (define/public (m1) 1)
+     (define/public (m2) 2))
+
+but t1 and t2 can still be used individually or combined with other traits.
+
+When traits are combined with trait-sum, the combination drops inherit, inherit
+/super, inherit/inner, and inherit-field declarations when a definition is
+supplied for the same method or field name by another trait. The trait-sum
+operation fails (the exn:fail:contract exception is raised) if any of the
+traits to combine define a method or field with the same name, or if an inherit
+/super or inherit/inner declaration to be dropped is inconsistent with the
+supplied definition. In other words, declaring a method with inherit, inherit/
+super, or inherit/inner, does not count as defining the method; at the same
+time, for example, a trait that contains an inherit/super declaration for a
+method m cannot be combined with a trait that defines m as augment, since no
+class could satisfy the requirements of both augment and inherit/super when the
+trait is later converted to a mixin and applied to a class.
+
+(trait-exclude trait-expr id)
+Produces a new trait that is like the trait result of trait-expr, but with the
+definition of a method named by id removed; as the method definition is
+removed, either an inherit, inherit/super, or inherit/inner declaration is
+added:
+
+  • A method declared with public, pubment, or public-final is replaced with an
+    inherit declaration.
+
+  • A method declared with override or override-final is replaced with an
+    inherit/super declaration.
+
+  • A method declared with augment, augride, or augment-final is replaced with
+    an inherit/inner declaration.
+
+  • A method declared with overment is not replaced with any inherit
+    declaration.
+
+If the trait produced by trait-expr has no method definition for id, the
+exn:fail:contract exception is raised.
+
+(trait-exclude-field trait-expr id)
+Produces a new trait that is like the trait result of trait-expr, but with the
+definition of a field named by id removed; as the field definition is removed,
+an inherit-field declaration is added.
+
+(trait-alias trait-expr id new-id)
+Produces a new trait that is like the trait result of trait-expr, but the
+definition and declaration of the method named by id is duplicated with the
+name new-id. The consistency requirements for the resulting trait are the same
+as for trait-sum, otherwise the exn:fail:contract exception is raised. This
+operation does not rename any other use of id, such as in method calls (even
+method calls to identifier in the cloned definition for new-id).
+
+(trait-rename trait-expr id new-id)
+Produces a new trait that is like the trait result of trait-expr, but all
+definitions and references to methods named id are replaced by definitions and
+references to methods named by new-id. The consistency requirements for the
+resulting trait are the same as for trait-sum, otherwise the exn:fail:contract
+exception is raised.
+
+(trait-rename-field trait-expr id new-id)
+Produces a new trait that is like the trait result of trait-expr, but all
+definitions and references to fields named id are replaced by definitions and
+references to fields named by new-id. The consistency requirements for the
+resulting trait are the same as for trait-sum, otherwise the exn:fail:contract
+exception is raised.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,74 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 3  C Types
+3.1  Type Constructors
+3.2  Numeric Types
+3.3  Other Atomic Types
+3.4  String Types
+3.5  Pointer Types
+3.6  Function Types
+3.7  C Struct Types
+3.8  Enumerations and Masks
+On this page:
+make-ctype
+ctype?
+ctype-sizeof
+ctype-alignof
+ctype->layout
+compiler-sizeof
+[...search manuals...]
+  top← prev  up  next → 
+
+3.1 Type Constructors
+
+(make-ctype type scheme-to-c c-to-scheme) → ctype?
+  type : ctype?
+  scheme-to-c : (or/c #f (any/c . -> . any))
+  c-to-scheme : (or/c #f (any/c . -> . any))
+Creates a new C type value whose representation for foreign code is the same as
+type’s. The given conversions functions convert to and from the Racket
+representation of type. Either conversion function can be #f, meaning that the
+conversion for the corresponding direction is the identity function. If both
+functions are #f, type is returned.
+
+(ctype? v) → boolean?
+  v : any/c
+Returns #t if v is a C type, #f otherwise.
+
+(ctype-sizeof type) → exact-nonnegative-integer?
+  type : ctype?
+(ctype-alignof type) → exact-nonnegative-integer?
+  type : ctype?
+Returns the size or alignment of a given type for the current platform.
+
+(ctype->layout type)
+ → (flat-rec-contract rep symbol? (listof rep))
+  type : ctype?
+Returns a value to describe the eventual C representation of the type. It can
+be any of the following symbols:
+
+    'int8 'uint8 'int16 'uint16 'int32 'uint32 'int64 'uint64
+    'float 'double 'bool 'void 'pointer 'fpointer
+    'bytes 'string/ucs-4 'string/utf-16
+
+The result can also be a list, which describes a C struct whose element
+representations are provided in order within the list.
+
+(compiler-sizeof sym) → exact-nonnegative-integer?
+  sym : symbol?
+Possible values for symbol are 'int, 'char, 'short, 'long, '*, 'void, 'float,
+'double. The result is the size of the correspond type according to the C
+sizeof operator for the current platform. The compiler-sizeof operation should
+be used to gather information about the current platform, such as defining
+alias type like _int to a known type like _int32.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

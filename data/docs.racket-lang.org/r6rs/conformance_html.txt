@@ -1,0 +1,74 @@
+▼  R6RS: Scheme
+1  Using R6RS with Dr Racket
+2  Running Top-Level Programs
+3  Installing Libraries
+4  R6RS Module Language
+5  Libraries and Collections
+6  Language Interoperability
+7  R6RS Conformance
+8  R6RS Libraries
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+7 R6RS Conformance
+
+Racket’s R6RS support does not conform with the standard in several known ways:
+
+  • When guard catches an exception that no clause matches, the exception is
+    re-raiseed without restoring the continuation to the one that raised the
+    exception.
+
+    This difference can be made visible using dynamic-wind. According to R6RS,
+    the following program should print “in” and “out” twice, but each prints
+    once using Racket:
+
+        (guard (exn [(equal? exn 5) 'five])
+           (guard (exn [(equal? exn 6) 'six])
+             (dynamic-wind
+               (lambda () (display "in") (newline))
+               (lambda () (raise 5))
+               (lambda () (display "out") (newline)))))
+
+    Along similar lines, continuation capture and invocation within an
+    exception handler is restricted. Unless the exception is raised through
+    raise-continuable, a handler can escape only through a continuation that is
+    a tail of the current continuation, and a continuation captured within the
+    handler cannot be invoked after control escapes from the raise.
+
+    The initial exception handler does not return for non-&serious conditions,
+    but raise and raise-continuable both install an uncaught-exception handler
+    (via parameterize and uncaught-exception-handler) to one that returns for
+    non-&serious conditions.
+
+  • Inexact numbers are printed without a precision indicator, and precision
+    indicators are ignored on input (e.g., 0.5|7 is read the same as 0.5).
+
+  • Word boundaries for string-downcase, string-upcase, and string-titlecase
+    are not determined as specified by Unicode Standard Annex #29.
+
+  • When an identifier bound by letrec or letrec* is referenced before it is
+    bound, an exception is not raised; instead, the reference produces #
+    <undefined>.
+
+  • A custom textual port must represent positions using integers, and the
+    positions must correspond to bytes in a UTF-8 encoding of the port’s data.
+    For custom ports (byte or character) that support both input and output,
+    beware that buffered input can create a mismatch between the position
+    implemented by the custom procedures and the port’s current position; the
+    result from a custom position procedure is automatically adjusted to
+    account for buffering, and setting the port’s position flushes all buffered
+    bytes, but writing after a read does not automatically reset the port’s
+    position to counteract the effects of buffering.
+
+  • The bindings in a namespace produced by null-environment or
+    racket-report-environment correspond to R5RS bindings instead of R6RS
+    bindings. In particular, =>, else, _, and ... are not bound.
+
+  • Bindings for #%datum, #%app, #%top, and #%top-interaction are imported into
+    every library and program, and at every phase level for which the library
+    or program has imports.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,149 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 3  Built-In Datatypes
+ 3.1  Booleans
+ 3.2  Numbers
+ 3.3  Characters
+ 3.4  Strings (Unicode)
+ 3.5  Bytes and Byte Strings
+ 3.6  Symbols
+ 3.7  Keywords
+ 3.8  Pairs and Lists
+ 3.9  Vectors
+3.10  Hash Tables
+3.11  Boxes
+3.12  Void and Undefined
+[...search manuals...]
+  top← prev  up  next → 
+
+3.3 Characters
+
+A Racket character corresponds to a Unicode scalar value. Roughly, a scalar
+value is an unsigned integer whose representation fits into 21 bits, and that
+maps to some notion of a natural-language character or piece of a character.
+Technically, a scalar value is a simpler notion than the concept called a
+“character” in the Unicode standard, but it’s an approximation that works well
+for many purposes. For example, any accented Roman letter can be represented as
+a scalar value, as can any common Chinese character.
+
+Although each Racket character corresponds to an integer, the character
+datatype is separate from numbers. The char->integer and integer->char
+procedures convert between scalar-value numbers and the corresponding
+character.
+
+A printable character normally prints as #\ followed by the represented
+character. An unprintable character normally prints as #\u followed by the
+scalar value as hexadecimal number. A few characters are printed specially; for
+example, the space and linefeed characters print as #\space and #\newline,
+respectively.
+
+            +Reading Characters in The Racket Reference documents the fine
+            points of the syntax of characters.
+
+Examples:
+
+    > (integer->char 65)
+    #\A
+
+    > (char->integer #\A)
+    65
+
+    > #\λ
+    #\λ
+
+    > #\u03BB
+    #\λ
+
+    > (integer->char 17)
+    #\u0011
+
+    > (char->integer #\space)
+    32
+
+
+
+The display procedure directly writes a character to the current output port
+(see Input and Output), in contrast to the character-constant syntax used to
+print a character result.
+
+Examples:
+
+    > #\A
+    #\A
+
+    > (display #\A)
+    A
+
+
+
+Racket provides several classification and conversion procedures on characters.
+Beware, however, that conversions on some Unicode characters work as a human
+would expect only when they are in a string (e.g., upcasing “ss” or downcasing
+“Σ”).
+
+Examples:
+
+    > (char-alphabetic? #\A)
+    #t
+
+    > (char-numeric? #\0)
+    #t
+
+    > (char-whitespace? #\newline)
+    #t
+
+    > (char-downcase #\A)
+    #\a
+
+    > (char-upcase #\ss)
+    #\ss
+
+
+
+The char=? procedure compares two or more characters, and char-ci=? compares
+characters ignoring case. The eqv? and equal? procedures behave the same as
+char=? on characters; use char=? when you want to more specifically declare
+that the values being compared are characters.
+
+Examples:
+
+    > (char=? #\a #\A)
+    #f
+
+    > (char-ci=? #\a #\A)
+    #t
+
+    > (eqv? #\a #\A)
+    #f
+
+
+
+            +Characters in The Racket Reference provides more on characters and
+            character procedures.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

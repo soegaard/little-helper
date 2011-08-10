@@ -1,0 +1,428 @@
+▼  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+► 4  Web Servers
+4.1  Server Units
+4.2  Configuration Units
+4.3  Configuration Table
+4.4  Configuration Table Structure
+4.5  Standard Responders
+On this page:
+4.1 Server Units
+4.1.1 Signature
+web-server^
+serve
+serve-ports
+4.1.2 Unit
+web-server@
+4.2 Configuration Units
+4.2.1 Signature
+web-config^
+max-waiting
+virtual-hosts
+initial-connection-timeout
+port
+listen-ip
+make-servlet-namespace
+4.2.2 Unit
+configuration-table->web-config@
+configuration-table-sexpr->web-config@
+4.3 Configuration Table
+default-configuration-table-path
+configuration-table-sexpr?
+sexpr->configuration-table
+configuration-table->sexpr
+read-configuration-table
+write-configuration-table
+4.4 Configuration Table Structure
+configuration-table
+host-table
+host
+responders
+messages
+timeouts
+paths
+4.5 Standard Responders
+file-response
+servlet-loading-responder
+gen-servlet-not-found
+servlet-error-responder
+gen-servlet-responder
+gen-servlets-refreshed
+gen-passwords-refreshed
+gen-authentication-responder
+gen-protocol-responder
+gen-file-not-found-responder
+gen-collect-garbage-responder
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Web Servers
+
+A Web server is a unit with the web-server^ signature. The most common way to
+construct one is to provide a web-config^ unit to the web-server@ unit. The
+most common way to construct a web-config^ unit is to use configuration-table->
+web-config@ to produce one from a configuration table file, such as the one
+that is shipped with Racket in default-configuration-table-path.
+
+4.1 Server Units
+
+ (require web-server/web-server-sig)
+
+web-server^ : signature
+
+
+    (serve) → (-> void)
+    Runs the server and returns a procedure that shuts down the server.
+
+    (serve-ports ip op) → void
+      ip : input-port?
+      op : output-port?
+    Serves a single connection represented by the ports ip and op.
+
+ (require web-server/web-server-unit)
+
+web-server@  :  (unit/c (web-config^ tcp^)
+                        (web-server^))
+Uses the web-config^ to construct a dispatcher/c function that sets up one
+virtual host dispatcher, for each virtual host in the web-config^, that
+sequences the following operations:
+
+  • Logs the incoming request with the given format to the given file
+
+  • Performs HTTP Basic Authentication with the given password file
+
+  • Allows the "/conf/refresh-passwords" URL to refresh the password file.
+
+  • Allows the "/conf/collect-garbage" URL to call the garbage collector.
+
+  • Allows the "/conf/refresh-servlets" URL to refresh the servlets cache.
+
+  • Execute servlets in the mapping URLs to the given servlet root directory
+    under htdocs.
+
+  • Serves files under the "/" URL in the given htdocs directory.
+
+Using this dispatcher/c, it loads a dispatching server that provides serve and
+serve-ports functions that operate as expected.
+
+4.2 Configuration Units
+
+ (require web-server/web-config-sig)
+
+web-config^ : signature
+Provides contains the following identifiers.
+
+    max-waiting : integer?
+    Passed to tcp-accept.
+
+    virtual-hosts : (string? . -> . host?)
+    Contains the configuration of individual virtual hosts.
+
+    initial-connection-timeout : integer?
+    Specifies the initial timeout given to a connection.
+
+    port : port-number?
+    Specifies the port to serve HTTP on.
+
+    listen-ip : (or/c false/c string?)
+    Passed to tcp-listen.
+
+    make-servlet-namespace : make-servlet-namespace/c
+    Passed to servlets:make through make-default-path->servlet.
+
+ (require web-server/web-config-unit)
+
+(configuration-table->web-config@                       
+     path                                               
+   [ #:port port                                        
+     #:listen-ip listen-ip                              
+     #:make-servlet-namespace make-servlet-namespace])  
+ → (unit/c (import) (export web-config^))
+  path : path-string?
+  port : (or/c false/c port-number?) = #f
+  listen-ip : (or/c false/c string?) = #f
+   make-servlet-namespace   :   make-servlet-namespace/c
+                            =   (make-make-servlet-namespace)
+Reads the S-expression at path and calls configuration-table-sexpr->web-config@
+appropriately.
+
+(configuration-table-sexpr->web-config@                 
+     sexpr                                              
+   [ #:web-server-root web-server-root                  
+     #:port port                                        
+     #:listen-ip listen-ip                              
+     #:make-servlet-namespace make-servlet-namespace])  
+ → (unit/c (import) (export web-config^))
+  sexpr : list?
+   web-server-root   :   path-string?
+                     =   (directory-part default-configuration-table-path)
+  port : (or/c false/c port-number?) = #f
+  listen-ip : (or/c false/c string?) = #f
+   make-servlet-namespace   :   make-servlet-namespace/c
+                            =   (make-make-servlet-namespace)
+Parses sexpr as a configuration-table and constructs a web-config^ unit.
+
+4.3 Configuration Table
+
+ (require web-server/configuration/configuration-table)
+This module provides functions for reading, writing, parsing, and printing
+configuration-table structures.
+
+default-configuration-table-path : path?
+The default configuration table S-expression file.
+
+configuration-table-sexpr? : (any . -> . boolean?)
+Equivalent to list?.
+
+(sexpr->configuration-table sexpr) → configuration-table?
+  sexpr : configuration-table-sexpr?
+This function converts a configuration-table from an S-expression.
+
+(configuration-table->sexpr ctable)
+ → configuration-table-sexpr?
+  ctable : configuration-table?
+This function converts a configuration-table to an S-expression.
+
+    `((port ,integer?)
+      (max-waiting ,exact-integer?)
+      (initial-connection-timeout ,integer?)
+      (default-host-table
+        ,host-table-sexpr?)
+      (virtual-host-table
+       (list ,symbol? ,host-table-sexpr?)
+       ...))
+
+where a host-table-sexpr is:
+
+    `(host-table
+      (default-indices ,string? ...)
+      (log-format ,symbol?)
+      (messages
+       (servlet-message ,path-string?)
+       (authentication-message ,path-string?)
+       (servlets-refreshed ,path-string?)
+       (passwords-refreshed ,path-string?)
+       (file-not-found-message ,path-string?)
+       (protocol-message ,path-string?)
+       (collect-garbage ,path-string?))
+      (timeouts
+       (default-servlet-timeout ,integer?)
+       (password-connection-timeout ,integer?)
+       (servlet-connection-timeout ,integer?)
+       (file-per-byte-connection-timeout ,integer?)
+       (file-base-connection-timeout ,integer))
+      (paths
+       (configuration-root ,path-string?)
+       (host-root ,path-string?)
+       (log-file-path ,path-string?)
+       (file-root ,path-string?)
+       (servlet-root ,path-string?)
+       (mime-types ,path-string?)
+       (password-authentication ,path-string?)))
+
+In this syntax, the 'messages paths are relative to the 'configuration-root
+directory. All the paths in 'paths except for 'servlet-root are relative to
+'host-root (other than 'host-root obviously.) The 'servlet-root path is
+relative to 'file-root.
+Allowable 'log-formats are those accepted by log-format->format.
+Note: You almost always want to leave everything in the 'paths section the
+default except the 'host-root.
+
+(read-configuration-table path) → configuration-table?
+  path : path-string?
+This function reads a configuration-table from path.
+
+(write-configuration-table ctable path) → void
+  ctable : configuration-table?
+  path : path-string?
+This function writes a configuration-table to path.
+
+4.4 Configuration Table Structure
+
+ (require web-server/configuration/configuration-table-structs)
+This module provides the following structures that represent a standard
+configuration (see Server Units) of the Web Server . The contracts on this
+structure influence the valid types of values in the configuration table
+S-expression file format described in Configuration Table.
+(struct   configuration-table  ( port
+                                 max-waiting
+                                 initial-connection-timeout
+                                 default-host
+                                 virtual-hosts)
+          #:extra-constructor-name make-configuration-table)
+  port : port-number?
+  max-waiting : natural-number/c
+  initial-connection-timeout : natural-number/c
+  default-host : host-table?
+  virtual-hosts : (listof (cons/c string? host-table?))
+(struct   host-table (indices log-format messages timeouts paths)
+          #:extra-constructor-name make-host-table)
+  indices : (listof string?)
+  log-format : symbol?
+  messages : messages?
+  timeouts : timeouts?
+  paths : paths?
+(struct   host      (   indices
+                        log-format
+                        log-path
+                        passwords
+                        responders
+                        timeouts
+                        paths)
+          #:extra-constructor-name make-host)
+  indices : (listof string?)
+  log-format : symbol?
+  log-path : (or/c false/c path-string?)
+  passwords : (or/c false/c path-string?)
+  responders : responders?
+  timeouts : timeouts?
+  paths : paths?
+(struct   responders     ( servlet
+                           servlet-loading
+                           authentication
+                           servlets-refreshed
+                           passwords-refreshed
+                           file-not-found
+                           protocol
+                           collect-garbage)
+          #:extra-constructor-name make-responders)
+  servlet : (url? any/c . -> . response?)
+  servlet-loading : (url? any/c . -> . response?)
+  authentication : (url? (cons/c symbol? string?) . -> . response?)
+  servlets-refreshed : (-> response?)
+  passwords-refreshed : (-> response?)
+  file-not-found : (request? . -> . response?)
+  protocol : (url? . -> . response?)
+  collect-garbage : (-> response?)
+(struct   messages    ( servlet
+                        authentication
+                        servlets-refreshed
+                        passwords-refreshed
+                        file-not-found
+                        protocol
+                        collect-garbage)
+          #:extra-constructor-name make-messages)
+  servlet : string?
+  authentication : string?
+  servlets-refreshed : string?
+  passwords-refreshed : string?
+  file-not-found : string?
+  protocol : string?
+  collect-garbage : string?
+(struct   timeouts     ( default-servlet
+                         password
+                         servlet-connection
+                         file-per-byte
+                         file-base)
+          #:extra-constructor-name make-timeouts)
+  default-servlet : number?
+  password : number?
+  servlet-connection : number?
+  file-per-byte : number?
+  file-base : number?
+(struct   paths       (   conf
+                          host-base
+                          log
+                          htdocs
+                          servlet
+                          mime-types
+                          passwords)
+          #:extra-constructor-name make-paths)
+  conf : (or/c false/c path-string?)
+  host-base : (or/c false/c path-string?)
+  log : (or/c false/c path-string?)
+  htdocs : (or/c false/c path-string?)
+  servlet : (or/c false/c path-string?)
+  mime-types : (or/c false/c path-string?)
+  passwords : (or/c false/c path-string?)
+
+4.5 Standard Responders
+
+ (require web-server/configuration/responders)
+This module provides some functions that help constructing HTTP responders.
+These functions are used by the default dispatcher constructor (see Server
+Units) to turn the paths given in the configuration-table into responders for
+the associated circumstance.
+
+(file-response   http-code            
+                 short-version        
+                 text-file            
+                 header ...)     →   response?
+  http-code : natural-number/c
+  short-version : string?
+  text-file : string?
+  header : header?
+Generates a response? with the given http-code and short-version as the
+corresponding fields; with the content of the text-file as the body; and, with
+the headers as, you guessed it, headers.
+
+This does not cause redirects to a well-known URL, such as "conf/
+not-found.html", but rather use the contents of "not-found.html" (for example)
+as its contents. Therefore, any relative URLs in text-file are relative to
+whatever URL file-response is used to respond to. Thus, you should probably use
+absolute URLs in these files.
+
+(servlet-loading-responder url exn) → response?
+  url : url?
+  exn : exn?
+Gives exn to the current-error-handler and response with a stack trace and a
+"Servlet didn’t load" message.
+
+(gen-servlet-not-found file) → ((url url?) . -> . response?)
+  file : path-string?
+Returns a function that generates a standard "Servlet not found." error with
+content from file.
+
+(servlet-error-responder url exn) → response?
+  url : url?
+  exn : exn?
+Gives exn to the current-error-handler and response with a stack trace and a
+"Servlet error" message.
+
+(gen-servlet-responder file)
+ → ((url url?) (exn any/c) . -> . response?)
+  file : path-string?
+Prints the exn to standard output and responds with a "Servlet error." message
+with content from file.
+
+(gen-servlets-refreshed file) → (-> response?)
+  file : path-string?
+Returns a function that generates a standard "Servlet cache refreshed." message
+with content from file.
+
+(gen-passwords-refreshed file) → (-> response?)
+  file : path-string?
+Returns a function that generates a standard "Passwords refreshed." message
+with content from file.
+
+(gen-authentication-responder file)
+ → ((url url?) (header header?) . -> . response?)
+  file : path-string?
+Returns a function that generates an authentication failure error with content
+from file and header as the HTTP header.
+
+(gen-protocol-responder file) → ((url url?) . -> . response?)
+  file : path-string?
+Returns a function that generates a "Malformed request" error with content from
+file.
+
+(gen-file-not-found-responder file)
+ → ((req request?) . -> . response?)
+  file : path-string?
+Returns a function that generates a standard "File not found" error with
+content from file.
+
+(gen-collect-garbage-responder file) → (-> response?)
+  file : path-string?
+Returns a function that generates a standard "Garbage collection run" message
+with content from file.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

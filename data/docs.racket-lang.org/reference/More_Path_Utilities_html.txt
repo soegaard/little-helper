@@ -1,0 +1,135 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 14  Operating System
+14.1  Paths
+14.2  Filesystem
+14.3  Networking
+14.4  Processes
+14.5  Logging
+14.6  Time
+14.7  Environment and Runtime Information
+14.8  Command-Line Parsing
+▼ 14.1  Paths
+14.1.1  Manipulating Paths
+14.1.2  More Path Utilities
+14.1.3  Unix and Mac OS X Paths
+14.1.4  Windows Path Conventions
+On this page:
+explode-path
+file-name-from-path
+filename-extension
+find-relative-path
+normalize-path
+path-only
+simple-form-path
+some-system-path->string
+string->some-system-path
+[...search manuals...]
+  top← prev  up  next → 
+
+14.1.2 More Path Utilities
+
+ (require racket/path)
+The bindings documented in this section are provided by the racket/path and
+racket libraries, but not racket/base.
+
+(explode-path path)
+ → (listof (or/c path-for-some-system? 'up 'same))
+  path : (or/c path-string? path-for-some-system?)
+Returns the list of path element that constitute path. If path is simplified in
+the sense of simple-form-path, then the result is always a list of paths, and
+the first element of the list is a root.
+
+(file-name-from-path path) → (or/c path-for-some-system? #f)
+  path : (or/c path-string? path-for-some-system?)
+Returns the last element of path. If path syntactically a directory path (see
+split-path), then then result is #f.
+
+(filename-extension path) → (or/c bytes? #f)
+  path : (or/c path-string? path-for-some-system?)
+Returns a byte string that is the extension part of the filename in path
+without the . separator. If path is syntactically a directory (see split-path)
+or if the path has no extension, #f is returned.
+
+(find-relative-path base path) → path-for-some-system?
+  base : (or/c path-string? path-for-some-system?)
+  path : (or/c path-string?  path-for-some-system?)
+Finds a relative pathname with respect to base that names the same file or
+directory as path. Both base and path must be simplified in the sense of
+simple-form-path. If path is not a proper subpath of base (i.e., a subpath that
+is strictly longer), path is returned.
+
+(normalize-path path [wrt]) → path?
+  path : path-string?
+   wrt   :   (and/c path-string? complete-path?)
+         =   (current-directory)
+
+
+            For most purposes, simple-form-path is the preferred mechanism to
+            normalize a path, because it works for paths that include
+            non-existent directory components, and it avoids unnecessarily
+            expanding soft links.
+
+Returns a complete version of path by making the path complete, expanding the
+complete path, and resolving all soft links (which requires consulting the
+filesystem). If path is relative, then wrt is used as the base path.
+
+Letter case is not normalized by normalize-path. For this and other reasons,
+such as whether the path is syntactically a directory, the result of
+normalize-path is not suitable for comparisons that determine whether two paths
+refer to the same file or directory (i.e., the comparison may produce false
+negatives).
+
+An error is signaled by normalize-path if the input path contains an embedded
+path for a non-existent directory, or if an infinite cycle of soft links is
+detected.
+
+(path-only path) → (or/c #f path-for-some-system?)
+  path : (or/c path-string? path-for-some-system?)
+If path is a filename, the file’s path is returned. If path is syntactically a
+directory, path is returned (as a path, if it was a string). If path has no
+directory part #f is returned.
+
+(simple-form-path path) → path?
+  path : path-string?
+Returns (simplify-path (path->complete-path path)), which ensures that the
+result is a complete path containing no up- or same-directory indicators.
+
+(some-system-path->string path) → string?
+  path : path-for-some-system?
+Converts path to a string using a UTF-8 encoding of the path’s bytes.
+
+Use this function when working with paths for a different system (whose
+encoding of pathnames might be unrelated to the current locale’s encoding) and
+when starting and ending with strings.
+
+(string->some-system-path str kind) → path-for-some-system?
+  str : string?
+  kind : (or/c 'unix 'windows)
+Converts str to a kind path using a UTF-8 encoding of the path’s bytes.
+
+Use this function when working with paths for a different system (whose
+encoding of pathnames might be unrelated to the current locale’s encoding) and
+when starting and ending with strings.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

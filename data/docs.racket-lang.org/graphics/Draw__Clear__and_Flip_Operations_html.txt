@@ -1,0 +1,401 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+► 4  Draw, Clear, and Flip Operations
+4.1  Viewports
+4.2  Pixels
+4.3  Lines
+4.4  Rectangles
+4.5  Ellipses
+4.6  Polygons
+4.7  Strings
+4.8  Pixmaps
+On this page:
+4.1 Viewports
+draw-viewport
+clear-viewport
+flip-viewport
+copy-viewport
+4.2 Pixels
+draw-pixel
+clear-pixel
+flip-pixel
+4.3 Lines
+draw-line
+clear-line
+flip-line
+4.4 Rectangles
+draw-rectangle
+clear-rectangle
+flip-rectangle
+draw-solid-rectangle
+clear-solid-rectangle
+flip-solid-rectangle
+4.5 Ellipses
+draw-ellipse
+clear-ellipse
+flip-ellipse
+draw-solid-ellipse
+clear-solid-ellipse
+flip-solid-ellipse
+4.6 Polygons
+draw-polygon
+clear-polygon
+flip-polygon
+draw-solid-polygon
+clear-solid-polygon
+flip-solid-polygon
+4.7 Strings
+draw-string
+clear-string
+flip-string
+4.8 Pixmaps
+draw-pixmap-posn
+draw-pixmap
+save-pixmap
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Draw, Clear, and Flip Operations
+
+The following are the basic graphics operations for drawing to a viewport. Each
+function takes a viewport as its argument and returns a function operating
+within that viewport. Further arguments, if any, are curried. For example, (
+draw-line viewport) returns a function, that can then be applied to the proper
+arguments to draw a line in the viewport corresponding to viewport descriptor
+viewport.
+
+In general, draw- functions make pixels black or colored, clear- functions make
+them white, and flip- commands invert pixels (which makes black white, white
+black, and is otherwise ill-defined).
+
+4.1 Viewports
+
+((draw-viewport viewport) [color]) → void?
+  viewport : viewport?
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Colors the entire contents of viewport with color.
+
+((clear-viewport viewport)) → void?
+  viewport : viewport?
+Whitens the entire contents of viewport.
+
+((flip-viewport viewport)) → void?
+  viewport : viewport?
+Inverts the entire contents of viewport.
+
+(copy-viewport source dest) → void?
+  source : viewport?
+  dest : viewport?
+Copies the content of source into dest.
+
+4.2 Pixels
+
+((draw-pixel viewport) p [color]) → void?
+  viewport : viewport?
+  p : posn?
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Colors the pixel in viewport at p.
+
+((clear-pixel viewport) p) → void?
+  viewport : viewport?
+  p : posn?
+Whitens the pixel in viewport at p.
+
+((flip-pixel viewport) p) → void?
+  viewport : viewport?
+  p : posn?
+Inverts the pixel in viewport at p.
+
+4.3 Lines
+
+((draw-line viewport) p1 p2 [color]) → void?
+  viewport : viewport?
+  p1 : posn?
+  p2 : posn?
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Draws a line in viewport connecting positions p1 and p2.
+
+((clear-line viewport) p1 p2) → void?
+  viewport : viewport?
+  p1 : posn?
+  p2 : posn?
+Whitens a line in viewport connecting positions p1 and p2.
+
+((flip-line viewport) p1 p2) → void?
+  viewport : viewport?
+  p1 : posn?
+  p2 : posn?
+Inverts a line in viewport connecting positions p1 and p2.
+
+4.4 Rectangles
+
+((draw-rectangle    viewport)        
+                    p                
+                    width            
+                    height           
+                  [ color])     →   void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Draws a rectangle border in the viewport with the top-left of the rectangle at
+the position p and with sides width across and height tall.
+
+((clear-rectangle viewport) p width height) → void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Whitens a rectangle border in the viewport, analogous to draw-rectangle.
+
+((flip-rectangle viewport) p width height) → void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Inverts a rectangle border in the viewport, analogous to draw-rectangle.
+
+((draw-solid-rectangle    viewport)        
+                          p                
+                          width            
+                          height           
+                        [ color])     →   void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Draws a solid rectangle in the viewport with the top-left of the rectangle at
+the position p and with sides width across and height tall.
+
+((clear-solid-rectangle   viewport)        
+                          p                
+                          width            
+                          height)     →   void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Whitens a rectangle border in the viewport, analogous to draw-solid-rectangle.
+
+((flip-solid-rectangle   viewport)        
+                         p                
+                         width            
+                         height)     →   void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Inverts a rectangle border in the viewport, analogous to draw-solid-rectangle.
+
+4.5 Ellipses
+
+((draw-ellipse viewport) p width height [color]) → void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Draws a ellipse border in the viewport. The ellipse is inscribed with a
+rectangle whose top-left is at position p and with sides width across and
+height tall.
+
+((clear-ellipse viewport) p width height) → void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Whitens a ellipse border in the viewport, analogous to draw-ellipse.
+
+((flip-ellipse viewport) p width height) → void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Inverts a ellipse border in the viewport, analogous to draw-ellipse.
+
+((draw-solid-ellipse    viewport)        
+                        p                
+                        width            
+                        height           
+                      [ color])     →   void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Draws a solid ellipse in the viewport. The ellipse is inscribed with a
+rectangle whose top-left is at position p and with sides width across and
+height tall.
+
+((clear-solid-ellipse   viewport)        
+                        p                
+                        width            
+                        height)     →   void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Whitens a ellipse border in the viewport, analogous to draw-solid-ellipse.
+
+((flip-solid-ellipse   viewport)        
+                       p                
+                       width            
+                       height)     →   void?
+  viewport : viewport?
+  p : posn?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Inverts a ellipse border in the viewport, analogous to draw-solid-ellipse.
+
+4.6 Polygons
+
+((draw-polygon viewport) points offset [color]) → void?
+  viewport : viewport?
+  points : (listof posn?)
+  offset : posn?
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Draws a polygon border in viewport using points for the polygon vertices and
+offset as an offset added to all points.
+
+((clear-polygon viewport) points offset) → void?
+  viewport : viewport?
+  points : (listof posn?)
+  offset : posn?
+Whitens a polygon border in viewport, analogous to draw-polygon.
+
+((flip-polygon viewport) points offset) → void?
+  viewport : viewport?
+  points : (listof posn?)
+  offset : posn?
+Inverts a polygon border in viewport, analogous to draw-polygon.
+
+((draw-solid-polygon    viewport)        
+                        points           
+                        offset           
+                      [ color])     →   void?
+  viewport : viewport?
+  points : (listof posn?)
+  offset : posn?
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Draws a solid polygon in viewport using points for the polygon vertices and
+offset as an offset added to all points.
+
+((clear-solid-polygon   viewport)        
+                        points           
+                        offset)     →   void?
+  viewport : viewport?
+  points : (listof posn?)
+  offset : posn?
+Whitens a polygon border in viewport, analogous to draw-solid-polygon.
+
+((flip-solid-polygon   viewport)        
+                       points           
+                       offset)     →   void?
+  viewport : viewport?
+  points : (listof posn?)
+  offset : posn?
+Inverts a polygon border in viewport, analogous to draw-solid-polygon.
+
+4.7 Strings
+
+((draw-string viewport) p str [color]) → void?
+  viewport : viewport?
+  p : posn?
+  str : string?
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Draws a string at a specified location in the viewport. The lower left of the
+string begins at p.
+
+((clear-string viewport) p str) → void?
+  viewport : viewport?
+  p : posn?
+  str : string?
+Whitens a string at a specified location in the viewport. The lower left of the
+string begins at p.
+
+((flip-string viewport) p str) → void?
+  viewport : viewport?
+  p : posn?
+  str : string?
+Inverts a string at a specified location in the viewport. The lower left of the
+string begins at p.
+
+4.8 Pixmaps
+
+(((draw-pixmap-posn    file             
+                     [ type]))          
+                       viewport)        
+                       p                
+                     [ color])     →   void?
+  file : path-string?
+              (one-of/c 'unknown 'unknown/mask
+   type   :             'gif 'gif/mask 'jpeg 'png 'png/mask
+                        'xbm 'xpm 'bmp)
+          =   'unknown/mask
+  viewport : viewport?
+  p : posn?
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Draws a pixmap into viewport with its upper left corner at position p. If type
+is 'unknown or 'unknown/mask, then the content of the file is examined to
+determine the type. The 'gif/mask, 'png/mask, and 'unknown/mask types draw the
+bitmap with a transparent background if filename refers to a GIF/PNG file with
+a transparent background.
+
+The argument color is only used when the loaded pixmap is monochrome. In that
+case, the color is used instead of black in the drawn image.
+
+((draw-pixmap viewport) file p [color]) → void?
+  viewport : viewport?
+  file : path-string?
+  p : posn?
+               (or/c (integer-in 0 299)
+   color   :         string?              =   "black"
+                     rgb?)
+Equivalent to (((draw-pixmap-posn file) viewport) p color).
+
+((save-pixmap viewport) file [type]) → void?
+  viewport : viewport?
+  file : path-string?
+  type : (one-of/c 'gif 'jpeg 'png 'xbm 'xpm 'bmp) = 'xpm
+Saves the current content of viewport to file. The type argument determines the
+kind of file that is written.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

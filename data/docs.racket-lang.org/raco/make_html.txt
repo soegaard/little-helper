@@ -1,0 +1,449 @@
+▼  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+► 1  raco make: Compiling Source to Bytecode
+1.1  Bytecode Files
+1.2  Dependency Files
+1.3  API for Making Bytecode
+1.4  API for Parallel-Build
+1.5  Compilation Manager Hook for Syntax Transformers
+1.6  Compiling to Raw Bytecode
+On this page:
+1.1 Bytecode Files
+1.2 Dependency Files
+1.3 API for Making Bytecode
+make-compilation-manager-load/ use-compiled-handler
+managed-compile-zo
+trust-existing-zos
+make-caching-managed-compile-zo
+manager-compile-notify-handler
+manager-trace-handler
+manager-skip-file-handler
+file-stamp-in-collection
+file-stamp-in-paths
+get-file-sha1
+get-compiled-file-sha1
+with-compile-output
+parallel-lock-client
+1.4 API for Parallel-Build
+parallel-compile-files
+parallel-compile
+1.5 Compilation Manager Hook for Syntax Transformers
+register-external-file
+1.6 Compiling to Raw Bytecode
+[...search manuals...]
+  top← prev  up  next → 
+
+1 raco make: Compiling Source to Bytecode
+
+The raco make command accept filenames for Racket modules to be compiled to
+bytecode format. Modules are re-compiled only if the source Racket file is
+newer than the bytecode file and has a different SHA-1 hash, or if any imported
+module is recompiled or has a different SHA-1 hash for its compiled form plus
+dependencies.
+
+1.1 Bytecode Files
+
+A file "‹name›.‹ext›" is compiled to bytecode that is saved as "compiled/
+‹name›_‹ext›.zo" relative to the file. As a result, the bytecode file is
+normally used automatically when "‹name›.‹ext›" is required as a module, since
+the underlying load/use-compiled operation detects such a bytecode file.
+
+For example, in a directory that contains the following files:
+
+  • "a.rkt":
+
+        #lang racket
+        (require "b.rkt" "c.rkt")
+        (+ b c)
+
+  • "b.rkt":
+
+        #lang racket
+        (provide b)
+        (define b 1)
+
+  • "c.rkt":
+
+        #lang racket
+        (provide c)
+        (define c 1)
+
+then
+
+  raco make a.rkt
+
+triggers the creation of "compiled/a_rkt.zo", "compiled/b_rkt.zo", and
+"compiled/c_rkt.zo". A subsequent
+
+  racket a.rkt
+
+loads bytecode from the generated ".zo" files, paying attention to the ".rkt"
+sources only to confirm that each ".zo" file has a later timestamp.
+
+In contrast,
+
+  racket b.rkt c.rkt
+
+would create only "compiled/b_rkt.zo" and "compiled/c_rkt.zo", since neither
+"b.rkt" nor "c.rkt" imports "a.rkt".
+
+1.2 Dependency Files
+
+In addition to a bytecode file, raco make creates a file "compiled/
+‹name›_‹ext›.dep" that records dependencies of the compiled module on other
+module files and the source file’s SHA-1 hash. Using this dependency
+information, a re-compilation request via raco make can consult both the source
+file’s timestamp/hash and the timestamps/hashes for the bytecode of imported
+modules. Furthermore, imported modules are themselves compiled as necessary,
+including updating the bytecode and dependency files for the imported modules,
+transitively.
+
+Continuing the raco make a.rkt example from the previous section, the raco make
+command creates "compiled/a_rkt.dep", "compiled/b_rkt.dep", and "compiled/
+c_rkt.dep" at the same time as the ".zo" files. The "compiled/a_rkt.dep" file
+records the dependency of "a.rkt" on "b.rkt", "c.rkt" and the racket library.
+If the "b.rkt" file is modified (so that its timestamp and SHA-1 hash changes),
+then running
+
+  raco make a.rkt
+
+again rebuilds "compiled/a_rkt.zo" and "compiled/b_rkt.zo".
+
+For module files that are within library collections, raco setup uses the same
+".zo" and ".dep" conventions and files as raco make, so the two tools can be
+used together.
+
+1.3 API for Making Bytecode
+
+ (require compiler/cm)
+The compiler/cm module implements the compilation and dependency management
+used by raco make and raco setup.
+
+(make-compilation-manager-load/use-compiled-handler 
+[delete-zos-when-rkt-file-does-not-exist?])
+ → (path? (or/c symbol? false/c) . -> . any)
+  delete-zos-when-rkt-file-does-not-exist? : any/c = #f
+Returns a procedure suitable as a value for the current-load/use-compiled
+parameter. The returned procedure passes it arguments on to the current-load/
+use-compiled procedure that is installed when make-compilation-manager-load/
+use-compiled-handler is called, but first it automatically compiles a source
+file to a ".zo" file if
+
+  • the file is expected to contain a module (i.e., the second argument to the
+    handler is a symbol);
+
+  • the value of each of (current-eval), (current-load), and (
+    namespace-module-registry (current-namespace)) is the same as when
+    make-compilation-manager-load/use-compiled-handler was called;
+
+  • the value of use-compiled-file-paths contains the first path that was
+    present when make-compilation-manager-load/use-compiled-handler was called;
+
+  • the value of current-load/use-compiled is the result of this procedure; and
+
+  • one of the following holds:
+
+      □ the source file is newer than the ".zo" file in the first sub-directory
+        listed in use-compiled-file-paths (at the time that
+        make-compilation-manager-load/use-compiled-handler was called), and
+        either no ".dep" file exists or it records a source-file SHA-1 hash
+        that differs from the current version and source-file SHA-1 hash;
+
+      □ no ".dep" file exists next to the ".zo" file;
+
+      □ the version recorded in the ".dep" file does not match the result of (
+        version);
+
+      □ one of the files listed in the ".dep" file has a ".zo" timestamp newer
+        than the target ".zo", and the combined hashes of the dependencies
+        recorded in the ".dep" file does not match the combined hash recorded
+        in the ".dep" file.
+
+If SHA-1 hashes override a timestamp-based decision to recompile the file, then
+the target ".zo" file’s timestamp is updated to the current time.
+
+After the handler procedure compiles a ".zo" file, it creates a corresponding
+".dep" file that lists the current version and the identification of every file
+that is directly required by the module in the compiled file. Additional
+dependencies can be installed during compilation via compiler/cm-accomplice.
+The ".dep" file also records the SHA-1 hash of the module’s source, and it
+records a combined SHA-1 hash of all of the dependencies that includes their
+recursive dependencies.
+
+The handler caches timestamps when it checks ".dep" files, and the cache is
+maintained across calls to the same handler. The cache is not consulted to
+compare the immediate source file to its ".zo" file, which means that the
+caching behavior is consistent with the caching of the default module name
+resolver (see current-module-name-resolver).
+
+If use-compiled-file-paths contains an empty list when
+make-compilation-manager-load/use-compiled-handler is called, then
+exn:fail:contract exception is raised.
+
+If the delete-zos-when-rkt-file-does-not-exist? argument is a true value, then
+the returned handler will delete ".zo" files when there is no corresponding
+original source file.
+
+Do not install the result of make-compilation-manager-load/use-compiled-handler
+when the current namespace contains already-loaded versions of modules that may
+need to be recompiled—unless the already-loaded modules are never referenced by
+not-yet-loaded modules. References to already-loaded modules may produce
+compiled files with inconsistent timestamps and/or ".dep" files with incorrect
+information.
+
+(managed-compile-zo file [read-src-syntax]) → void?
+  file : path-string?
+   read-src-syntax   :   (any/c input-port? . -> . syntax?)
+                     =   read-syntax
+Compiles the given module source file to a ".zo", installing a
+compilation-manager handler while the file is compiled (so that required
+modules are also compiled), and creating a ".dep" file to record the timestamps
+of immediate files used to compile the source (i.e., files required in the
+source).
+
+If file is compiled from source, then read-src-syntax is used in the same way
+as read-syntax to read the source module. The normal read-syntax is used for
+any required files, however.
+
+(trust-existing-zos) → boolean?
+(trust-existing-zos trust?) → void?
+  trust? : any/c
+A parameter that is intended for use by setup-plt when installing with
+pre-built ".zo" files. It causes a compilation-manager load/use-compiled
+handler to “touch” out-of-date ".zo" files instead of re-compiling from source.
+
+(make-caching-managed-compile-zo read-src-syntax)
+ → (path-string? . -> . void?)
+  read-src-syntax : (any/c input-port? . -> . syntax?)
+Returns a procedure that behaves like managed-compile-zo (providing the same
+read-src-syntax each time), but a cache of timestamp information is preserved
+across calls to the procedure.
+
+(manager-compile-notify-handler) → (path? . -> . any)
+(manager-compile-notify-handler notify) → void?
+  notify : (path? . -> . any)
+A parameter for a procedure of one argument that is called whenever a
+compilation starts. The argument to the procedure is the file’s path.
+
+(manager-trace-handler) → (string? . -> . any)
+(manager-trace-handler notify) → void?
+  notify : (string? . -> . any)
+A parameter for a procedure of one argument that is called to report
+compilation-manager actions, such as checking a file. The argument to the
+procedure is a string.
+
+(manager-skip-file-handler)
+ → (-> path? (or/c (cons/c number? promise?) #f))
+(manager-skip-file-handler proc) → void?
+  proc : (-> path? (or/c (cons/c number? promise?) #f))
+A parameter whose value is called for each file that is loaded and needs
+recompilation. If the procedure returns a pair, then the file is skipped (i.e.,
+not compiled); the number in the pair is used as the timestamp for the file’s
+bytecode, and the promise may be forced to obtain a string that is used as hash
+of the compiled file plus its dependencies. If the procedure returns #f, then
+the file is compiled as usual. The default is (lambda (x) #f).
+
+(file-stamp-in-collection p)
+ → (or/c (cons/c number? promise?) #f)
+  p : path?
+Calls file-stamp-in-paths with p and (current-library-collection-paths).
+
+(file-stamp-in-paths p paths)
+ → (or/c (cons/c number? promise?) #f)
+  p : path?
+  paths : (listof path?)
+Returns the file-modification date and delayed hash of por its bytecode form
+(i.e., ".zo" file), whichever exists and is newer, if p is an extension of any
+path in paths (i.e., exists in the directory, a subdirectory, etc.). Otherwise,
+the result is #f.
+
+This function is intended for use with manager-skip-file-handler.
+
+(get-file-sha1 p) → (or/c string? #f)
+  p : path?
+Computes a SHA-1 hash for the file p; the result is #f if p cannot be opened.
+
+(get-compiled-file-sha1 p) → (or/c string? #f)
+  p : path?
+Computes a SHA-1 hash for the bytecode file p, appending any
+dependency-describing hash available from a ".dep" file when available (i.e.,
+the suffix on p is replaced by ".dep" to locate dependency information). The
+result is #f if p cannot be opened.
+
+(with-compile-output p proc) → any
+  p : path-string?
+  proc : ([port input-port?] [tmp-path path?]  . -> . any)
+Opens a temporary path for writing and calls proc passing the resulting port
+and tmp-path. Once proc returns, with-compile-output renames tmp-path to p and
+arranges to delete temp-path if there’s an exception. Breaks are managed so
+that the port is reliably closed and the tmp-path file is reliably deleted if
+there’s a break. The result of proc is the result of the with-compile-output
+call.
+
+Windows prevents programs from overwriting files that are open. As a result,
+with-compile-output calls to rename-file-or-directory will fail if the
+destination file argument is an open file. Windows, however, does allow you to
+rename an open file. To avoid overwriting open files windows,
+with-compile-output creates a second temporary file tmp-path2, renames p to
+tmp-path2, renames tmp-path to p, and finally deletes tmp-path2.
+
+(parallel-lock-client)
+ → ([command (or/c 'lock 'unlock)] [zo-path bytes?] . -> . boolean?)
+(parallel-lock-client proc) → void?
+  proc : ([command (or/c 'lock 'unlock)] [zo-path bytes?] . -> . boolean?)
+Holds the parallel compilation lock client, which prevents compilation races
+between parallel builders. The proc function takes a command argument of either
+'lock or 'unlock. The zo-path argument specifies the path of the zo for which
+compilation should be locked.
+
+When the proc 'lock command returns #t, the current builder has obtained the
+lock for zo-path. Once compilation of zo-path is complete, the builder process
+must release the lock by calling proc 'unlock with the exact same zo-path.
+
+When the proc 'lock command returns #f, another parallel builder obtained the
+lock first and has already compiled the zo. The parallel builder should
+continue without compiling zo-path.
+
+Example:
+
+    > (let* ([lc (parallel-lock-client)]
+             [zo-name  #"collects/racket/compiled/draw_rkt.zo"]
+             [locked? (and lc (lc 'lock zo-name))]
+             [ok-to-compile? (or (not lc) locked?)])
+        (dynamic-wind
+          (lambda () (void))
+          (lambda ()
+            (when ok-to-compile?
+              (printf "Do compile here ...\n")))
+          (lambda ()
+           (when locked?
+             (lc 'unlock zo-name)))))
+    Do compile here ...
+
+
+
+1.4 API for Parallel-Build
+
+ (require setup/parallel-build)
+The setup/parallel-build library provides the parallel compilation to bytecode
+functionality of rack setup and raco make.
+
+(parallel-compile-files    list-of-files                      
+                         [ #:worker-count worker-count        
+                           #:handler handler])           →   void?
+  list-of-files : (listof path?)
+  worker-count : non-negative-integer? = (processor-count)
+                 (->i ([handler-type symbol?]
+                       [path path-string?]
+   handler   :         [msg string?]            =   void
+                       [out string?]
+                       [err string?])
+                      void?)
+The parallel-compile utility function is used by raco make to compile a list of
+paths in parallel. The optional keyword argument #:worker-count specifies the
+number of compile workers to spawn during parallel compilation. The callback,
+handler, is called with the symbol 'done as the handler-type argument for each
+successfully compiled file, 'output when a successful compilation produces
+stdout/stderr output, 'error when a compilation error has occured, or
+'fatal-error when a unrecoverable error occurs. The other arguments give more
+information for each status update.
+
+    (parallel-compile-files
+      source-files
+      #:worker-count 4
+      #:handler (lambda (type work msg out err)
+        (match type
+          ['done (when (verbose) (printf " Made ~a\n" work))]
+          ['output (printf " Output from: ~a\n~a~a" work out err)]
+          [else (printf " Error compiling ~a\n~a\n~a~a"
+                        work
+                        msg
+                        out
+                        err)])))
+
+(parallel-compile   worker-count          
+                    setup-fprintf         
+                    append-error          
+                    collects-tree)   →   (void)
+  worker-count : non-negative-integer?
+                       (->* ([stage string?] [format string?])
+   setup-fprintf   :        ()
+                            #:rest (listof any/c) void)
+  append-error : (cc? [prefix string?] [exn (or/c exn? null?)] [out string?] 
+[err srtring?] [message string?] . -> . void?)
+  collects-tree : (listof any/c)
+The parallel-compile internal utility function is used by rack setup to compile
+collects in parallel. The worker-count argument specifies the number of compile
+workers to spawn during parallel compilation. The setup-fprintf and
+append-error functions are internal callback mechanisms that rack setup uses to
+communicate intermediate compilation results. The collects-tree argument is a
+compound datastructure containing an in-memory tree representation of the
+collects directory.
+
+1.5 Compilation Manager Hook for Syntax Transformers
+
+ (require compiler/cm-accomplice)
+
+(register-external-file file) → void?
+  file : (and path? complete-path?)
+Logs a message (see log-message) at level 'info. The message data is a
+file-dependency prefab structure type with one field whose value is file.
+
+A compilation manager implemented by compiler/cm looks for such messages to
+register an external dependency. The compilation manager records (in a ".dep"
+file) the path as contributing to the implementation of the module currently
+being compiled. Afterward, if the registered file is modified, the compilation
+manager will know to recompile the module.
+
+The include macro, for example, calls this procedure with the path of an
+included file as it expands an include form.
+
+1.6 Compiling to Raw Bytecode
+
+The --no-deps mode for raco make is an improverished form of the compilation,
+because it does not track import dependencies. It does, however, support
+compilation of non-module source in an namespace that initially imports scheme.
+
+Outside of a module, top-level define-syntaxes, module, #%require,
+define-values-for-syntax, and begin expressions are handled specially by raco
+make --no-deps: the compile-time portion of the expression is evaluated,
+because it might affect later expressions.
+
+For example, when compiling the file containing
+
+    (require racket/class)
+    (define f (class object% (super-new)))
+
+the class form from the racket/class library must be bound in the compilation
+namespace at compile time. Thus, the require expression is both compiled (to
+appear in the output code) and evaluated (for further computation).
+
+Many definition forms expand to define-syntaxes. For example, define-signature
+expands to define-syntaxes. In --no-deps mode, raco make --no-deps detects
+define-syntaxes and other expressions after expansion, so top-level
+define-signature expressions affect the compilation of later expressions, as a
+programmer would expect.
+
+In contrast, a load or eval expression in a source file is compiled—but not
+evaluated!—as the source file is compiled. Even if the load expression loads
+syntax or signature definitions, these will not be loaded as the file is
+compiled. The same is true of application expressions that affect the reader,
+such as (read-case-sensitive #t). The -p or --prefix flag for raco make takes a
+file and loads it before compiling the source files specified on the command
+line.
+
+In general, a better solution is to put all code to compile into a module and
+use raco make in its default mode.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

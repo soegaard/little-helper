@@ -1,0 +1,50 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+On this page:
+rgb
+change-color
+default-display-is-color?
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Color Operations
+
+A color can be represented in three ways: as a color index (an integer in 0 to
+299, inclusive), as a color name string, or as a rgb value. All drawing
+functions which take a color argument accept colors in any form. An rgb value
+is assigned to an index with change-color.
+
+(struct   rgb (red green blue)
+          #:extra-constructor-name make-rgb)
+  red : (real-in 0 1)
+  green : (real-in 0 1)
+  blue : (real-in 0 1)
+Takes three values in the range 0 (dark) to 1 (bright) and returns an rgb (a
+color).
+
+(change-color index rgb) → void?
+  index : (integer-in 0 299)
+  rgb : rgb?
+Changes the color at index in the color table to the color specified in rgb.
+Only the first twenty-one indices are initialized; a color index should not be
+used until it has been initialized.
+
+(default-display-is-color?) → boolean?
+Returns #t if the default display screen for viewports is in color or #f
+otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,77 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 6  Units
+ 6.1  Creating Units
+ 6.2  Invoking Units
+ 6.3  Linking Units and Creating Compound Units
+ 6.4  Inferred Linking
+ 6.5  Generating A Unit from Context
+ 6.6  Structural Matching
+ 6.7  Extending the Syntax of Signatures
+ 6.8  Unit Utilities
+ 6.9  Unit Contracts
+6.10  Single-Unit Modules
+6.11  Single-Signature Modules
+6.12  Transformer Helpers
+On this page:
+invoke-unit
+define-values/ invoke-unit
+[...search manuals...]
+  top← prev  up  next → 
+
+6.2 Invoking Units
+
+(invoke-unit unit-expr)
+(invoke-unit unit-expr (import tagged-sig-spec ...))
+Invokes the unit produced by unit-expr. For each of the unit’s imports, the
+invoke-unit expression must contain a tagged-sig-spec in the import clause; see
+unit for the grammar of tagged-sig-spec. If the unit has no imports, the import
+clause can be omitted.
+
+When no tagged-sig-specs are provided, unit-expr must produce a unit that
+expects no imports. To invoke the unit, all bindings are first initialized to
+the #<undefined> value. Next, the unit’s body definitions and expressions are
+evaluated in order; in the case of a definition, evaluation sets the value of
+the corresponding variable(s). Finally, the result of the last expression in
+the unit is the result of the invoke-unit expression.
+
+Each supplied tagged-sig-spec takes bindings from the surrounding context and
+turns them into imports for the invoked unit. The unit need not declare an
+import for every provided tagged-sig-spec, but one tagged-sig-spec must be
+provided for each declared import of the unit. For each variable identifier in
+each provided tagged-sig-spec, the value of the identifier’s binding in the
+surrounding context is used for the corresponding import in the invoked unit.
+
+(define-values/invoke-unit unit-expr
+  (import tagged-sig-spec ...)
+  (export tagged-sig-spec ...))
+Like invoke-unit, but the values of the unit’s exports are copied to new
+bindings.
+
+The unit produced by unit-expr is linked and invoked as for invoke-unit. In
+addition, the export clause is treated as a kind of import into the local
+definition context. That is, for every binding that would be available in a
+unit that used the export clause’s tagged-sig-spec as an import, a definition
+is generated for the context of the define-values/invoke-unit form.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

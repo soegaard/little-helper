@@ -1,0 +1,383 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 14  Operating System
+14.1  Paths
+14.2  Filesystem
+14.3  Networking
+14.4  Processes
+14.5  Logging
+14.6  Time
+14.7  Environment and Runtime Information
+14.8  Command-Line Parsing
+▼ 14.3  Networking
+ 14.3.1  TCP
+ 14.3.2  UDP
+On this page:
+udp-open-socket
+udp-bind!
+udp-connect!
+udp-send-to
+udp-send
+udp-send-to*
+udp-send*
+udp-send-to/ enable-break
+udp-send/ enable-break
+udp-receive!
+udp-receive!*
+udp-receive!/ enable-break
+udp-close
+udp?
+udp-bound?
+udp-connected?
+udp-send-ready-evt
+udp-receive-ready-evt
+udp-send-to-evt
+udp-send-evt
+udp-receive!-evt
+udp-addresses
+[...search manuals...]
+  top← prev  up  next → 
+
+14.3.2 UDP
+
+ (require racket/udp)
+The bindings documented in this section are provided by the racket/udp and
+racket libraries, but not racket/base.
+
+For information about UDP in general, see TCP/IP Illustrated, Volume 1 by W.
+Richard Stevens.
+
+(udp-open-socket  [ family-hostname         
+                    family-port-no])   →   udp?
+  family-hostname : (or/c string? #f) = #f
+  family-port-no : (or/c string? #f) = #f
+Creates and returns a UDP socket to send and receive datagrams (broadcasting is
+allowed). Initially, the socket is not bound or connected to any address or
+port.
+
+If family-hostname or family-port-no is not #f, then the socket’s protocol
+family is determined from these arguments. The socket is not bound to the
+hostname or port number. For example, the arguments might be the hostname and
+port to which messages will be sent through the socket, which ensures that the
+socket’s protocol family is consistent with the destination. Alternately, the
+arguments might be the same as for a future call to udp-bind!, which ensures
+that the socket’s protocol family is consistent with the binding. If neither
+family-hostname nor family-port-no is non-#f, then the socket’s protocol family
+is IPv4.
+
+(udp-bind!   udp-socket             
+             hostname-string        
+             port-no)          →   void?
+  udp-socket : udp?
+  hostname-string : (or/c string? #f)
+   port-no   :   (and/c exact-nonnegative-integer?
+                        (integer-in 0 65535))
+Binds an unbound udp-socket to the local port number port-no. If port-no is 0
+the udp-socket is bound to an ephemeral port, which can be determined by
+calling udp-addresses.
+
+If hostname-string is #f, then the socket accepts connections to all of the
+listening machine’s IP addresses at port-no. Otherwise, the socket accepts
+connections only at the IP address associated with the given name. For example,
+providing "127.0.0.1" as hostname-string typically creates a listener that
+accepts only connections to "127.0.0.1" from the local machine.
+
+A socket cannot receive datagrams until it is bound to a local address and
+port. If a socket is not bound before it is used with a sending procedure
+udp-send, udp-send-to, etc., the sending procedure binds the socket to a random
+local port. Similarly, if an event from udp-send-evt or udp-send-to-evt is
+chosen for a synchronization (see Events), the socket is bound; if the event is
+not chosen, the socket may or may not become bound.
+
+The binding of a bound socket cannot be changed, with one exception: on some
+systems, if the socket is bound automatically when sending, if the socket is
+disconnected via udp-connect!, and if the socket is later used again in a send,
+then the later send may change the socket’s automatic binding.
+
+If udp-socket is already bound or closed, the exn:fail:network exception is
+raised.
+
+(udp-connect!   udp-socket             
+                hostname-string        
+                port-no)          →   void?
+  udp-socket : udp?
+  hostname-string : (or/c string? #f)
+                 (or/c (and/c exact-nonnegative-integer?
+   port-no   :                (integer-in 1 65535))
+                       #f)
+Connects the socket to the indicated remote address and port if hostname-string
+is a string and port-no is an exact integer.
+
+If hostname-string is #f, then port-no also must be #f, and the port is
+disconnected (if connected). If one of hostname-string or port-no is #f and the
+other is not, the exn:fail:contract exception is raised.
+
+A connected socket can be used with udp-send (not udp-send-to), and it accepts
+datagrams only from the connected address and port. A socket need not be
+connected to receive datagrams. A socket can be connected, re-connected, and
+disconnected any number of times.
+
+If udp-socket is closed, the exn:fail:network exception is raised.
+
+(udp-send-to    udp-socket        
+                hostname          
+                port-no           
+                bstr              
+              [ start-pos         
+                end-pos])    →   void
+  udp-socket : udp?
+  hostname : string?
+   port-no   :   (and/c exact-nonnegative-integer?
+                        (integer-in 1 65535))
+  bstr : bytes?
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Sends (subbytes bytes start-pos end-pos) as a datagram from the unconnected
+udp-socket to the socket at the remote machine hostname-address on the port
+port-no. The udp-socket need not be bound or connected; if it is not bound,
+udp-send-to binds it to a random local port. If the socket’s outgoing datagram
+queue is too full to support the send, udp-send-to blocks until the datagram
+can be queued.
+
+If start-pos is greater than the length of bstr, or if end-pos is less than
+start-pos or greater than the length of bstr, the exn:fail:contract exception
+is raised.
+
+If udp-socket is closed or connected, the exn:fail:network exception is raised.
+
+(udp-send udp-socket bstr [start-pos end-pos]) → void
+  udp-socket : udp?
+  bstr : bytes?
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Like udp-send-to, except that udp-socket must be connected, and the datagram
+goes to the connection target. If udp-socket is closed or unconnected, the
+exn:fail:network exception is raised.
+
+(udp-send-to*    udp-socket        
+                 hostname          
+                 port-no           
+                 bstr              
+               [ start-pos         
+                 end-pos])    →   boolean?
+  udp-socket : udp?
+  hostname : string?
+   port-no   :   (and/c exact-nonnegative-integer?
+                        (integer-in 1 65535))
+  bstr : bytes?
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Like udp-send-to, but never blocks; if the socket’s outgoing queue is too full
+to support the send, #f is returned, otherwise the datagram is queued and the
+result is #t.
+
+(udp-send* udp-socket bstr [start-pos end-pos]) → boolean?
+  udp-socket : udp?
+  bstr : bytes?
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Like udp-send, except that (like udp-send-to) it never blocks and returns #f or
+#t.
+
+(udp-send-to/enable-break    udp-socket        
+                             hostname          
+                             port-no           
+                             bstr              
+                           [ start-pos         
+                             end-pos])    →   void
+  udp-socket : udp?
+  hostname : string?
+   port-no   :   (and/c exact-nonnegative-integer?
+                        (integer-in 1 65535))
+  bstr : bytes?
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Like udp-send-to, but breaking is enabled (see Breaks) while trying to send the
+datagram. If breaking is disabled when udp-send-to/enable-break is called, then
+either the datagram is sent or the exn:break exception is raised, but not both.
+
+(udp-send/enable-break    udp-socket        
+                          bstr              
+                        [ start-pos         
+                          end-pos])    →   void
+  udp-socket : udp?
+  bstr : bytes?
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Like udp-send, except that breaks are enabled like udp-send-to/enable-break.
+
+(udp-receive!    udp-socket        
+                 bstr              
+               [ start-pos         
+                                  exact-nonnegative-integer?
+                 end-pos])    →   string?
+                                  (integer-in 1 65535)
+  udp-socket : udp?
+  bstr : (and/c bytes? (not immutable?))
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Accepts up to end-pos-start-pos bytes of udp-socket’s next incoming datagram
+into bstr, writing the datagram bytes starting at position start-pos within
+bstr. The udp-socket must be bound to a local address and port (but need not be
+connected). If no incoming datagram is immediately available, udp-receive!
+blocks until one is available.
+
+Three values are returned: the number of received bytes (between 0 and
+end-pos-start-pos, a hostname string indicating the source address of the
+datagram, and an integer indicating the source port of the datagram. If the
+received datagram is longer than end-pos-start-pos bytes, the remainder is
+discarded.
+
+If start-pos is greater than the length of bstr, or if end-pos is less than
+start-pos or greater than the length of bstr, the exn:fail:contract exception
+is raised.
+
+(udp-receive!*    udp-socket  
+                  bstr        
+                [ start-pos   
+                  end-pos])   
+      (or/c exact-nonnegative-integer? #f)
+  →   (or/c string? #f)
+      (or/c (integer-in 1 65535) #f)
+  udp-socket : udp?
+  bstr : (and/c bytes? (not immutable?))
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Like udp-receive!, except that it never blocks. If no datagram is available,
+the three result values are all #f.
+
+(udp-receive!/enable-break    udp-socket  
+                              bstr        
+                            [ start-pos   
+                              end-pos])   
+      exact-nonnegative-integer?
+  →   string?
+      (integer-in 1 65535)
+  udp-socket : udp?
+  bstr : (and/c bytes? (not immutable?))
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Like udp-receive!, but breaking is enabled (see Breaks) while trying to receive
+the datagram. If breaking is disabled when udp-receive!/enable-break is called,
+then either a datagram is received or the exn:break exception is raised, but
+not both.
+
+(udp-close udp-socket) → void?
+  udp-socket : udp?
+Closes udp-socket, discarding unreceived datagrams. If the socket is already
+closed, the exn:fail:network exception is raised.
+
+(udp? v) → boolean?
+  v : any/c
+Returns #t if v is a socket created by udp-open-socket, #f otherwise.
+
+(udp-bound? udp-socket) → boolean?
+  udp-socket : udp?
+Returns #t if udp-socket is bound to a local address and port, #f otherwise.
+
+(udp-connected? udp-socket) → boolean?
+  udp-socket : udp?
+Returns #t if udp-socket is connected to a remote address and port, #f
+otherwise.
+
+(udp-send-ready-evt udp-socket) → evt?
+  udp-socket : udp?
+Returns a synchronizable event (see Events) that is in a blocking state when
+udp-send-to on udp-socket would block.
+
+(udp-receive-ready-evt udp-socket) → evt?
+  udp-socket : udp?
+Returns a synchronizable event (see Events) that is in a blocking state when
+udp-receive! on udp-socket would block.
+
+(udp-send-to-evt    udp-socket        
+                    hostname          
+                    port-no           
+                    bstr              
+                  [ start-pos         
+                    end-pos])    →   evt?
+  udp-socket : udp?
+  hostname : string?
+   port-no   :   (and/c exact-nonnegative-integer?
+                        (integer-in 1 65535))
+  bstr : bytes?
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Returns a synchronizable event. The event is in a blocking state when
+udp-send-to on udp-socket would block. Otherwise, if the event is chosen in a
+synchronization, data is sent as for (udp-send-to udp-socket hostname-address
+port-no bstr start-pos end-pos), and the synchronization result is #<void>. (No
+bytes are sent if the event is not chosen.)
+
+(udp-send-evt    udp-socket        
+                 bstr              
+               [ start-pos         
+                 end-pos])    →   evt?
+  udp-socket : udp?
+  bstr : bytes?
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Returns a synchronizable event. The event is in a blocking state when udp-send
+on udp-socket would block. Otherwise, if the event is chosen in a
+synchronization, data is sent as for (udp-send-to udp-socket bstr start-pos
+end-pos), and the synchronization result is #<void>. (No bytes are sent if the
+event is not chosen.) If udp-socket is closed or unconnected, the
+exn:fail:network exception is raised during a synchronization attempt.
+
+(udp-receive!-evt    udp-socket        
+                     bstr              
+                   [ start-pos         
+                     end-pos])    →   evt?
+  udp-socket : udp?
+  bstr : (and/c bytes? (not immutable?))
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = (bytes-length bstr)
+Returns a synchronizable event. The event is in a blocking state when
+udp-receive on udp-socket would block. Otherwise, if the event is chosen in a
+synchronization, data is received into bstr as for (udp-receive! udp-socket
+bytes start-pos end-pos), and the synchronization result is a list of three
+values, corresponding to the three results from udp-receive!. (No bytes are
+received and the bstr content is not modified if the event is not chosen.)
+
+(udp-addresses udp-port [port-numbers?])
+      (or/c (values string? string?)
+  →         (values string? (integer-in 0 65535)
+                    string? (integer-in 0 65535)))
+  udp-port : udp?
+  port-numbers? : any/c = #f
+Returns two strings when port-numbers? is #f (the default). The first string is
+the Internet address for the local machine a viewed by the given UDP socket’s
+connection. (For most machines, the answer corresponds to the current machine’s
+only Internet address, but when a machine serves multiple addresses, the result
+is connection-specific.) The second string is the Internet address for the
+other end of the connection.
+
+If port-numbers? is true, then four results are returned: a string for the
+local machine’s address, an exact integer between 1 and 65535 for the local
+machine’s port number or 0 if the socket is unbound, a string for the remote
+machine’s address, and an exact integer between 1 and 65535 for the remote
+machine’s port number or 0 if the socket is unconnected.
+
+If the given port has been closed, the exn:fail:network exception is raised.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

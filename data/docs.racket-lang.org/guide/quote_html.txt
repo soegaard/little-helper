@@ -1,0 +1,127 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 4  Expressions and Definitions
+ 4.1  Notation
+ 4.2  Identifiers and Binding
+ 4.3  Function Calls (Procedure Applications)
+ 4.4  Functions (Procedures): lambda
+ 4.5  Definitions: define
+ 4.6  Local Binding
+ 4.7  Conditionals
+ 4.8  Sequencing
+ 4.9  Assignment: set!
+4.10  Quoting: quote and ’
+4.11  Quasiquoting: quasiquote and `
+4.12  Simple Dispatch: case
+4.13  Dynamic Binding: parameterize
+[...search manuals...]
+  top← prev  up  next → 
+
+4.10 Quoting: quote and ’
+
+            +Literals: quote and #%datum in The Racket Reference also documents
+            quote.
+
+The quote form produces a constant:
+
+    (quote datum)
+
+The syntax of a datum is technically specified as anything that the read
+function parses as a single element. The value of the quote form is the same
+value that read would produce given datum.
+
+The datum can be a symbol, a boolean, a number, a (character or byte) string, a
+character, a keyword, an empty list, a pair (or list) containing more such
+values, a vector containing more such values, a hash table containing more such
+values, or a box containing another such value.
+
+Examples:
+
+    > (quote apple)
+    'apple
+
+    > (quote #t)
+    #t
+
+    > (quote 42)
+    42
+
+    > (quote "hello")
+    "hello"
+
+    > (quote ())
+    '()
+
+    > (quote ((1 2 3) #("z" x) . the-end))
+    '((1 2 3) #("z" x) . the-end)
+
+    > (quote (1 2 . (3)))
+    '(1 2 3)
+
+
+
+As the last example above shows, the datum does not have to match the
+normalized printed form of a value. A datum cannot be a printed representation
+that starts with #<, so it cannot be #<void>, #<undefined>, or a procedure.
+
+The quote form is rarely used for a datum that is a boolean, number, or string
+by itself, since the printed forms of those values can already be used as
+constants. The quote form is more typically used for symbols and lists, which
+have other meanings (identifiers, function calls, etc.) when not quoted.
+
+An expression
+
+    'datum
+
+is a shorthand for
+
+    (quote datum)
+
+and this shorthand is almost always used instead of quote. The shorthand
+applies even within the datum, so it can produce a list containing quote.
+
+            +Reading Quotes in The Racket Reference provides more on the ’
+            shorthand.
+
+Examples:
+
+    > 'apple
+    'apple
+
+    > '"hello"
+    "hello"
+
+    > '(1 2 3)
+    '(1 2 3)
+
+    > (display '(you can 'me))
+    (you can (quote me))
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

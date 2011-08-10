@@ -1,0 +1,59 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+On this page:
+mixin
+[...search manuals...]
+  top← prev  up  next → 
+
+5.5 Mixins
+
+(mixin (interface-expr ...) (interface-expr ...)
+  class-clause ...)
+Produces a mixin, which is a procedure that encapsulates a class extension,
+leaving the superclass unspecified. Each time that a mixin is applied to a
+specific superclass, it produces a new derived class using the encapsulated
+extension.
+
+The given class must implement interfaces produced by the first set of
+interface-exprs. The result of the procedure is a subclass of the given class
+that implements the interfaces produced by the second set of interface-exprs.
+The class-clauses are as for class*, to define the class extension encapsulated
+by the mixin.
+
+Evaluation of a mixin form checks that the class-clauses are consistent with
+both sets of interface-exprs.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

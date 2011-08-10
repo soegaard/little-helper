@@ -1,0 +1,119 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+read-all
+read-all-syntax
+port->srcloc
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+24 Ports
+
+Carl Eastlund <cce@racket-lang.org>
+
+ (require unstable/port)
+
+This module provides tools for port I/O.
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(read-all [reader port]) → list?
+  reader : (-> any/c) = read
+  port : input-port? = (current-input-port)
+This function produces a list of all the values produced by calling (reader)
+while current-input-port is set to port, up until it produces eof.
+
+Examples:
+
+    > (read-all read (open-input-string "1 2 3"))
+    '(1 2 3)
+
+    > (parameterize ([current-input-port (open-input-string "a b c")])
+        (read-all))
+    '(a b c)
+
+
+
+(read-all-syntax [reader port]) → (syntax/c list?)
+  reader : (-> (or/c syntax? eof-object?)) = read
+  port : input-port? = (current-input-port)
+This function produces a syntax object containing a list of all the syntax
+objects produced by calling (reader) while current-input-port is set to port,
+up until it produces eof. The source location of the result spans the entire
+portion of the port that was read.
+
+Examples:
+
+    (define port1 (open-input-string "1 2 3"))
+    > (port-count-lines! port1)
+    > (read-all-syntax read-syntax port1)
+    #<syntax:1:0 (1 2 3)>
+
+    (define port2 (open-input-string "a b c"))
+    > (port-count-lines! port2)
+    > (parameterize ([current-input-port port2])
+        (read-all-syntax))
+    #<syntax:1:0 (a b c)>
+
+
+
+(port->srcloc port [source span]) → srcloc?
+  port : port?
+  source : any/c = (object-name port)
+  span : exact-nonnegative-integer? = 0
+Produces a srcloc structure representing the current position of a port, using
+the provided source and span values to fill in missing fields. This function
+relies on port-next-location, so line counting must be enabled for port to get
+meaningful results.
+
+Examples:
+
+    (define port (open-input-string "1 2 3"))
+    > (port-count-lines! port)
+    > (read port)
+    1
+
+    > (port->srcloc port)
+    (srcloc 'string 1 1 2 0)
+
+    > (port->srcloc port "1 2 3" 1)
+    (srcloc "1 2 3" 1 1 2 1)
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

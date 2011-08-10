@@ -1,0 +1,189 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+▼ 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+On this page:
+syntax-parse
+syntax-parser
+define/ syntax-parse
+[...search manuals...]
+  top← prev  up  next → 
+
+8.3 Parsing syntax
+
+This section describes syntax-parse, the syntax/parse library’s facility for
+parsing syntax. Both syntax-parse and the specification facility, syntax
+classes, use a common language of syntax patterns, which is described in detail
+in Syntax patterns.
+
+Two parsing forms are provided: syntax-parse and syntax-parser.
+
+(syntax-parse stx-expr parse-option ... clause ...+)
+ 
+      parse-option   =   #:context context-expr
+                     |   #:literals (literal ...)
+                     |   #:literal-sets (literal-set ...)
+                     |   #:conventions (convention-id ...)
+                     |   #:local-conventions (convention-rule ...)
+                     |   #:disable-colon-notation
+                          
+           literal   =   literal-id
+                     |   (pattern-id literal-id)
+                     |   (pattern-id literal-id #:phase phase-expr)
+                          
+       literal-set   =   literal-set-id
+                     |   (literal-set-id literal-set-option ...)
+                          
+literal-set-option   =   #:at context-id
+                     |   #:phase phase-expr
+                          
+            clause   =   (syntax-pattern pattern-directive ... expr ...+)
+ 
+       stx-expr    :   syntax?
+       context-expr    :   syntax?
+       phase-expr   :   (or/c exact-integer? #f)
+
+Evaluates stx-expr, which should produce a syntax object, and matches it
+against the clauses in order. If some clause’s pattern matches, its attributes
+are bound to the corresponding subterms of the syntax object and that clause’s
+side conditions and expr is evaluated. The result is the result of expr.
+
+Each clause consists of a syntax pattern, an optional sequence of pattern
+directives, and a non-empty sequence of body expressions.
+
+If the syntax object fails to match any of the patterns (or all matches fail
+the corresponding clauses’ side conditions), a syntax error is raised.
+
+The following options are supported:
+
+    #:context context-expr
+     
+       context-expr   :   syntax?
+
+    When present, context-expr is used in reporting parse failures; otherwise
+    stx-expr is used.
+
+    Examples:
+
+        > (syntax-parse #'(a b 3)
+            [(x:id ...) 'ok])
+        a: expected identifier at: 3
+
+        > (syntax-parse #'(a b 3)
+            #:context #'(lambda (a b 3) (+ a b))
+            [(x:id ...) 'ok])
+        lambda: expected identifier at: 3
+
+
+
+    #:literals (literal ...)
+     
+    literal   =   literal-id
+              |   (pattern-id literal-id)
+              |   (pattern-id literal-id #:phase phase-expr)
+     
+       phase-expr   :   (or/c exact-integer? #f)
+
+    Unlike syntax-case, syntax-parse requires all literals to have a binding.
+    To match identifiers by their symbolic names, use the ~datum pattern form
+    instead. The #:literals option specifies identifiers that should be treated
+    as literals rather than pattern variables. An entry in the literals list
+    has two components: the identifier used within the pattern to signify the
+    positions to be matched (pattern-id), and the identifier expected to occur
+    in those positions (literal-id). If the entry is a single identifier, that
+    identifier is used for both purposes.
+
+    If the #:phase option is given, then the literal is compared at phase
+    phase-expr. Specifically, the binding of the literal-id at phase phase-expr
+    must match the input’s binding at phase phase-expr.
+
+    #:literal-sets (literal-set ...)
+     
+           literal-set   =   literal-set-id
+                         |   (literal-set-id literal-set-option ...)
+                              
+    literal-set-option   =   #:at lctx
+                         |   #:phase phase-expr
+     
+       phase-expr   :   (or/c exact-integer? #f)
+
+    Many literals can be declared at once via one or more literal sets,
+    imported with the #:literal-sets option. See literal sets for more
+    information.
+
+    If the #:at keyword is given, the lexical context of the lctx term is used
+    to determine which identifiers in the patterns are treated as literals;
+    this option is useful primarily for macros that generate syntax-parse
+    expressions.
+
+    #:conventions (conventions-id ...)
+
+    Imports conventions that give default syntax classes to pattern variables
+    that do not explicitly specify a syntax class.
+
+    #:local-conventions (convention-rule ...)
+
+    Uses the conventions specified. The advantage of #:local-conventions over
+    #:conventions is that local conventions can be in the scope of syntax-class
+    parameter bindings. See the section on conventions for examples.
+
+    #:disable-colon-notation
+
+    Suppresses the “colon notation” for annotated pattern variables.
+
+    Examples:
+
+        > (syntax-parse #'(a b c)
+            [(x:y ...) 'ok])
+        syntax-parse: not defined as syntax class at: y
+
+        > (syntax-parse #'(a b c) #:disable-colon-notation
+            [(x:y ...) 'ok])
+        'ok
+
+
+
+(syntax-parser parse-option ... clause ...+)
+Like syntax-parse, but produces a matching procedure. The procedure accepts a
+single argument, which should be a syntax object.
+
+(define/syntax-parse syntax-pattern pattern-directive ... stx-expr)
+ 
+   stx-expr    :   syntax?
+Definition form of syntax-parse. That is, it matches the syntax object result
+of stx-expr against syntax-pattern and creates pattern variable definitions for
+the attributes of syntax-pattern.
+
+Examples:
+
+    > (define/syntax-parse ((~seq kw:keyword arg:expr) ...)
+        #'(#:a 1 #:b 2 #:c 3))
+    > #'(kw ...)
+    #<syntax:123:0 (#:a #:b #:c)>
+
+
+
+Compare with define/with-syntax, a similar definition form that uses the
+simpler syntax-case patterns.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

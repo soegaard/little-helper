@@ -1,0 +1,51 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+include-bitmap
+include-bitmap/ relative-to
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Include Bitmap
+
+ (require mrlib/include-bitmap)
+The include-bitmap form takes a filename containing a bitmap and “inlines” the
+bitmap into the program.
+
+Historically, the advantage of inlining the bitmap is that a stand-alone
+executable can be created that contains the bitmap and does not refer to the
+original image file. The define-runtime-path form, however, now provides a
+better alternative.
+
+(include-bitmap path-spec)
+(include-bitmap path-spec type-expr)
+
+The path-spec is the same as for include form. The type-expr should produce
+'unknown, 'unknown/mask, etc., as for bitmap%, and the default is 'unknown/
+mask.
+
+(include-bitmap/relative-to source path-spec)
+(include-bitmap/relative-to source path-spec [type-expr])
+Analogous to include-at/relative-to, though only a source is needed (no
+context).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

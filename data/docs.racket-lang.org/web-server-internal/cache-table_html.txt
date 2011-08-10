@@ -1,0 +1,51 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 5  Internal APIs
+5.1  Timers
+5.2  Connection Manager
+5.3  Serializable Closures
+5.4  Cache Table
+5.5  MIME Types
+5.6  Serialization Utilities
+5.7  URL Param
+5.8  GZip
+On this page:
+make-cache-table
+cache-table-lookup!
+cache-table-clear!
+cache-table?
+[...search manuals...]
+  top← prev  up  next → 
+
+5.4 Cache Table
+
+ (require web-server/private/cache-table)
+This module provides a set of caching hash table functions.
+
+(make-cache-table) → cache-table?
+Constructs a cache-table.
+
+(cache-table-lookup! ct id mk) → any/c
+  ct : cache-table?
+  id : symbol?
+  mk : (-> any/c)
+Looks up id in ct. If it is not present, then mk is called to construct the
+value and add it to ct.
+
+(cache-table-clear! ct) → void?
+  ct : cache-table?
+Clears all entries in ct.
+
+(cache-table? v) → boolean?
+  v : any/c
+Determines if v is a cache table.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

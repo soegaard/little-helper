@@ -1,0 +1,739 @@
+Title
+
+Vector library
+
+Author
+
+Taylor Campbell
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access the discussion via the
+archive of the mailing list.
+
+  • Received: 2003/03/26
+  • Draft: 2003/04/03-2003/06/01
+  • Revised: 2003/07/15
+  • Revised: 2003/11/01
+  • Revised: 2004/04/10
+  • Revised: 2004/04/28
+  • Revised: 2004/08/30
+  • Final: 2004/10/26
+
+Table of Contents
+
+  • 1. Abstract
+  • 2. Rationale
+  • 3. Procedure Index
+  • 4. Procedures
+      □ 4.1. Constructors
+      □ 4.2. Predicates
+      □ 4.3. Selectors
+      □ 4.4. Iteration
+      □ 4.5. Searching
+      □ 4.6. Mutators
+      □ 4.7. Conversion
+  • 5. Reference Implementation
+  • 6. Acknowledgements
+  • 7. References
+  • 8. Copyright
+
+1. Abstract
+
+This SRFI proposes a comprehensive and complete library of vector operations
+accompanied by a freely available and complete reference implementation. The
+reference implementation is unencumbered by copyright, and useable with no
+modifications on any Scheme system that is R5RS-compliant. It also provides
+several hooks for implementation-specific optimization as well.
+
+Because this SRFI is more of a library or module specification than a request
+for additions to readers or any other internal implementation detail, in an
+implementation that supports a module or structure or package or library or
+unit (et cetera) systems, these procedures should be contained in a module /
+structure / package / library / unit called vector-lib.
+
+2. Rationale
+
+R5RS provides very few list-processing procedures, for which reason SRFI 1
+(list-lib) exists. However, R5RS provides even fewer vector operations — while
+it provides mapping, appending, et cetera operations for lists, it specifies
+only nine vector manipulation operations —:
+
+  • vector?
+  • make-vector
+  • vector
+  • vector-length
+  • vector-ref
+  • vector-set!
+  • vector->list
+  • list->vector
+  • vector-fill!
+
+Many Scheme implementations provide several vector operations beyond the
+minuscule set that R5RS defines (the typical vector-append, vector-map, et
+cetera), but often these procedures have different names, take arguments in
+different orders, don't take the same number of arguments, or have some other
+flaw that makes them unportable. For this reason, this SRFI is proposed.
+
+It should be noted that no vector sorting procedures are provided by this SRFI,
+because there already is a SRFI for such a purpose (SRFI 32 (sort-lib)), which
+includes routines for sorting not only vectors but also lists.
+
+3. Procedure Index
+
+Here is an index of the procedures provided by this package. Those marked by
+bold are provided in R5RS and those marked by bold italic are defined by R5RS
+but are modified from their original definitions.
+
+. Constructors
+
+    make-vector vector
+    vector-unfold vector-unfold-right
+    vector-copy vector-reverse-copy
+    vector-append vector-concatenate
+
+. Predicates
+
+    vector?
+    vector-empty?
+    vector=
+
+. Selectors
+
+    vector-ref
+    vector-length
+
+. Iteration
+
+    vector-fold vector-fold-right
+    vector-map vector-map!
+    vector-for-each
+    vector-count
+
+. Searching
+
+    vector-index vector-index-right
+    vector-skip vector-skip-right
+    vector-binary-search
+    vector-any vector-every
+
+. Mutators
+
+    vector-set! vector-swap!
+    vector-fill!
+    vector-reverse!
+    vector-copy! vector-reverse-copy!
+
+. Conversion
+
+    vector->list reverse-vector->list
+    list->vector reverse-list->vector
+
+4. Procedures
+
+In this section containing specifications of procedures, the following notation
+is used to specify parameters and return values:
+
+(f arg[1] arg[2] ...) -> something
+    Indicates a function f takes the parameters arg[1] arg[2] ... and returns a
+    value of the type something. If something is unspecified, then what f
+    returns is implementation-dependant; this SRFI does not specify what it
+    returns, and in order to write portable code, the return value should be
+    ignored.
+
+vec
+    The argument in this place must be a vector, i.e. it must satisfy the
+    predicate vector?.
+
+i, j, start, size
+    The argument in this place must be a nonnegative integer, i.e. it must
+    satisfy the predicates integer? and either zero? or positive?. The third
+    case of it indicates the index at which traversal begins; the fourth case
+    of it indicates the size of a vector.
+
+end
+    The argument in this place must be a positive integer, i.e. it must satisfy
+    the predicates integer? and positive?. This indicates the index directly
+    before which traversal will stop — processing will occur until the index of
+    the vector is end. It is the closed right side of a range.
+
+f
+    The argument in this place must be a function of one or more arguments,
+    returning exactly one value.
+
+pred?
+    The argument in this place must be a function of one or more arguments that
+    returns one value, which is treated as a boolean.
+
+x, y, z, seed, knil, fill, key, value
+    The argument in this place may be any Scheme value.
+
+[something]
+    Indicates that something is an optional argument; it needn't necessarily be
+    applied. Something needn't necessarily be one thing; for example, this
+    usage of it is perfectly valid:
+
+       [start [end]]
+
+    and is indeed used quite often.
+
+something ...
+    Indicates that zero or more somethings are allowed to be arguments.
+
+something[1] something[2] ...
+    Indicates that at least one something must be arguments.
+
+something[1] something[2] ... something[n]
+    Exactly equivalent to the previous argument notation, but this also
+    indicates that n will be used later in the procedure description.
+
+
+It should be noted that all of the procedures that iterate across multiple
+vectors in parallel stop iterating and produce the final result when the end of
+the shortest vector is reached. The sole exception is vector=, which
+automatically returns #f if the vectors' lengths vary.
+
+4.1. Constructors
+
+(make-vector size [fill]) -> vector
+    [R5RS] Creates and returns a vector of size size, optionally filling it
+    with fill. The default value of fill is unspecified.
+
+    Example:
+
+    (make-vector 5 3)
+    #(3 3 3 3 3)
+
+(vector x ...) -> vector
+    [R5RS] Creates and returns a vector whose elements are x ....
+
+    Example:
+
+    (vector 0 1 2 3 4)
+    #(0 1 2 3 4)
+
+(vector-unfold f length initial-seed ...) -> vector
+    The fundamental vector constructor. Creates a vector whose length is length
+    and iterates across each index k between 0 and length, applying f at each
+    iteration to the current index and current seeds, in that order, to receive
+    n + 1 values: first, the element to put in the kth slot of the new vector
+    and n new seeds for the next iteration. It is an error for the number of
+    seeds to vary between iterations.
+
+    Examples:
+
+    (vector-unfold (λ (i x) (values x (- x 1)))
+                     10 0)
+    #(0 -1 -2 -3 -4 -5 -6 -7 -8 -9)
+
+    Construct a vector of the sequence of integers in the range [0,n).
+    (vector-unfold values n)
+    #(0 1 2 ... n-2 n-1)
+
+    Copy vector.
+
+    (vector-unfold (λ (i) (vector-ref vector i))
+                     (vector-length vector))
+
+(vector-unfold-right f length initial-seed ...) -> vector
+    Like vector-unfold, but it uses f to generate elements from right-to-left,
+    rather than left-to-right.
+
+    Examples:
+
+    Construct a vector in reverse of the integers in the range [0,n).
+
+    (vector-unfold-right (λ (i x) (values x (+ x 1))) n 0)
+    #(n-1 n-2 ... 2 1 0)
+
+    Reverse vector.
+
+    (vector-unfold-right (λ (i x) (values (vector-ref vector x) (+ x 1)))
+                           (vector-length vector)
+                           0)
+
+(vector-copy vec [start [end [fill]]]) -> vector
+    Allocates a new vector whose length is end - start and fills it with
+    elements from vec, taking elements from vec starting at index start and
+    stopping at index end. start defaults to 0 and end defaults to the value of
+    (vector-length vec). If end extends beyond the length of vec, the slots in
+    the new vector that obviously cannot be filled by elements from vec are
+    filled with fill, whose default value is unspecified.
+
+    Examples:
+
+    (vector-copy '#(a b c d e f g h i))
+    #(a b c d e f g h i)
+
+    (vector-copy '#(a b c d e f g h i) 6)
+    #(g h i)
+
+    (vector-copy '#(a b c d e f g h i) 3 6)
+    #(d e f)
+
+    (vector-copy '#(a b c d e f g h i) 6 12 'x)
+    #(g h i x x x)
+
+(vector-reverse-copy vec [start [end]]) -> vector
+    Like vector-copy, but it copies the elements in the reverse order from vec.
+
+    Example:
+
+    (vector-reverse-copy '#(5 4 3 2 1 0) 1 5)
+    #(1 2 3 4)
+
+(vector-append vec ...) -> vector
+    Returns a newly allocated vector that contains all elements in order from
+    the subsequent locations in vec ....
+
+    Examples:
+
+    (vector-append '#(x) '#(y))
+    #(x y)
+
+    (vector-append '#(a) '#(b c d))
+    #(a b c d)
+
+    (vector-append '#(a #(b)) '#(#(c)))
+    #(a #(b) #(c))
+
+(vector-concatenate list-of-vectors) -> vector
+    Appends each vector in list-of-vectors. This is equivalent to:
+
+    (apply vector-append list-of-vectors)
+
+    However, it may be implemented better.
+
+    Example:
+
+    (vector-concatenate '(#(a b) #(c d)))
+    #(a b c d)
+
+
+4.2. Predicates
+
+(vector? x) -> boolean
+    [R5RS] Disjoint type predicate for vectors: this returns #t if x is a
+    vector, and #f if otherwise.
+
+    Examples:
+
+    (vector? '#(a b c))
+    #t
+
+    (vector? '(a b c))
+    #f
+
+    (vector? #t)
+    #f
+
+    (vector? '#())
+    #t
+
+    (vector? '())
+    #f
+
+(vector-empty? vec) -> boolean
+    Returns #t if vec is empty, i.e. its length is 0, and #f if not.
+
+    Examples:
+
+    (vector-empty? '#(a))
+    #f
+
+    (vector-empty? '#(()))
+    #f
+
+    (vector-empty? '#(#()))
+    #f
+
+    (vector-empty? '#())
+    #t
+
+(vector= elt=? vec ...) -> boolean
+    Vector structure comparator, generalized across user-specified element
+    comparators. Vectors a and b are considered equal by vector= iff their
+    lengths are the same, and for each respective elements E[a] and E[b], (elt
+    =? E[a] E[b]) returns a true value. Elt=? is always applied to two
+    arguments. Element comparison must be consistent with eq; that is, if (eq?
+    E[a] E[b]) results in a true value, then (elt=? E[a] E[b]) must also result
+    in a true value. This may be exploited to avoid unnecessary element
+    comparisons. (The reference implementation does, but it does not consider
+    the situation where elt=? is in fact itself eq? to avoid yet more
+    unnecessary comparisons.)
+
+    If there are only zero or one vector arguments, #t is automatically
+    returned. The dynamic order in which comparisons of elements and of vectors
+    are performed is left completely unspecified; do not rely on a particular
+    order.
+
+    Examples:
+
+    (vector= eq? '#(a b c d) '#(a b c d))
+    #t
+
+    (vector= eq? '#(a b c d) '#(a b d c))
+    #f
+
+    (vector= = '#(1 2 3 4 5) '#(1 2 3 4))
+    #f
+
+    (vector= = '#(1 2 3 4) '#(1 2 3 4))
+    #t
+
+    The two trivial cases.
+
+    (vector= eq?)
+    #t
+
+    (vector= eq? '#(a))
+    #t
+
+    Note the fact that we don't use vector literals in the next two — it is
+    unspecified whether or not literal vectors with the same external
+    representation are eq?.
+
+    (vector= eq? (vector (vector 'a)) (vector (vector 'a)))
+    #f
+
+    (vector= equal? (vector (vector 'a)) (vector (vector 'a)))
+    #t
+
+
+4.3. Selectors
+
+(vector-ref vec i) -> value
+    [R5RS] Vector element dereferencing: returns the value that the location in
+    vec at i is mapped to in the store. Indexing is based on zero. I must be
+    within the range [0, (vector-length vec)).
+
+    Example:
+
+    (vector-ref '#(a b c d) 2)
+    c
+
+(vector-length vec) -> exact nonnegative integer
+    [R5RS] Returns the length of vec, the number of locations reachable from
+    vec. (The careful word 'reachable' is used to allow for 'vector slices,'
+    whereby vec refers to a larger vector that contains more locations that are
+    unreachable from vec. This SRFI does not define vector slices, but later
+    SRFIs may.)
+
+    Example:
+
+    (vector-length '#(a b c))
+    3
+
+
+4.4. Iteration
+
+(vector-fold kons knil vec[1] vec[2] ...) -> value
+    The fundamental vector iterator. Kons is iterated over each index in all of
+    the vectors, stopping at the end of the shortest; kons is applied as (kons
+    i state (vector-ref vec[1] i) (vector-ref vec[2] i) ...) where state is the
+    current state value — the current state value begins with knil, and becomes
+    whatever kons returned at the respective iteration —, and i is the current
+    index.
+
+    The iteration is strictly left-to-right.
+
+    Examples:
+
+    Find the longest string's length in vector-of-strings.
+    (vector-fold (λ (index len str) (max (string-length str) len))
+                   0 vector-of-strings)
+
+    Produce a list of the reversed elements of vec.
+    (vector-fold (λ (index tail elt) (cons elt tail))
+                   '() vec)
+
+    Count the number of even numbers in vec.
+    (vector-fold (λ (index counter n)
+                     (if (even? n) (+ counter 1) counter))
+                   0 vec)
+
+(vector-fold-right kons knil vec[1] vec[2] ...) -> value
+    Similar to vector-fold, but it iterates right to left instead of left to
+    right.
+
+    Example:
+
+    Convert a vector to a list.
+    (vector-fold-right (λ (index tail elt) (cons elt tail))
+                         '() '#(a b c d))
+    (a b c d)
+
+(vector-map f vec[1] vec[2] ...) -> vector
+    Constructs a new vector of the shortest size of the vector arguments. Each
+    element at index i of the new vector is mapped from the old vectors by (f i
+    (vector-ref vec[1] i) (vector-ref vec[2] i) ...). The dynamic order of
+    application of f is unspecified.
+
+    Examples:
+
+    (vector-map (λ (i x) (* x x))
+                  (vector-unfold (λ (i x) (values x (+ x 1))) 4 1))
+    #(1 4 9 16)
+
+    (vector-map (λ (i x y) (* x y))
+                  (vector-unfold (λ (i x) (values x (+ x 1))) 5 1)
+                  (vector-unfold (λ (i x) (values x (- x 1))) 5 5))
+    #(5 8 9 8 5)
+
+    (let ((count 0))
+       (vector-map (λ (ignored-index ignored-elt)
+                     (set! count (+ count 1))
+                     count)
+                   '#(a b)))
+    #(1 2) OR #(2 1)
+
+    (vector-map (λ (i elt) (+ i elt)) '#(1 2 3 4))
+    #(1 3 5 7)
+
+(vector-map! f vec[1] vec[2] ...) -> unspecified
+    Similar to vector-map, but rather than mapping the new elements into a new
+    vector, the new mapped elements are destructively inserted into vec[1].
+    Again, the dynamic order of application of f unspecified, so it is
+    dangerous for f to apply either vector-ref or vector-set! to vec[1] in f.
+
+(vector-for-each f vec[1] vec[2] ...) -> unspecified
+    Simple vector iterator: applies f to each index in the range [0, length),
+    where length is the length of the smallest vector argument passed, and the
+    respective list of parallel elements from vec[1] vec[2] ... at that index.
+    In contrast with vector-map, f is reliably applied to each subsequent
+    elements, starting at index 0, in the vectors.
+
+    Example:
+
+    (vector-for-each (λ (i x) (display x) (newline))
+                     '#("foo" "bar" "baz" "quux" "zot"))
+    Displays:
+
+    foo
+    bar
+    baz
+    quux
+    zot
+
+
+
+(vector-count pred? vec[1] vec[2] ...) -> exact nonnegative integer
+    Counts the number of parallel elements in the vectors that satisfy pred?,
+    which is applied, for each index i in the range [0, length) — where length
+    is the length of the smallest vector argument —, to i and each parallel
+    element in the vectors at that index, in order.
+
+    Examples:
+
+    (vector-count (λ (i elt) (even? elt)) '#(3 1 4 1 5 9 2 5 6))
+    3
+
+    (vector-count (λ (i x y) (< x y)) '#(1 3 6 9) '#(2 4 6 8 10 12))
+    2
+
+
+4.5. Searching
+
+(vector-index pred? vec[1] vec[2] ...) -> exact nonnegative integer or #f
+    Finds & returns the index of the first elements in vec[1] vec[2] ... that
+    satisfy pred?. If no matching element is found by the end of the shortest
+    vector, #f is returned.
+
+    Examples:
+
+    (vector-index even? '#(3 1 4 1 5 9))
+    2
+
+    (vector-index < '#(3 1 4 1 5 9 2 5 6) '#(2 7 1 8 2))
+    1
+
+    (vector-index = '#(3 1 4 1 5 9 2 5 6) '#(2 7 1 8 2))
+    #f
+
+(vector-index-right pred? vec[1] vec[2] ...) -> exact nonnegative integer or #f
+    Like vector-index, but it searches right-to-left, rather than
+    left-to-right, and all of the vectors must have the same length.
+
+(vector-skip pred? vec[1] vec[2] ...) -> exact nonnegative integer or #f
+    Finds & returns the index of the first elements in vec[1] vec[2] ... that
+    do not satisfy pred?. If all the values in the vectors satisfy pred? until
+    the end of the shortest vector, this returns #f. This is equivalent to:
+
+    (vector-index (λ (x[1] x[2] ...) (not (pred? x[1] x[1] ...)))
+                        vec[1] vec[2] ...)
+
+    Example:
+
+    (vector-skip number? '#(1 2 a b 3 4 c d))
+    2
+
+(vector-skip-right pred? vec[1] vec[2] ...) -> exact nonnegative integer or #f
+    Like vector-skip, but it searches for a non-matching element right-to-left,
+    rather than left-to-right, and all of the vectors must have the same
+    length. This is equivalent to:
+
+    (vector-index-right (λ (x[1] x[2] ...) (not (pred? x[1] x[1] ...)))
+                              vec[1] vec[2] ...)
+
+(vector-binary-search vec value cmp) -> exact nonnegative integer or #f
+    Similar to vector-index and vector-index-right, but instead of searching
+    left to right or right to left, this performs a binary search. cmp should
+    be a procedure of two arguments and return a negative integer, which
+    indicates that its first argument is less than its second, zero, which
+    indicates that they are equal, or a positive integer, which indicates that
+    the first argument is greater than the second argument. An example cmp
+    might be:
+
+    (λ (char[1] char[2])
+      (cond ((char<? char[1] char[2]) -1)
+            ((char=? char[1] char[2]) 0)
+            (else 1)))
+
+(vector-any pred? vec[1] vec[2] ...) -> value or #f
+    Finds the first set of elements in parallel from vec[1] vec[2] ... for
+    which pred? returns a true value. If such a parallel set of elements
+    exists, vector-any returns the value that pred? returned for that set of
+    elements. The iteration is strictly left-to-right.
+
+(vector-every pred? vec[1] vec[2] ...) -> value or #f
+    If, for every index i between 0 and the length of the shortest vector
+    argument, the set of elements (vector-ref vec[1] i) (vector-ref vec[2] i)
+    ... satisfies pred?, vector-every returns the value that pred? returned for
+    the last set of elements, at the last index of the shortest vector. The
+    iteration is strictly left-to-right.
+
+
+4.6. Mutators
+
+(vector-set! vec i value) -> unspecified
+    [R5RS] Assigns the contents of the location at i in vec to value.
+
+(vector-swap! vec i j) -> unspecified
+    Swaps or exchanges the values of the locations in vec at i & j.
+
+(vector-fill! vec fill [start [end]]) -> unspecified
+    [R5RS+] Assigns the value of every location in vec between start, which
+    defaults to 0 and end, which defaults to the length of vec, to fill.
+
+(vector-reverse! vec [start [end]]) -> unspecified
+    Destructively reverses the contents of the sequence of locations in vec
+    between start and end. Start defaults to 0 and end defaults to the length
+    of vec. Note that this does not deeply reverse.
+
+(vector-copy! target tstart source [sstart [send]]) -> unspecified
+    Copies a block of elements from source to target, both of which must be
+    vectors, starting in target at tstart and starting in source at sstart,
+    ending when send - sstart elements have been copied. It is an error for
+    target to have a length less than tstart + (send - sstart). Sstart defaults
+    to 0 and send defaults to the length of source.
+
+(vector-reverse-copy! target tstart source [sstart [send]]) -> unspecified
+    Like vector-copy!, but this copies the elements in the reverse order. It is
+    an error if target and source are identical vectors and the target & source
+    ranges overlap; however, if tstart = sstart, vector-reverse-copy! behaves
+    as (vector-reverse! target tstart send) would.
+
+
+4.7. Conversion
+
+(vector->list vec [start [end]]) -> proper-list
+    [R5RS+] Creates a list containing the elements in vec between start, which
+    defaults to 0, and end, which defaults to the length of vec.
+
+(reverse-vector->list vec [start [end]]) -> proper-list
+    Like vector->list, but the resulting list contains the elements in reverse
+    between the specified range.
+
+(list->vector proper-list) -> vector
+    [R5RS+] Creates a vector of elements from proper-list.
+
+(reverse-list->vector proper-list) -> vector
+    Like list->vector, but the resulting list contains the elements in reverse
+    of proper-list.
+
+
+5. Reference Implementation
+
+With this SRFI comes a complete reference implementation. It is licensed under
+a very open copyright with which no implementors should have any legal issues.
+
+The reference implementation has only one non-R5RS dependency: SRFI 23's error
+procedure.
+
+This reference implementation of all the procedures described in this SRFI can
+be found here.
+
+6. Acknowledgements
+
+Thanks to Olin Shivers for his wonderfully complete list and string packages;
+to all the members of the #scheme IRC channel on Freenode who nitpicked a great
+deal, but also helped quite a lot in general, and helped test the reference
+implementation in various Scheme systems; to Michael Burschik for his numerous
+comments; to Sergei Egorov for helping to narrow down the procedures; to Mike
+Sperber for putting up with an extremely overdue draft; to Felix Winkelmann for
+continually bugging me about finishing up the SRFI so that it would be only
+overdue and not withdrawn; and to everyone else who gave questions, comments,
+thoughts, or merely attention to the SRFI.
+
+7. References
+
+R5RS
+    R5RS: The Revised^5 Report on Scheme
+    R. Kelsey, W. Clinger, J. Rees (editors).
+    Higher-Order and Symbolic Computation, Vol. 11, No. 1, September, 1998
+    and
+    ACM SIGPLAN Notices, Vol. 33, No. 9, October, 1998
+    Available at: http://www.schemers.org/Documents/Standards/R5RS/
+
+SRFI
+    SRFI: Scheme Request for Implementation
+    The SRFI website can be found at: http://srfi.schemers.org/
+    The SRFIs mentioned in this document are described later.
+
+SRFI 1
+    SRFI 1: List Library
+    A SRFI of list processing procedures, written by Olin Shivers.
+    Available at: http://srfi.schemers.org/srfi-1/
+
+SRFI 13
+    SRFI 13: String Library
+    A SRFI of string processing procedures, written by Olin Shivers.
+    Available at: http://srfi.schemers.org/srfi-13/
+
+SRFI 23
+    SRFI 23: Error Reporting Mechanism
+    A SRFI that defines a new primitive (error) for reporting that an error
+    occurred, written by Stephan Houben.
+    Available at: http://srfi.schemers.org/srfi-23/
+
+SRFI 32
+    SRFI 32: Sort Libraries (draft)
+    A SRFI of list and vector sorting routines, written by Olin Shivers.
+    Available at: http://srfi.schemers.org/srfi-32/
+
+8. Copyright
+
+Copyright (C) Taylor Campbell (2003). All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Mike Sperber

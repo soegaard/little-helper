@@ -1,0 +1,130 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 3  Making Slides
+3.1  Primary Slide Functions
+3.2  Slide Registration
+3.3  Viewer Control
+3.4  Constants and Layout Variables
+3.5  Configuration
+3.6  Pict-Staging Helper
+3.7  Slides to Picts
+On this page:
+current-font-size
+current-main-font
+current-line-sep
+current-para-width
+current-title-color
+current-slide-assembler
+current-titlet
+set-margin!
+set-title-h!
+make-slide-inset
+slide-inset?
+[...search manuals...]
+  top← prev  up  next → 
+
+3.5 Configuration
+
+(current-font-size) → exact-nonnegative-integer?
+(current-font-size n) → void?
+  n : exact-nonnegative-integer?
+Parameter that determines he font size used by t, para, etc. The default size
+is 32.
+
+(current-main-font) → text-style/c
+(current-main-font style) → void?
+  style : text-style/c
+Parameter that determines the font size used by t, para, etc. The default is
+platform-specific; possible initial values include 'swiss, "Verdana", and "Gill
+Sans".
+
+(current-line-sep) → exact-nonnegative-integer?
+(current-line-sep n) → void?
+  n : exact-nonnegative-integer?
+Parameter that controls the amount of space used between lines by para, item,
+and subitem.
+
+(current-para-width) → exact-nonnegative-integer?
+(current-para-width n) → void?
+  n : exact-nonnegative-integer?
+Parameter that controls the width of a pict created by para, item, and subitem.
+
+(current-title-color) → (or/c string? (is-a?/c color%))
+(current-title-color color) → void?
+  color : (or/c string? (is-a?/c color%))
+Parameter used by the default current-titlet to colorize the title. The default
+is "black".
+
+                                ((or/c string? #f)
+                                 exact-nonnegative-integer?
+(current-slide-assembler)   →    pict?
+                                 . -> .
+                                 pict?)
+(current-slide-assembler proc) → void?
+              ((or/c string? #f)
+               exact-nonnegative-integer?
+   proc   :    pict?
+               . -> .
+               pict?)
+Parameter whose value is a function for assembling slide content into a single
+pict; the assembling function takes a string for the title (or #f), a
+separation for the title (if any) and pict, and a pict for the slide content
+(not counting the title).
+
+The result is of the assembler is ct-superimposed with the client area, but the
+result pict might draw outside the client region to paint the screen margins,
+too.
+
+The default assembler uses titlet to turn a title string (if any) to a pict.
+See also current-titlet and set-title-h!,.
+
+The slide assembler is not responsible for adding page numbers to the slide;
+that job belongs to the viewer. See also current-page-number-font,
+current-page-number-color, and set-page-numbers-visible!.
+
+(current-titlet) → (string? . -> . pict?)
+(current-titlet proc) → void?
+  proc : (string? . -> . pict?)
+Parameter to configure titlet. The default is
+
+    (lambda (s)
+      (colorize (text s (current-main-font) 40)
+                (current-title-color)))
+
+If this parameter is changed such that the result is a different height, then
+set-title-h! should be called to update the value produced by title-h,
+titleless-page, etc.
+
+(set-margin! amt) → void?
+  amt : real?
+Changes the margin that surrounds the client area. See also margin.
+
+(set-title-h! amt) → void?
+  amt : real?
+Changes the expected height of a title, which adjusts title-h, client-h,
+full-page, and titleless-page.
+
+(make-slide-inset   left-inset           
+                    top-inset            
+                    right-inset          
+                    bottom-inset)   →   slide-inset?
+  left-inset : exact-nonnegative-integer?
+  top-inset : exact-nonnegative-integer?
+  right-inset : exact-nonnegative-integer?
+  bottom-inset : exact-nonnegative-integer?
+Creates a slide inset, which describes a number of pixels to inset the viewer
+for a slide on each side.
+
+(slide-inset? v) → boolean?
+  v : any/c
+Returns #t if v is a slide inset created by make-slide-inset, #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

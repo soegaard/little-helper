@@ -1,0 +1,83 @@
+▼  File: Racket File Format Libraries
+1  Convertible: Data-Conversion Protocol
+2  gzip Compression and File Creation
+3  gzip Decompression
+4  zip File Creation
+5  tar File Creation
+6  MD5 Message Digest
+7  SHA1 Message Digest
+8  GIF File Writing
+9  Windows Registry
+   Bibliography
+   Index
+On this page:
+prop: convertible
+convertible?
+convert
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Convertible: Data-Conversion Protocol
+
+ (require file/convertible)
+
+The file/convertible library provides a protocol to mediate between providers
+of data in different possible formats and consumers of the formats. For
+example, a datatype that implements prop:convertible might be able to convert
+itself to a GIF or PDF stream, in which case it would produce data for
+'gif-bytes or 'pdf-bytes requests.
+
+Any symbol can be used for a conversion request, but the following should be
+considered standard:
+
+  • 'text — a string for human-readable text
+
+  • 'gif-bytes — a byte string containing a GIF image encoding
+
+  • 'png-bytes — a byte string containing a PNG image encoding
+
+  • 'ps-bytes — a byte string containing a PostScript document
+
+  • 'eps-bytes — a byte string containing an Encapsulated PostScript document
+
+  • 'pdf-bytes — a byte string containing a PDF document
+
+  • 'pdf-bytes+bounds — a list containing a byte string and four numbers; the
+    byte string contains a PDF document and the four numbers are sizing
+    information for the PDF document, namely the width, height, ascent and
+    descent in that order
+
+prop:convertible : struct-type-property?
+A property whose value should be a procedure of three arguments. The procedure
+is called when a structure with the property is passed to convert; the first
+argument to the procedure is the structure, the second argument is a symbol for
+the requested conversion, and the third argument is a value to return
+(typically #f if the conversion is not supported. The procedure’s result
+depends on the requested conversion.
+
+(convertible? v) → boolean?
+  v : any/c
+Returns #t if v supports the conversion protocol, #f otherwise.
+
+(convert v request [default])
+      (case request
+        [(text) (or/c string? (λ (x) (eq? x default)))]
+        [(gif-bytes png-bytes ps-bytes eps-bytes pdf-bytes)
+         (or/c bytes? (λ (x) (eq? x default)))]
+        [(pdf-bytes+bounds) (or/c (list/c bytes?
+  →                                       (and/c real? (not/c negative?))
+                                          (and/c real? (not/c negative?))
+                                          (and/c real? (not/c negative?))
+                                          (and/c real? (not/c negative?)))
+                                  (λ (x) (eq? x default)))]
+        [else any/c])
+  v : convertible?
+  request : symbol?
+  default : any/c = #f
+Requests a data conversion from v, where request indicates the type of
+requested data and default is the value that the converter should return if it
+cannot produce data in the format indicated by request.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

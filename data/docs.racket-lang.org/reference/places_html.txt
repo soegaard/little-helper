@@ -1,0 +1,221 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 10  Concurrency and Parallelism
+10.1  Threads
+10.2  Synchronization
+10.3  Thread-Local Storage
+10.4  Futures
+10.5  Places
+On this page:
+place-enabled?
+place?
+place-channel?
+dynamic-place
+place
+place-wait
+place-dead-evt
+place-kill
+place-break
+place-channel
+place-channel-put
+place-channel-get
+place-channel-put/ get
+place-message-allowed?
+[...search manuals...]
+  top← prev  up  next → 
+
+10.5 Places
+
+            Currently, parallel support for places is enabled only for Racket
+            3m (which is the main variant of Racket), and only by default for
+            Windows, Linux x86/x86_64, and Mac OS X x86/x86_64. To enable
+            support for other platforms, use --enable-places with configure
+            when building Racket. The place-enabled? function reports whether
+            places run in parallel.
+
+ (require racket/place)
+The bindings documented in this section are provided by the racket/place and
+racket libraries, but not racket/base.
+
+Places enable the development of parallel programs that take advantage of
+machines with multiple processors, cores, or hardware threads.
+
+A place is a parallel task that is effectively a separate instance of the
+Racket virtual machine. Places communicate through place channels, which are
+endpoints for a two-way buffered communication.
+
+To a first approximation, place channels support only immutable, transparent
+values as messages. In addition, place channels themselves can be sent across
+channels to establish new (possibly more direct) lines of communication in
+addition to any existing lines. Finally, mutable values produced by
+shared-flvector, make-shared-flvector, shared-fxvector, make-shared-fxvector,
+shared-bytes, and make-shared-bytes can be sent across place channels; mutation
+of such values is visible to all places that share the value, because they are
+allowed in a shared memory space. See place-message-allowed?.
+
+A place channel can be used as a synchronizable event (see Events) to receive a
+value through the channel. A place can also receive messages with
+place-channel-get, and messages can be sent with place-channel-put.
+
+Constraints on messages across a place channel—and therefore on the kinds of
+data that places share—enable greater parallelism than future, even including
+separate garbage collection of separate places. At the same time, the setup and
+communication costs for places can be higher than for futures.
+
+For example, the following expression lanches two places, echoes a message to
+each, and then waits for the places to terminate:
+
+    (let ([pls (for/list ([i (in-range 2)])
+                  (dynamic-place "place-worker.rkt" 'place-main))])
+       (for ([i (in-range 2)]
+             [p pls])
+          (place-channel-put p i)
+          (printf "~a\n" (place-channel-get p)))
+       (map place-wait pls))
+
+The "place-worker.rkt" module must export the place-main function that each
+place executes, where place-main must accept a single place channel argument:
+
+    #lang racket
+    (provide place-main)
+     
+    (define (place-main pch)
+      (place-channel-put pch (format "Hello from place ~a"
+                                      (place-channel-get pch))))
+
+(place-enabled?) → boolean?
+Returns #t if Racket is configured so that dynamic-place and place create
+places that can run in parallel, #f if dynamic-place and place are simulated
+using thread.
+
+(place? v) → boolean?
+  v : any/c
+Returns #t if v is a place descriptor value, #f otherwise. Every place
+descriptor is also a place channel.
+
+(place-channel? v) → boolean?
+  v : any/c
+Returns #t if v is place channel, #f otherwise.
+
+(dynamic-place module-path start-proc) → place?
+  module-path : module-path?
+  start-proc : symbol?
+Creates a place to run the procedure that is identified by module-path and
+start-proc. The result is a place descriptor value that represents the new
+parallel task; the place descriptor is returned immediately. The place
+descriptor value is also a place channel that permits communication with the
+place.
+
+The module indicated by module-path must export a function with the name
+start-proc. The function must accept a single argument, which is a place
+channel that corresponds to the other end of communication for the place
+descriptor returned by place.
+
+When the place is created, the initial exit handler terminates the place, using
+the argument to the exit handler as the place’s completion value. Use (exit v)
+to immediately terminate a place with the completion value v. Since a
+completion value is limited to an exact integer between 0 and 255, any other
+value for v is converted to 0.
+
+If the function indicated by module-path and start-proc returns, then the place
+terminates with the completion value 0.
+
+(place id body ...+)
+Creates a place that evaluates body expressions with id bound to a place
+channel. The bodys close only over id plus the top-level bindings of the
+enclosing module, because the bodys are lifted to a function that is exported
+by the module. The result of place is a place descriptor, like the result of
+dynamic-place.
+
+(place-wait p) → exact-integer?
+  p : place?
+Returns the completion value of the place indicated by p, blocking until the
+place has terminated.
+
+(place-dead-evt p) → evt?
+  p : place?
+Returns a synchronizable event (see Events) that is ready if and only if p has
+terminated.
+
+(place-kill p) → void?
+  p : place?
+Immediately terminates the place, setting the place’s completion value to 1 if
+the place does not have a completion value already.
+
+(place-break p) → void?
+  p : place?
+Sends place p a break signal; see Breaks.
+
+(place-channel)   →   place-channel?   place-channel?
+Returns two place channels. Data sent through the first channel can be received
+through the second channel, and data sent through the second channel can be
+received from the first.
+
+Typically, one place channel is used by the current place to send messages to a
+destination place; the other place channel is sent to the destination place
+(via an existing place channel).
+
+(place-channel-put pch v) → void
+  pch : place-channel?
+  v : place-message-allowed?
+Sends a message v on channel pch.
+
+See place-message-allowed? form information on automatic coercions in v, such
+as converting a mutable string to an immutable string.
+
+(place-channel-get pch) → place-message-allowed?
+  pch : place-channel?
+Returns a message received on channel pch.
+
+(place-channel-put/get pch v) → void
+  pch : place-channel?
+  v : any/c
+Sends an immutable message v on channel pch and then waits for a reply message
+on the same channel.
+
+(place-message-allowed? v) → boolean?
+  v : any/c
+Returns #t if v is allowed as a message on a place channel, #f otherwise.
+
+If (place-enabled?) returns #f, then the result is always #t and no conversions
+are performed on v as a message. Otherwise, the following kinds of data are
+allowed as messages:
+
+  • numbers, characters, booleans, and #<void>;
+
+  • symbols that are interned;
+
+  • strings and byte strings, where mutable strings and byte strings are
+    automatically replaced by immutable variants;
+
+  • pairs, lists, vectors, and immutable prefab structures containing
+    message-allowed values, where a mutable vector is automatically replaced by
+    an immutable vector;
+
+  • place channels, where a place descriptor is automatically replaced by a
+    plain place channel; and
+
+  • values produced by shared-flvector, make-shared-flvector, shared-fxvector,
+    make-shared-fxvector, shared-bytes, and make-shared-bytes.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

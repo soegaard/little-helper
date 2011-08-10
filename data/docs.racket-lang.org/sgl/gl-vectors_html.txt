@@ -1,0 +1,314 @@
+▼  GL: 3-D Graphics
+1  Using Open GL
+2  C-Style Open GL
+3  Racket-Style Open GL
+4  Open GL Vectors
+5  Bitmaps
+   Index
+On this page:
+gl-vector?
+gl-vector->vector
+gl-vector->list
+gl-vector-length
+gl-vector-ref
+gl-vector-set!
+gl-byte-vector?
+make-gl-byte-vector
+gl-byte-vector
+vector->gl-byte-vector
+list->gl-byte-vector
+gl-byte-vector+
+gl-byte-vector-
+gl-byte-vector*
+gl-ubyte-vector?
+make-gl-ubyte-vector
+gl-ubyte-vector
+vector->gl-ubyte-vector
+list->gl-ubyte-vector
+gl-ubyte-vector+
+gl-ubyte-vector-
+gl-ubyte-vector*
+gl-short-vector?
+make-gl-short-vector
+gl-short-vector
+vector->gl-short-vector
+list->gl-short-vector
+gl-short-vector+
+gl-short-vector-
+gl-short-vector*
+gl-ushort-vector?
+make-gl-ushort-vector
+gl-ushort-vector
+vector->gl-ushort-vector
+list->gl-ushort-vector
+gl-ushort-vector+
+gl-ushort-vector-
+gl-ushort-vector*
+gl-int-vector?
+make-gl-int-vector
+gl-int-vector
+vector->gl-int-vector
+list->gl-int-vector
+gl-int-vector+
+gl-int-vector-
+gl-int-vector*
+gl-uint-vector?
+make-gl-uint-vector
+gl-uint-vector
+vector->gl-uint-vector
+list->gl-uint-vector
+gl-uint-vector+
+gl-uint-vector-
+gl-uint-vector*
+gl-float-vector?
+make-gl-float-vector
+gl-float-vector
+vector->gl-float-vector
+list->gl-float-vector
+gl-float-vector+
+gl-float-vector-
+gl-float-vector*
+gl-double-vector?
+make-gl-double-vector
+gl-double-vector
+vector->gl-double-vector
+list->gl-double-vector
+gl-double-vector+
+gl-double-vector-
+gl-double-vector*
+gl-boolean-vector?
+make-gl-boolean-vector
+gl-boolean-vector
+vector->gl-boolean-vector
+list->gl-boolean-vector
+gl-boolean-vector+
+gl-boolean-vector-
+gl-boolean-vector*
+gl-vector-norm
+[...search manuals...]
+  top← prev  up  next → 
+
+4 OpenGL Vectors
+
+ (require sgl/gl-vectors)
+
+The sgl/gl-vectors module supports OpenGL programming with cvectors. In this
+document and in the error messages, a “gl-vector” is just a cvector, while a
+“gl-‹type›-vector” is a cvector with an appropriate type. Using the sgl/
+gl-vectors module instead of using cvector directly because these functions are
+specialized to handling the OpenGL types correctly.
+
+(gl-vector? v) → boolean?
+  v : any/c
+(gl-vector->vector vec) → vector?
+  vec : cvector?
+(gl-vector->list vec) → list?
+  vec : cvector?
+(gl-vector-length vec) → exact-nonnegative-integer?
+  vec : cvector?
+(gl-vector-ref vec pos) → any/v
+  vec : cvector?
+  pos : exact-nonnegative-integer?
+(gl-vector-set! vec pos v) → void?
+  vec : cvector?
+  pos : exact-nonnegative-integer?
+  v : any/v
+Synonyms for cvector?, cvector->vector, cvector-length, etc.
+
+(gl-byte-vector? v) → boolean?
+  v : any/c
+(make-gl-byte-vector pos) → gl-byte-vector?
+  pos : exact-nonnegative-integer?
+(gl-byte-vector v ...) → gl-byte-vector?
+  v : byte?
+(vector->gl-byte-vector v ...) → gl-byte-vector?
+  v : (vectorof byte?)
+(list->gl-byte-vector v ...) → gl-byte-vector?
+  v : (listof byte?)
+(gl-byte-vector+ vec ...+) → gl-byte-vector?
+  vec : gl-byte-vector?
+(gl-byte-vector- vec ...+) → gl-byte-vector?
+  vec : gl-byte-vector?
+(gl-byte-vector* x vec) → gl-byte-vector?
+  x : real?
+  vec : gl-byte-vector?
+Operations on vectors of byte elements. The gl-byte-vector+ and gl-byte-vector-
+functions compute the element-by-element sum and difference of the given
+vectors, respectively. The gl-byte-vector* function multiplies each element of
+vec by x.
+(gl-ubyte-vector? v) → boolean?
+  v : any/c
+(make-gl-ubyte-vector pos) → gl-ubyte-vector?
+  pos : exact-nonnegative-integer?
+(gl-ubyte-vector v ...) → gl-ubyte-vector?
+  v : ubyte?
+(vector->gl-ubyte-vector v ...) → gl-ubyte-vector?
+  v : (vectorof ubyte?)
+(list->gl-ubyte-vector v ...) → gl-ubyte-vector?
+  v : (listof ubyte?)
+(gl-ubyte-vector+ vec ...+) → gl-ubyte-vector?
+  vec : gl-ubyte-vector?
+(gl-ubyte-vector- vec ...+) → gl-ubyte-vector?
+  vec : gl-ubyte-vector?
+(gl-ubyte-vector* x vec) → gl-ubyte-vector?
+  x : real?
+  vec : gl-ubyte-vector?
+Operations on vectors of ubyte elements. The gl-ubyte-vector+ and
+gl-ubyte-vector- functions compute the element-by-element sum and difference of
+the given vectors, respectively. The gl-ubyte-vector* function multiplies each
+element of vec by x.
+(gl-short-vector? v) → boolean?
+  v : any/c
+(make-gl-short-vector pos) → gl-short-vector?
+  pos : exact-nonnegative-integer?
+(gl-short-vector v ...) → gl-short-vector?
+  v : short?
+(vector->gl-short-vector v ...) → gl-short-vector?
+  v : (vectorof short?)
+(list->gl-short-vector v ...) → gl-short-vector?
+  v : (listof short?)
+(gl-short-vector+ vec ...+) → gl-short-vector?
+  vec : gl-short-vector?
+(gl-short-vector- vec ...+) → gl-short-vector?
+  vec : gl-short-vector?
+(gl-short-vector* x vec) → gl-short-vector?
+  x : real?
+  vec : gl-short-vector?
+Operations on vectors of short elements. The gl-short-vector+ and
+gl-short-vector- functions compute the element-by-element sum and difference of
+the given vectors, respectively. The gl-short-vector* function multiplies each
+element of vec by x.
+(gl-ushort-vector? v) → boolean?
+  v : any/c
+(make-gl-ushort-vector pos) → gl-ushort-vector?
+  pos : exact-nonnegative-integer?
+(gl-ushort-vector v ...) → gl-ushort-vector?
+  v : ushort?
+(vector->gl-ushort-vector v ...) → gl-ushort-vector?
+  v : (vectorof ushort?)
+(list->gl-ushort-vector v ...) → gl-ushort-vector?
+  v : (listof ushort?)
+(gl-ushort-vector+ vec ...+) → gl-ushort-vector?
+  vec : gl-ushort-vector?
+(gl-ushort-vector- vec ...+) → gl-ushort-vector?
+  vec : gl-ushort-vector?
+(gl-ushort-vector* x vec) → gl-ushort-vector?
+  x : real?
+  vec : gl-ushort-vector?
+Operations on vectors of ushort elements. The gl-ushort-vector+ and
+gl-ushort-vector- functions compute the element-by-element sum and difference
+of the given vectors, respectively. The gl-ushort-vector* function multiplies
+each element of vec by x.
+(gl-int-vector? v) → boolean?
+  v : any/c
+(make-gl-int-vector pos) → gl-int-vector?
+  pos : exact-nonnegative-integer?
+(gl-int-vector v ...) → gl-int-vector?
+  v : int?
+(vector->gl-int-vector v ...) → gl-int-vector?
+  v : (vectorof int?)
+(list->gl-int-vector v ...) → gl-int-vector?
+  v : (listof int?)
+(gl-int-vector+ vec ...+) → gl-int-vector?
+  vec : gl-int-vector?
+(gl-int-vector- vec ...+) → gl-int-vector?
+  vec : gl-int-vector?
+(gl-int-vector* x vec) → gl-int-vector?
+  x : real?
+  vec : gl-int-vector?
+Operations on vectors of int elements. The gl-int-vector+ and gl-int-vector-
+functions compute the element-by-element sum and difference of the given
+vectors, respectively. The gl-int-vector* function multiplies each element of
+vec by x.
+(gl-uint-vector? v) → boolean?
+  v : any/c
+(make-gl-uint-vector pos) → gl-uint-vector?
+  pos : exact-nonnegative-integer?
+(gl-uint-vector v ...) → gl-uint-vector?
+  v : uint?
+(vector->gl-uint-vector v ...) → gl-uint-vector?
+  v : (vectorof uint?)
+(list->gl-uint-vector v ...) → gl-uint-vector?
+  v : (listof uint?)
+(gl-uint-vector+ vec ...+) → gl-uint-vector?
+  vec : gl-uint-vector?
+(gl-uint-vector- vec ...+) → gl-uint-vector?
+  vec : gl-uint-vector?
+(gl-uint-vector* x vec) → gl-uint-vector?
+  x : real?
+  vec : gl-uint-vector?
+Operations on vectors of uint elements. The gl-uint-vector+ and gl-uint-vector-
+functions compute the element-by-element sum and difference of the given
+vectors, respectively. The gl-uint-vector* function multiplies each element of
+vec by x.
+(gl-float-vector? v) → boolean?
+  v : any/c
+(make-gl-float-vector pos) → gl-float-vector?
+  pos : exact-nonnegative-integer?
+(gl-float-vector v ...) → gl-float-vector?
+  v : float?
+(vector->gl-float-vector v ...) → gl-float-vector?
+  v : (vectorof float?)
+(list->gl-float-vector v ...) → gl-float-vector?
+  v : (listof float?)
+(gl-float-vector+ vec ...+) → gl-float-vector?
+  vec : gl-float-vector?
+(gl-float-vector- vec ...+) → gl-float-vector?
+  vec : gl-float-vector?
+(gl-float-vector* x vec) → gl-float-vector?
+  x : real?
+  vec : gl-float-vector?
+Operations on vectors of float elements. The gl-float-vector+ and
+gl-float-vector- functions compute the element-by-element sum and difference of
+the given vectors, respectively. The gl-float-vector* function multiplies each
+element of vec by x.
+(gl-double-vector? v) → boolean?
+  v : any/c
+(make-gl-double-vector pos) → gl-double-vector?
+  pos : exact-nonnegative-integer?
+(gl-double-vector v ...) → gl-double-vector?
+  v : double?
+(vector->gl-double-vector v ...) → gl-double-vector?
+  v : (vectorof double?)
+(list->gl-double-vector v ...) → gl-double-vector?
+  v : (listof double?)
+(gl-double-vector+ vec ...+) → gl-double-vector?
+  vec : gl-double-vector?
+(gl-double-vector- vec ...+) → gl-double-vector?
+  vec : gl-double-vector?
+(gl-double-vector* x vec) → gl-double-vector?
+  x : real?
+  vec : gl-double-vector?
+Operations on vectors of double elements. The gl-double-vector+ and
+gl-double-vector- functions compute the element-by-element sum and difference
+of the given vectors, respectively. The gl-double-vector* function multiplies
+each element of vec by x.
+(gl-boolean-vector? v) → boolean?
+  v : any/c
+(make-gl-boolean-vector pos) → gl-boolean-vector?
+  pos : exact-nonnegative-integer?
+(gl-boolean-vector v ...) → gl-boolean-vector?
+  v : boolean?
+(vector->gl-boolean-vector v ...) → gl-boolean-vector?
+  v : (vectorof boolean?)
+(list->gl-boolean-vector v ...) → gl-boolean-vector?
+  v : (listof boolean?)
+(gl-boolean-vector+ vec ...+) → gl-boolean-vector?
+  vec : gl-boolean-vector?
+(gl-boolean-vector- vec ...+) → gl-boolean-vector?
+  vec : gl-boolean-vector?
+(gl-boolean-vector* x vec) → gl-boolean-vector?
+  x : real?
+  vec : gl-boolean-vector?
+Operations on vectors of boolean elements. The gl-boolean-vector+ and
+gl-boolean-vector- functions compute the element-by-element sum and difference
+of the given vectors, respectively. The gl-boolean-vector* function multiplies
+each element of vec by x.
+
+(gl-vector-norm vec) → real?
+  vec : gl-vector?
+Returns the square root of the sum of the squares of the elements of vec.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

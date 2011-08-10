@@ -1,0 +1,80 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 22  Dialects of Racket and Scheme
+22.1  More Rackets
+22.2  Standards
+22.3  Teaching
+► 22.2  Standards
+ 22.2.1  R5RS
+ 22.2.2  R6RS
+On this page:
+22.2.1 R5RS
+22.2.2 R6RS
+[...search manuals...]
+  top← prev  up  next → 
+
+22.2 Standards
+
+Standard dialects of Scheme include the ones defined by R5RS and R6RS.
+
+22.2.1 R5RS
+
+“R5RS” stands for The Revised5 Report on the Algorithmic Language Scheme, and
+it is currently the most widely implemented Scheme standard.
+
+Racket tools in their default modes do not conform to R5RS, mainly because
+Racket tools generally expect modules, and R5RS does not define a module
+system. Typical single-file R5RS programs can be converted to Racket programs
+by prefixing them with #lang r5rs, but other Scheme systems do not recognize #
+lang r5rs. The plt-r5rs executable (see plt-r5rs) more directly conforms to the
+R5RS standard.
+
+Aside from the module system, the syntactic forms and functions of R5RS and
+Racket differ. Only simple R5RS become Racket programs when prefixed with #lang
+racket, and relatively few Racket programs become R5RS programs when a #lang
+line is removed. Also, when mixing “R5RS modules” with Racket modules, beware
+that R5RS pairs correspond to Racket mutable pairs (as constructed with mcons).
+
+See R5RS: Legacy Scheme for more information about running R5RS programs with
+Racket.
+
+22.2.2 R6RS
+
+“R6RS” stands for The Revised6 Report on the Algorithmic Language Scheme, which
+extends R5RS with a module system that is similar to the Racket module system.
+
+When an R6RS library or top-level program is prefixed with #!r6rs (which is
+valid R6RS syntax), then it can also be used as a Racket program. This works
+because #! in Racket is treated as a shorthand for #lang followed by a space,
+so #!r6rs selects the r6rs module language. As with R5RS, however, beware that
+the syntactic forms and functions of R6RS differ from Racket, and R6RS pairs
+are mutable pairs.
+
+See R6RS: Scheme for more information about running R6RS programs with Racket.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

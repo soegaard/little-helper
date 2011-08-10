@@ -1,0 +1,168 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+► 4.6  In-Source Documentation
+4.6.1  Source Annotations for Documentation
+4.6.2  Extracting Documentation from Source
+On this page:
+4.6.1 Source Annotations for Documentation
+provide/ doc
+require/ doc
+proc-doc/ names
+proc-doc
+thing-doc
+parameter-doc
+4.6.2 Extracting Documentation from Source
+include-extracted
+provide-extracted
+include-previously-extracted
+[...search manuals...]
+  top← prev  up  next → 
+
+4.6 In-Source Documentation
+
+The scribble/srcdoc and scribble/extract libraries support writing
+documentation within the documentation code along with an export contract,
+similar to using JavaDoc. With this approach, a single contract specification
+is used both for the run-time contract and the documentation of an exported
+binding.
+
+The scribble/srcdoc library provides forms for exporting a binding with
+associated documentation. The scribble/extract library is used to pull scribble
+/srcdoc-based documentation into a Scribble document (perhaps for multiple
+libraries).
+
+Although documentation is written with a library’s implementation when using
+scribble/srcdoc, the documentation creates no run-time overhead for the
+library. Similarly, typesetting the documentation does not require running the
+library. The two phases (run time versus documentation time) are kept separate
+in much the same way that the module system keeps expansion-time code separate
+from run-time code.
+
+For an example use, see the "file" collection’s "gif.rkt" source file and the
+corresponding extraction in "scribblings/gif.scrbl". As that example
+illustrates, prefixing the module declaration with
+
+  #reader scribble/reader
+
+
+enables the @-reader, which is handy for writing documentation expressions.
+
+4.6.1 Source Annotations for Documentation
+
+ (require scribble/srcdoc)
+
+(provide/doc spec ...)
+Like provide or provide/contract, but each spec uses a documentation
+transformer to describe the exported identifier and its contract.
+
+The currently supported documentation transformers are proc-doc, proc-doc/names
+, parameter-doc, and thing-doc.
+
+(require/doc require-spec ...)
+Like require, but for bindings that are needed at documentation time (and
+documentation-expansion time, etc.) instead of run time (and expansion time,
+etc.). A require-doc form has no effect on a normal use of the library; it
+affects only documentation extraction.
+
+Typically, a library that uses scribble/srcdoc includes at least (require/doc
+scribble/base scribble/manual) to get core Racket forms and basic Scribble
+functions to use in documentation expressions.
+
+(proc-doc/names id contract ((arg-id ...) ((arg-id default-expr) ...))
+                desc-expr)
+ 
+ contract   =   (-> arg ... result)
+            |   (->* (mandatory ...) (optional ...) result)
+            |   (case-> (-> arg ... result) ...)
+                 
+mandatory   =   contract-expr
+            |   keyword contract-expr
+                 
+ optional   =   contract-expr
+            |   keyword contract-expr
+When used in provide/doc, exports id with the contract described by contract
+just like using provide/contract.
+
+The arg-ids specify the names of arguments, which are not normally written as
+part of a contract. They are combined with the contract expression to generate
+the description of the binding in the documentation via defproc. The (arg-id
+default-expr) pairs specify the names and default values of the optional
+arguments.
+
+The desc-expr is a documentation-time expression that produces prose to
+describe the exported binding—that is, the last part of the generated defproc,
+so the description can refer to the arg-ids using racket.
+
+The normal requires of the enclosing library are effectively converted into
+for-label requires when generating documentation, so that identifiers in the
+contracts are linked to their corresponding documentation. Similarly, any
+binding that is available in the run-time phase of of the enclosing library can
+be referenced in documentation prose using the racket form.
+
+(proc-doc id contract desc-expr)
+ 
+contract   =   (-> result)
+           |   (->i (arg ...) () (values ress ...))
+           |   (->i (arg ...) () #:pre (pre-id ...) condition (values
+                ress ...))
+           |   (->i (arg ...) () res)
+           |   (->i (arg ...) () #:pre (pre-id ...) condition [name res])
+           |   (->i (arg ...) () #:rest rest res)
+           |   (->d (arg ...) () (values [id result] ...))
+           |   (->d (arg ...) () #:pre-cond expr (values [id result] ...))
+           |   (->d (arg ...) () [id result])
+           |   (->d (arg ...) () #:pre-cond expr [id result])
+           |   (->d (arg ...) () #:rest id rest [id result])
+Like proc-doc, but supporting contract forms that embed argument names. Only a
+subset of ->i and ->d forms are currently supported.
+
+(thing-doc id contract-expr dec-expr)
+Like proc-doc, but for an export of an arbitrary value.
+
+(parameter-doc id (parameter/c contract-expr) arg-id desc-expr)
+Like proc-doc, but for exporting a parameter.
+
+4.6.2 Extracting Documentation from Source
+
+ (require scribble/extract)
+
+(include-extracted module-path)
+Expands to a sequence of documentation forms extracted from module-path, which
+is expected to be a module that uses scribble/srcdoc.
+
+(provide-extracted module-path)
+Similar to include-extracted, but the documentation is packaged and exported as
+exported, instead of left inline.
+
+Use this form in combination with include-previously-extracted when
+documentation from a single source is to be split and typeset among multiple
+documentation locations. The provide-extracted form extracts the documentation
+once, and then include-previously-extracted form extracts documentation for
+specific bindings as needed.
+
+(include-previously-extracted module-path regexp)
+Similar to include-extracted, but instead of referring to the source that
+contains its own documentation, module-path refers to a module that uses
+provide-extracted. The include-previously-extracted form expands to
+documentation forms for all identifiers whose string forms match regexp.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

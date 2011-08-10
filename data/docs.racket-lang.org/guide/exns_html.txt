@@ -1,0 +1,145 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 10  Exceptions and Control
+10.1  Exceptions
+10.2  Prompts and Aborts
+10.3  Continuations
+[...search manuals...]
+  top← prev  up  next → 
+
+10.1 Exceptions
+
+Whenever a run-time error occurs, an exception is raised. Unless the exception
+is caught, then it is handled by printing a message associated with the
+exception, and then escaping from the computation.
+
+    > (/ 1 0)
+    /: division by zero
+
+    > (car 17)
+    car: expects argument of type <pair>; given 17
+
+
+To catch an exception, use the with-handlers form:
+
+    (with-handlers ([predicate-expr handler-expr] ...)
+      body ...+)
+
+Each predicate-expr in a handler determines a kind of exception that is caught
+by the with-handlers form, and the value representing the exception is passed
+to the handler procedure produced by handler-expr. The result of the
+handler-expr is the result of the with-handlers expression.
+
+For example, a divide-by-zero error raises an instance of the
+exn:fail:contract:divide-by-zero structure type:
+
+    > (with-handlers ([exn:fail:contract:divide-by-zero?
+                       (lambda (exn) +inf.0)])
+        (/ 1 0))
+    +inf.0
+
+    > (with-handlers ([exn:fail:contract:divide-by-zero?
+                       (lambda (exn) +inf.0)])
+        (car 17))
+    car: expects argument of type <pair>; given 17
+
+
+The error function is one way to raise your own exception. It packages an error
+message and other information into an exn:fail structure:
+
+    > (error "crash!")
+    crash!
+
+    > (with-handlers ([exn:fail? (lambda (exn) 'air-bag)])
+        (error "crash!"))
+    'air-bag
+
+
+The exn:fail:contract:divide-by-zero and exn:fail structure types are sub-types
+of the exn structure type. Exceptions raised by core forms and functions always
+raise an instance of exn or one of its sub-types, but an exception does not
+have to be represented by a structure. The raise function lets you raise any
+value as an exception:
+
+    > (raise 2)
+    uncaught exception: 2
+
+    > (with-handlers ([(lambda (v) (equal? v 2)) (lambda (v) 'two)])
+        (raise 2))
+    'two
+
+    > (with-handlers ([(lambda (v) (equal? v 2)) (lambda (v) 'two)])
+        (/ 1 0))
+    /: division by zero
+
+
+Multiple predicate-exprs in a with-handlers form let you handle different kinds
+of exceptions in different ways. The predicates are tried in order, and if none
+of them match, then the exception is propagated to enclosing contexts.
+
+    > (define (always-fail n)
+        (with-handlers ([even? (lambda (v) 'even)]
+                        [positive? (lambda (v) 'positive)])
+          (raise n)))
+    > (always-fail 2)
+    'even
+
+    > (always-fail 3)
+    'positive
+
+    > (always-fail -3)
+    uncaught exception: -3
+
+    > (with-handlers ([negative? (lambda (v) 'negative)])
+       (always-fail -3))
+    'negative
+
+
+Using (lambda (v) #t) as a predicate captures all exceptions, of course:
+
+    > (with-handlers ([(lambda (v) #t) (lambda (v) 'oops)])
+        (car 17))
+    'oops
+
+
+Capturing all exceptions is usually a bad idea, however. If the user types
+Ctl-C in a terminal window or clicks the Stop button in DrRacket to interrupt a
+computation, then normally the exn:break exception should not be caught. To
+catch only exceptions that represent errors, use exn:fail? as the predicate:
+
+    > (with-handlers ([exn:fail? (lambda (v) 'oops)])
+        (car 17))
+    'oops
+
+    > (with-handlers ([exn:fail? (lambda (v) 'oops)])
+        (break-thread (current-thread)) ; simulate Ctl-C
+        (car 17))
+    user break
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

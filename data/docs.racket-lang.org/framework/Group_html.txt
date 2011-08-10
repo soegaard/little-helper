@@ -1,0 +1,169 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+group: %
+set-open-here-frame
+get-open-here-frame
+get-mdi-parent
+get-frames
+frame-label-changed
+frame-shown/ hidden
+for-each-frame
+get-active-frame
+set-active-frame
+insert-frame
+remove-frame
+clear
+on-close-all
+can-close-all?
+locate-file
+group: get-the-frame-group
+group: on-close-action
+group: can-close-check
+group: add-to-windows-menu
+[...search manuals...]
+  top← prev  up  next → 
+
+15 Group
+
+group:% : class?
+  superclass: object%
+
+This class manages a group of frames matching the frame:basic<%> interface.
+There is one instance created by the framework, returned by the function
+group:get-the-frame-group and every frame that was constructed with
+frame:basic-mixin adds itself to the result of group:get-the-frame-group.
+
+
+    (send a-group: set-open-here-frame frame) → void?
+      frame : (is-a?/c frame:editor%)
+    Sets the frame to load new files into. See also frame:open-here<%>.
+
+    (send a-group: get-open-here-frame)
+     → (or/c false/c (is-a?/c frame:editor<%>))
+    Returns the currently saved frame to load new files into.
+
+    (send a-group: get-mdi-parent)
+     → (or/c false/c (is-a?/c frame%))
+    The result of this method must be used as the parent frame for each frame
+    in the group.
+
+    (send a-group: get-frames)
+     → (list-of (is-a?/c frame:basic<%>))
+    Returns the frames in the group.
+
+    (send a-group: frame-label-changed frame) → void?
+      frame : (is-a?/c frame:basic<%>)
+    This method is called by frames constructed with frame:basic-mixin when
+    their titles change.
+
+    Updates the windows menu of each frame in the group.
+
+    (send a-group: frame-shown/hidden) → void?
+    This method is called by instances of frame:basic% to notify the frame
+    group that a frame’s visibility is changed.
+
+    Updates the Windows menus of all of the frames in the frame group.
+
+    (send a-group: for-each-frame f) → void?
+      f : ((is-a?/c frame:basic<%>) -> void?)
+    This method applies a function to each frame in the group. It also
+    remembers the function and applies it to any new frames that are added to
+    the group when they are added.
+
+    See also get-frames.
+
+    Applies f to each frame in the group
+
+    (send a-group: get-active-frame) → (is-a?/c frame:basic<%>)
+    Returns the frame with the keyboard focus or the first frame in the group.
+
+    (send a-group: set-active-frame frame) → void?
+      frame : (is-a?/c frame:basic<%>)
+    Sets the active frame in the group. This method is called by on-activate.
+
+    (send a-group: insert-frame frame) → void?
+      frame : (is-a?/c frame:basic<%>)
+    Inserts a frame into the group.
+
+    (send a-group: remove-frame frame) → void?
+      frame : (is-a?/c frame:basic<%>)
+    Removes a frame from the group.
+
+    (send a-group: clear) → boolean?
+    This removes all of the frames in the group. It does not close the frames.
+    See also on-close-alland can-close-all?.
+
+    (send a-group: on-close-all) → void?
+    Call this method to close all of the frames in the group. The function
+    can-close-all? must have been called just before this function and it must
+    have returned #t.
+
+    Calls the on-close method and the show method (with #f as argument) on each
+    frame in the group.
+
+    (send a-group: can-close-all?) → boolean?
+    Call this method to make sure that closing all of the frames in the frame
+    groups is permitted by the user. The function on-close-all is expected to
+    be called just after this method is called.
+
+    Calls the can-close? method of each frame in the group.
+    (send a-group: locate-file name)
+     → (or/c false/c (is-a?/c frame:basic<%>))
+      name : path?
+    Returns the frame that is editing or viewing the file name.
+
+(group:get-the-frame-group) → (is-a?/c group:%)
+This returns the frame group.
+(group:on-close-action) → void?
+See also group:can-close-check.
+
+Call this function from the can-close? callback of a frame in order for the
+group to properly close the application.
+(group:can-close-check) → boolean?
+See also group:on-close-action.
+
+Call this function from the can-close? callback of a frame in order for the
+group to properly close the application.
+(group:add-to-windows-menu proc) → any
+  proc : (-> (is-a?/c menu%) any)
+Procedures passed to this function are called when the Windows menu is created.
+Use it to add additional menu items.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

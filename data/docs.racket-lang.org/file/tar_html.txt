@@ -1,0 +1,53 @@
+▼  File: Racket File Format Libraries
+1  Convertible: Data-Conversion Protocol
+2  gzip Compression and File Creation
+3  gzip Decompression
+4  zip File Creation
+5  tar File Creation
+6  MD5 Message Digest
+7  SHA1 Message Digest
+8  GIF File Writing
+9  Windows Registry
+   Bibliography
+   Index
+On this page:
+tar
+tar->output
+tar-gzip
+[...search manuals...]
+  top← prev  up  next → 
+
+5 tar File Creation
+
+ (require file/tar)
+The file/tar library provides utilities to create archive files in USTAR
+format, like the archive that the Unix utility pax generates. The USTAR format
+imposes limits on path lengths. The resulting archives contain only directories
+and files (symbolic links are followed), and owner information is not
+preserved; the owner that is stored in the archive is always “root.”
+
+(tar tar-file path ...) → exact-nonnegative-integer?
+  tar-file : path-string?
+  path : path-string?
+Creates tar-file, which holds the complete content of all paths. The given
+paths are all expected to be relative path names of existing directories and
+files (i.e., relative to the current directory). If a nested path is provided
+as a path, its ancestor directories are also added to the resulting tar file,
+up to the current directory (using pathlist-closure).
+
+(tar->output paths [out]) → exact-nonnegative-integer?
+  paths : (listof path?)
+  out : output-port? = (current-output-port)
+Packages each of the given paths in a tar format archive that is written
+directly to the out. The specified paths are included as-is; if a directory is
+specified, its content is not automatically added, and nested directories are
+added without parent directories.
+
+(tar-gzip tar-file paths ...) → void?
+  tar-file : path-string?
+  paths : path-string?
+Like tar, but compresses the resulting file with gzip.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

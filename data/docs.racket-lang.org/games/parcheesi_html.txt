@@ -1,0 +1,80 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+▼ 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+[...search manuals...]
+  top← prev  up  next → 
+
+1.16 [parcheesi] Parcheesi — Board Game
+
+            To play Parcheesi, run the PLT Games program. (Under Unix, it’s
+            called plt-games).
+
+Parcheesi is a race game for four players. The goal is for each player to move
+their pieces from the starting position (the circles in the corners) to the
+home square (in the center of the board), passing a nearly complete loop around
+the board in the counter-clockwise direction and then heads up towards the main
+row. For example, the green player enters from the bottom right, travels around
+the board on the light blue squares, passing each of the corners, until it
+reaches the middle of the bottom of the board, where it turns off the light
+blue squares and heads into the central region.
+
+On each turn, the player rolls two dice and advances the pawn, based on the die
+rolls. Typically the players may move a pawn for each die. The pawn moves by
+the number of pips showing on the die and all of the dice must be used to
+complete a turn.
+
+There are some exceptions, however:
+
+  • You must roll a 5 (either directly or via summing) to enter from the start
+    area to the main ring.
+
+  • If two pieces of the same color occupy a square, no pieces may pass that
+    square.
+
+  • If an opponent’s piece lands on your piece, you piece is returned to the
+    starting area and the opponent receives a bonus of 20 (which is treated
+    just as if they had rolled a 20 on the dice).
+
+  • If your piece makes it home (and it must do so by exact count) you get a
+    bonus of 10, to be used as an additional die roll.
+
+These rules induce a number of unexpected corner cases, but the GUI only lets
+you make legal moves. Watch the space along the bottom of the board for reasons
+why a move is illegal or why you have not used all of your die rolls.
+
+The automated players are:
+
+  • Reckless Renee, who tries to maximize the chances that someone else bops
+    her.
+
+  • Polite Polly, who tries to minimize the distance her pawns move. (“No,
+    after you. I insist.”)
+
+  • Amazing Grace, who tries to minimize the chance she gets bopped while
+    moving as far as possible.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

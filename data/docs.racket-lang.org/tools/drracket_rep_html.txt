@@ -1,0 +1,423 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drracket: rep: text<%>
+drracket: rep: text%
+after-delete
+after-insert
+display-results
+do-many-evals
+do-many-text-evals
+evaluate-from-port
+after-many-evals
+on-execute
+get-error-range
+get-user-custodian
+get-user-eventspace
+get-user-language-settings
+get-user-namespace
+get-user-thread
+highlight-errors
+highlight-errors/ exn
+initialize-console
+insert-prompt
+kill-evaluation
+on-close
+queue-output
+reset-console
+reset-highlighting
+run-in-evaluation-thread
+shutdown
+wait-for-io-to-complete
+wait-for-io-to-complete/ user
+drracket: rep: drs-bindings-keymap-mixin
+get-keymaps
+drracket: rep: context<%>
+clear-annotations
+disable-evaluation
+enable-evaluation
+ensure-rep-shown
+get-breakables
+get-directory
+needs-execution
+reset-offer-kill
+set-breakables
+update-running
+drracket: rep: get-welcome-delta
+drracket: rep: get-dark-green-delta
+drracket: rep: get-drs-bindings-keymap
+drracket: rep: current-rep
+drracket: rep: current-value-port
+[...search manuals...]
+  top← prev  up  next → 
+
+14 drracket:rep
+
+drracket:rep:text<%> : interface?
+
+drracket:rep:text% : class?
+  superclass: scheme:text%
+
+  extends:  drracket:rep:text<%>
+This class implements a read-eval-print loop for DrRacket. User submitted
+evaluations in DrRacket are evaluated asynchronously, in an eventspace created
+for the user. No evaluations carried out by this class affect the
+implementation that uses it.
+
+    (make-object drracket:rep:text% context)
+     → (is-a?/c drracket:rep:text%)
+      context : (implements drracket:rep:context<%>)
+
+    (send a-drracket:rep:text after-delete) → void?
+    Overrides after-delete in mode:host-text-mixin.
+    Resets any error highlighting in this editor.
+
+    (send a-drracket:rep:text after-insert) → void?
+    Overrides after-insert in mode:host-text-mixin.
+    Resets any error highlighting in this editor.
+
+    (send a-drracket:rep:text display-results results) → void?
+      results : (list-of TST)
+    This displays each of the elements of results in the interactions window,
+    expect those elements of results that are void. Those are just ignored.
+
+    (send a-drracket:rep:text do-many-evals run-loop) → void?
+      run-loop : (((-> void) -> void) -> void)
+    Specification: Use this function to evaluate code or run actions that
+    should mimic the user’s interactions. For example, DrRacket uses this
+    function to evaluate expressions in the definitions window and expressions
+    submitted at the prompt.
+
+    Default implementation: The function run-loop is called. It is expected to
+    loop, calling its argument with a thunk that corresponds to the user’s
+    evaluation. It should call its argument once for each expression the user
+    is evaluating. It should pass a thunk to its argument that actually does
+    the users’s evaluation.
+
+    (send a-drracket:rep:text do-many-text-evals  
+          text                                    
+          start                                   
+          end                                     
+          complete-program?)                      
+     → void?
+      text : (is-a?/c text%)
+      start : int
+      end : int
+      complete-program? : any/c
+    Specification: This function evaluates all of the expressions in a text.
+
+    Default implementation: It evaluates all of the expressions in text
+    starting at start and ending at end, calling do-many-evals to handle the
+    evaluation.
+
+    The complete-program? argument determines if the front-end/complete-program
+    method or the front-end/interaction method is called.
+
+    (send a-drracket:rep:text evaluate-from-port  
+          port                                    
+          complete-program?                       
+          cleanup)                                
+     → any
+      port : input-port?
+      complete-program? : boolean?
+      cleanup : (-> void)
+    Evaluates the program in the port argument. If complete-program? is #t,
+    this method calls the front-end/complete-program to evaluate the program.
+    If it is #f, it calls front-end/interaction method. When evaluation
+    finishes, it calls cleanup on the user’s main thread.
+
+    This method must be called from the DrRacket main thread.
+
+    (send a-drracket:rep:text after-many-evals) → any
+    Augments <method not found>.
+    Called from the DrRacket main thread after evaluate-from-port finishes (no
+    matter how it finishes).
+
+    (send a-drracket:rep:text on-execute run-on-user-thread) → any
+      run-on-user-thread : (-> any)
+    Use run-on-user-thread to initialize the user’s parameters, etc.
+
+    Called from the DrRacket thread after the language’s on-execute method has
+    been invoked, and after the special values have been setup (the ones
+    registered via drracket:language:add-snip-value).
+
+    Do not print to current-output-port or current-error-port during the
+    dynamic extent of the thunk passed to run-on-user-thread becuase this can
+    deadlock. IO is still, in general, fine, but the current-error-port and
+    current-output-port are set to the user’s ports that print into the
+    interactions window and are not in a good state during those calls.
+
+    (send a-drracket:rep:text get-error-range)
+     → (or/c false/c (list/c (is-a?/c text:basic%) number? number?))
+    Specification: Indicates the highlighted error range. The state for the
+    error range is shared across all instances of this class, so there can only
+    be one highlighted error region at a time.
+
+    Default implementation: If #f, no region is highlighted. If a list, the
+    first element is the editor where the range is highlighted and the second
+    and third are the beginning and ending regions, respectively.
+
+    (send a-drracket:rep:text get-user-custodian)
+     → (or/c false/c custodian?)
+    This is the custodian controlling the user’s program.
+
+    (send a-drracket:rep:text get-user-eventspace)
+     → (or/c false/c eventspace?)
+    This is the user’s eventspace. The result of get-user-thread is the main
+    thread of this eventspace.
+
+    (send a-drracket:rep:text get-user-language-settings)
+     → language-settings
+    Returns the user’s language-settings for the most recently run program.
+    Consider using get-next-settings instead, since the user may have selected
+    a new language since the program was last run.
+
+    (send a-drracket:rep:text get-user-namespace)
+     → (or/c false/c namespace?)
+    Returns the user’s namespace. This method returns a new namespace each time
+    Run is clicked.
+
+    (send a-drracket:rep:text get-user-thread)
+     → (or/c false/c thread?)
+    This method returns the thread that the users code runs in. It is returns a
+    different result, each time the user runs the program.
+
+    It is #f before the first time the user click on the Run button or the
+    evaluation has been killed.
+
+    This thread has all of its parameters initialized according to the settings
+    of the current execution. See Parameters for more information about
+    parameters.
+
+    (send a-drracket:rep:text highlight-errors    locs            
+                                                [ error-arrows])  
+     → void?
+      locs : (listof srcloc?)
+      error-arrows : (or/c #f (listof srcloc?)) = #f
+    Call this method to highlight errors associated with this repl. See also
+    reset-highlighting, and highlight-errors/exn.
+
+    This method highlights a series of dis-contiguous ranges in the editor.
+
+    It puts the caret at the location of the first error.
+
+    (send a-drracket:rep:text highlight-errors/exn exn) → void?
+      exn : exn
+    Highlights the errors associated with the exn (only syntax and read errors
+    – does not extract any information from the continuation marks)
+
+    See also highlight-errors.
+
+    (send a-drracket:rep:text initialize-console) → void?
+    This inserts the “Welcome to DrRacket” message into the interactions
+    buffer, calls reset-console, insert-prompt, and clear-undos.
+
+    Once the console is initialized, this method calls first-opened.
+    Accordingly, this method should not be called to initialize a REPL when the
+    user’s evaluation is imminent. That is, this method should be called when
+    new tabs or new windows are created, but not when the Run button is
+    clicked.
+
+    This method calls the first-opened from the user’s eventspace’s main thread
+    and, when first-opened returns, it enqueue’s a callback that ends an edit
+    sequence on the REPL and calls clear-undos. Accordingly, if the
+    first-opened method does not return, the interactions text will be in an
+    unclosed edit sequence.
+
+    (send a-drracket:rep:text insert-prompt) → void?
+    Inserts a new prompt at the end of the text.
+
+    (send a-drracket:rep:text kill-evaluation) → void?
+    This method is called when the user chooses the kill menu item.
+
+    (send a-drracket:rep:text on-close) → void?
+    Overrides on-close in editor:basic<%>.
+    Calls shutdown.
+
+    Calls the super method.
+
+    (send a-drracket:rep:text queue-output thnk) → void?
+      thnk : (-> void?)
+    Specification: This method queues thunks for DrRacket’s eventspace in a
+    special output-related queue.
+
+    (send a-drracket:rep:text reset-console) → void?
+    Kills the old eventspace, and creates a new parameterization for it.
+
+    (send a-drracket:rep:text reset-highlighting) → void?
+    This method resets the highlighting being displayed for this repl. See
+    also: highlight-errors, and highlight-errors/exn.
+
+    (send a-drracket:rep:text run-in-evaluation-thread f) → void?
+      f : ( -> void)
+    Specification: This function runs its arguments in the user evaluation
+    thread. This thread is the same as the user’s eventspace main thread.
+
+    See also do-many-evals.
+
+    Default implementation: Calls f, after switching to the user’s thread.
+
+    (send a-drracket:rep:text shutdown) → void?
+    Shuts down the user’s program and all windows. Reclaims any resources the
+    program allocated. It is expected to be called from DrRacket’s main
+    eventspace thread.
+
+    (send a-drracket:rep:text wait-for-io-to-complete) → void?
+    This waits for all pending IO in the rep to finish and then returns.
+
+    This method must only be called from the main thread in DrRacket’s
+    eventspace
+
+    (send a-drracket:rep:text wait-for-io-to-complete/user)
+     → void?
+    This waits for all pending IO in the rep to finish and then returns.
+
+    This method must only be called from the main thread in the user’s
+    eventspace
+
+drracket:rep:drs-bindings-keymap-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:keymap<%>
+This mixin adds some DrRacket-specific keybindings to the editor it is mixed
+onto.
+
+
+    (send a-drracket:rep:drs-bindings-keymap get-keymaps)
+     → (listof (is-a?/c keymap%))
+    Overrides get-keymaps in editor:keymap<%>.
+    Calls the super method and adds in a keymap with the DrRacket-specific
+    keybindings:
+
+      □ f5 - Run
+
+      □ c:x;o - toggles the focus between the definition and interactions
+        windows.
+
+drracket:rep:context<%> : interface?
+Objects that match this interface provide all of the services that the
+drracket:rep:text% class needs to connect with its context.
+
+
+    (send a-drracket:rep:context clear-annotations) → void?
+    Specification: Call this method to clear any annotations in the text before
+    executing or analyzing or other such activities that should process the
+    program.
+
+    Tools that annotate the program text should augment this method to clear
+    their own annotations on the program text.
+
+    DrRacket calls this method before a program is run (via the Run button).
+
+    Default implementation: Clears any error highlighting in the definitions
+    window.
+
+    (send a-drracket:rep:context disable-evaluation) → void?
+    Call this method to disable evaluation GUI evaluation while some evaluation
+    (or expansion) is taking place on another thread.
+
+    Override this method if you add a GUI-based mechanism for initiating
+    evaluation in the frame.
+
+    This method is also called when the user switches tabs.
+
+    See also enable-evaluation.
+
+    (send a-drracket:rep:context enable-evaluation) → void?
+    This method must disable the GUI controls that start user-sponsored
+    evaluation. It is called once the user starts some evaluation to ensure
+    that only one evaluation proceeds at a time.
+
+    It is also called when the user switches tabs.
+
+    See also disable-evaluation.
+
+    (send a-drracket:rep:context ensure-rep-shown rep) → void?
+      rep : (is-a?/c drracket:rep:text<%>)
+    This method is called to force the rep window to be visible when, for
+    example, an error message is put into the rep. Also ensures that the
+    appropriate tab is visible, if necessary.
+
+    (send a-drracket:rep:context get-breakables)
+      →   (or/c thread? false/c)
+          (or/c custodian? false/c)
+    Returns the last values passed to set-breakables.
+
+    (send a-drracket:rep:context get-directory)
+     → (union string false/c)
+    The result of this method is used as the initial directory for the user’s
+    program to be evaluated in.
+
+    (send a-drracket:rep:context needs-execution)
+     → (or/c string? false/c)
+    This method should return an explanatory string when the state of the
+    program that the repl reflects has changed. It should return #f otherwise.
+
+    (send a-drracket:rep:context reset-offer-kill) → void?
+    The break button typically offers to kill if it has been pushed twice in a
+    row. If this method is called, however, it ignores any prior clicks.
+
+    (send a-drracket:rep:context set-breakables   thread            
+                                                  custodian)   →   void?
+      thread : (or/c thread false/c)
+      custodian : (or/c custodian false/c)
+    Calling this method with a thread and a custodian means that the next time
+    the break button is clicked, it will either break the thread or shutdown
+    the custodian.
+
+    See also get-breakables.
+
+    (send a-drracket:rep:context update-running running?) → void?
+      running? : any/c
+    This method should update some display in the gui that indicates whether or
+    not evaluation is currently proceeding in the user’s world.
+
+(drracket:rep:get-welcome-delta) → (is-a?/c style-delta%)
+Returns a style delta that matches the style and color of the phrase “Welcome
+to” in the beginning of the interactions window.
+(drracket:rep:get-dark-green-delta) → (is-a?/c style-delta%)
+Returns a style delta that matches the style and color of the name of a
+language in the interactions window.
+(drracket:rep:get-drs-bindings-keymap) → (is-a?/c keymap%)
+Returns a keymap that binds various DrRacket-specific keybindings. This keymap
+is used in the definitions and interactions window.
+
+By default, binds C-x;o to a function that switches the focus between the
+definitions and interactions windows. Also binds f5 to Execute and f1 to Help
+Desk.
+(drracket:rep:current-rep)
+ → (or/c false/c (is-a?/c drracket:rep:text%))
+This is a parameter whose value should not be set by tools. It is initialized
+to the repl that controls this evaluation in the user’s thread.
+
+It only returns #f if the program not running in the context of a repl (eg, the
+test suite window).
+(drracket:rep:current-value-port) → (or/c false/c port?)
+This is a parameter whose value is a port that prints in the REPL in blue. It
+is used to print the values of toplevel expressions in the REPL.
+
+It is only initialized on the user’s thread.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

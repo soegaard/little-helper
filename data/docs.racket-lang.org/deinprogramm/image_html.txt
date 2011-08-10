@@ -1,0 +1,286 @@
+▼  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+► 6  Bilder konstruieren: "image.ss"
+6.1  Bilder
+6.2  Modi und Farben
+6.3  Einfache geometrische Figuren
+6.4  Eigenschaften von Bildern
+6.5  Bilder zusammensetzen
+6.6  Bilder aus Pixeln konstruieren
+On this page:
+6.1 Bilder
+image
+empty-image
+image?
+6.2 Modi und Farben
+mode
+octet
+rgb-color
+make-color
+color-red
+color-green
+color-blue
+color?
+image-color
+image-color?
+alpha-rgb-color
+make-alpha-color
+alpha-color-red
+alpha-color-green
+alpha-color-blue
+alpha-color-alpha
+alpha-color?
+6.3 Einfache geometrische Figuren
+rectangle
+circle
+ellipse
+triangle
+line
+text
+6.4 Eigenschaften von Bildern
+image-width
+image-height
+image-inside?
+find-image
+6.5 Bilder zusammensetzen
+h-place
+v-place
+h-mode
+v-mode
+overlay
+beside
+above
+clip
+pad
+6.6 Bilder aus Pixeln konstruieren
+color-list->image
+image->color-list
+alpha-color-list->image
+image->alpha-color-list
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Bilder konstruieren: "image.ss"
+
+Note: This is documentation for the "image.rkt" teachpack that goes with the
+German textbook Die Macht der Abstraktion.
+
+Dieses Teachpack definiert Prozeduren fu:r die Konstruktion von Bildern.
+Einfache Bilder werden als geometrische Formen oder Bitmaps konstruiert.
+Zusa:tzliche Prozeduren erlauben die Komposition von Bildern.
+
+6.1 Bilder
+
+image : signature
+Ein Bild (Name: image) ist die Repra:sentation eines Bildes.
+
+empty-image : image
+Ein leeres Bild mit Breite und Ho:he 0.
+
+image? : (any -> boolean?)
+Der Aufruf (image? x) stellt fest, ob x ein Bild ist.
+
+6.2 Modi und Farben
+
+mode : signature
+(one-of "solid" "outline")
+
+Ein Modus (Name: mode) legt fest, ob die Darstellung einer Form diese fu:llt
+oder nur einen Umriss zeichnet.
+
+octet : signature
+(combined natural (predicate (lambda (n) (<= n 255))))
+
+Ein Oktet (Name: octet) ist eine natu:rliche Zahl zwischen 0 und 255.
+
+rgb-color : signature
+Eine RGB-Farbe ist eine Farbe (Name: color, die vom Record-Konstruktor
+make-color zuru:ckgegeben wird:
+
+make-color : (octet octet octet -> rgb-color)
+Eine RGB-Farbe beschreibt eine Farbe mit den roten, blauen und gru:nen
+Anteilen, also z.B. (make-color 100 200 30).
+
+color-red : (color -> octet)
+liefert den Rot-Anteil einer RGB-Farbe.
+color-green : (color -> octet)
+liefert den Gru:n-Anteil einer RGB-Farbe.
+color-blue : (color -> octet)
+liefert den Blau-Anteil einer RGB-Farbe.
+
+color? : (any -> boolean)
+stellt fest, ob ein Objekt eine RGB-Farbe ist.
+
+image-color : signature
+(mixed string rgb-color)
+
+Eine Farbe (Name: image-color) ist eine Zeichenkette aus einer Farbbezeichnung
+(z.B. "blue") oder eine RGB-Farbe.
+
+image-color? : (any -> boolean?)
+stellt fest, ob ein Objekt eine Farbe ist.
+
+alpha-rgb-color : signature
+Eine Alpha/RGB-Farbe ist eine Farbe (Name: color, die vom Record-Konstruktor
+make-alpha-color zuru:ckgegeben wird:
+
+make-alpha-color : (octet octet octet octet -> alpha-color)
+Eine Alpha/RGB-Farbe beschreibt eine Farbe mit den Alpha-, roten, blaue und
+gru:nen Anteilen, also z.B. (make-color 50 100 200 30). Der Alpha-Anteil
+beschreibt, wie durchsichtig die Farbe ist.
+
+alpha-color-red : (color -> octet)
+liefert den Rot-Anteil einer RGB-Farbe.
+alpha-color-green : (color -> octet)
+liefert den Gru:n-Anteil einer RGB-Farbe.
+alpha-color-blue : (color -> octet)
+liefert den Blau-Anteil einer RGB-Farbe.
+alpha-color-alpha : (color -> octet)
+liefert den Alpha-Anteil einer RGB-Farbe.
+
+alpha-color? : (any -> boolean)
+stellt fest, ob ein Objekt eine Alpha/RGB-Farbe ist.
+
+6.3 Einfache geometrische Figuren
+
+Die folgenden Prozeduren erzeugen Bilder mit einfachen geometrischen Formen:
+
+rectangle : (natural natural mode image-color -> image)
+Der Aufruf (rectangle w h m c) erzeugt ein Rechteck mit Breite w und Ho:he h,
+gefu:llt mit Modus m und in Farbe c.
+
+circle : (natural mode image-color -> image)
+Der Aufruf (circle r m c) erzeugt einen Kreis oder eine Scheibe mit Radius r,
+gefu:llt mit Modus m und in Farbe c.
+
+ellipse : (natural natural mode image-color -> image)
+Der Aufruf (ellipse w h m c) erzeugt eine Ellipse mit Breite w und Ho:he h,
+gefu:llt mit Modus m und in Farbe c.
+
+triangle : (integer mode image-color -> image)
+Der Aufruf (triangle s m c) erzeugt ein nach oben zeigendes gleichseitiges
+Dreieck, wobei s die Seitenla:nge angibt, gefu:llt mit Modus m und in Farbe c.
+
+line : (natural natural number number number number image-color -> image)
+Der Aufruf (line w h sx sy ex ey c) erzeugt ein Bild mit einer farbigen
+Strecke, wobei w die Breite und h die Ho:he des Bilds, sowie sx die X- und sx
+die Y-Koordinate des Anfangspunkts und ex die X- und ey die Y-Koordinate des
+Endpunkts angeben, gefu:llt mit Modus m und in Farbe c.
+
+text : (string natural image-color -> image)
+Der Aufruf (text s f c) erzeugt ein Bild mit Text s, wobei die Buchstaben die
+Gro:sse f haben, in Farbe c
+
+Ausserdem ko:nnen beliebige Bitmap-Bilder in ein Scheme-Programm eingeklebt
+werden.
+
+6.4 Eigenschaften von Bildern
+
+Zwei Eigenschaften von Bildern sind fu:r ihre Manipulation nu:tzlich, na:mlich
+Breite und Ho:he:
+
+image-width : (image -> natural)
+liefert die Breite von i in Pixeln.
+
+image-height : (image -> natural)
+liefert die Ho:he von i in Pixeln.
+
+image-inside? : (image image -> boolean)
+Der Aufruf (image-inside? i1 i2) stellt fest, ob das Bild i2 im Bild i1
+enthalten ist.
+
+find-image : (image image -> posn)
+Der Aufruf (find-image i1 i2) findet die Position von i2 im Bild i1 (in dem es
+vorkommen muss).
+
+6.5 Bilder zusammensetzen
+
+The na:chste Gruppe von Prozeduren baut aus Bildern neue Bilder:
+
+h-place : signature
+(mixed integer (one-of "left" "right" "center"))
+
+Eine horizontale Positionsangabe (Name: h-place) gibt an, wie zwei Bilder
+horizontal zueinander positioniert werden
+
+Im ersten Fall, wenn es sich um eine Zahl x handelt, wird das zweite Bild x
+Pixel vom linken Rand auf das erste gelegt. Die drei Fa:lle mit Zeichenketten
+sagen, dass die Bilder am linken Rand bzw. am rechten Rand bu:ndig plaziert
+werden, bzw. das zweite Bild horizontal in die Mitte des ersten gesetzt wird.
+
+v-place : signature
+(mixed integer (one-of "top" "bottom" "center"))
+
+Eine vertikale Positionsangabe (Name: v-place) gibt an, wie zwei Bilder
+vertikal zueinander positioniert werden
+
+Im ersten Fall, wenn es sich um eine Zahl y handelt, wird das zweite Bild y
+Pixel vom oberen Rand auf das erste gelegt. Die drei Fa:lle mit Zeichenketten
+sagen, dass die Bilder am oberen Rand bzw. am unteren Rand bu:ndig plaziert
+werden, bzw. das zweite Bild vertikal in die Mitte des ersten gesetzt wird.
+
+h-mode : signature
+(one-of "left" "right" "center") Eine horizontale Justierungsangabe (Name:
+h-mode) gibt an, ob zwei Bilder, die u:bereinander angeordnet werden, entlang
+der linken Kante, der rechten Kante oder der Mitte angeordnet werden.
+
+v-mode : signature
+(one-of "top" "bottom" "center")
+
+Eine vertikale Justierungsangabe (Name: V-mode) gibt an, ob zwei Bilder, die
+nebenander angeordnet werden, entlang der oberen Kante, der untern Kante oder
+der Mitte angeordnet werden.
+
+overlay : (image image h-place v-place -> image)
+Der Aufruf (overlay img other h v) legt zweite Bild other auf das erste img.
+Die beiden anderen Argumente geben an, wie die beiden Bilder zueinander
+positioniert werden.
+
+beside : (image image v-mode -> image)
+Der Aufruf (beside img other v) ordnet die beiden Bilder entsprechend des
+v-Arguments nebeneinander an.
+
+above : (image image h-mode -> image)
+Der Aufruf (img other h -> image) ordnet die beiden Bilder entsprechend des
+h-Arguments u:bereinander an.
+
+clip : (image natural natural natural natural -> image)
+Der Aufruf (clip img x y w h) liefert das Teilrechteck des Bildes img bei (x,
+y), Breite w und Ho:he h.
+
+pad : (image natural natural natural natural -> image)
+Der Aufruf (pad img l r t b) fu:gt an den Seiten von img noch transparenten
+Leerraum an: l Pixel links, r Pixel rechts, t Pixel oben und b Pixel unten.
+
+6.6 Bilder aus Pixeln konstruieren
+
+color-list->image : ((list-of color) natural natural -> image)
+Der Aufruf (color-list->image lis w h) stellt ein Bild mit Breite w und Ho:he h
+her, in dem die Pixel die Farben aus der Liste lis (welche die La:nge (* w h)
+haben muss) haben.
+
+image->color-list : (image -> (list-of rgb-color))
+Diese Prozedur liefert eine Liste der RGB-Farben der Pixel eines Bildes.
+
+alpha-color-list->image : ((list-of alpha-rgb-color) natural natural -> image)
+Der Aufruf (color-list->image lis w h) stellt ein Bild mit Breite w und Ho:he h
+her, in dem die Pixel die Farben aus der Liste lis (welche die La:nge (* w h)
+haben muss) haben.
+
+image->alpha-color-list : (image -> (list-of rgb-color))
+Diese Prozedur liefert eine Liste der Alpha/RGB-Farben der Pixel eines Bildes.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

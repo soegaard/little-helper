@@ -1,0 +1,129 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+On this page:
+<drawing-the-cat>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18.6 Drawing the Cat
+
+This code is three large, similar constants, bundled up into the cat function.
+The thinking-cat is the one that is visible when the game is being played. It
+differs from the others in that it does not have a mouth. The mad-cat is the
+one that you see when the cat loses. It differs from the others in that its
+pinks turn pink. Finally, the happy-cat shows up when the cat wins and it is
+just like the thinking-cat except it has a smile.
+
+<drawing-the-cat> ::=
+
+    (define/contract (cat mode)
+      (-> (or/c 'mad 'happy 'thinking) image?)
+      (define face-width 36)
+      (define face-height 22)
+     
+      (define face-color
+        (cond
+          [(eq? mode 'mad) 'pink]
+          [else 'lightgray]))
+     
+      (define left-ear
+        (regular-polygon 3 8 'solid 'black (/ pi -3)))
+      (define right-ear
+        (regular-polygon 3 8 'solid 'black 0))
+      (define ear-x-offset 14)
+      (define ear-y-offset 9)
+     
+      (define eye (overlay (ellipse 12 8 'solid 'black)
+                           (ellipse 6 4 'solid 'limegreen)))
+      (define eye-x-offset 8)
+      (define eye-y-offset 3)
+     
+      (define nose
+        (regular-polygon 3 5 'solid 'black (/ pi 2)))
+     
+      (define mouth-happy
+        (overlay (ellipse 8 8 'solid face-color)
+                 (ellipse 8 8 'outline 'black)
+                 (move-pinhole
+                  (rectangle 10 5 'solid face-color)
+                  0
+                  4)))
+      (define mouth-no-expression
+        (overlay (ellipse 8 8 'solid face-color)
+                 (ellipse 8 8 'outline face-color)
+                 (rectangle 10 5 'solid face-color)))
+     
+      (define mouth
+        (cond
+          [(eq? mode 'happy) mouth-happy]
+          [else mouth-no-expression]))
+      (define mouth-x-offset 4)
+      (define mouth-y-offset -5)
+     
+      (define (whiskers img)
+        (add-line
+         (add-line
+          (add-line
+           (add-line
+            (add-line
+             (add-line
+              img
+              6 4 30 12 'black)
+             6 4 30 4 'black)
+            6 4 30 -4 'black)
+           -6 4 -30 12 'black)
+          -6 4 -30 4 'black)
+         -6 4 -30 -4 'black))
+      (whiskers
+       (overlay
+        (move-pinhole left-ear (- ear-x-offset) ear-y-offset)
+        (move-pinhole right-ear (- ear-x-offset 1) ear-y-offset)
+        (ellipse (+ face-width 4) (+ face-height 4) 'solid 'black)
+        (ellipse face-width face-height 'solid face-color)
+        (move-pinhole mouth (- mouth-x-offset) mouth-y-offset)
+        (move-pinhole mouth mouth-x-offset mouth-y-offset)
+        (move-pinhole eye (- eye-x-offset) eye-y-offset)
+        (move-pinhole eye eye-x-offset eye-y-offset)
+        (move-pinhole nose -1 -4))))
+     
+    (define thinking-cat (cat 'thinking))
+    (define happy-cat (cat 'happy))
+    (define mad-cat (cat 'mad))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

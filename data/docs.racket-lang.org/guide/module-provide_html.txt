@@ -1,0 +1,107 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 6  Modules
+6.1  Module Basics
+6.2  Module Syntax
+6.3  Module Paths
+6.4  Imports: require
+6.5  Exports: provide
+6.6  Assignment and Redefinition
+[...search manuals...]
+  top← prev  up  next → 
+
+6.5 Exports: provide
+
+By default, all of a module’s definitions are private to the module. The
+provide form specifies definitions to be made available where the module is
+required.
+
+    (provide provide-spec ...)
+
+A provide form can only appear at module level (i.e., in the immediate body of
+a module). Specifying multiple provide-specs in a single provide is exactly the
+same as using multiple provides each with a single provide-spec.
+
+Each identifier can be exported at most once from a module across all provides
+within the module. More precisely, the external name for each export must be
+distinct; the same internal binding can be exported multiple times with
+different external names.
+
+The allowed shape of a provide-spec is defined recursively:
+
+        identifier
+
+        In its simplest form, a provide-spec indicates a binding within its
+        module to be exported. The binding can be from either a local
+        definition, or from an import.
+
+        (rename-out [orig-id export-id] ...)
+
+        A rename-out form is similar to just specifying an identifier, but the
+        exported binding orig-id is given a different name, export-id, to
+        importing modules.
+
+        (struct-out struct-id)
+
+        A struct-out form exports the bindings created by (struct struct-id
+        ....).
+
+                    +See Programmer-Defined Datatypes for information on
+                    define-struct.
+
+        (all-defined-out)
+
+        The all-defined-out shorthand exports all bindings that are defined
+        within the exporting module (as opposed to imported).
+
+        Use of the all-defined-out shorthand is generally discouraged, because
+        it makes less clear the actual exports for a module, and because Racket
+        programmers get into the habit of thinking that definitions can be
+        added freely to a module without affecting its public interface (which
+        is not the case when all-defined-out is used).
+
+        (all-from-out module-path)
+
+        The all-from-out shorthand exports all bindings in the module that were
+        imported using a require-spec that is based on module-path.
+
+        Although different module-paths could refer to the same file-based
+        module, re-exporting with all-from-out is based specifically on the
+        module-path reference, and not the module that is actually referenced.
+
+        (except-out provide-spec id ...)
+
+        Like provide-spec, but omitting the export of each id, where id is the
+        external name of the binding to omit.
+
+        (prefix-out prefix-id provide-spec)
+
+        Like provide-spec, but adding prefix-id to the beginning of the
+        external name for each exported binding.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

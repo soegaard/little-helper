@@ -1,0 +1,80 @@
+►  Dr Racket: The Racket Programming Environment
+1  Interface Essentials
+2  Languages
+3  Interface Reference
+4  Extending Dr Racket
+   Index
+▼ 2  Languages
+2.1  Language Declared in Source
+2.2  Legacy Languages
+2.3  How to Design Programs Teaching Languages
+2.4  Other Experimental Languages
+2.5  Output Printing Styles
+[...search manuals...]
+  top← prev  up  next → 
+
+2.1 Language Declared in Source
+
+The Use the language declared in the source mode in DrRacket is a kind of
+meta-language, where the program itself specifies its language, usually through
+a #lang line.
+
+More generally, when using the declared-in-source mode, the definitions window
+must contain a module in some form. Besides #lang, a Racket module can be
+written as (module ...). In any case, aside from comments, the definitions
+window must contain exactly one module.
+
+In the details pane of the module language, some of the configuration options
+correspond to using various libraries and thus can be used without DrRacket.
+Here’s how, for the ones that are straightforward (the ones not mentioned here
+require more sophisticated configuration of various libraries).
+
+  • Dynamic Properties: The radio buttons corresond to various uses of the
+    errortrace/errortrace-lib library.
+
+    The No Debugging or profiling option means not to use the library at all.
+
+    The Debugging option means (current-compile (
+    make-errortrace-compile-handler)) as well as adding (build-path "compiled"
+    "errortrace") to use-compiled-file-paths.
+
+    The Debugging and profiling option means to use errortrace/errortrace-lib
+    library’s profiling-enabled in conjunction with current-eval.
+
+    The Syntactic test suite coverage option means to use test-coverage-enabled
+    in conjunction with current-eval.
+
+    The other two checkboxes save compiled .zo files and adjust the JIT
+    compiler.
+
+    The populate compiled/ directories option corresponds to
+
+        (current-load/use-compiled
+         (make-compilation-manager-load/use-compiled-handler))
+        (manager-skip-file-handler
+         (λ (p)
+           (file-date-in-paths
+            p
+            (cons (CACHE-DIR) (current-library-collection-paths)))))
+
+    plus adding either (build-path "compiled" "drracket") or (build-path
+    "compiled" "drracket" "errortrace") to the front of use-compiled-file-paths
+    , depending if the Debugging option is set or not.
+
+    The Preserve stacktrace option corresponds to
+
+
+        (compile-context-preservation-enabled #t)
+
+  • Output Syntax: The output syntax options correspond to settings in the
+    racket/pretty library and the mzlib/pconvert library.
+
+  • Collection Paths: This corresponds to setting the
+    current-library-collection-paths parameter.
+
+  • Command-line arguments: This corresponds to setting the
+    current-command-line-arguments parameter.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

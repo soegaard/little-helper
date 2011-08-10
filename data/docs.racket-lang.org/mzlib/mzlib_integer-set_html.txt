@@ -1,0 +1,206 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+make-integer-set
+integer-set-contents
+set-integer-set-contents!
+integer-set?
+well-formed-set?
+make-range
+intersect
+difference
+union
+split
+complement
+xor
+member?
+get-integer
+foldr
+partition
+card
+subset?
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/integer-set)
+
+The mzlib/integer-set library provides functions for working with finite sets
+of integers. This module is designed for sets that are compactly represented as
+groups of intervals, even when their cardinality is large. For example, the set
+of integers from -1000000 to 1000000 except for 0, can be represented as
+{[-1000000, -1], [1, 1000000]}. This data structure would not be a good choice
+for the set of all odd integers between 0 and 1000000, which would be {[1, 1],
+[3, 3], ... [999999, 999999]}.
+
+In addition to the integer set abstract type, a well-formed set is a list of
+pairs of exact integers, where each pair represents a closed range of integers,
+and the entire set is the union of the ranges. The ranges must be disjoint and
+increasing. Further, adjacent ranges must have at least one integer between
+them. For example: '((-1 . 2) (4 . 10)) is a well-formed-set as is '((1 . 1) (3
+. 3)), but '((1 . 5) (6 . 7)), '((1 . 5) (-3 . -1)), '((5 . 1)), and '((1 . 5)
+(3 . 6)) are not.
+
+(make-integer-set wfs) → integer-set?
+  wfs : well-formed-set?
+Creates an integer set from a well-formed set.
+
+(integer-set-contents s) → well-formed-set?
+  s : integer-set?
+Produces a well-formed set from an integer set.
+
+(set-integer-set-contents! s wfs) → void?
+  s : integer-set?
+  wfs : well-formed-set?
+Mutates an integer set.
+
+(integer-set? v) → boolean?
+  v : any/c
+Returns #t if v is an integer set, #f otherwise.
+
+(well-formed-set? v) → boolean?
+  v : any/c
+Returns #t if v is a well-formed set, #f otherwise.
+
+(make-range) → integer-set?
+(make-range elem) → integer-set?
+  elem : exact-integer?
+(make-range start end) → integer-set?
+  start : exact-integer?
+  end : exact-integer?
+Produces, respectively, an empty integer set, an integer set containing only
+elem, or an integer set containing the integers from start to end inclusive,
+where (<= start end).
+
+(intersect x y) → integer-set?
+  x : integer-set?
+  y : integer-set?
+Returns the intersection of the given sets.
+
+(difference x y) → integer-set?
+  x : integer-set?
+  y : integer-set?
+Returns the difference of the given sets (i.e., elements in x that are not in
+y).
+
+(union x y) → integer-set?
+  x : integer-set?
+  y : integer-set?
+Returns the union of the given sets.
+
+(split x y) → integer-set?
+  x : integer-set?
+  y : integer-set?
+Produces three values: the first is the intersection of x and y, the second is
+the difference x remove y, and the third is the difference y remove x.
+
+(complement s start end) → any
+  s : integer-set?
+  start : exact-integer?
+  end : exact-integer?
+
+Returns the a set containing the elements between start to end inclusive that
+are not in s, where (<= start-k end-k).}
+
+(xor x y) → integer-set?
+  x : integer-set?
+  y : integer-set?
+Returns an integer set containing every member of x and y that is not in both
+sets.
+
+(member? k s) → boolean?
+  k : exact-integer?
+  s : integer-set?
+Returns #t if k is in s, #f otherwise.
+
+(get-integer integer-set) → (or/c exact-integer? false/c)
+  integer-set : any/c
+Returns a member of integer-set, or #f if integer-set is empty.
+
+(foldr proc base-v s) → any/c
+  proc : (exact-integer? any/c . -> . any/c)
+  base-v : any/c
+  s : integer-set?
+Applies proc to each member of s in ascending order, where the first argument
+to proc is the set member, and the second argument is the fold result starting
+with base-v. For example, (foldr cons null s) returns a list of all the
+integers in s, sorted in increasing order.
+
+(partition s) → (listof integer-set?)
+  s : integer-set-list?
+Returns the coarsest refinement of the sets in s such that the sets in the
+result list are pairwise disjoint. For example, partitioning the sets that
+represent '((1 . 2) (5 . 10)) and '((2 . 2) (6 . 6) (12 . 12)) produces the a
+list containing the sets for '((1 . 1) (5 . 5) (7 . 10)) '((2 . 2) (6 . 6)),
+and '((12 . 12)).
+
+(card s) → exact-nonnegative-integer?
+  s : integer-set?
+Returns the number of integers in the given integer set.
+
+(subset? x y) → boolean?
+  x : integer-set?
+  y : integer-set?
+Returns true if every integer in x is also in y, otherwise #f.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

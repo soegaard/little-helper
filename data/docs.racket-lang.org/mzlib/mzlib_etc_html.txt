@@ -1,0 +1,279 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+begin-lifted
+begin-with-definitions
+define-syntax-set
+evcase
+identity
+let+
+loop-until
+namespace-defined?
+nand
+nor
+opt-lambda
+recur
+rec
+this-expression-source-directory
+this-expression-file-name
+hash-table
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/etc)
+
+The mzlib/etc library re-exports the following scheme/base and other libraries:
+
+    boolean=?
+    true
+    false
+    build-list
+    build-string
+    build-vector
+    compose
+    local
+    symbol=?
+
+(begin-lifted expr ...+)
+
+Lifts the exprs so that they are evaluated once at the “top level” of the
+current context, and the result of the last expr is used for every evaluation
+of the begin-lifted form.
+
+When this form is used as a run-time expression within a module, the “top
+level” corresponds to the module’s top level, so that each expr is evaluated
+once for each invocation of the module. When it is used as a run-time
+expression outside of a module, the “top level” corresponds to the true top
+level. When this form is used in a define-syntax, letrec-syntax, etc. binding,
+the “top level” corresponds to the beginning of the binding’s right-hand side.
+Other forms may redefine “top level” (using local-expand/capture-lifts) for the
+expressions that they enclose.
+
+(begin-with-definitions defn-or-expr ...)
+The same as (block defn-or-expr ...).
+
+(define-syntax-set (id ...) defn ...)
+Similar to define-syntaxes, but instead of a single body expression, a sequence
+of definitions follows the sequence of defined identifiers. For each
+identifier, the defns should include a definition for id/proc. The value for id
+/proc is used as the (expansion-time) value for id.
+
+The define-syntax-set form is useful for defining a set of syntax transformers
+that share helper functions, though begin-for-syntax now serves essentially the
+same purposes.
+
+Examples:
+
+    (define-syntax-set (let-current-continuation
+                        let-current-escape-continuation)
+      (define (mk call-id)
+         (lambda (stx)
+           (syntax-case stx ()
+             [(_ id body1 body ...)
+              (with-syntax ([call call-id])
+                #'(call (lambda (id) body1 body ...)))])))
+      (define let-current-continuation/proc
+        (mk (quote-syntax call/cc)))
+      (define let-current-escape-continuation/proc
+        (mk (quote-syntax call/ec))))
+
+
+(evcase key-expr (value-expr body-expr ...) ...+)
+(evcase key-expr (value-expr body-expr ...) ... [else body-expr ...])
+The evcase form is similar to case, except that expressions are provided in
+each clause instead of a sequence of data. After key-expr is evaluated, each
+value-expr is evaluated until a value is found that is eqv? to the key value;
+when a matching value is found, the corresponding body-exprs are evaluated and
+the value(s) for the last is the result of the entire evcase expression.
+
+The else literal is recognized either as unbound (like in the mzscheme
+language) or bound as else from scheme/base.
+
+(identity v) → any/c
+  v : any/c
+Returns v.
+
+(let+ clause body-expr ...+)
+ 
+clause   =   (val target expr)
+         |   (rec target expr)
+         |   (vals (target ...) expr)
+         |   (recs (target expr) ...)
+         |   (_ expr ...)
+              
+target   =   id
+         |   (values id ...)
+A binding construct that specifies scoping on a per-binding basis instead of a
+per-expression basis. It helps eliminate rightward-drift in programs. It looks
+similar to let, except each clause has an additional keyword tag before the
+binding variables.
+
+Each clause has one of the following forms:
+
+  • (val target expr) : Binds target non-recursively to expr.
+
+  • (rec target expr) : Binds target recursively to expr.
+
+  • (vals (target expr) ...) : The targets are bound to the exprs. The
+    environment of the exprs is the environment active before this clause.
+
+  • (recs (target expr) ...) : The targetss are bound to the exprs. The
+    environment of the exprs includes all of the targetss.
+
+  • (_ expr ...) : Evaluates the exprs without binding any variables.
+
+The clauses bind left-to-right. When a target is (values id ...), multiple
+values returned by the corresponding expression are bound to the multiple
+variables.
+
+Examples:
+
+    > (let+ ([val (values x y) (values 1 2)])
+         (list x y))
+    '(1 2)
+
+    > (let ([x 1])
+         (let+ ([val x 3]
+                [val y x])
+            y))
+    3
+
+
+
+(loop-until start done? next f) → void?
+  start : any/c
+  done? : (any/c . -> . any)
+  next : (any/c . -> . any/c)
+  f : (any/c . -> . any)
+Repeatedly invokes the f procedure until the done? procedure returns #t:
+
+    (define (loop-until start done? next f)
+      (let loop ([i start])
+        (unless (done? i)
+          (f i)
+          (loop (next i)))))
+
+(namespace-defined? sym) → boolean?
+  sym : symbol?
+Returns #t if namespace-variable-value would return a value for sym, #f
+otherwise.
+
+(nand expr ...)
+Same as (not (and expr ...)).
+
+(nor expr ...)
+Same as (not (or expr ...)).
+
+(opt-lambda formals body ...+)
+Supports optional (but not keyword) arguments like lambda from scheme/base.
+
+(recur id bindings body ...+)
+Equivalent to (let id bindings body ...+).
+
+(rec id value-expr)
+(rec (id arg-id ...) expr)
+(rec (id arg-id ... . rest-id) expr)
+Equivalent, respectively, to
+
+    (letrec ([id value-expr]) id)
+    (letrec ([id (lambda (arg-id ...) value-expr)]) id)
+    (letrec ([id (lambda (arg-id ... . rest-id) value-expr)]) id)
+
+(this-expression-source-directory)
+(this-expression-source-directory datum)
+
+
+            See scheme/runtime-path for a definition form that works better
+            when creating executables.
+
+Expands to an expression that evaluates to the directory of the file containing
+the source datum. If datum is not supplied, then the entire (
+this-expression-source-directory) expression is used as datum.
+
+If datum has a source module, then the expansion attempts to determine the
+module’s run-time location. This location is determined by preserving the
+lexical context of datum in a syntax object, extracting its source module path
+at run time, and then resolving the module path.
+
+Otherwise, datum’s source file is determined through source location
+information associated with datum, if it is present. As a last resort,
+current-load-relative-directory is used if it is not #f, and current-directory
+is used if all else fails.
+
+A directory path derived from source location is always stored in bytes in the
+expanded code, unless the file is within the result of find-collects-dir, in
+which case the expansion records the path relative to (find-collects-dir) and
+then reconstructs it using (find-collects-dir) at run time.
+
+(this-expression-file-name)
+(this-expression-file-name datum)
+Similar to this-expression-source-directory, except that only source
+information associated with datum or (this-expression-file-name) is used to
+extract a filename. If no filename is available, the result is #f.
+
+(hash-table (quote flag) ... (key-expr val-expr) ...)
+Creates a new hash-table providing the quoted flags (if any) to make-hash-table
+, and then mapping each key to the corresponding values.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,84 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+On this page:
+keyword?
+keyword->string
+string->keyword
+keyword<?
+[...search manuals...]
+  top← prev  up  next → 
+
+3.8 Keywords
+
+            +Keywords in The Racket Guide introduces keywords.
+
+A keyword is like an interned symbol, but its printed form starts with #:, and
+a keyword cannot be used as an identifier. Furthermore, a keyword by itself is
+not a valid expression, though a keyword can be quoted to form an expression
+that produces the symbol.
+
+Two keywords are eq? if and only if they print the same.
+
+Like symbols, keywords are only weakly held by the internal keyword table; see
+Symbols for more information.
+
+(keyword? v) → boolean?
+  v : any/c
+Returns #t if v is a keyword, #f otherwise.
+
+(keyword->string keyword) → string?
+  keyword : keyword?
+Returns a string for the displayed form of keyword, not including the leading
+#:.
+
+(string->keyword str) → keyword?
+  str : string?
+Returns a keyword whose displayed form is the same as that of str, but with a
+leading #:.
+
+(keyword<? a-keyword b-keyword ...+) → boolean?
+  a-keyword : keyword?
+  b-keyword : keyword?
+Returns #t if the arguments are sorted, where the comparison for each pair of
+keywords is the same as using keyword->string and string<?.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

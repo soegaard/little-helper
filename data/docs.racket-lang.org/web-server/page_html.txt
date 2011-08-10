@@ -1,0 +1,111 @@
+▼  Web Applications in Racket
+1  Running Web Servlets
+2  Stateful Servlets
+3  Stateless Servlets
+4  HTTP: Hypertext Transfer Protocol
+5  URL-Based Dispatch
+6  Formlets: Functional Form Abstraction
+7  Templates: Separation of View
+8  Page: Short-hand for Common Patterns
+9  Troubleshooting and Tips
+   Index
+On this page:
+page
+embed/ url
+lambda/ page
+define/ page
+current-request
+binding-id/ c
+binding-format/ c
+get-binding
+get-bindings
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Page: Short-hand for Common Patterns
+
+ (require web-server/page)
+
+The Web Server provides a simple utility library for building Web applications
+that consistent mostly of send/suspend/dispatch-created pages and request
+handling.
+
+Most Web applications rely heavily on send/suspend/dispatch and typically use
+the pattern:
+
+    (send/suspend/dispatch
+     (λ (my-embed/url)
+       .... (my-embed/url other-page) ....))
+
+(page e ...)
+The page macro automates this by expanding (page e ...) to a usage of send/
+suspend/dispatch where the syntax parameter embed/url is bound to the argument
+of send/suspend/dispatch.
+
+embed/url
+When used inside page syntactically, a rename transformer for the procedure
+embedding function; otherwise, a syntax error.
+
+A simple example:
+
+    (page
+     (response/xexpr
+      `(html
+        (body
+         (a ([href
+              ,(embed/url
+                (λ (req)
+                  "You clicked!"))])
+            "Click me")))))
+
+Similarly, many Web applications make use almost exclusively of functions that
+are arguments to embed/url and immediately invoke send/suspend/dispatch.
+
+(lambda/page formals e ...)
+(define/page (id . formals) e ...)
+The lambda/page and define/page automate this by expanding to functions that
+accept a request as the first argument (followed by any arguments specified in
+formals) and immediately wrap their body in page. This functions also cooperate
+with get-binding by binding the request to the current-request parameter.
+
+The binding interface of web-server/http is powerful, but subtle to use
+conveniently due to its protection against hostile clients.
+
+(current-request) → request?
+(current-request req) → void?
+  req : request?
+binding-id/c : contract?
+binding-format/c : contract?
+(get-binding id [req #:format format])
+ → (or/c false/c string? bytes? binding?)
+  id : binding-id/c
+  req : request? = (current-request)
+  format : binding-format/c = 'string
+(get-bindings id [req #:format format])
+ → (listof (or/c string? bytes? binding?))
+  id : binding-id/c
+  req : request? = (current-request)
+  format : binding-format/c = 'string
+The get-binding(s) interface attempts to resolve this by providing a powerful
+interface with convenient defaults.
+
+get-binding extracts the first binding of a form input from a request, while
+get-bindings extracts them all.
+
+They accept a form identifier (id) as either a byte string, a string, or a
+symbol. In each case, the user input is compared in a case-sensitive way with
+the form input.
+
+They accept an optional request argument (req) that defaults to the value of
+the current-request parameter used by lambda/page and define/page.
+
+Finally, they accept an optional keyword argument (format) that specifies the
+desired return format. The default, 'string, produces a UTF-8 string (or #f if
+the byte string cannot be converted to UTF-8.) The 'bytes format always
+produces the raw byte string. The 'file format produces the file upload content
+(or #f if the form input was not an uploaded file.) The 'binding format
+produces the binding object.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

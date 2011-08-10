@@ -1,0 +1,83 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 14  Units (Components)
+14.1  Signatures and Units
+14.2  Invoking Units
+14.3  Linking Units
+14.4  First-Class Units
+14.5  Whole-module Signatures and Units
+14.6  Contracts for Units
+14.7  unit versus module
+[...search manuals...]
+  top← prev  up  next → 
+
+14.2 Invoking Units
+
+The simple-factory@ unit has no imports, so it can be invoked directly using
+invoke-unit:
+
+    > (require "simple-factory-unit.rkt")
+    > (invoke-unit simple-factory@)
+    Factory started.
+
+
+The invoke-unit form does not make the body definitions available, however, so
+we cannot build any toys with this factory. The define-values/invoke-unit form
+binds the identifiers of a signature to the values supplied by a unit (to be
+invoked) that implements the signature:
+
+    > (define-values/invoke-unit/infer simple-factory@)
+    Factory started.
+
+    > (build-toys 3)
+    (list (toy 'blue) (toy 'blue) (toy 'blue))
+
+
+Since simple-factory@ exports the toy-factory^ signature, each identifier in
+toy-factory^ is defined by the define-values/invoke-unit/infer form. The /infer
+part of the form name indicates that the identifiers bound by the declaration
+are inferred from simple-factory@.
+
+Now that the identifiers in toy-factory^ are defined, we can also invoke
+toy-store@, which imports toy-factory^ to produce toy-store^:
+
+    > (require "toy-store-unit.rkt")
+    > (define-values/invoke-unit/infer toy-store@)
+    > (get-inventory)
+    '()
+
+    > (stock! 2)
+    > (get-inventory)
+    (list (toy 'green) (toy 'green))
+
+
+Again, the /infer part define-values/invoke-unit/infer determines that
+toy-store@ imports toy-factory^, and so it supplies the top-level bindings that
+match the names in toy-factory^ as imports to toy-store@.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

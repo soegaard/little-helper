@@ -1,0 +1,135 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+On this page:
+BNF
+nonterm
+BNF-seq
+BNF-group
+optional
+kleenestar
+kleeneplus
+kleenerange
+BNF-alt
+BNF-etc
+[...search manuals...]
+  top← prev  up  next → 
+
+4.7 BNF Grammars
+
+ (require scribble/bnf)
+The scribble/bnf library provides utilities for typesetting grammars.
+
+For example,
+
+  @(let ([open @litchar{(}]
+
+         [close @litchar{)}])
+
+     @BNF[(list @nonterm{expr}
+
+                @nonterm{id}
+
+                @BNF-seq[open @kleeneplus[@nonterm{expr}] close]
+
+                @BNF-seq[open @litchar{lambda}
+
+                          open @kleenestar[@nonterm{id}] close
+
+                          @nonterm{expr} close]
+
+                @nonterm{val})
+
+          (list @nonterm{val}
+
+                @BNF-alt[@nonterm{number} @nonterm{primop}])
+
+          (list @nonterm{id}
+
+                @elem{any name except for @litchar{lambda}})])
+
+
+produces the output
+
+  ‹expr›  ::=  ‹id›
+
+           |   ( ‹expr›+ )
+
+           |   ( lambda ( ‹id›* ) ‹expr› )
+
+           |   ‹val›
+
+  ‹val›   ::=  ‹number›  |  ‹primop›
+
+  ‹id›    ::=  any name except for lambda
+
+
+See also racketgrammar.
+
+(BNF prod ...) → table?
+  prod : (cons element? (listof element?))
+Typesets a grammar table. Each production starts with an element (typically
+constructed with nonterm) for the non-terminal being defined, and then a list
+of possibilities (typically constructed with BNF-seq, etc.) to show on separate
+lines.
+
+(nonterm pre-content ...) → element?
+  pre-content : any/c
+Typesets a non-terminal: italic in angle brackets.
+
+(BNF-seq elem ...) → element?
+  elem : element?
+Typesets a sequence.
+
+(BNF-group pre-content ...) → element?
+  pre-content : any/c
+Typesets a group surrounded by curly braces (so the entire group can be
+repeated, for example).
+
+(optional pre-content ...) → element?
+  pre-content : any/c
+Typesets an optional element: in square brackets.
+
+(kleenestar pre-content ...) → element?
+  pre-content : any/c
+Typesets a 0-or-more repetition.
+
+(kleeneplus pre-content ...) → element?
+  pre-content : any/c
+Typesets a 1-or-more repetition.
+
+(kleenerange n m pre-content ...) → element?
+  n : any/c
+  m : any/c
+  pre-content : any/c
+Typesets a n-to-m repetition. The n and m arguments are converted to a string
+using (format "~a" n) and (format "~a" m).
+
+(BNF-alt elem ...) → element?
+  elem : element?
+Typesets alternatives for a production’s right-hand side to appear on a single
+line. The result is normally used as a single possibility in a production list
+for BNF.
+
+BNF-etc : string?
+A string to use for omitted productions or content.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

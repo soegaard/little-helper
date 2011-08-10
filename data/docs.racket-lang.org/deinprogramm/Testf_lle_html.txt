@@ -1,0 +1,78 @@
+►  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+▼ 1  Die Macht der Abstraktion - Anfa:nger
+ 1.1  Definitionen
+ 1.2  Record-Typ-Definitionen
+ 1.3  Prozedurapplikation
+ 1.4  #t and #f
+ 1.5  lambda
+ 1.6  Bezeichner
+ 1.7  cond
+ 1.8  if
+ 1.9  and
+1.10  or
+1.11  Signaturen
+1.12  Testfa:lle
+1.13  Parametrische Record-Typ-Definitionen
+1.14  Eigenschaften
+1.15  Primitive Operationen
+On this page:
+check-expect
+check-within
+check-member-of
+check-range
+check-error
+check-property
+[...search manuals...]
+  top← prev  up  next → 
+
+1.12 Testfa:lle
+
+(check-expect expr expr)
+Dieser Testfall u:berpru:ft, ob der erste expr den gleichen Wert hat wie der
+zweite expr, wobei das zweite expr meist ein Literal ist.
+
+(check-within expr expr expr)
+Wie check-expect, aber mit einem weiteren Ausdruck, der als Wert eine Zahl
+delta hat. Der Testfall u:berpru:ft, dass jede Zahl im Resultat des ersten expr
+maximal um delta von der entsprechenden Zahl im zweiten expr abweicht.
+
+(check-member-of expr expr ...)
+A:hnlich wie check-expect: Der Testfall u:berpru:ft, dass das Resultat des
+ersten Operanden gleich dem Wert eines der folgenden Operanden ist.
+
+(check-range expr expr expr)
+A:hnlich wie check-expect: Alle drei Operanden mu:ssen Zahlen sein. Der
+Testfall u:berpru:ft, ob die erste Zahl zwischen der zweiten und der dritten
+liegt (inklusive).
+
+(check-error expr expr)
+Dieser Testfall u:berpru:ft, ob der erste expr einen Fehler produziert, wobei
+die Fehlermeldung der Zeichenkette entspricht, die der Wert des zweiten expr
+ist.
+
+(check-property expr)
+Dieser Testfall u:berpru:ft experimentell, ob die Eigenschaft expr erfu:llt
+ist. Dazu werden zufa:llige Werte fu:r die mit for-all quantifizierten
+Variablen eingesetzt: Damit wird u:berpru:ft, ob die Bedingung gilt.
+
+Wichtig: check-property funktioniert nur fu:r Eigenschaften, bei denen aus den
+Signaturen sinnvoll Werte generiert werden ko:nnen. Dies ist fu:r die meisten
+eingebauten Signaturen der Fall, aber nicht fu:r Signaturvariablen und
+Signaturen, die mit predicate erzeugt wurden. In diesen Fa:llen erzeugt
+check-property eine Fehlermeldung.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

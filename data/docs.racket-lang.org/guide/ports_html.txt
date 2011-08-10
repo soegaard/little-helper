@@ -1,0 +1,149 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 8  Input and Output
+8.1  Varieties of Ports
+8.2  Default Ports
+8.3  Reading and Writing Racket Data
+8.4  Datatypes and Serialization
+8.5  Bytes, Characters, and Encodings
+8.6  I/ O Patterns
+[...search manuals...]
+  top← prev  up  next → 
+
+8.1 Varieties of Ports
+
+Various functions create various kinds of ports. Here are a few examples:
+
+  • Files: The open-output-file function opens a file for writing, and
+    open-input-file opens a file for reading.
+
+    Examples:
+
+        > (define out (open-output-file "data"))
+        > (display "hello" out)
+        > (close-output-port out)
+        > (define in (open-input-file "data"))
+        > (read-line in)
+        "hello"
+
+        > (close-input-port in)
+
+
+    If a file exists already, then open-output-file raises an exception by
+    default. Supply an option like #:exists 'truncate or #:exists 'update to
+    re-write or update the file:
+
+    Examples:
+
+        > (define out (open-output-file "data" #:exists 'truncate))
+        > (display "howdy" out)
+        > (close-output-port out)
+
+
+    Instead of having to match open-input-file and open-output-file calls, most
+    Racket programmers will instead use call-with-output-file, which takes a
+    function to call with the output port; when the function returns, the port
+    is closed.
+
+    Examples:
+
+        > (call-with-output-file "data"
+                                  #:exists 'truncate
+                                  (lambda (out)
+                                    (display "hello" out)))
+        > (call-with-input-file "data"
+                                (lambda (in)
+                                  (read-line in)))
+        "hello"
+
+
+  • Strings: The open-output-string function creates a port that accumulates
+    data into a string, and get-output-string extracts the accumulated string.
+    The open-input-string function creates a port to read from a string.
+
+    Examples:
+
+        > (define p (open-output-string))
+        > (display "hello" p)
+        > (get-output-string p)
+        "hello"
+
+        > (read-line (open-input-string "goodbye\nfarewell"))
+        "goodbye"
+
+
+  • TCP Connections: The tcp-connect function creates both an input port and an
+    output port for the client side of a TCP communication. The tcp-listen
+    function creates a server, which accepts connections via tcp-accept.
+
+    Examples:
+
+        > (define server (tcp-listen 12345))
+        > (define-values (c-in c-out) (tcp-connect "localhost" 12345))
+        > (define-values (s-in s-out) (tcp-accept server))
+        > (display "hello\n" c-out)
+        > (close-output-port c-out)
+        > (read-line s-in)
+        "hello"
+
+        > (read-line s-in)
+        #<eof>
+
+
+  • Process Pipes: The subprocess function runs a new process at the OS level
+    and returns ports that correspond to the subprocess’s stdin, stdout, and
+    stderr. (The first three arguments can be certain kinds of existing ports
+    to connect directly to the subprocess, instead of creating new ports.)
+
+    Examples:
+
+        > (define-values (p stdout stdin stderr)
+            (subprocess #f #f #f "/usr/bin/wc" "-w"))
+        > (display "a b c\n" stdin)
+        > (close-output-port stdin)
+        > (read-line stdout)
+        "       3"
+
+        > (close-input-port stdout)
+        > (close-input-port stderr)
+
+  • Internal Pipes: The make-pipe function returns two ports that are ends of a
+    pipe. This kind of pipe is internal to Racket, and not related to OS-level
+    pipes for communicating between different processes.
+
+    Examples:
+
+        > (define-values (in out) (make-pipe))
+        > (display "garbage" out)
+        > (close-output-port out)
+        > (read-line in)
+        "garbage"
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

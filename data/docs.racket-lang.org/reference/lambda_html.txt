@@ -1,0 +1,226 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+lambda
+λ
+case-lambda
+#%plain-lambda
+[...search manuals...]
+  top← prev  up  next → 
+
+2.8 Procedure Expressions: lambda and case-lambda
+
+            +Functions (Procedures): lambda in The Racket Guide introduces
+            procedure expressions.
+
+(lambda kw-formals body ...+)
+(λ kw-formals body ...+)
+ 
+kw-formals   =   (arg ...)
+             |   (arg ...+ . rest-id)
+             |   rest-id
+                  
+       arg   =   id
+             |   [id default-expr]
+             |   keyword id
+             |   keyword [id default-expr]
+Produces a procedure. The kw-formals determines the number of arguments and
+which keyword arguments that the procedure accepts.
+
+Considering only the first arg case, a simple kw-formals has one of the
+following three forms:
+
+    (id ...)
+
+    The procedure accepts as many non-keyword argument values as the number of
+    ids. Each id is associated with an argument value by position.
+
+    (id ...+ . rest-id)
+
+    The procedure accepts any number of non-keyword arguments greater or equal
+    to the number of ids. When the procedure is applied, the ids are associated
+    with argument values by position, and all leftover arguments are placed
+    into a list that is associated to rest-id.
+
+    rest-id
+
+    The procedure accepts any number of non-keyword arguments. All arguments
+    are placed into a list that is associated with rest-id.
+
+More generally, an arg can include a keyword and/or default value. Thus, the
+first two cases above are more completely specified as follows:
+
+    (arg ...)
+
+    Each arg has the following four forms:
+
+        id
+
+        Adds one to both the minimum and maximum number of non-keyword
+        arguments accepted by the procedure. The id is associated with an
+        actual argument by position.
+
+        [id default-expr]
+
+        Adds one to the maximum number of non-keyword arguments accepted by the
+        procedure. The id is associated with an actual argument by position,
+        and if no such argument is provided, the default-expr is evaluated to
+        produce a value associated with id. No arg with a default-expr can
+        appear before an id without a default-expr and without a keyword.
+
+        keyword id
+
+        The procedure requires a keyword-based argument using keyword. The id
+        is associated with a keyword-based actual argument using keyword.
+
+        keyword [id default-expr]
+
+        The procedure accepts a keyword-based using keyword. The id is
+        associated with a keyword-based actual argument using keyword, if
+        supplied in an application; otherwise, the default-expr is evaluated to
+        obtain a value to associate with id.
+
+    The position of a keyword arg in kw-formals does not matter, but each
+    specified keyword must be distinct.
+
+    (arg ...+ . rest-id)
+
+    Like the previous case, but the procedure accepts any number of non-keyword
+    arguments beyond its minimum number of arguments. When more arguments are
+    provided than non-keyword arguments among the args, the extra arguments are
+    placed into a list that is associated to rest-id.
+
+The kw-formals identifiers are bound in the bodys. When the procedure is
+applied, a new location is created for each identifier, and the location is
+filled with the associated argument value. The locations are created and filled
+in order, with default-exprs evaluated as needed to fill locations.
+
+
+            In other words, argument bindings with default-value expressions
+            are evaluated analogous to let*.
+
+If any identifier appears in the bodys that is not one of the identifiers in
+kw-formals, then it refers to the same location that it would if it appeared in
+place of the lambda expression. (In other words, variable reference is
+lexically scoped.)
+
+When multiple identifiers appear in a kw-formals, they must be distinct
+according to bound-identifier=?.
+
+If the procedure produced by lambda is applied to fewer or more by-position or
+by-keyword arguments than it accepts, to by-keyword arguments that it does not
+accept, or without required by-keyword arguments, then the exn:fail:contract
+exception is raised.
+
+The last body expression is in tail position with respect to the procedure
+body.
+
+Examples:
+
+    > ((lambda (x) x) 10)
+    10
+
+    > ((lambda (x y) (list y x)) 1 2)
+    '(2 1)
+
+    > ((lambda (x [y 5]) (list y x)) 1 2)
+    '(2 1)
+
+    > (let ([f (lambda (x #:arg y) (list y x))])
+       (list (f 1 #:arg 2)
+             (f #:arg 2 1)))
+    '((2 1) (2 1))
+
+
+
+When compiling a lambda or case-lambda expression, Racket looks for a 
+'method-arity-error property attached to the expression (see Syntax Object
+Properties). If it is present with a true value, and if no case of the
+procedure accepts zero arguments, then the procedure is marked so that an
+exn:fail:contract:arity exception involving the procedure will hide the first
+argument, if one was provided. (Hiding the first argument is useful when the
+procedure implements a method, where the first argument is implicit in the
+original source). The property affects only the format of
+exn:fail:contract:arity exceptions, not the result of procedure-arity.
+
+(case-lambda [formals body ...+] ...)
+ 
+formals   =   (id ...)
+          |   (id ...+ . rest-id)
+          |   rest-id
+Produces a procedure. Each [formals body ...+] clause is analogous to a single
+lambda procedure; applying the case-lambda-generated procedure is the same as
+applying a procedure that corresponds to one of the clauses—the first procedure
+that accepts the given number of arguments. If no corresponding procedure
+accepts the given number of arguments, the exn:fail:contract exception is
+raised.
+
+Note that a case-lambda clause supports only formals, not the more general
+kw-formals of lambda. That is, case-lambda does not directly support keyword
+and optional arguments.
+
+Example:
+
+    > (let ([f (case-lambda
+                [() 10]
+                [(x) x]
+                [(x y) (list y x)]
+                [r r])])
+        (list (f)
+              (f 1)
+              (f 1 2)
+              (f 1 2 3)))
+    '(10 1 (2 1) (1 2 3))
+
+
+
+(#%plain-lambda formals body ...+)
+Like lambda, but without support for keyword or optional arguments.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

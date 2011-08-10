@@ -1,0 +1,323 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+button-changed?
+button-down?
+button-up?
+dragging?
+entering?
+get-alt-down
+get-caps-down
+get-control-down
+get-event-type
+get-left-down
+get-meta-down
+get-middle-down
+get-right-down
+get-shift-down
+get-x
+get-y
+leaving?
+moving?
+set-alt-down
+set-caps-down
+set-control-down
+set-event-type
+set-left-down
+set-meta-down
+set-middle-down
+set-right-down
+set-shift-down
+set-x
+set-y
+Inherited methods:
+from event%
+get-time-stamp
+set-time-stamp
+[...search manuals...]
+  top← prev  up  next → 
+
+mouse-event% : class?
+  superclass: event%
+
+A mouse-event% object encapsulates a mouse event. Mouse events are primarily
+processed by on-subwindow-event in window<%> and on-event in canvas<%>.
+
+See also Mouse and Keyboard Events.
+
+(new mouse-event%    [event-type event-type]      
+                   [ [left-down left-down]        
+                     [middle-down middle-down]    
+                     [right-down right-down]      
+                     [x x]                        
+                     [y y]                        
+                     [shift-down shift-down]      
+                     [control-down control-down]  
+                     [meta-down meta-down]        
+                     [alt-down alt-down]          
+                     [time-stamp time-stamp]      
+                     [caps-down caps-down]])      
+ → (is-a?/c mouse-event%)
+                    (or/c 'enter 'leave 'left-down 'left-up
+   event-type   :         'middle-down 'middle-up
+                          'right-down 'right-up 'motion)
+  left-down : any/c = #f
+  middle-down : any/c = #f
+  right-down : any/c = #f
+  x : exact-integer? = 0
+  y : exact-integer? = 0
+  shift-down : any/c = #f
+  control-down : any/c = #f
+  meta-down : any/c = #f
+  alt-down : any/c = #f
+  time-stamp : exact-integer? = 0
+  caps-down : any/c = #f
+Creates a mouse event for a particular type of event. The event types are:
+
+  • 'enter — mouse pointer entered the window
+
+  • 'leave — mouse pointer left the window
+
+  • 'left-down — left mouse button pressed
+
+  • 'left-up — left mouse button released
+
+  • 'middle-down — middle mouse button pressed
+
+  • 'middle-up — middle mouse button released
+
+  • 'right-down — right mouse button pressed (Mac OS X: click with control key
+    pressed)
+
+  • 'right-up — right mouse button released (Mac OS X: release with control key
+    pressed)
+
+  • 'motion — mouse moved, with or without button(s) pressed
+
+See the corresponding get- and set- methods for information about left-down,
+middle-down, right-down, x, y, shift-down, control-down, meta-down, alt-down,
+time-stamp, and caps-down.
+
+(send a-mouse-event button-changed? [button]) → boolean?
+  button : (or/c 'left 'middle 'right 'any) = 'any
+Returns #t if this was a mouse button press or release event, #f otherwise. See
+also button-up? and button-down?.
+
+If button is not 'any, then #t is only returned if it is a release event for a
+specific button.
+
+(send a-mouse-event button-down? [button]) → boolean?
+  button : (or/c 'left 'middle 'right 'any) = 'any
+Returns #t if the event is for a button press, #f otherwise.
+
+If button is not 'any, then #t is only returned if it is a press event for a
+specific button.
+
+(send a-mouse-event button-up? [button]) → boolean?
+  button : (or/c 'left 'middle 'right 'any) = 'any
+Returns #t if the event is for a button release, #f otherwise. (As noted in
+Mouse and Keyboard Events, button release events are sometimes dropped.)
+
+If button is not 'any, then #t is only returned if it is a release event for a
+specific button.
+
+(send a-mouse-event dragging?) → boolean?
+Returns #t if this was a dragging event (motion while a button is pressed), #f
+otherwise.
+
+(send a-mouse-event entering?) → boolean?
+Returns #t if this event is for the mouse entering a window, #f otherwise.
+
+When the mouse button is up, an enter/leave event notifies a window that it
+will start/stop receiving mouse events. When the mouse button is down, however,
+the window receiving the mouse-down event receives all mouse events until the
+button is released; enter/leave events are not sent to other windows, and are
+not reliably delivered to the click-handling window (since the window can
+detect movement out of its region via get-x and get-y). See also Mouse and
+Keyboard Events.
+
+(send a-mouse-event get-alt-down) → boolean?
+Returns #t if the Option (Mac OS X) key was down for the event. When the Alt
+key is pressed in Windows, it is reported as a Meta press (see get-meta-down).
+
+(send a-mouse-event get-caps-down) → boolean?
+Returns #t if the Caps Lock key was on for the event.
+
+(send a-mouse-event get-control-down) → boolean?
+Returns #t if the Control key was down for the event.
+
+On Mac OS X, if a control-key press is combined with a mouse button click, the
+event is reported as a right-button click and get-control-down for the event
+reports #f.
+
+(send a-mouse-event get-event-type)
+      (or/c 'enter 'leave 'left-down 'left-up
+  →         'middle-down 'middle-up
+            'right-down 'right-up 'motion)
+Returns the type of the event; see mouse-event% for information about each
+event type. See also set-event-type.
+
+(send a-mouse-event get-left-down) → boolean?
+Returns #t if the left mouse button was down (but not pressed) during the
+event.
+
+(send a-mouse-event get-meta-down) → boolean?
+Returns #t if the Meta (Unix), Alt (Windows), or Command (Mac OS X) key was
+down for the event.
+
+(send a-mouse-event get-middle-down) → boolean?
+Returns #t if the middle mouse button was down (but not pressed) for the event.
+On Mac OS X, a middle-button click is impossible.
+
+(send a-mouse-event get-right-down) → boolean?
+Returns #t if the right mouse button was down (but not pressed) for the event.
+On Mac OS X, a control-click combination is treated as a right-button click.
+
+(send a-mouse-event get-shift-down) → boolean?
+Returns #t if the Shift key was down for the event.
+
+(send a-mouse-event get-x) → exact-integer?
+Returns the x-position of the mouse at the time of the event, in the target’s
+window’s (client-area) coordinate system.
+
+(send a-mouse-event get-y) → exact-integer?
+Returns the y-position of the mouse at the time of the event in the target’s
+window’s (client-area) coordinate system.
+
+(send a-mouse-event leaving?) → boolean?
+Returns #t if this event is for the mouse leaving a window, #f otherwise.
+
+See entering? for information about enter and leave events while the mouse
+button is clicked.
+
+(send a-mouse-event moving?) → boolean?
+Returns #t if this was a moving event (whether a button is pressed is not), #f
+otherwise.
+
+(send a-mouse-event set-alt-down down?) → void?
+  down? : any/c
+Sets whether the Option (Mac OS X) key was down for the event. When the Alt key
+is pressed in Windows, it is reported as a Meta press (see set-meta-down).
+
+(send a-mouse-event set-caps-down down?) → void?
+  down? : any/c
+Sets whether the Caps Lock key was on for the event.
+
+(send a-mouse-event set-control-down down?) → void?
+  down? : any/c
+Sets whether the Control key was down for the event.
+
+On Mac OS X, if a control-key press is combined with a mouse button click, the
+event is reported as a right-button click and get-control-down for the event
+reports #f.
+
+(send a-mouse-event set-event-type event-type) → void?
+                    (or/c 'enter 'leave 'left-down 'left-up
+   event-type   :         'middle-down 'middle-up
+                          'right-down 'right-up 'motion)
+Sets the type of the event; see mouse-event% for information about each event
+type. See also get-event-type.
+
+(send a-mouse-event set-left-down down?) → void?
+  down? : any/c
+Sets whether the left mouse button was down (but not pressed) during the event.
+
+(send a-mouse-event set-meta-down down?) → void?
+  down? : any/c
+Sets whether the Meta (Unix), Alt (Windows), or Command (Mac OS X) key was down
+for the event.
+
+(send a-mouse-event set-middle-down down?) → void?
+  down? : any/c
+Sets whether the middle mouse button was down (but not pressed) for the event.
+On Mac OS X, a middle-button click is impossible.
+
+(send a-mouse-event set-right-down down?) → void?
+  down? : any/c
+Sets whether the right mouse button was down (but not pressed) for the event.
+On Mac OS X, a control-click combination by the user is treated as a
+right-button click.
+
+(send a-mouse-event set-shift-down down?) → void?
+  down? : any/c
+Sets whether the Shift key was down for the event.
+
+(send a-mouse-event set-x pos) → void?
+  pos : exact-integer?
+Sets the x-position of the mouse at the time of the event in the target’s
+window’s (client-area) coordinate system.
+
+(send a-mouse-event set-y pos) → void?
+  pos : exact-integer?
+Sets the y-position of the mouse at the time of the event in the target’s
+window’s (client-area) coordinate system.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

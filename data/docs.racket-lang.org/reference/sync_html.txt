@@ -1,0 +1,373 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 10  Concurrency and Parallelism
+10.1  Threads
+10.2  Synchronization
+10.3  Thread-Local Storage
+10.4  Futures
+10.5  Places
+▼ 10.2  Synchronization
+10.2.1  Events
+10.2.2  Channels
+10.2.3  Semaphores
+10.2.4  Buffered Asynchronous Channels
+On this page:
+evt?
+sync
+sync/ timeout
+sync/ enable-break
+sync/ timeout/ enable-break
+choice-evt
+wrap-evt
+handle-evt
+guard-evt
+nack-guard-evt
+poll-guard-evt
+always-evt
+never-evt
+system-idle-evt
+alarm-evt
+handle-evt?
+prop: evt
+current-evt-pseudo-random-generator
+[...search manuals...]
+  top← prev  up  next → 
+
+10.2.1 Events
+
+A synchronizable event (or just event for short) works with the sync procedure
+to coordinate synchronization among threads. Certain kinds of objects double as
+events, including ports and threads. Other kinds of objects exist only for
+their use as events.
+
+At any point in time, an event is either ready for synchronization, or it is
+not; depending on the kind of event and how it is used by other threads, an
+event can switch from not ready to ready (or back), at any time. If a thread
+synchronizes on an event when it is ready, then the event produces a particular
+synchronization result.
+
+Synchronizing an event may affect the state of the event. For example, when
+synchronizing a semaphore, then the semaphore’s internal count is decremented,
+just as with semaphore-wait. For most kinds of events, however (such as a
+port), synchronizing does not modify the event’s state.
+
+The following act as events in Racket. An extension or embedding application
+can extend the set of primitive events — in particular, an eventspace in
+GRacket is an event — and new structure types can generate events (see prop:evt
+).
+
+  • semaphore — a semaphore is ready when semaphore-wait would not block. The
+    synchronization result of semaphore is semaphore itself.
+
+  • semaphore-peek — a semaphore-peek event returned by semaphore-peek-evt
+    applied to semaphore is ready exactly when semaphore is ready. The
+    synchronization result of semaphore-peek is semaphore-peek itself.
+
+  • channel — a channel returned by make-channel is ready when channel-get
+    would not block. The channel’s result as an event is the same as the
+    channel-get result.
+
+  • channel-put — an event returned by channel-put-evt applied to channel is
+    ready when channel-put would not block on channel. The synchronization
+    result of channel-put is channel-put itself.
+
+  • input-port — an input port is ready as an event when read-byte would not
+    block. The synchronization result of input-port is input-port itself.
+
+  • output-port — an output port is ready when write-bytes-avail would not
+    block or when the port contains buffered characters and write-bytes-avail*
+    can flush part of the buffer (although write-bytes-avail might block). The
+    synchronization result of output-port is output-port itself.
+
+  • progress — an event produced by port-progress-evt applied to input-port is
+    ready after any subsequent read from input-port. The synchronization result
+    of progress is progress itself.
+
+  • tcp-listener — a TCP listener is ready when tcp-accept would not block. The
+    synchronization result of listener is listener itself.
+
+  • thd — a thread is ready when thread-wait would not block. The
+    synchronization result of thread is thread itself.
+
+  • thread-dead — an event returned by thread-dead-evt applied to thd is ready
+    when thd has terminated. The synchronization result of thread-dead is
+    thread-dead itself.
+
+  • thread-resume — an event returned by thread-resume-evt applied to thd is
+    ready when thd subsequently resumes execution (if it was not already
+    running). The event’s result is thd.
+
+  • thread-suspend — an event returned by thread-suspend-evt applied to thd is
+    ready when thd subsequently suspends execution (if it was not already
+    suspended). The event’s result is thd.
+
+  • alarm — an event returned by alarm-evt is ready after a particular date and
+    time. The synchronization result of alarm is alarm itself.
+
+  • subprocess — a subprocess is ready when subprocess-wait would not block.
+    The synchronization result of subprocess is subprocess itself.
+
+  • will-executor — a will executor is ready when will-execute would not block.
+    The synchronization result of will-executor is will-executor itself.
+
+  • custodian-box — a custodian box is ready when its custodian is shut down.
+    The synchronization result of custodian-box is custodian-box itself.
+
+  • udp — an event returned by udp-send-evt or udp-receive!-evt is ready when a
+    send or receive on the original socket would block, respectively. The
+    synchronization result of udp is udp itself.
+
+  • log-receiver — a log receiver as produced by make-log-receiver is ready
+    when a logged message is available. The event’s result is a vector, as
+    described with make-log-receiver.
+
+  • choice — an event returned by choice-evt is ready when one or more of the
+    evts supplied to choice-evt are ready. If the choice event is chosen, one
+    of its ready evts is chosen pseudo-randomly, and the result is the chosen
+    evt’s result.
+
+  • wrap — an event returned by wrap-evt applied to evt and proc is ready when
+    evt is ready. The event’s result is obtained by a call to proc (with breaks
+    disabled) on the result of evt.
+
+  • handle — an event returned by handle-evt applied to evt and proc is ready
+    when evt is ready. The event’s result is obtained by a tail call to proc on
+    the result of evt.
+
+  • guard — an event returned by guard-evt applied to thunk generates a new
+    event every time that guard is used with sync (or whenever it is part of a
+    choice event used with sync, etc.); the generated event is the result of
+    calling thunk when the synchronization begins; if thunk returns a
+    non-event, then thunk’s result is replaced with an event that is ready and
+    whose result is guard.
+
+  • nack-guard — an event returned by nack-guard-evt applied to proc generates
+    a new event every time that nack-guard is used with sync (or whenever it is
+    part of a choice event used with sync, etc.); the generated event is the
+    result of calling proc with a NACK (“negative acknowledgment”) event when
+    the synchronization begins; if proc returns a non-event, then proc’s result
+    is replaced with an event that is ready and whose result is nack-guard.
+
+    If the event from proc is not ultimately chosen as the unblocked event,
+    then the NACK event supplied to proc becomes ready with a #<void> value.
+    This NACK event becomes ready when the event is abandoned because some
+    other event is chosen, because the synchronizing thread is dead, or because
+    control escaped from the call to sync (even if nack-guard’s proc has not
+    yet returned a value). If the event returned by proc is chosen, then the
+    NACK event never becomes ready.
+
+  • poll-guard — an event returned by poll-guard-evt applied to proc generates
+    a new event every time that poll-guard is used with sync (or whenever it is
+    part of a choice event used with sync, etc.); the generated event is the
+    result of calling proc with a boolean: #t if the event will be used for a
+    poll, #f for a blocking synchronization.
+
+    If #t is supplied to proc, if breaks are disabled, if the polling thread is
+    not terminated, and if polling the resulting event produces a result, the
+    event will certainly be chosen for its result.
+
+  • struct — a structure whose type has the prop:evt property identifies/
+    generates an event through the property.
+
+  • always-evt — a constant event that is always ready. The synchronization
+    result of always-evt is always-evt itself.
+
+  • never-evt — a constant event that is never ready.
+
+  • idle — an event produced by system-idle-evt is ready when, if this event
+    were replaced by never-evt, no thread in the system would be available to
+    run. In other words, all threads must be suspended or blocked on events
+    with timeouts that have not yet expired. The event’s result is #<void>.
+
+  • place-channel — a place channel is ready when place-channel-get would not
+    block. The channel’s result as an event is the same as the
+    place-channel-get result.
+
+  • place-dead — an event returned by (place-dead-evt p) is ready when p has
+    terminated. The synchronization result of place-dead is place-dead itself.
+
+(evt? v) → boolean?
+  v : any/c
+Returns #t if v is a synchronizable event, #f otherwise.
+
+(sync evt ...+) → any
+  evt : evt?
+Blocks as long as none of the synchronizable events evts are ready, as defined
+above.
+
+When at least one evt is ready, its synchronization result (often evt itself)
+is returned. If multiple evts are ready, one of the evts is chosen
+pseudo-randomly for the result; the current-evt-pseudo-random-generator
+parameter sets the random-number generator that controls this choice.
+
+(sync/timeout timeout evt ...+) → any
+  timeout : (or/c #f (and/c real? (not/c negative?)) (-> any))
+  evt : evt?
+Like sync if timeout is #f. If timeout is a real number, then the result is #f
+if timeout seconds pass without a successful synchronization. If timeout is a
+procedure, then it is called in tail position if polling the evts discovers no
+ready events.
+
+A zero value for timeout is equivalent to (lambda () #f). In either case, each
+evt is checked at least once before returning #f or calling timeout.
+
+See also alarm-evt for an alternative timeout mechanism.
+
+(sync/enable-break evt ...+) → any
+  evt : evt?
+Like sync, but breaking is enabled (see Breaks) while waiting on the evts. If
+breaking is disabled when sync/enable-break is called, then either all evts
+remain unchosen or the exn:break exception is raised, but not both.
+
+(sync/timeout/enable-break timeout evt ...+) → any
+  timeout : (or/c #f (and/c real? (not/c negative?)) (-> any))
+  evt : evt?
+Like sync/enable-break, but with a timeout as for sync/timeout.
+
+(choice-evt evt ...) → evt?
+  evt : evt?
+Creates and returns a single event that combines the evts. Supplying the result
+to sync is the same as supplying each evt to the same call.
+
+(wrap-evt evt wrap) → evt?
+  evt : (and/c evt? (not/c handle-evt?))
+  wrap : (any/c . -> . any)
+Creates an event that is in a ready when evt is ready, but whose result is
+determined by applying wrap to the result of evt. The call to wrap is
+parameterize-breaked to disable breaks initially. The evt cannot be an event
+created by handle-evt or any combination of choice-evt involving an event from
+handle-evt.
+
+(handle-evt evt handle) → evt?
+  evt : (and/c evt? (not/c handle-evt?))
+  handle : (any/c . -> . any)
+Like wrap, except that handle is called in tail position with respect to the
+synchronization request, and without breaks explicitly disabled.
+
+(guard-evt generator) → evt?
+  generator : (-> evt?)
+Creates a value that behaves as an event, but that is actually an event
+generator. For details, see the overview.
+
+(nack-guard-evt generator) → evt?
+  generator : (evt? . -> . evt?)
+Creates a value that behaves as an event, but that is actually an event
+generator; the generator procedure receives an event that becomes ready with a
+#<void> value if the generated event was not ultimately chosen. For details,
+see the overview.
+
+(poll-guard-evt generator) → evt?
+  generator : (boolean? . -> . evt?)
+Creates a value that behaves as an event, but that is actually an event
+generator; the generator procedure receives a boolean indicating whether the
+event is used for polling. For details, see the overview.
+
+always-evt : evt?
+A constant event that is always ready, with itself as its result.
+
+never-evt : evt?
+A constant event that is never ready.
+
+(system-idle-evt) → evt?
+Returns an event that is ready when the system is otherwise idle; see the
+overview for more information. The result of the system-idle-evt procedure is
+always the same event.
+
+(alarm-evt msecs) → evt
+  msecs : nonnegative-number?
+Returns a synchronizable event that is not ready when (
+current-inexact-milliseconds) would return a value that is less than msecs, and
+it is ready when (current-inexact-milliseconds) would return a value that is
+more than msecs.
+
+(handle-evt? evt) → boolean?
+  evt : evt?
+Returns #t if evt was created by handle-evt or by choice-evt applied to another
+event for which handle-evt? produces #t. Such events are illegal as an argument
+to handle-evt or wrap-evt, because they cannot be wrapped further. For any
+other event, handle-evt? produces #f, and the event is a legal argument to
+handle-evt or wrap-evt for further wrapping.
+
+prop:evt : struct-type-property?
+A structure type property that identifies structure types whose instances can
+serve as synchronizable events. The property value can be any of the following:
+
+  • An event evt: In this case, using the structure as an event is equivalent
+    to using evt.
+
+  • A procedure proc of one argument: In this case, the structure is similar to
+    an event generated by guard-evt, except that the would-be guard procedure
+    proc receives the structure as an argument, instead of no arguments.
+
+  • An exact, non-negative integer between 0 (inclusive) and the number of
+    non-automatic fields in the structure type (exclusive, not counting
+    supertype fields): The integer identifies a field in the structure, and the
+    field must be designated as immutable. If the field contains an object or
+    an event-generating procedure of one argument, the event or procedure is
+    used as above. Otherwise, the structure acts as an event that is never
+    ready.
+
+Instances of a structure type with the prop:input-port or prop:output-port
+property are also synchronizable by virtue of being a port. If the structure
+type has more than one of prop:evt, prop:input-port, and prop:output-port, then
+the prop:evt value (if any) takes precedence for determing the instance’s
+behavior as an event, and the prop:input-port property takes precedence over
+prop:output-port for synchronization.
+
+Examples:
+
+    > (define-struct wt (base val)
+                     #:property prop:evt (struct-field-index base))
+    > (define sema (make-semaphore))
+    > (sync/timeout 0 (make-wt sema #f))
+    #f
+
+    > (semaphore-post sema)
+    > (sync/timeout 0 (make-wt sema #f))
+    #<semaphore>
+
+    > (semaphore-post sema)
+    > (sync/timeout 0 (make-wt (lambda (self) (wt-val self)) sema))
+    #<semaphore>
+
+    > (semaphore-post sema)
+    > (define my-wt (make-wt (lambda (self) (wrap-evt
+                                             (wt-val self)
+                                             (lambda (x) self)))
+                             sema))
+    > (sync/timeout 0 my-wt)
+    #<wt>
+
+    > (sync/timeout 0 my-wt)
+    #f
+
+
+
+(current-evt-pseudo-random-generator)
+ → pseudo-random-generator?
+(current-evt-pseudo-random-generator generator) → void?
+  generator : pseudo-random-generator?
+A parameter that determines the pseudo-random number generator used by sync for
+events created by choice-evt.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,62 @@
+▼  File: Racket File Format Libraries
+1  Convertible: Data-Conversion Protocol
+2  gzip Compression and File Creation
+3  gzip Decompression
+4  zip File Creation
+5  tar File Creation
+6  MD5 Message Digest
+7  SHA1 Message Digest
+8  GIF File Writing
+9  Windows Registry
+   Bibliography
+   Index
+On this page:
+gzip
+gzip-through-ports
+deflate
+[...search manuals...]
+  top← prev  up  next → 
+
+2 gzip Compression and File Creation
+
+ (require file/gzip)
+The file/gzip library provides utilities to create archive files in gzip
+format, or simply to compress data using the pkzip “deflate” method.
+
+(gzip in-file [out-file]) → void?
+  in-file : path-string?
+  out-file : path-string? = (string-append in-file ".gz")
+Compresses data to the same format as the gzip utility, writing the compressed
+data directly to a file. The in-file argument is the name of the file to
+compress. If the file named by out-file exists, it will be overwritten.
+
+(gzip-through-ports   in                   
+                      out                  
+                      orig-filename        
+                      timestamp)      →   void?
+  in : input-port?
+  out : output-port?
+  orig-filename : (or/c string? false/c)
+  timestamp : exact-integer?
+Reads the port in for data and compresses it to out, outputting the same format
+as the gzip utility. The orig-filename string is embedded in this output;
+orig-filename can be #f to omit the filename from the compressed stream. The
+timestamp number is also embedded in the output stream, as the modification
+date of the original file (in Unix seconds, as file-or-directory-modify-seconds
+would report on Unix).
+
+                       exact-nonnegative-integer?
+(deflate in out)   →   exact-nonnegative-integer?
+                       exact-nonnegative-integer?
+  in : input-port?
+  out : output-port?
+Writes pkzip-format “deflated” data to the port out, compressing data from the
+port in. The data in a file created by gzip uses this format (preceded with
+header information).
+
+The result is three values: the number of bytes read from in, the number of
+bytes written to out, and a cyclic redundancy check (CRC) value for the input.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

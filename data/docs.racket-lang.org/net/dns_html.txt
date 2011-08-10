@@ -1,0 +1,94 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 14  DNS: Domain Name Service Queries
+14.1  Functions
+14.2  DNS Unit
+14.3  DNS Signature
+On this page:
+14.1 Functions
+dns-get-address
+dns-get-name
+dns-get-mail-exchanger
+dns-find-nameserver
+14.2 DNS Unit
+dns@
+14.3 DNS Signature
+dns^
+[...search manuals...]
+  top← prev  up  next → 
+
+14 DNS: Domain Name Service Queries
+
+ (require net/dns)
+The net/dns library provides utilities for looking up hostnames.
+Thanks to Eduardo Cavazos and Jason Crowe for repairs and improvements.
+
+14.1 Functions
+
+(dns-get-address nameserver address) → string?
+  nameserver : string?
+  address : string?
+Consults the specified nameserver (normally a numerical address like
+"128.42.1.30") to obtain a numerical address for the given Internet address.
+
+The query record sent to the DNS server includes the "recursive" bit, but
+dns-get-address also implements a recursive search itself in case the server
+does not provide this optional feature.
+
+(dns-get-name nameserver address) → string?
+  nameserver : string?
+  address : string?
+Consults the specified nameserver (normally a numerical address like
+"128.42.1.30") to obtain a name for the given numerical address.
+
+(dns-get-mail-exchanger nameserver address) → string?
+  nameserver : string?
+  address : string?
+Consults the specified nameserver to obtain the address for a mail exchanger
+the given mail host address. For example, the mail exchanger for
+"ollie.cs.rice.edu" might be "cs.rice.edu".
+
+(dns-find-nameserver) → (or/c string? false/c)
+Attempts to find the address of a nameserver on the present system. On Unix and
+Mac OS X, this procedure parses "/etc/resolv.conf" to extract the first
+nameserver address. On Windows, it runs nslookup.exe.
+
+14.2 DNS Unit
+
+ (require net/dns-unit)
+
+dns@ : unit?
+Imports nothing, exports dns^.
+
+14.3 DNS Signature
+
+ (require net/dns-sig)
+
+dns^ : signature
+
+Includes everything exported by the net/dns module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

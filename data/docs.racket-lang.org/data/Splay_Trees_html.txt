@@ -1,0 +1,223 @@
+▼  Data: Data Structures
+1  Imperative Queues
+2  Growable Vectors
+3  Orders and Ordered Dictionaries
+4  Splay Trees
+5  Skip Lists
+6  Interval Maps
+7  Binary Heaps
+On this page:
+make-splay-tree
+make-adjustable-splay-tree
+splay-tree?
+adjustable-splay-tree?
+splay-tree-ref
+splay-tree-set!
+splay-tree-remove!
+splay-tree-count
+splay-tree-iterate-first
+splay-tree-iterate-next
+splay-tree-iterate-key
+splay-tree-iterate-value
+splay-tree-remove-range!
+splay-tree-contract!
+splay-tree-expand!
+splay-tree-iterate-least
+splay-tree-iterate-greatest
+splay-tree-iterate-least/ >?
+splay-tree-iterate-least/ >=?
+splay-tree-iterate-greatest/ <?
+splay-tree-iterate-greatest/ <=?
+splay-tree-iter?
+splay-tree->list
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Splay Trees
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require data/splay-tree)
+
+Splay trees are an efficient data structure for mutable dictionaries with
+totally ordered keys. They were described in the paper “Self-Adjusting Binary
+Search Trees” by Daniel Sleator and Robert Tarjan in Journal of the ACM 32(3)
+pp652-686.
+
+A splay-tree is a ordered dictionary (dict? and ordered-dict?).
+
+(make-splay-tree  [ ord                                      
+                    #:key-contract key-contract              
+                    #:value-contract value-contract])   →   splay-tree?
+  ord : order? = datum-order
+  key-contract : contract? = any/c
+  value-contract : contract? = any/c
+Makes a new empty splay-tree. The splay tree uses ord to order keys; in
+addition, the domain contract of ord is combined with key-contract to check
+keys.
+
+Examples:
+
+    > (define splay-tree
+        (make-splay-tree (order 'string-order string? string=? string<?)))
+    > (splay-tree-set! splay-tree "dot" 10)
+    > (splay-tree-set! splay-tree "cherry" 500)
+    > (dict-map splay-tree list)
+    '(("cherry" 500) ("dot" 10))
+
+    > (splay-tree-ref splay-tree "dot")
+    10
+
+    > (splay-tree-remove! splay-tree "cherry")
+    > (splay-tree-count splay-tree)
+    1
+
+    > (splay-tree-set! splay-tree 'pear 3)
+    splay-tree-set!: contract violation, expected <string?>,
+
+    given: 'pear
+
+      contract from
+
+        <collects>/data/splay-tree.rkt
+
+      blaming top-level
+
+      contract:
+
+        (->i
+
+        ((s splay-tree?) (key (s) ...) (v (s) ...))
+
+        (_r void?))
+
+      at: <collects>/data/splay-tree.rkt:1112.2
+
+
+
+(make-adjustable-splay-tree  [ #:key-contract key-contract        
+                               #:value-contract value-contract])  
+ → splay-tree?
+  key-contract : contract? = any/c
+  value-contract : contract? = any/c
+Makes a new empty splay-tree that permits only exact integers as keys (in
+addition to any constraints imposed by key-contract). The resulting splay tree
+answers true to adjustable-splay-tree? and supports efficient key adjustment.
+
+Examples:
+
+    > (define splay-tree (make-adjustable-splay-tree))
+    > (splay-tree-set! splay-tree 3 'apple)
+    > (splay-tree-set! splay-tree 6 'cherry)
+    > (dict-map splay-tree list)
+    '((3 apple) (6 cherry))
+
+    > (splay-tree-ref splay-tree 3)
+    'apple
+
+    > (splay-tree-remove! splay-tree 6)
+    > (splay-tree-count splay-tree)
+    1
+
+
+
+(splay-tree? x) → boolean?
+  x : any/c
+Returns #t if x is a splay-tree, #f otherwise.
+
+(adjustable-splay-tree? x) → boolean?
+  x : any/c
+Returns #t if x is a splay-tree that supports key adjustment; see
+splay-tree-contract! and splay-tree-expand!.
+
+(splay-tree-ref s key [default]) → any
+  s : splay-tree?
+  key : any/c
+  default : any/c = (lambda () (error ....))
+(splay-tree-set! s key value) → void?
+  s : splay-tree?
+  key : any/c
+  value : any/c
+(splay-tree-remove! s key) → void?
+  s : splay-tree?
+  key : any/c
+(splay-tree-count s) → exact-nonnegative-integer?
+  s : splay-tree?
+(splay-tree-iterate-first s) → (or/c #f splay-tree-iter?)
+  s : splay-tree?
+(splay-tree-iterate-next s iter) → (or/c #f splay-tree-iter?)
+  s : splay-tree?
+  iter : splay-tree-iter?
+(splay-tree-iterate-key s iter) → any/c
+  s : splay-tree?
+  iter : splay-tree-iter?
+(splay-tree-iterate-value s iter) → any/c
+  s : splay-tree?
+  iter : splay-tree-iter?
+Implementations of dict-ref, dict-set!, dict-remove!, dict-count,
+dict-iterate-first, dict-iterate-next, dict-iterate-key, and dict-iterate-value
+, respectively.
+
+(splay-tree-remove-range! s from to) → void?
+  s : splay-tree?
+  from : any/c
+  to : any/c
+Removes all keys in [from, to); that is, all keys greater than or equal to from
+and less than to.
+
+This operation takes O(N) time, or O(log N) time if (adjustable-splay-tree? s).
+
+(splay-tree-contract! s from to) → void?
+  s : adjustable-splay-tree?
+  from : exact-integer?
+  to : exact-integer?
+Like splay-tree-remove-range!, but also decreases the value of all keys greater
+than or equal to to by (- to from).
+
+This operation is only allowed on adjustable splay trees, and it takes O(log N)
+time.
+
+(splay-tree-expand! s from to) → void?
+  s : adjustable-splay-tree?
+  from : exact-integer?
+  to : exact-integer?
+Increases the value of all keys greater than or equal to from by (- to from).
+
+This operation is only allowed on adjustable splay trees, and it takes O(log N)
+time.
+
+(splay-tree-iterate-least s) → (or/c #f splay-tree-iter?)
+  s : splay-tree
+(splay-tree-iterate-greatest s) → (or/c #f splay-tree-iter?)
+  s : splay-tree
+(splay-tree-iterate-least/>? s key) → (or/c #f splay-tree-iter?)
+  s : splay-tree?
+  key : any/c
+(splay-tree-iterate-least/>=? s key)
+ → (or/c #f splay-tree-iter?)
+  s : splay-tree?
+  key : any/c
+(splay-tree-iterate-greatest/<? s key)
+ → (or/c #f splay-tree-iter?)
+  s : splay-tree?
+  key : any/c
+(splay-tree-iterate-greatest/<=? s key)
+ → (or/c #f splay-tree-iter?)
+  s : splay-tree?
+  key : any/c
+Implementations of dict-iterate-least, dict-iterate-greatest,
+dict-iterate-least/>?, dict-iterate-least/>=?, dict-iterate-greatest/<?, and
+dict-iterate-greatest/<=?, respectively.
+
+(splay-tree-iter? x) → boolean?
+  x : any/c
+Returns #t if x represents a position in a splay-tree, #f otherwise.
+
+(splay-tree->list s) → (listof pair?)
+  s : splay-tree?
+Returns an association list with the keys and values of s, in order.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

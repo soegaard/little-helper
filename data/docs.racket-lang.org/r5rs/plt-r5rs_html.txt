@@ -1,0 +1,28 @@
+▼  R5RS: Legacy Scheme
+1  Running R5RS Programs
+2  plt-r5rs
+3  R5RS Module Language
+4  R5RS Initialization Library
+[...search manuals...]
+  top← prev  up  next → 
+
+2 plt-r5rs
+
+The plt-r5rs executable runs an R5RS program from a file that is supplied on
+the command line. If no program file is provided as a command-line argument,
+then a read-eval-print loop is started.
+
+Before starting a read-eval-print loop, an initialization file is loaded, if it
+exists. The file is the same as the file reported by (find-system-path
+'init-file), but with the characters racket in the filename replaced by
+pltr5rs. For example, on Unix, the file is "~/.pltr5rsrc".
+
+By default, plt-r5rs departs from R5RS conformance in one crucial way: the
+names of pre-defined functions cannot be redefined at the top level. This
+restriction enables better run-time performance. Use the --no-prim command-line
+flag—before a file to load, if any—to obtain the standard behavior for
+primitive bindings (at the cost of performance).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,106 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+▼ 4.3  Manual Forms
+ 4.3.1  Typesetting Code
+ 4.3.2  Documenting Modules
+ 4.3.3  Documenting Forms, Functions, Structure Types, and Values
+ 4.3.4  Documenting Classes and Interfaces
+ 4.3.5  Documenting Signatures
+ 4.3.6  Various String Forms
+ 4.3.7  Links
+ 4.3.8  Indexing
+ 4.3.9  Images
+4.3.10  Bibliography
+4.3.11  Miscellaneous
+4.3.12  Index-Entry Descriptions
+On this page:
+aux-elem
+defterm
+onscreen
+menuitem
+filepath
+exec
+envvar
+Flag
+DFlag
+PFlag
+DPFlag
+[...search manuals...]
+  top← prev  up  next → 
+
+4.3.6 Various String Forms
+
+(aux-elem pre-content ...) → element?
+  pre-content : pre-content?
+Like elem, but adds an 'aux style property.
+
+(defterm pre-content ...) → element?
+  pre-content : pre-content?
+Typesets the decoded pre-content as a defined term (e.g., in italic). Consider
+using deftech instead, though, so that uses of tech can hyper-link to the
+definition.
+
+(onscreen pre-content ...) → element?
+  pre-content : pre-content?
+Typesets the decoded pre-content as a string that appears in a GUI, such as the
+name of a button.
+
+(menuitem menu-name item-name) → element?
+  menu-name : string?
+  item-name : string?
+Typesets the given combination of a GUI’s menu and item name.
+
+(filepath pre-content ...) → element?
+  pre-content : pre-content?
+Typesets the decoded pre-content as a file name (e.g., in typewriter font and
+in in quotes).
+
+(exec pre-content ...) → element?
+  pre-content : pre-content?
+Typesets the decoded pre-content as a command line (e.g., in typewriter font).
+
+(envvar pre-content ...) → element?
+  pre-content : pre-content?
+Typesets the given decoded pre-content as an environment variable (e.g., in
+typewriter font).
+
+(Flag pre-content ...) → element?
+  pre-content : pre-content?
+Typesets the given decoded pre-content as a flag (e.g., in typewriter font with
+a leading -).
+
+(DFlag pre-content ...) → element?
+  pre-content : pre-content?
+Typesets the given decoded pre-content a long flag (e.g., in typewriter font
+with two leading -s).
+
+(PFlag pre-content ...) → element?
+  pre-content : pre-content?
+Typesets the given decoded pre-content as a + flag (e.g., in typewriter font
+with a leading +).
+
+(DPFlag pre-content ...) → element?
+  pre-content : pre-content?
+Typesets the given decoded pre-content a long + flag (e.g., in typewriter font
+with two leading +s).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

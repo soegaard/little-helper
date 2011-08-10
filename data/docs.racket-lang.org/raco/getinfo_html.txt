@@ -1,0 +1,128 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 6  raco setup: Installation Management
+6.1  Running raco setup
+6.2  "info.rkt" File Format
+6.3  API for Installation
+6.4  API for Installing ".plt" Archives
+6.5  API for Finding Installation Directories
+6.6  API for Reading "info.rkt" Files
+6.7  API for Relative Paths
+6.8  API for Cross-References for Installed Manuals
+On this page:
+get-info
+get-info/ full
+find-relevant-directories
+find-relevant-directory-records
+directory-record
+reset-relevant-directories-state!
+[...search manuals...]
+  top← prev  up  next → 
+
+6.6 API for Reading "info.rkt" Files
+
+ (require setup/getinfo)
+The setup/getinfo library provides functions for accessing fields in "info.rkt"
+files.
+
+(get-info    collection-names         
+           [ #:namespace namespace])  
+      (or/c
+  →    (symbol? [(-> any)] . -> . any)
+       false/c)
+  collection-names : (listof string?)
+  namespace : (or/c namespace? #f) = #f
+Accepts a list of strings naming a collection or sub-collection, and calls
+get-info/full with the full path corresponding to the named collection and the
+namespace argument.
+
+(get-info/full path [#:namespace namespace])
+      (or/c
+  →    (symbol? [(-> any)] . -> . any)
+       false/c)
+  path : path?
+  namespace : (or/c namespace? #f) = #f
+Accepts a path to a directory. If it finds either a well-formed an "info.rkt"
+file or an "info.rkt" file (with preference for the "info.rkt" file), it
+returns an info procedure that accepts either one or two arguments. The first
+argument to the info procedure is always a symbolic name, and the result is the
+value of the name in the "info.rkt" file, if the name is defined. The optional
+second argument, thunk, is a procedure that takes no arguments to be called
+when the name is not defined; the result of the info procedure is the result of
+the thunk in that case. If the name is not defined and no thunk is provided,
+then an exception is raised.
+
+The get-info/full function returns #f if there is no "info.rkt" (or "info.ss")
+file in the directory. If there is a "info.rkt" (or "info.ss") file that has
+the wrong shape (i.e., not a module using setup/infotab or (lib "infotab.rkt"
+"setup")), or if the "info.rkt" file fails to load, then an exception is
+raised. If the "info.rkt" file loaded, get-info/full returns the get-info file.
+If the "info.rkt" file does not exist, then get-info/full does the same checks
+for the "info.rkt" file, either raising an exception or returning the get-info
+function from the "info.rkt" file.
+
+The "info.rkt" (or "info.ss") module is loaded into namespace if it is not #f,
+or a private, weakly-held namespace otherwise.
+
+(find-relevant-directories syms [mode]) → (listof path?)
+  syms : (listof symbol?)
+  mode : (symbols 'preferred 'all-available) = 'preferred
+Returns a list of paths identifying installed directories (i.e., collections
+and installed PLaneT packages) whose "info.rkt" file defines one or more of the
+given symbols. The result is based on a cache that is computed by raco setup
+and stored in the "info-domain" sub-directory of each collection directory (as
+determined by the PLT_COLLECTION_PATHS environment variable, etc.) and the file
+"cache.rkt" in the user add-on directory. Note that the cache may be out of
+date by the time you call get-info/full, so do not assume that it won’t return
+#f.
+
+The result is in a canonical order (sorted lexicographically by directory
+name), and the paths it returns are suitable for providing to get-info/full.
+
+If mode is specified, it must be either 'preferred (the default) or
+'all-available. If mode is 'all-available, find-relevant-collections returns
+all installed directories whose info files contain the specified symbols—for
+instance, all installed PLaneT packages will be searched if 'all-available is
+specified. If mode is 'preferred, then only a subset of “preferred” packages
+will be searched, and in particular only the directory containing the most
+recent version of any PLaneT package will be returned.
+
+No matter what mode is specified, if more than one collection has the same
+name, find-relevant-directories will only search the one that occurs first in
+the PLT_COLLECTION_PATHS environment variable.
+
+(find-relevant-directory-records syms key)
+ → (listof directory-record?)
+  syms : (listof symbol?)
+  key : (or/c 'preferred 'all-available)
+Like find-relevant-directories, but returns directory-record structs instead of
+path?s.
+
+(struct   directory-record (maj min spec path syms)
+          #:extra-constructor-name make-directory-record)
+  maj : integer?
+  min : integer?
+  spec : any/c
+  path : path?
+  syms : (listof symbol?)
+A struct that records information about a collection or a PLaneT package that
+has been installed. Collections will have the major version being 1 and the
+minor version being 0. The spec field is a quoted module spec; the path field
+is where the info.rkt file for this collection or PLaneT package exists on the
+filesystem the syms field holds the identifiers defined in that file.
+
+(reset-relevant-directories-state!) → void?
+Resets the cache used by find-relevant-directories.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

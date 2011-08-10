@@ -1,0 +1,64 @@
+▼  R6RS: Scheme
+1  Using R6RS with Dr Racket
+2  Running Top-Level Programs
+3  Installing Libraries
+4  R6RS Module Language
+5  Libraries and Collections
+6  Language Interoperability
+7  R6RS Conformance
+8  R6RS Libraries
+   Index
+► 4  R6RS Module Language
+4.1  Using R6RS
+4.2  The Implementation of R6RS
+On this page:
+4.1 Using R6RS
+4.2 The Implementation of R6RS
+#%module-begin
+[...search manuals...]
+  top← prev  up  next → 
+
+4 R6RS Module Language
+
+ #lang r6rs
+
+The r6rs language is usually used in the form #!r6rs, which is equivalent to #
+lang r6rs and is also valid R6RS syntax.
+
+4.1 Using R6RS
+
+See Using R6RS with DrRacket, Running Top-Level Programs, and Installing
+Libraries for more information on writing and running R6RS programs with
+Racket.
+
+4.2 The Implementation of R6RS
+
+The R6RS language is itself implemented as a module within Racket. The details
+of that implementation, as provided in this section, are not normally relevant
+to programmers using R6RS; see the links in Using R6RS, instead. The details
+may be relevant to programmers who are developing new tools or deriving
+variants of R6RS within Racket.
+
+As a Racket module, the r6rs module language provides only a #%module-begin
+binding, which is used to process the entire body of a Racket module (see
+module). The #%module-begin binding from r6rs allows the body of a module to
+use the syntax of either a R6RS library or a R6RS top-level program.
+
+(#%module-begin
+ (library library-name
+   (export export-spec ...)
+   (import import-spec ...)
+   library-body ...))
+(#%module-begin
+ (import import-spec ...)
+ program-body ...)
+An r6rs module that contains a single library form defines an R6RS library,
+while a module body that starts with an import form defined an R6RS top-level
+program.
+
+The library, export, and import identifiers are not exported by the r6rs
+library; they are recognized through equivalence to unbound identifiers.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

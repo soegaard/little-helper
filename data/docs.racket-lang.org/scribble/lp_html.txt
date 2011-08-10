@@ -1,0 +1,128 @@
+▼  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 5  Literate Programming
+5.1  scribble/ lp Language
+5.2  scribble/ lp-include Module
+On this page:
+<f>
+<fs-body>
+5.1 scribble/ lp Language
+chunk
+5.2 scribble/ lp-include Module
+lp-include
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Literate Programming
+
+Programs written using scribble/lp are simultaneously two things: a program and
+a document describing the program.
+
+Programs in scribble/lp are viewed in two different ways, either by running the
+program directly or by including it with lp-include. When running the program,
+all of the chunk expressions are collected and stitched together into a
+program, and the rest of the module is discarded. When using lp-include, the
+entire contents of the module are preserved and are treated like an ordinary
+Scribble document, where chunks are typeset in a manner similar to codeblock.
+
+For example, consider this program:
+
+  #lang scribble/lp
+
+    
+
+  Literate programs have chunks of code, like this one:
+
+    
+
+  @chunk[<f>
+
+         (define (f x)
+
+           <fs-body>)]
+
+    
+
+  and this one:
+
+    
+
+  @chunk[<fs-body>
+
+         (* x x)]
+
+    
+
+  that, when assembled, produce a complete program, in this case:
+
+    
+
+  @racketblock[(define (f x)
+
+                 (* x x))]
+
+  
+
+
+When this file is required in the normal manner, it defines a function f that
+squares its argument, and the documentation is ignored. When it is included
+with lp-include, it looks like this:
+
+    Literate programs have chunks of code, like this one:
+
+    <f> ::=
+
+        (define (f x)
+          <fs-body>)
+
+    and this one:
+
+    <fs-body> ::=
+
+
+        (* x x)
+
+    that, when assembled, produce a complete program, in this case:
+
+        (define (f x)
+          (* x x))
+
+5.1 scribble/lp Language
+
+ #lang scribble/lp
+The scribble/lp language provides core support for literate programming.
+
+(chunk id form ...)
+Introduces a chunk, binding id for use in other chunks. Normally, id starts
+with < and ends with >.
+
+When running a scribble program only the code inside the chunks is run; the
+rest is ignored.
+
+If id is <*>, then this chunk is used as the main chunk in the file. If <*> is
+never used, then the first chunk in the file is treated as the main chunk. If
+some chunk is not referenced from the main chunk (possibly indirectly via other
+chunks that the main chunk references), then it is not included in the program
+and thus is not run.
+
+5.2 scribble/lp-include Module
+
+ (require scribble/lp-include)
+The scribble/lp-include library is normally used within a Scribble document—
+that is, a module that starts with something like #lang scribble/base or #lang
+scribble/manual, instead of #lang racket.
+
+(lp-include filename)
+Includes the source of filename as the typeset version of the literate program.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

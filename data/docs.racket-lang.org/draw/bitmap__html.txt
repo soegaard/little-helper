@@ -1,0 +1,297 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+get-argb-pixels
+get-depth
+get-height
+get-loaded-mask
+get-width
+is-color?
+load-file
+ok?
+save-file
+set-argb-pixels
+set-loaded-mask
+[...search manuals...]
+  top← prev  up  next → 
+
+bitmap% : class?
+  superclass: object%
+
+A bitmap% object is a pixel-based image, either monochrome, color, or color
+with an alpha channel. See also make-screen-bitmap and make-bitmap in canvas%.
+
+A bitmap is convertible to 'png-bytes through the file/convertible protocol.
+
+(make-object bitmap%    width              
+                        height             
+                      [ monochrome?        
+                        alpha?])      →   (is-a?/c bitmap%)
+  width : exact-positive-integer?
+  height : exact-positive-integer?
+  monochrome? : any/c = #f
+  alpha? : any/c = #f
+(make-object bitmap%    in                            
+                      [ kind                          
+                        bg-color                      
+                        complain-on-failure?])   →   (is-a?/c bitmap%)
+  in : (or/c path-string? input-port?)
+              (one-of/c 'unknown 'unknown/mask 'unknown/alpha
+                        'gif 'gif/mask 'gif/alpha
+   kind   :             'jpeg 'jpeg/alpha
+                        'png 'png/mask 'png/alpha
+                        'xbm 'xbm/alpha 'xpm 'xpm/alpha
+                        'bmp 'bmp/alpha)
+          =   'unknown
+  bg-color : (or/c (is-a?/c color%) false/c) = #f
+  complain-on-failure? : any/c = #f
+(make-object bitmap% bits width height) → (is-a?/c bitmap%)
+  bits : bytes?
+  width : exact-positive-integer?
+  height : exact-positive-integer?
+The make-bitmap, make-monochrome-bitmap, and read-bitmap functions are
+preferred over using make-object with bitmap%, because the functions are less
+overloaded and they enable alpha channels by default.
+
+When width and height are provided: Creates a new bitmap. If monochrome? is
+true, the bitmap is monochrome; if monochrome? is #f and alpha? is true, the
+bitmap has an alpha channel; otherwise, the bitmap is color without an alpha
+channel.
+
+The initial content of the bitmap is “empty”: all white, and with zero alpha in
+the case of a bitmap with an alpha channel.
+
+When in is provided: Creates a bitmap from a file format, where kind specifies
+the format. See load-file for details.
+
+When a bits byte string is provided: Creates a monochrome bitmap from an array
+of bit values, where each byte in bits specifies eight bits, and padding bits
+are added so that each bitmap line starts on a character boundary. A 1 bit
+value indicates black, and 0 indicates white. If width times height is larger
+than 8 times the length of bits, an exn:fail:contract exception is raised.
+
+(send a-bitmap get-argb-pixels    x                        
+                                  y                        
+                                  width                    
+                                  height                   
+                                  pixels                   
+                                [ just-alpha?              
+                                  pre-multiplied?])   →   void?
+  x : real?
+  y : real?
+  width : exact-nonnegative-integer?
+  height : exact-nonnegative-integer?
+  pixels : (and/c bytes? (not/c immutable?))
+  just-alpha? : any/c = #f
+  pre-multiplied? : any/c = #f
+Produces the same result as get-argb-pixels in bitmap-dc%, but the bitmap does
+not have to be selected into the DC (and this method works even if the bitmap
+is selected into another DC, attached as a button label, etc.).
+
+(send a-bitmap get-depth) → exact-nonnegative-integer?
+Gets the color depth of the bitmap, which is 1 for a monochrome bitmap and 32
+for a color bitmap. See also is-color?.
+
+(send a-bitmap get-height) → exact-positive-integer?
+Gets the height of the bitmap in pixels.
+
+(send a-bitmap get-loaded-mask)
+ → (or/c (is-a?/c bitmap%) false/c)
+Returns a mask bitmap that is stored with this bitmap.
+
+When a GIF file is loaded with 'gif/mask or 'unknown/mask and the file contains
+a transparent “color,” a mask bitmap is generated to identify the transparent
+pixels. The mask bitmap is monochrome, with white pixels where the loaded
+bitmap is transparent and black pixels everywhere else.
+
+When a PNG file is loaded with 'png/mask or 'unknown/mask and the file contains
+a mask or alpha channel, a mask bitmap is generated to identify the mask or
+alpha channel. If the file contains a mask or an alpha channel with only
+extreme values, the mask bitmap is monochrome, otherwise it is grayscale
+(representing the alpha channel inverted).
+
+When an XPM file is loaded with 'xpm/mask or 'unknown/mask, a mask bitmap is
+generated to indicate which pixels are set.
+
+When 'unknown/alpha and similar modes are used to load a bitmap, transparency
+information is instead represented by an alpha channel, not by a mask bitmap.
+
+Unlike an alpha channel, the mask bitmap is not used automatically by drawing
+routines. The mask bitmap can be extracted and supplied explicitly as a mask
+(e.g., as the sixth argument to draw-bitmap). The mask bitmap is used by
+save-file when saving a bitmap as 'png if the mask has the same dimensions as
+the saved bitmap. The mask bitmap is also used automatically when the bitmap is
+a control label.
+
+(send a-bitmap get-width) → exact-positive-integer?
+Gets the width of the bitmap in pixels.
+
+(send a-bitmap is-color?) → boolean?
+Returns #f if the bitmap is monochrome, #t otherwise.
+
+(send a-bitmap load-file    in                            
+                          [ kind                          
+                            bg-color                      
+                            complain-on-failure?])   →   boolean?
+  in : (or/c path-string? input-port?)
+              (one-of/c 'unknown 'unknown/mask 'unknown/alpha
+                        'gif 'gif/mask 'gif/alpha
+   kind   :             'jpeg 'jpeg/alpha
+                        'png 'png/mask 'png/alpha
+                        'xbm 'xbm/alpha 'xpm 'xpm/alpha
+                        'bmp 'bmp/alpha)
+          =   'unknown
+  bg-color : (or/c (is-a?/c color%) false/c) = #f
+  complain-on-failure? : any/c = #f
+Loads a bitmap from a file format that read from in, unless the bitmap was
+produced by make-screen-bitmap or make-bitmap in canvas% (in which case an
+exn:fail:contract exception is raised). If the bitmap is in use by a bitmap-dc%
+object or a control, the image data is not loaded. The bitmap changes its size
+and depth to match that of the loaded image. If an error is encountered when
+reading the file format, an exception is raised only if complain-on-failure? is
+true (which is not the default).
+
+The kind argument specifies the file’s format:
+
+  • 'unknown — examine the file to determine its format; creates either a
+    monochrome or color bitmap without an alpha channel
+
+  • 'unknown/mask — like 'unknown, but see get-loaded-mask
+
+  • 'unknown/alpha — like 'unknown, but if the bitmap is color, it has an alpha
+    channel, and transparency in the image file is recorded in the alpha
+    channel
+
+  • 'gif — load a GIF bitmap file, creating a color bitmap
+
+  • 'gif/mask — like 'gif, but see get-loaded-mask
+
+  • 'gif/alpha — like 'gif, but with an alpha channel
+
+  • 'jpeg — load a JPEG bitmap file, creating a color bitmap
+
+  • 'jpeg/alpha — like 'jpeg, but with an alpha channel
+
+  • 'png — load a PNG bitmap file, creating a color or monochrome bitmap
+
+  • 'png/mask — like 'png, but see get-loaded-mask
+
+  • 'png/alpha — like 'png, but always color and with an alpha channel
+
+  • 'xbm — load an X bitmap (XBM) file; creates a monochrome bitmap
+
+  • 'xbm/alpha — like 'xbm, but creates a color bitmap with an alpha channel
+
+  • 'xpm — load an XPM bitmap file, creating a color bitmap
+
+  • 'xpm/alpha — like 'xpm, but with an alpha channel
+
+  • 'bmp — load a Windows bitmap file, creating a color bitmap
+
+  • 'bmp/alpha — like 'bmp, but with an alpha channel
+
+An XBM image is always loaded as a monochrome bitmap. A 1-bit grayscale PNG
+without a mask or alpha channel is also loaded as a monochrome bitmap. An image
+in any other format is always loaded as a color bitmap.
+
+For PNG loading, if bg-color is not #f, then it is combined with the file’s
+alpha channel or mask (if any) while loading the image; in this case, no
+separate mask bitmap is generated and the alpha channel fills the bitmap, even
+if 'unknown/mask, 'png/mask is specified for the format. If the format is
+specified as 'unknown or 'png and bg-color is not specified, the PNG file is
+consulted for a background color to use for loading, and white is used if no
+background color is indicated in the file.
+
+In all PNG-loading modes, gamma correction is applied when the file provides a
+gamma value, otherwise gamma correction is not applied. The current display’s
+gamma factor is determined by the SCREEN_GAMMA environment variable if it is
+defined. If the preference and environment variable are both undefined, a
+platform-specific default is used.
+
+(send a-bitmap ok?) → boolean?
+Returns #t if the bitmap is valid in the sense that an image file was loaded
+successfully. If ok? returns #f, then drawing to or from the bitmap has no
+effect.
+
+(send a-bitmap save-file name kind [quality]) → boolean?
+  name : (or/c path-string? output-port?)
+  kind : (one-of/c 'png 'jpeg 'xbm 'xpm 'bmp)
+  quality : (integer-in 0 100) = 75
+Writes a bitmap to the named file or output stream.
+
+The kind argument determined the type of file that is created, one of:
+
+  • 'png — save a PNG file
+
+  • 'jpeg — save a JPEG file
+
+  • 'xbm — save an X bitmap (XBM) file
+
+  • 'xpm — save an XPM bitmap file
+
+  • 'bmp — save a Windows bitmap file
+
+The quality argument is used only for saving as 'jpeg, in which case it
+specifies the trade-off between image precision (high quality matches the
+content of the bitmap% object more precisely) and size (low quality is
+smaller).
+
+When saving as 'png, if get-loaded-mask returns a bitmap of the same size as
+this one, a grayscale version is included in the PNG file as the alpha channel.
+
+A monochrome bitmap saved as 'png without a mask bitmap produces a 1-bit
+grayscale PNG file (which, when read with load-file, creates a monochrome
+bitmap% object.)
+
+(send a-bitmap set-argb-pixels    x                        
+                                  y                        
+                                  width                    
+                                  height                   
+                                  pixels                   
+                                [ just-alpha?              
+                                  pre-multiplied?])   →   void?
+  x : real?
+  y : real?
+  width : exact-nonnegative-integer?
+  height : exact-nonnegative-integer?
+  pixels : bytes?
+  just-alpha? : any/c = #f
+  pre-multiplied? : any/c = #f
+The same as set-argb-pixels in bitmap-dc%, but the bitmap does not have to be
+selected into the DC.
+
+(send a-bitmap set-loaded-mask mask) → void?
+  mask : (is-a?/c bitmap%)
+See get-loaded-mask.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

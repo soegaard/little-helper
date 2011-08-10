@@ -1,0 +1,268 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+gui-utils: trim-string
+gui-utils: quote-literal-label
+gui-utils: format-literal-label
+gui-utils: cancel-on-right?
+gui-utils: ok/ cancel-buttons
+gui-utils: next-untitled-name
+gui-utils: cursor-delay
+gui-utils: show-busy-cursor
+gui-utils: delay-action
+gui-utils: local-busy-cursor
+gui-utils: unsaved-warning
+gui-utils: get-choice
+gui-utils: get-clicked-clickback-delta
+gui-utils: get-clickback-delta
+[...search manuals...]
+  top← prev  up  next → 
+
+16 GUI Utilities
+
+ (require framework/gui-utils)
+
+(gui-utils:trim-string str size)
+      (and/c string?
+  →          (λ (str)
+               ((string-length str) . <= . size)))
+  str : string?
+  size : (and/c number? positive?)
+Constructs a string whose size is less than size by trimming the str and
+inserting an ellispses into it.
+(gui-utils:quote-literal-label str)
+      (and/c string?
+  →          (lambda (str)
+               ((string-length str) . <= . 200)))
+  str : string?
+Constructs a string whose ampersand characters are escaped; the label is also
+trimmed to <= 200 characters.
+(gui-utils:format-literal-label   str        
+                                  rest ...)  
+      (and/c string?
+  →          (lambda (str)
+               ((string-length str) . <= . 200)))
+  str : string?
+  rest : (listof any/c)
+Formats a string whose ampersand characters are mk-escaped; the label is also
+trimmed to <= 200 mk-characters.
+(gui-utils:cancel-on-right?) → boolean?
+Returns #t if cancel should be on the right-hand side (or below) in a dialog
+and #f otherwise.
+
+Just returns what system-position-ok-before-cancel? does.
+
+See also gui-utils:ok/cancel-buttons.
+(gui-utils:ok/cancel-buttons    parent                           
+                                confirm-callback                 
+                                cancel-callback                  
+                              [ confirm-label                    
+                                cancel-label                     
+                                #:confirm-style confirm-style])  
+  →   (is-a?/c button%)   (is-a?/c button%)
+  parent : (is-a?/c area-container<%>)
+  confirm-callback : ((is-a?/c button%) (is-a?/c event%) . -> . any)
+  cancel-callback : ((is-a?/c button%) (is-a?/c event%) . -> . any)
+  confirm-label : string? = (string-constant ok)
+  cancel-label : string? = (string-constant cancel)
+  confirm-style : (listof symbol?) = '(border)
+Adds an Ok and a cancel button to a panel, changing the order to suit the
+platform. Under Mac OS X and unix, the confirmation action is on the right (or
+bottom) and under Windows, the canceling action is on the right (or bottom).
+The buttons are also sized to be the same width.
+
+The first result is be the OK button and the second is the cancel button.
+
+By default, the confirmation action button has the '(border) style, meaning
+that hitting return in the dialog will trigger the confirmation action. The
+confirm-style argument can override this behavior, tho. See button% for the
+precise list of allowed styles.
+
+See also gui-utils:cancel-on-right?.
+(gui-utils:next-untitled-name) → string?
+Returns a name for the next opened untitled frame. The first name is
+“Untitled”, the second is “Untitled 2”, the third is “Untitled 3”, and so
+forth.
+(gui-utils:cursor-delay) → real?
+(gui-utils:cursor-delay new-delay) → void?
+  new-delay : real?
+This function is not a parameter. Instead, the state is just stored in the
+closure.
+
+The first case in the case lambda returns the current delay in seconds before a
+watch cursor is shown, when either gui-utils:local-busy-cursor or
+gui-utils:show-busy-cursor is called.
+
+The second case in the case lambda Sets the delay, in seconds, before a watch
+cursor is shown, when either gui-utils:local-busy-cursor or
+gui-utils:show-busy-cursor is called.
+(gui-utils:show-busy-cursor thunk [delay]) → any/c
+  thunk : (-> any/c)
+  delay : integer? = (gui-utils:cursor-delay)
+Evaluates (thunk) with a watch cursor. The argument delay specifies the amount
+of time before the watch cursor is opened. Use gui-utils:cursor-delay to set
+this value to all calls.
+
+This function returns the result of thunk.
+(gui-utils:delay-action   delay-time        
+                          open              
+                          close)       →   (-> void?)
+  delay-time : real?
+  open : (-> void?)
+  close : (-> void?)
+Use this function to delay an action for some period of time. It also supports
+cancelling the action before the time period elapses. For example, if you want
+to display a watch cursor, but you only want it to appear after 2 seconds and
+the action may or may not take more than two seconds, use this pattern:
+
+    (let ([close-down
+           (gui-utils:delay-action
+            2
+            (λ () .. init watch cursor ...)
+            (λ () .. close watch cursor ...))])
+     
+      (close-down))
+
+Creates a thread that waits delay-time. After delay-time has elapsed, if the
+result thunk has not been called, call open. Then, when the result thunk is
+called, call close. The function close will only be called if open has been
+called.
+(gui-utils:local-busy-cursor    window         
+                                thunk          
+                              [ delay])   →   any/c
+  window : (is-a?/c window<%>)
+  thunk : (-> any/c)
+  delay : integer? = (gui-utils:cursor-delay)
+Evaluates (thunk) with a watch cursor in window. If window is #f, the watch
+cursor is turned on globally. The argument delay specifies the amount of time
+before the watch cursor is opened. Use gui-utils:cursor-delay to set this value
+for all uses of this function.
+
+The result of this function is the result of thunk.
+(gui-utils:unsaved-warning    filename       
+                              action         
+                            [ can-save-now?  
+                              parent         
+                              cancel?])      
+ → (symbols 'continue 'save 'cancel)
+  filename : string?
+  action : string?
+  can-save-now? : boolean? = #f
+                (or/c false/c
+   parent   :         (is-a?/c frame%)     =   #f
+                      (is-a?/c dialog%))
+  cancel? : boolean? = #t
+This displays a dialog that warns the user of a unsaved file.
+
+The string, action, indicates what action is about to take place, without
+saving. For example, if the application is about to close a file, a good action
+is "Close" "Anyway". The result symbol indicates the user’s choice. If
+can-save-now? is #f, this function does not give the user the “Save” option and
+thus will not return 'save.
+
+If cancel? is #t there is a cancel button in the dialog and the result may be
+'cancel. If it is #f, then there is no cancel button, and 'cancel will not be
+the result of the function.
+(gui-utils:get-choice    message                 
+                         true-choice             
+                         false-choice            
+                       [ title                   
+                         default-result          
+                         parent                  
+                         style                   
+                         checkbox-proc           
+                         checkbox-label])   →   any/c
+  message : string?
+  true-choice : string?
+  false-choice : string?
+  title : string? = (string-constant warning)
+  default-result : any/c = 'disallow-close
+   parent   :   (or/c false/c (is-a?/c frame%) (is-a?/c dialog%))
+            =   #f
+  style : (symbols 'app 'caution 'stop) = 'app
+   checkbox-proc   :   (or/c false/c (case-> (boolean? . -> . void?)
+                                             (-> boolean?)))
+                   =   #f
+  checkbox-label : string? = (string-constant dont-ask-again)
+Opens a dialog that presents a binary choice to the user. The user is forced to
+choose between these two options, ie cancelling or closing the dialog opens a
+message box asking the user to actually choose one of the two options.
+
+The dialog will contain the string message and two buttons, labeled with the
+true-choice and the false-choice. If the user clicks on true-choice #t is
+returned. If the user clicks on false-choice, #f is returned.
+
+The argument default-result determines how closing the window is treated. If
+the argument is 'disallow-close, closing the window is not allowed. If it is
+anything else, that value is returned when the user closes the window.
+
+If gui-utils:cancel-on-right? returns #t, the false choice is on the right.
+Otherwise, the true choice is on the right.
+
+The style parameter is (eventually) passed to message as an icon in the dialog.
+
+If checkbox-proc is given, it should be a procedure that behaves like a
+parameter for getting/setting a boolean value. The intention for this value is
+that it can be used to disable the dialog. When it is given, a checkbox will
+appear with a checkbox-label label (defaults to the dont-ask-again string
+constant), and that checkbox value will be sent to the checkbox-proc when the
+dialog is closed. Note that the dialog will always pop-up — it is the caller’s
+responsibility to avoid the dialog if not needed.
+(gui-utils:get-clicked-clickback-delta [white-on-black?])
+ → (is-a?/c style-delta%)
+  white-on-black? : boolean? = #f
+This delta is designed for use with set-clickback. Use it as one of the
+style-delta% argument to set-clickback.
+
+If white-on-black? is true, the function returns a delta suitable for use on a
+black background.
+
+See also gui-utils:get-clickback-delta.
+(gui-utils:get-clickback-delta [white-on-black?])
+ → (is-a?/c style-delta%)
+  white-on-black? : boolean? = #f
+This delta is designed for use with set-clickback. Use the result of this
+function as the style for the region text where the clickback is set.
+
+If white-on-black? is true, the function returns a delta suitable for use on a
+black background.
+
+See also gui-utils:get-clicked-clickback-delta.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

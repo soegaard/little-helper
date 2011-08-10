@@ -1,0 +1,134 @@
+▼  Mz Scheme: Legacy Language
+1  Old Syntactic Forms
+2  Old Functions
+3  Extra Libraries
+4  Omitted Functions
+On this page:
+#%module-begin
+#%plain-module-begin
+#%plain-lambda
+lambda
+λ
+#%app
+#%plain-app
+define
+define-syntax
+define-for-syntax
+if
+cond
+case
+fluid-let
+define-struct
+let-struct
+require
+require-for-syntax
+require-for-template
+require-for-label
+provide
+provide-for-syntax
+provide-for-label
+#%datum
+#%top-interaction
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Old Syntactic Forms
+
+(#%module-begin form ...)
+Like #%plain-module-begin from scheme/base, but (require-for-syntax mzscheme)
+is added to the beginning of the form sequence, thus importing mzscheme into
+the transformer environment for the module body. (In contrast, scheme/base
+exports for-syntax minimal transformer support, while scheme exports all of
+scheme/base for-syntax.
+
+(#%plain-module-begin form ...)
+The same binding as #%plain-module-begin from scheme/base.
+
+(#%plain-lambda formals body ...+)
+The same binding as #%plain-lambda in scheme/base. (This binding was not
+present in version 372 and earlier.)
+
+(lambda formals body ...+)
+(λ formals body ...+)
+The same bindings as #%plain-lambda.
+
+(#%app proc-expr arg-expr ...)
+(#%app)
+The same binding as #%plain-app from scheme/base.
+
+(#%plain-app proc-expr arg-expr ...)
+(#%plain-app)
+The same binding as #%app. (This binding was not present in version 372 and
+earlier.)
+
+(define id expr)
+(define (head args) body ...+)
+ 
+head   =   id
+       |   (head args)
+            
+args   =   arg-id ...
+       |   arg-id ... . rest-id
+Like define in scheme/base, but without support for keyword arguments or
+optional arguments.
+
+(define-syntax id expr)
+(define-syntax (head args) body ...+)
+(define-for-syntax id expr)
+(define-for-syntax (head args) body ...+)
+Like define-syntax and define-for-syntax in scheme/base, but without support
+for keyword arguments or optional arguments (i.e., head is as for define).
+
+(if test-expr then-expr else-expr)
+(if test-expr then-expr)
+Like if in scheme/base, but else-expr defaults to (void).
+
+(cond cond-clause ...)
+(case val-expr case-clause ...)
+Like cond and case in scheme/base, but else and => are recognized as unbound
+identifiers, instead of as the scheme/base bindings.
+
+(fluid-let ([id expr] ...) body ...+)
+Provides a kind of dynamic binding via mutation of the ids.
+
+The fluid-let form first evaluates each expr to obtain an entry value for each
+id. As evaluation moves into body, either though normal evaluation or a
+continuation jump, the current value of each id is swapped with the entry
+value. On exit from body, then the current value and entry value are swapped
+again.
+
+(define-struct id-maybe-super (field-id ...) maybe-inspector-expr)
+ 
+ maybe-inspector-expr   =  
+                        |   expr
+Like define-struct from scheme/base, but with fewer options. Each field is
+implicitly mutable, and the optional expr is analogous to supplying an
+#:inspector expression.
+
+(let-struct id-maybe-super (field-id ...) body ...+)
+Expands to
+
+    (let ()
+      (define-struct id-maybe-super (field-id ...))
+      body ...+)
+
+(require raw-require-spec)
+(require-for-syntax raw-require-spec)
+(require-for-template raw-require-spec)
+(require-for-label raw-require-spec)
+(provide raw-provide-spec)
+(provide-for-syntax raw-provide-spec)
+(provide-for-label raw-provide-spec)
+Like #%require and #%provide. The -for-syntax, -for-template, and -for-label
+forms are translated to #%require and #%provide using for-syntax, for-template,
+and for-label sub-forms, respectively.
+
+(#%datum . datum)
+Expands to 'datum, even if datum is a keyword.
+
+(#%top-interaction . form)
+The same as #%top-interaction in scheme/base.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

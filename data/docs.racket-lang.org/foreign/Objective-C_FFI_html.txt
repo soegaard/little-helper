@@ -1,0 +1,367 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 5  Derived Utilities
+ 5.1  Safe Homogenous Vectors
+ 5.2  Safe C Vectors
+ 5.3  Tagged C Pointer Types
+ 5.4  Defining Bindings
+ 5.5  Allocation and Finalization
+ 5.6  Atomic Execution
+ 5.7  Speculatively Atomic Execution
+ 5.8  Objective-C FFI
+ 5.9  File Security-Guard Checks
+5.10  Windows API Helpers
+► 5.8  Objective-C FFI
+5.8.1  FFI Types and Constants
+5.8.2  Syntactic Forms and Procedures
+5.8.3  Raw Runtime Functions
+5.8.4  Legacy Library
+On this page:
+5.8.1 FFI Types and Constants
+_ id
+_ Class
+_ Protocol
+_ SEL
+_ BOOL
+YES
+NO
+5.8.2 Syntactic Forms and Procedures
+tell
+tellv
+import-class
+import-protocol
+define-objc-class
+define-objc-mixin
+self
+super-tell
+get-ivar
+set-ivar!
+selector
+objc-is-a?
+5.8.3 Raw Runtime Functions
+objc_ look Up Class
+objc_ get Protocol
+sel_ register Name
+objc_ allocate Class Pair
+objc_ register Class Pair
+object_ get Class
+class_ add Method
+class_ add Ivar
+object_ get Instance Variable
+object_ set Instance Variable
+_ Ivar
+objc_ msg Send/ typed
+objc_ msg Send Super/ typed
+make-objc_ super
+_ objc_ super
+5.8.4 Legacy Library
+objc-unsafe!
+[...search manuals...]
+  top← prev  up  next → 
+
+5.8 Objective-C FFI
+
+ (require ffi/unsafe/objc)
+The ffi/unsafe/objc library builds on ffi/unsafe to support interaction with
+Objective-C.
+
+The library supports Objective-C interaction in two layers. The upper layer
+provides syntactic forms for sending messages and deriving subclasses. The
+lower layer is a think wrapper on the Objective-C runtime library functions.
+Even the upper layer is unsafe and relatively low-level compared to normal
+Racket libraries, because argument and result types must be declared in terms
+of FFI C types (see Type Constructors).
+
+5.8.1 FFI Types and Constants
+
+_id : ctype?
+The type of an Objective-C object, an opaque pointer.
+
+_Class : ctype?
+The type of an Objective-C class, which is also an _id.
+
+_Protocol : ctype?
+The type of an Objective-C protocol, which is also an _id.
+
+_SEL : ctype?
+The type of an Objective-C selector, an opaque pointer.
+
+_BOOL : ctype?
+The Objective-C boolean type. Racket values are converted for C in the usual
+way: #f is false and any other value is true. C values are converted to Racket
+booleans.
+
+YES : boolean?
+Synonym for #t
+
+NO : boolean?
+Synonym for #f
+
+5.8.2 Syntactic Forms and Procedures
+
+(tell result-type obj-expr method-id)
+(tell result-type obj-expr arg ...)
+ 
+result-type   =  
+              |   #:type ctype-expr
+                   
+        arg   =   method-id arg-expr
+              |   method-id #:type ctype-expr arg-expr
+Sends a message to the Objective-C object produced by obj-expr. When a type is
+omitted for either the result or an argument, the type is assumed to be _id,
+otherwise it must be specified as an FFI C type (see Type Constructors).
+
+If a single method-id is provided with no arguments, then method-id must not
+end with :; otherwise, each method-id must end with :.
+
+Examples:
+
+    > (tell NSString alloc)
+    #<cpointer:id>
+
+    > (tell (tell NSString alloc)
+            initWithUTF8String: #:type _string "Hello")
+    #<cpointer:id>
+
+
+
+(tellv obj-expr method-id)
+(tellv obj-expr arg ...)
+Like tell, but with a result type _void.
+
+(import-class class-id ...)
+Defines each class-id to the class (a value with FFI type _Class) that is
+registered with the string form of class-id. The registered class is obtained
+via objc_lookUpClass.
+
+Example:
+
+    > (import-class NSString)
+
+
+(import-protocol protocol-id ...)
+Defines each protocol-id to the protocol (a value with FFI type _Protocol) that
+is registered with the string form of protocol-id. The registered class is
+obtained via objc_getProtocol.
+
+Example:
+
+    > (import-protocol NSCoding)
+
+
+(define-objc-class class-id superclass-expr
+  maybe-mixins
+  maybe-protocols
+  [field-id ...]
+  method)
+ 
+   maybe-mixins   =  
+                  |   #:mixins (mixin-expr ...)
+                       
+maybe-protocols   =  
+                  |   #:protocols (protocol-expr ...)
+                       
+         method   =   (mode result-ctype-expr (method-id) body ...+)
+                  |   (mode result-ctype-expr (arg ...+) body ...+)
+                       
+           mode   =   +
+                  |   -
+                  |   +a
+                  |   -a
+                       
+            arg   =   method-id [ctype-expr arg-id]
+Defines class-id as a new, registered Objective-C class (of FFI type _Class).
+The superclass-expr should produce an Objective-C class or #f for the
+superclass. An optional #:mixins clause can specify mixins defined with
+define-objc-mixin. An optional #:protocols clause can specify Objective-C
+protocols to be implemented by the class.
+
+Each field-id is an instance field that holds a Racket value and that is
+initialized to #f when the object is allocated. The field-ids can be referenced
+and set! directly when the method bodys. Outside the object, they can be
+referenced and set with get-ivar and set-ivar!.
+
+Each method adds or overrides a method to the class (when mode is - or -a) to
+be called on instances, or it adds a method to the meta-class (when mode is +
+or +a) to be called on the class itself. All result and argument types must be
+declared using FFI C types (see Type Constructors). When mode is +a or -a, the
+method is called in atomic mode (see _cprocedure).
+
+If a method is declared with a single method-id and no arguments, then
+method-id must not end with :. Otherwise, each method-id must end with :.
+
+If the special method dealloc is declared for mode -, it must not call the
+superclass method, because a (super-tell dealloc) is added to the end of the
+method automatically. In addition, before (super-tell dealloc), space for each
+field-id within the instance is deallocated.
+
+Example:
+
+    > (define-objc-class MyView NSView
+        [bm] ; <- one field
+        (- _racket (swapBitwmap: [_racket new-bm])
+           (begin0 bm (set! bm new-bm)))
+        (- _void (drawRect: [_NSRect exposed-rect])
+           (super-tell drawRect: exposed-rect)
+           (draw-bitmap-region bm exposed-rect))
+        (- _void (dealloc)
+           (when bm (done-with-bm bm))))
+
+
+(define-objc-mixin (class-id superclass-id)
+  maybe-mixins
+  maybe-protocols
+  [field-id ...]
+  method)
+Like define-objc-class, but defines a mixin to be combined with other method
+definitions through either define-objc-class or define-objc-mixin. The
+specified field-ids are not added by the mixin, but must be a subset of the
+field-ids declared for the class to which the methods are added.
+
+self
+When used within the body of a define-objc-class or define-objc-mixin method,
+refers to the object whose method was called. This form cannot be used outside
+of a define-objc-class or define-objc-mixin method.
+
+(super-tell result-type method-id)
+(super-tell result-type arg ...)
+When used within the body of a define-objc-class or define-objc-mixin method,
+calls a superclass method. The result-type and arg sub-forms have the same
+syntax as in tell. This form cannot be used outside of a define-objc-class or
+define-objc-mixin method.
+
+(get-ivar obj-expr field-id)
+Extracts the Racket value of a field in a class created with define-objc-class.
+
+(set-ivar! obj-expr field-id value-expr)
+Sets the Racket value of a field in a class created with define-objc-class.
+
+(selector method-id)
+Returns a selector (of FFI type _SEL) for the string form of method-id.
+
+Example:
+
+    > (tellv button setAction: #:type _SEL (selector terminate:))
+
+
+(objc-is-a? obj cls) → boolean?
+  obj : _id
+  cls : _Class
+Check whether obj is an instance of the Objective-C class cls.
+
+5.8.3 Raw Runtime Functions
+
+(objc_lookUpClass s) → (or/c _Class #f)
+  s : string?
+Finds a registered class by name.
+
+(objc_getProtocol s) → (or/c _Protocol #f)
+  s : string?
+Finds a registered protocol by name.
+
+(sel_registerName s) → _SEL
+  s : string?
+Interns a selector given its name in string form.
+
+(objc_allocateClassPair cls s extra) → _Class
+  cls : _Class
+  s : string?
+  extra : integer?
+Allocates a new Objective-C class.
+
+(objc_registerClassPair cls) → void?
+  cls : _Class
+Registers an Objective-C class.
+
+(object_getClass obj) → _Class
+  obj : _id
+Returns the class of an object (or the meta-class of a class).
+
+(class_addMethod   cls                   
+                   sel                   
+                   imp                   
+                   type                  
+                   type-encoding)   →   boolean?
+  cls : _Class
+  sel : _SEL
+  imp : procedure?
+  type : ctype?
+  type-encoding : string?
+Adds a method to a class. The type argument must be a FFI C type (see Type
+Constructors) that matches both imp and the not Objective-C type string
+type-encoding.
+
+(class_addIvar   cls                   
+                 name                  
+                 size                  
+                 log-alignment         
+                 type-encoding)   →   boolean?
+  cls : _Class
+  name : string?
+  size : exact-nonnegative-integer?
+  log-alignment : exact-nonnegative-integer?
+  type-encoding : string?
+Adds an instance variable to an Objective-C class.
+
+(object_getInstanceVariable obj name)   →   _Ivar   any/c
+  obj : _id
+  name : string?
+Gets the value of an instance variable whose type is _pointer.
+
+(object_setInstanceVariable obj name val) → _Ivar
+  obj : _id
+  name : string?
+  val : any/c
+Sets the value of an instance variable whose type is _pointer.
+
+_Ivar : ctype?
+The type of an Objective-C instance variable, an opaque pointer.
+
+((objc_msgSend/typed types) obj sel arg) → any/c
+  types : (vector/c result-ctype arg-ctype ...)
+  obj : _id
+  sel : _SEL
+  arg : any/c
+Calls the Objective-C method on _id named by sel. The types vector must contain
+one more than the number of supplied args; the first FFI C type in type is used
+as the result type.
+
+((objc_msgSendSuper/typed   types)        
+                            super         
+                            sel           
+                            arg)     →   any/c
+  types : (vector/c result-ctype arg-ctype ...)
+  super : _objc_super
+  sel : _SEL
+  arg : any/c
+Like objc_msgSend/typed, but for a super call.
+
+(make-objc_super id super) → _objc_super
+  id : _id
+  super : _Class
+_objc_super : ctype?
+Constructor and FFI C type use for super calls.
+
+
+
+5.8.4 Legacy Library
+
+ (require ffi/objc)
+The ffi/objc library is a deprecated entry point to ffi/unsafe/objc. It exports
+only safe operations directly, and unsafe operations are imported using
+objc-unsafe!.
+
+(objc-unsafe!)
+Analogous to (unsafe!), makes unsafe bindings of ffi/unsafe/objc available in
+the importing module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

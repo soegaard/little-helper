@@ -1,0 +1,374 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 12  Input and Output
+ 12.1  Ports
+ 12.2  Byte and String Input
+ 12.3  Byte and String Output
+ 12.4  Reading
+ 12.5  Writing
+ 12.6  The Reader
+ 12.7  The Printer
+ 12.8  Pretty Printing
+ 12.9  Reader Extension
+12.10  Printer Extension
+12.11  Serialization
+12.12  Fast-Load Serialization
+▼ 12.1  Ports
+ 12.1.1  Encodings and Locales
+ 12.1.2  Managing Ports
+ 12.1.3  Port Buffers and Positions
+ 12.1.4  Counting Positions, Lines, and Columns
+ 12.1.5  File Ports
+ 12.1.6  String Ports
+ 12.1.7  Pipes
+ 12.1.8  Structures as Ports
+ 12.1.9  Custom Ports
+12.1.10  More Port Constructors, Procedures, and Events
+On this page:
+open-input-file
+open-output-file
+open-input-output-file
+call-with-input-file
+call-with-output-file
+call-with-input-file*
+call-with-output-file*
+with-input-from-file
+with-output-to-file
+port-try-file-lock?
+port-file-unlock
+port-file-identity
+[...search manuals...]
+  top← prev  up  next → 
+
+12.1.5 File Ports
+
+A port created by open-input-file, open-output-file, subprocess, and related
+functions is a file-stream port. The initial input, output, and error ports in
+racket are also file-stream ports. The file-stream-port? predicate recognizes
+file-stream ports.
+
+When an input or output file-stream port is created, it is placed into the
+management of the current custodian (see Custodians).
+
+(open-input-file path [#:mode mode-flag]) → input-port?
+  path : path-string?
+  mode-flag : (or/c 'binary 'text) = 'binary
+Opens the file specified by path for input. The mode-flag argument specifies
+how the file’s bytes are translated on input:
+
+  • 'binary — bytes are returned from the port exactly as they are read from
+    the file.
+
+  • 'text — return and linefeed bytes (10 and 13) as read from the file are
+    filtered by the port in a platform specific manner:
+
+      □ Unix and Mac OS X: no filtering occurs.
+
+      □ Windows: a return-linefeed combination from a file is returned by the
+        port as a single linefeed; no filtering occurs for return bytes that
+        are not followed by a linefeed, or for a linefeed that is not preceded
+        by a return.
+
+On Windows, 'text mode works only with regular files; attempting to use 'text
+with other kinds of files triggers an exn:fail:filesystem exception.
+
+Otherwise, the file specified by path need not be a regular file. It might be a
+device that is connected through the filesystem, such as "aux" on Windows or "/
+dev/null" on Unix. In all cases, the port is buffered by default.
+
+The port produced by open-input-file should be explicitly closed, either though
+close-input-port or indirectly via custodian-shutdown-all, to release the
+OS-level file handle. The input port will not be closed automatically if it is
+otherwise available for garbage collection (see Garbage Collection); a will
+could be associated with an input port to close it more automatically (see
+Wills and Executors).
+
+A path value that is the cleansed version of path is used as the name of the
+opened port.
+
+Examples:
+
+    > (with-output-to-file some-file
+        (lambda () (printf "hello world")))
+    (define in (open-input-file some-file))
+    > (read-string 11 in)
+    "hello world"
+
+    > (close-input-port in)
+
+
+(open-output-file    path                          
+                   [ #:mode mode-flag              
+                     #:exists exists-flag])   →   output-port?
+  path : path-string?
+  mode-flag : (or/c 'binary 'text) = 'binary
+                     (or/c 'error 'append 'update 'can-update
+   exists-flag   :         'replace 'truncate
+                           'must-truncate 'truncate/replace)
+                 =   'error
+Opens the file specified by path for output. The mode-flag argument specifies
+how bytes written to the port are translated when written to the file:
+
+  • 'binary — bytes are written to the file exactly as written to the port.
+
+  • 'text — on Windows, a linefeed byte (10) written to the port is translated
+    to a return-linefeed combination in the file; no filtering occurs for
+    returns.
+
+On Windows, 'text mode works only with regular files; attempting to use 'text
+with other kinds of files triggers an exn:fail:filesystem exception.
+
+The exists-flag argument specifies how to handle/require files that already
+exist:
+
+  • 'error — raise exn:fail:filesystem if the file exists.
+
+  • 'replace — remove the old file, if it exists, and write a new one.
+
+  • 'truncate — remove all old data, if the file exists.
+
+  • 'must-truncate — remove all old data in an existing file; if the file does
+    not exist, the exn:fail:filesystem exception is raised.
+
+  • 'truncate/replace — try 'truncate; if it fails (perhaps due to file
+    permissions), try 'replace.
+
+  • 'update — open an existing file without truncating it; if the file does not
+    exist, the exn:fail:filesystem exception is raised. Use file-position to
+    change the current read/write position.
+
+  • 'can-update — open an existing file without truncating it, or create the
+    file if it does not exist.
+
+  • 'append — append to the end of the file, whether it already exists or not;
+    on Windows, 'append is equivalent to 'update, except that the file is not
+    required to exist, and the file position is immediately set to the end of
+    the file after opening it.
+
+The file specified by path need not be a regular file. It might be a device
+that is connected through the filesystem, such as "aux" on Windows or "/dev/
+null" on Unix. The output port is block-buffered by default, unless the file
+corresponds to a terminal, in which case it is line-buffered by default.
+
+The port produced by open-output-file should be explicitly closed, either
+though close-output-port or indirectly via custodian-shutdown-all, to release
+the OS-level file handle. The output port will not be closed automatically if
+it is otherwise available for garbage collection (see Garbage Collection); a
+will could be associated with an output port to close it more automatically
+(see Wills and Executors).
+
+A path value that is the cleansed version of path is used as the name of the
+opened port.
+
+Examples:
+
+    (define out (open-output-file some-file))
+    > (write "hello world" out)
+    > (close-output-port out)
+
+
+(open-input-output-file    path                    
+                         [ #:mode mode-flag        
+                           #:exists exists-flag])  
+  →   input-port?   output-port?
+  path : path-string?
+  mode-flag : (or/c 'binary 'text) = 'binary
+   exists-flag   :   (or/c 'error 'append 'update 'can-update
+                           'replace 'truncate 'truncate/replace)
+                 =   'error
+Like open-output-file, but producing two values: an input port and an output
+port. The two ports are connected in that they share the underlying file
+device. This procedure is intended for use with special devices that can be
+opened by only one process, such as "COM1" in Windows. For regular files,
+sharing the device can be confusing. For example, using one port does not
+automatically flush the other port’s buffer, and reading or writing in one port
+moves the file position (if any) for the other port. For regular files, use
+separate open-input-file and open-output-file calls to avoid confusion.
+
+(call-with-input-file    path                      
+                         proc                      
+                       [ #:mode mode-flag])   →   any
+  path : path-string?
+  proc : (input-port? . -> . any)
+  mode-flag : (or/c 'binary 'text) = 'binary
+Calls open-input-file with the path and mode-flag arguments, and passes the
+resulting port to proc. The result of proc is the result of the
+call-with-input-file call, but the newly opened port is closed when proc
+returns.
+
+Examples:
+
+    > (with-output-to-file some-file
+        (lambda () (printf "text in a file")))
+    > (call-with-input-file some-file
+        (lambda (in) (read-string 14 in)))
+    "text in a file"
+
+
+
+(call-with-output-file    path                          
+                          proc                          
+                        [ #:mode mode-flag              
+                          #:exists exists-flag])   →   any
+  path : path-string?
+  proc : (output-port? . -> . any)
+  mode-flag : (or/c 'binary 'text) = 'binary
+   exists-flag   :   (or/c 'error 'append 'update
+                           'replace 'truncate 'truncate/replace)
+                 =   'error
+Analogous to call-with-input-file, but passing path, mode-flag and exists-flag
+to open-output-file.
+
+Examples:
+
+    > (call-with-output-file some-file
+        (lambda (out)
+          (write 'hello out)))
+    > (call-with-input-file some-file
+        (lambda (in)
+          (read-string 5 in)))
+    "hello"
+
+
+
+(call-with-input-file*    path                      
+                          proc                      
+                        [ #:mode mode-flag])   →   any
+  path : path-string?
+  proc : (input-port? . -> . any)
+  mode-flag : (or/c 'binary 'text) = 'binary
+Like call-with-input-file, but the newly opened port is closed whenever control
+escapes the dynamic extent of the call-with-input-file* call, whether through
+proc’s return, a continuation application, or a prompt-based abort.
+
+(call-with-output-file*    path                          
+                           proc                          
+                         [ #:mode mode-flag              
+                           #:exists exists-flag])   →   any
+  path : path-string?
+  proc : (output-port? . -> . any)
+  mode-flag : (or/c 'binary 'text) = 'binary
+   exists-flag   :   (or/c 'error 'append 'update
+                           'replace 'truncate 'truncate/replace)
+                 =   'error
+Like call-with-output-file, but the newly opened port is closed whenever
+control escapes the dynamic extent of the call-with-output-file* call, whether
+through proc’s return, a continuation application, or a prompt-based abort.
+
+(with-input-from-file    path                      
+                         thunk                     
+                       [ #:mode mode-flag])   →   any
+  path : path-string?
+  thunk : (-> any)
+  mode-flag : (or/c 'binary 'text) = 'binary
+Like call-with-input-file*, but instead of passing the newly opened port to the
+given procedure argument, the port is installed as the current input port (see
+current-input-port) using parameterize around the call to thunk.
+
+Examples:
+
+    > (with-output-to-file some-file
+        (lambda () (printf "hello")))
+    > (with-input-from-file some-file
+        (lambda () (read-string 5)))
+    "hello"
+
+
+
+(with-output-to-file    path                          
+                        thunk                         
+                      [ #:mode mode-flag              
+                        #:exists exists-flag])   →   any
+  path : path-string?
+  thunk : (-> any)
+  mode-flag : (or/c 'binary 'text) = 'binary
+   exists-flag   :   (or/c 'error 'append 'update
+                           'replace 'truncate 'truncate/replace)
+                 =   'error
+Like call-with-output-file*, but instead of passing the newly opened port to
+the given procedure argument, the port is installed as the current output port
+(see current-output-port) using parameterize around the call to thunk.
+
+Examples:
+
+    > (with-output-to-file some-file
+        (lambda () (printf "hello")))
+    > (with-input-from-file some-file
+        (lambda () (read-string 5)))
+    "hello"
+
+
+
+(port-try-file-lock? port mode) → boolean?
+  port : file-stream-port?
+  mode : (or/c 'shared 'exclusive)
+Attempts to acquire a lock on the file using the current platform’s facilities
+for file locking. Multiple processes can acquire a 'shared lock on a file, but
+at most one process can hold an 'exclusive lock, and 'shared and 'exclusive
+locks are mutually exclusive.
+
+The result is #t if the requested lock is acquired, #f otherwise. When a lock
+is acquired, it is held until either it is released with port-file-unlock or
+the port is closed (perhaps because the process terminates).
+
+Depending on the platform, locks may be merely advisory (i.e., locks affect
+only the ability of processes to acquire locks) or they may correspond to
+mandatory locks that prevent reads and writes to the locked file. Specifically,
+locks are mandatory on Windows and advisory on other platforms.
+
+Typically, locking is supported only for file ports, and attempting to acquire
+a lock with other kinds of file-stream ports raises an exn:fail:filesystem
+exception. Locking is not supported on Solaris, where the exn:fail:unsupported
+exception is raised.
+
+(port-file-unlock port) → void?
+  port : file-stream-port?
+Releases a lock held by the current process on the file of port.
+
+(port-file-identity port) → exact-positive-integer?
+  port : file-stream-port?
+Returns a number that represents the identity of the device and file read or
+written by port. For two ports whose open times overlap, the result of
+port-file-identity is the same for both ports if and only if the ports access
+the same device and file. For ports whose open times do not overlap, no
+guarantee can be provided for the port identities (even if the ports actually
+access the same file)—except as can be inferred through relationships with
+other ports. If port is closed, the exn:fail exception is raised. On Windows
+95, 98, and Me, if port is connected to a pipe instead of a file, the
+exn:fail:filesystem exception is raised.
+
+Examples:
+
+    (define file1 (open-output-file some-file))
+    (define file2 (open-output-file some-other-file))
+    > (port-file-identity file1)
+    807816704
+
+    > (port-file-identity file2)
+    807817472
+
+    > (close-output-port file1)
+    > (close-output-port file2)
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

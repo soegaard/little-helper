@@ -1,0 +1,74 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 5  Internal APIs
+5.1  Timers
+5.2  Connection Manager
+5.3  Serializable Closures
+5.4  Cache Table
+5.5  MIME Types
+5.6  Serialization Utilities
+5.7  URL Param
+5.8  GZip
+► 5.3  Serializable Closures
+5.3.1  Definition Syntax
+On this page:
+serial-lambda
+serial-case-lambda
+5.3.1 Definition Syntax
+define-closure
+[...search manuals...]
+  top← prev  up  next → 
+
+5.3 Serializable Closures
+
+The defunctionalization process of the Web Language (see Stateless Servlets)
+requires an explicit representation of closures that is serializable.
+
+ (require web-server/lang/serial-lambda)
+
+(serial-lambda formals body ...)
+Returns (lambda formals body ...), except it is serializable.
+
+(serial-case-lambda [formals body ...] ...)
+Returns (case-lambda [formals body ...] ...), except it is serializable.
+
+ (require web-server/private/define-closure)
+
+(define-closure tag formals (free-var ...) body)
+Defines a closure, constructed with make-tag that accepts a closure that
+returns freevar ..., that when invoked with formals executes body.
+
+Here is an example:
+
+    #lang racket
+    (require racket/serialize)
+     
+    (define-closure foo (a b) (x y)
+     (+ (- a b)
+        (* x y)))
+     
+    (define f12 (make-foo (lambda () (values 1 2))))
+    (serialize f12)
+    '((1) 1 (('page . foo:deserialize-info)) 0 () () (0 1 2))
+    (f12 6 7)
+    1
+    (f12 9 1)
+    10
+     
+    (define f45 (make-foo (lambda () (values 4 5))))
+    (serialize f45)
+    '((1) 1 (('page . foo:deserialize-info)) 0 () () (0 4 5))
+    (f45 1 2)
+    19
+    (f45 8 8)
+    20
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,92 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+▼ 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+[...search manuals...]
+  top← prev  up  next → 
+
+1.13 [pousse] Pousse — Tic-Tac-Toe-like Game
+
+            To play Pousse, run the PLT Games program. (Under Unix, it’s called
+            plt-games).
+
+Pousse (French for “push,” pronounced “poo-ss”) is a 2 person game, played on
+an N by N board (usually 4 by 4). Initially the board is empty, and the players
+take turns inserting one marker of their color (X or O) on the board. The color
+X always goes first. The columns and rows are numbered from 1 to N, starting
+from the top left, as in:
+
+      1 2 3 4
+
+     +-+-+-+-+
+
+   1 | | | | |
+
+     +-+-+-+-+
+
+   2 | | | | |
+
+     +-+-+-+-+
+
+   3 | | | | |
+
+     +-+-+-+-+
+
+   4 | | | | |
+
+     +-+-+-+-+
+
+
+A marker can only be inserted on the board by sliding it onto a particular row
+from the left or from the right, or onto a particular column from the top or
+from the bottom. So there are 4*N possible “moves” (ways to insert a marker).
+They are named Li, Ri, Ti, and Bi respectively, where i is the number of the
+row or column where the insertion takes place.
+
+When a marker is inserted, there may be a marker on the square where the
+insertion takes place. In this case, all markers on the insertion row or column
+from the insertion square up to the first empty square are moved one square
+further to make room for the inserted marker. Note that the last marker of the
+row or column will be pushed off the board (and must be removed from play) if
+there are no empty squares on the insertion row or column.
+
+A row or a column is a straight of a given color if it contains N markers of
+the given color.
+
+The game ends either when an insertion
+
+  • repeats a previous configuration of the board; in this case the player who
+    inserted the marker LOSES.
+
+  • creates a configuration with more straights of one color than straights of
+    the other color; the player whose color is dominant (in number of
+    straights) WINS.
+
+A game always leads to a win by one of the two players. Draws are impossible.
+
+This game is from the 1998 ICFP programming contest.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

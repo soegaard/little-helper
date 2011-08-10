@@ -1,0 +1,268 @@
+▼  Redex: Practical Semantics Engineering
+1  Patterns
+2  Terms
+3  Languages
+4  Reduction Relations
+5  Metafunctions and Relations
+6  Testing
+7  GUI
+8  Typesetting
+   Index
+On this page:
+redex-match
+match?
+match-bindings
+bind
+caching-enabled?
+set-cache-size!
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Patterns
+
+ (require redex/reduction-semantics)
+
+This section covers Redex’s pattern language, used in many of Redex’s forms.
+
+Note that pattern matching is caching (including caching the results of
+side-conditions). This means that once a pattern has matched a given term,
+Redex assumes that it will always match that term.
+
+This is the grammar for the Redex pattern language. Non-terminal references are
+wrapped with angle brackets; otherwise identifiers in the grammar are
+terminals.
+
+           pattern   =   any
+                     |   number
+                     |   natural
+                     |   integer
+                     |   real
+                     |   string
+                     |   variable
+                     |   (variable-except <id> ...)
+                     |   (variable-prefix <id>)
+                     |   variable-not-otherwise-mentioned
+                     |   hole
+                     |   symbol
+                     |   (name <id> <pattern>)
+                     |   (in-hole <pattern> <pattern>)
+                     |   (hide-hole <pattern>)
+                     |   (side-condition <pattern> guard)
+                     |   (cross <id>)
+                     |   (<pattern-sequence> ...)
+                     |   <racket-constant>
+                          
+  pattern-sequence   =   <pattern>
+                     |   ... ; literal ellipsis
+                     |   ..._id
+
+  • The any pattern matches any sexpression. This pattern may also be suffixed
+    with an underscore and another identifier, in which case they bind the full
+    name (as if it were an implicit name pattern) and match the portion before
+    the underscore.
+
+  • The number pattern matches any number. This pattern may also be suffixed
+    with an underscore and another identifier, in which case they bind the full
+    name (as if it were an implicit name pattern) and match the portion before
+    the underscore.
+
+  • The natural pattern matches any exact non-negative integer. This pattern
+    may also be suffixed with an underscore and another identifier, in which
+    case they bind the full name (as if it were an implicit name pattern) and
+    match the portion before the underscore.
+
+  • The integer pattern matches any exact integer. This pattern may also be
+    suffixed with an underscore and another identifier, in which case they bind
+    the full name (as if it were an implicit name pattern) and match the
+    portion before the underscore.
+
+  • The real pattern matches any real number. This pattern may also be suffixed
+    with an underscore and another identifier, in which case they bind the full
+    name (as if it were an implicit name pattern) and match the portion before
+    the underscore.
+
+  • The string pattern matches any string. This pattern may also be suffixed
+    with an underscore and another identifier, in which case they bind the full
+    name (as if it were an implicit name pattern) and match the portion before
+    the underscore.
+
+  • The variable pattern matches any symbol. This pattern may also be suffixed
+    with an underscore and another identifier, in which case they bind the full
+    name (as if it were an implicit name pattern) and match the portion before
+    the underscore.
+
+  • The variable-except pattern matches any symbol except those listed in its
+    argument. This is useful for ensuring that keywords in the language are not
+    accidentally captured by variables.
+
+  • The variable-prefix pattern matches any symbol that begins with the given
+    prefix.
+
+  • The variable-not-otherwise-mentioned pattern matches any symbol except
+    those that are used as literals elsewhere in the language.
+
+  • The hole pattern matches anything when inside the first argument to an
+    in-hole pattern. Otherwise, it matches only a hole.
+
+  • The symbol pattern stands for a literal symbol that must match exactly,
+    unless it is the name of a non-terminal in a relevant language or contains
+    an underscore.
+
+    If it is a non-terminal, it matches any of the right-hand sides of that
+    non-terminal. If the non-terminal appears twice in a single pattern, then
+    the match is constrained to expressions that are the same, unless the
+    pattern is part of a grammar, in which case there is no constraint.
+
+    If the symbol is a non-terminal followed by an underscore, for example e_1,
+    it is implicitly the same as a name pattern that matches only the
+    non-terminal, (name e_1 e) for the example. Accordingly, repeated uses of
+    the same name are constrainted to match the same expression.
+
+    If the symbol is a non-terminal followed by _!_, for example e_!_1, it is
+    also treated as a pattern, but repeated uses of the same pattern are
+    constrained to be different. For example, this pattern:
+
+        (e_!_1 e_!_1 e_!_1)
+
+    matches lists of three es, but where all three of them are distinct.
+
+    Unlike a _ pattern, the _!_ patterns do not bind names.
+
+    If _ names and _!_ are mixed, they are treated as separate. That is, this
+    pattern (e_1 e_!_1) matches just the same things as (e e), but the second
+    doesn’t bind any variables.
+
+    If the symbol otherwise has an underscore, it is an error.
+
+  • The pattern (name symbol pattern) matches pattern and binds using it to the
+    name symbol.
+
+  • The (in-hole pattern pattern) pattern matches the first pattern. This match
+    must include exactly one match against the second pattern. If there are
+    zero matches or more than one match, an exception is raised.
+
+    When matching the first argument of in-hole, the hole pattern matches any
+    sexpression. Then, the sexpression that matched the hole pattern is used to
+    match against the second pattern.
+
+  • The (hide-hole pattern) pattern matches what the embedded pattern matches
+    but if the pattern matcher is looking for a decomposition, it ignores any
+    holes found in that pattern.
+
+  • The (side-condition pattern guard) pattern matches what the embedded
+    pattern matches, and then the guard expression is evaluated. If it returns
+    #f, the pattern fails to match, and if it returns anything else, the
+    pattern matches. Any occurrences of name in the pattern (including those
+    implicitly there via _ pattersn) are bound using term-let in the guard.
+
+  • The (cross symbol) pattern is used for the compatible closure functions. If
+    the language contains a non-terminal with the same name as symbol, the
+    pattern (cross symbol) matches the context that corresponds to the
+    compatible closure of that non-terminal.
+
+  • The (pattern-sequence ...) pattern matches a sexpression list, where each
+    pattern-sequence element matches an element of the list. In addition, if a
+    list pattern contains an ellipsis, the ellipsis is not treated as a
+    literal, instead it matches any number of duplications of the pattern that
+    came before the ellipses (including 0). Furthermore, each (name symbol
+    pattern) in the duplicated pattern binds a list of matches to symbol,
+    instead of a single match. (A nested duplicated pattern creates a list of
+    list matches, etc.) Ellipses may be placed anywhere inside the row of
+    patterns, except in the first position or immediately after another
+    ellipses.
+
+    Multiple ellipses are allowed. For example, this pattern:
+
+        ((name x a) ... (name y a) ...)
+
+    matches this sexpression:
+
+        (term (a a))
+
+    three different ways. One where the first a in the pattern matches nothing,
+    and the second matches both of the occurrences of a, one where each named
+    pattern matches a single a and one where the first matches both and the
+    second matches nothing.
+
+    If the ellipses is named (ie, has an underscore and a name following it,
+    like a variable may), the pattern matcher records the length of the list
+    and ensures that any other occurrences of the same named ellipses must have
+    the same length.
+
+    As an example, this pattern:
+
+        ((name x a) ..._1 (name y a) ..._1)
+
+    only matches this sexpression:
+
+        (term (a a))
+
+    one way, with each named pattern matching a single a. Unlike the above, the
+    two patterns with mismatched lengths is ruled out, due to the underscores
+    following the ellipses.
+
+    Also, like underscore patterns above, if an underscore pattern begins with
+    ..._!_, then the lengths must be different.
+
+    Thus, with the pattern:
+
+        ((name x a) ..._!_1 (name y a) ..._!_1)
+
+    and the expression
+
+        (term (a a))
+
+    two matches occur, one where x is bound to '() and y is bound to '(a a) and
+    one where x is bound to '(a a) and y is bound to '().
+
+(redex-match lang pattern any)
+(redex-match lang pattern)
+If redex-match receives three arguments, it matches the pattern (in the
+language) against its third argument. If it matches, this returns a list of
+match structures describing the matches (see match? and match-bindings). If it
+fails, it returns #f.
+
+If redex-match receives only two arguments, it builds a procedure for
+efficiently testing if expressions match the pattern, using the language lang.
+The procedures accepts a single expression and if the expresion matches, it
+returns a list of match structures describing the matches. If the match fails,
+the procedure returns #f.
+
+(match? val) → boolean?
+  val : any/c
+Determines if a value is a match structure.
+
+(match-bindings m) → (listof bind?)
+  m : match?
+This returns a list of bind structs that binds the pattern variables in this
+match.
+
+(struct   bind (name exp)
+          #:extra-constructor-name make-bind)
+  name : symbol?
+  exp : any/c
+Instances of this struct are returned by redex-match. Each bind associates a
+name with an s-expression from the language, or a list of such s-expressions,
+if the (name ...) clause is followed by an ellipsis. Nested ellipses produce
+nested lists.
+
+(caching-enabled?) → boolean?
+(caching-enabled? on?) → void?
+  on? : boolean?
+When this parameter is #t (the default), Redex caches the results of pattern
+matching and metafunction evaluation. There is a separate cache for each
+pattern and metafunction; when one fills (see set-cache-size!), Redex evicts
+all of the entries in that cache.
+
+Caching should be disabled when matching a pattern that depends on values other
+than the in-scope pattern variables or evaluating a metafunction that reads or
+writes mutable external state.
+
+(set-cache-size! size) → void?
+  size : positive-integer?
+Changes the size of the per-pattern and per-metafunction caches. The default
+size is 350.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

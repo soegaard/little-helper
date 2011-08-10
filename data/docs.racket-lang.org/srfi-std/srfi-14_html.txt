@@ -1,0 +1,1222 @@
+Title
+
+SRFI 14: Character-set Library
+
+Author
+
+Olin Shivers
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access the discussion via the
+archive of the mailing list.
+
+  • Received: 1999/10/17
+  • Draft: 1999/10/30-1999/12/30
+  • Revised: 2000/04/30
+  • Revised: 2000/04/30
+  • Revised: 2000/06/09
+  • Revised: 2000/12/23
+
+Table of contents
+
+  • Abstract
+  • Variable index
+  • Rationale
+      □ "Linear-update" operations
+      □ Extra-SRFI recommendations
+  • Specification
+      □ General procedures
+      □ Iterating over character sets
+      □ Creating character sets
+      □ Querying character sets
+      □ Character set algebra
+      □ Standard character sets
+  • Unicode, Latin-1 and ASCII definitions of the standard character sets
+  • Reference implementation
+  • Acknowledgements
+  • References & Links
+  • Copyright
+
+Abstract
+
+The ability to efficiently represent and manipulate sets of characters is an
+unglamorous but very useful capability for text-processing code -- one that
+tends to pop up in the definitions of other libraries. Hence it is useful to
+specify a general substrate for this functionality early. This SRFI defines a
+general library that provides this functionality. It is accompanied by a
+reference implementation for the spec. The reference implementation is fairly
+efficient, straightforwardly portable, and has a "free software" copyright. The
+implementation is tuned for "small" 7 or 8 bit character types, such as ASCII
+or Latin-1; the data structures and algorithms would have to be altered for
+larger 16 or 32 bit character types such as Unicode -- however, the specs have
+been carefully designed with these larger character types in mind. Several
+forthcoming SRFIs can be defined in terms of this one:
+
+  • string library
+  • delimited input procedures (e.g., read-line)
+  • regular expressions
+
+Variable Index
+
+Here is the complete set of bindings -- procedural and otherwise -- exported by
+this library. In a Scheme system that has a module or package system, these
+procedures should be contained in a module named "char-set-lib".
+
+Predicates & comparison
+
+    char-set? char-set= char-set<= char-set-hash
+
+Iterating over character sets
+
+    char-set-cursor char-set-ref char-set-cursor-next end-of-char-set?
+    char-set-fold char-set-unfold char-set-unfold!
+    char-set-for-each char-set-map
+
+Creating character sets
+
+    char-set-copy char-set
+
+    list->char-set  string->char-set
+    list->char-set! string->char-set!
+
+    char-set-filter  ucs-range->char-set
+    char-set-filter! ucs-range->char-set!
+
+    ->char-set
+
+Querying character sets
+
+    char-set->list char-set->string
+    char-set-size char-set-count char-set-contains?
+    char-set-every char-set-any
+
+Character-set algebra
+
+    char-set-adjoin  char-set-delete
+    char-set-adjoin! char-set-delete!
+
+    char-set-complement  char-set-union  char-set-intersection
+    char-set-complement! char-set-union! char-set-intersection!
+
+    char-set-difference  char-set-xor  char-set-diff+intersection
+    char-set-difference! char-set-xor! char-set-diff+intersection!
+
+Standard character sets
+
+    char-set:lower-case  char-set:upper-case  char-set:title-case
+    char-set:letter      char-set:digit       char-set:letter+digit
+    char-set:graphic     char-set:printing    char-set:whitespace
+    char-set:iso-control char-set:punctuation char-set:symbol
+    char-set:hex-digit   char-set:blank       char-set:ascii
+    char-set:empty       char-set:full
+
+
+Rationale
+
+The ability to efficiently manipulate sets of characters is quite useful for
+text-processing code. Encapsulating this functionality in a general,
+efficiently implemented library can assist all such code. This library defines
+a new data structure to represent these sets, called a "char-set." The char-set
+type is distinct from all other types.
+
+This library is designed to be portable across implementations that use
+different character types and representations, especially ASCII, Latin-1 and
+Unicode. Some effort has been made to preserve compatibility with Java in the
+Unicode case (see the definition of char-set:whitespace for the single real
+deviation).
+
+Linear-update operations
+
+The procedures of this SRFI, by default, are "pure functional" -- they do not
+alter their parameters. However, this SRFI defines a set of "linear-update"
+procedures which have a hybrid pure-functional/side-effecting semantics: they
+are allowed, but not required, to side-effect one of their parameters in order
+to construct their result. An implementation may legally implement these
+procedures as pure, side-effect-free functions, or it may implement them using
+side effects, depending upon the details of what is the most efficient or
+simple to implement in terms of the underlying representation.
+
+The linear-update routines all have names ending with "!".
+
+Clients of these procedures may not rely upon these procedures working by side
+effect. For example, this is not guaranteed to work:
+
+(let* ((cs1 (char-set #\a #\b #\c))      ; cs1 = {a,b,c}.
+       (cs2 (char-set-adjoin! cs1 #\d))) ; Add d to {a,b,c}.
+  cs1) ; Could be either {a,b,c} or {a,b,c,d}.
+
+However, this is well-defined:
+
+(let ((cs (char-set #\a #\b #\c)))
+  (char-set-adjoin! cs #\d)) ; Add d to {a,b,c}.
+
+So clients of these procedures write in a functional style, but must
+additionally be sure that, when the procedure is called, there are no other
+live pointers to the potentially-modified character set (hence the term "linear
+update").
+
+There are two benefits to this convention:
+
+  • Implementations are free to provide the most efficient possible
+    implementation, either functional or side-effecting.
+  • Programmers may nonetheless continue to assume that character sets are
+    purely functional data structures: they may be reliably shared without
+    needing to be copied, uniquified, and so forth.
+
+Note that pure functional representations are the right thing for ASCII- or
+Latin-1-based Scheme implementations, since a char-set can be represented in an
+ASCII Scheme with 4 32-bit words. Pure set-algebra operations on such a
+representation are very fast and efficient. Programmers who code using
+linear-update operations are guaranteed the system will provide the best
+implementation across multiple platforms.
+
+In practice, these procedures are most useful for efficiently constructing
+character sets in a side-effecting manner, in some limited local context,
+before passing the character set outside the local construction scope to be
+used in a functional manner.
+
+Scheme provides no assistance in checking the linearity of the potentially
+side-effected parameters passed to these functions --- there's no linear type
+checker or run-time mechanism for detecting violations. (But sophisticated
+programming environments, such as DrScheme, might help.)
+
+Extra-SRFI recommendations
+
+Users are cautioned that the R5RS predicates
+char-alphabetic?
+char-numeric?
+char-whitespace?
+char-upper-case?
+char-lower-case?
+
+may or may not be in agreement with the SRFI 14 base character sets
+char-set:letter
+char-set:digit
+char-set:whitespace
+char-set:upper-case
+char-set:lower-case
+
+Implementors are strongly encouraged to bring these predicates into agreement
+with the base character sets of this SRFI; not to do so risks major confusion.
+
+Specification
+
+In the following procedure specifications:
+
+  • A cs parameter is a character set.
+  • An s parameter is a string.
+  • A char parameter is a character.
+  • A char-list parameter is a list of characters.
+  • A pred parameter is a unary character predicate procedure, returning a true
+    /false value when applied to a character.
+  • An obj parameter may be any value at all.
+
+Passing values to procedures with these parameters that do not satisfy these
+types is an error.
+
+Unless otherwise noted in the specification of a procedure, procedures always
+return character sets that are distinct (from the point of view of the
+linear-update operations) from the parameter character sets. For example,
+char-set-adjoin is guaranteed to provide a fresh character set, even if it is
+not given any character parameters.
+
+Parameters given in square brackets are optional. Unless otherwise noted in the
+text describing the procedure, any prefix of these optional parameters may be
+supplied, from zero arguments to the full list. When a procedure returns
+multiple values, this is shown by listing the return values in square brackets,
+as well. So, for example, the procedure with signature
+
+halts? f [x init-store] -> [boolean integer]
+
+would take one (f), two (f, x) or three (f, x, init-store) input parameters,
+and return two values, a boolean and an integer.
+
+A parameter followed by "..." means zero-or-more elements. So the procedure
+with the signature
+
+sum-squares x ...  -> number
+
+takes zero or more arguments (x ...), while the procedure with signature
+
+spell-check doc dict[1] dict[2] ... -> string-list
+
+takes two required parameters (doc and dict[1]) and zero or more optional
+parameters (dict[2] ...).
+
+General procedures
+
+char-set? obj -> boolean
+    Is the object obj a character set?
+char-set= cs[1] ... -> boolean
+    Are the character sets equal?
+
+    Boundary cases:
+
+    (char-set=) => true
+    (char-set= cs) => true
+
+    Rationale: transitive binary relations are generally extended to n-ary
+    relations in Scheme, which enables clearer, more concise code to be
+    written. While the zero-argument and one-argument cases will almost
+    certainly not arise in first-order uses of such relations, they may well
+    arise in higher-order cases or macro-generated code. E.g., consider
+
+    (apply char-set= cset-list)
+
+    This is well-defined if the list is empty or a singleton list. Hence we
+    extend these relations to any number of arguments. Implementors have
+    reported actual uses of n-ary relations in higher-order cases allowing for
+    fewer than two arguments. The way of Scheme is to handle the general case;
+    we provide the fully general extension.
+
+    A counter-argument to this extension is that R5RS's transitive binary
+    arithmetic relations (=, <, etc.) require at least two arguments, hence
+    this decision is a break with the prior convention -- although it is at
+    least one that is backwards-compatible.
+char-set<= cs[1] ... -> boolean
+    Returns true if every character set cs[i] is a subset of character set cs
+    [i+1].
+
+    Boundary cases:
+
+    (char-set<=) => true
+    (char-set<= cs) => true
+
+    Rationale: See char-set= for discussion of zero- and one-argument
+    applications. Consider testing a list of char-sets for monotonicity with
+
+    (apply char-set<= cset-list)
+
+char-set-hash cs [bound] -> integer
+    Compute a hash value for the character set cs. Bound is a non-negative
+    exact integer specifying the range of the hash function. A positive value
+    restricts the return value to the range [0,bound).
+
+    If bound is either zero or not given, the implementation may use an
+    implementation-specific default value, chosen to be as large as is
+    efficiently practical. For instance, the default range might be chosen for
+    a given implementation to map all strings into the range of integers that
+    can be represented with a single machine word.
+
+    Invariant:
+
+    (char-set= cs[1] cs[2]) => (= (char-set-hash cs[1] b) (char-set-hash cs[2] b))
+
+    A legal but nonetheless discouraged implementation:
+
+    (define (char-set-hash cs . maybe-bound) 1)
+
+    Rationale: allowing the user to specify an explicit bound simplifies user
+    code by removing the mod operation that typically accompanies every hash
+    computation, and also may allow the implementation of the hash function to
+    exploit a reduced range to efficiently compute the hash value. E.g., for
+    small bounds, the hash function may be computed in a fashion such that
+    intermediate values never overflow into bignum integers, allowing the
+    implementor to provide a fixnum-specific "fast path" for computing the
+    common cases very rapidly.
+
+Iterating over character sets
+
+char-set-cursor cset -> cursor
+char-set-ref cset cursor -> char
+char-set-cursor-next cset cursor -> cursor
+end-of-char-set? cursor -> boolean
+    Cursors are a low-level facility for iterating over the characters in a
+    set. A cursor is a value that indexes a character in a char set.
+    char-set-cursor produces a new cursor for a given char set. The set element
+    indexed by the cursor is fetched with char-set-ref. A cursor index is
+    incremented with char-set-cursor-next; in this way, code can step through
+    every character in a char set. Stepping a cursor "past the end" of a char
+    set produces a cursor that answers true to end-of-char-set?. It is an error
+    to pass such a cursor to char-set-ref or to char-set-cursor-next.
+
+    A cursor value may not be used in conjunction with a different character
+    set; if it is passed to char-set-ref or char-set-cursor-next with a
+    character set other than the one used to create it, the results and effects
+    are undefined.
+
+    Cursor values are not necessarily distinct from other types. They may be
+    integers, linked lists, records, procedures or other values. This license
+    is granted to allow cursors to be very "lightweight" values suitable for
+    tight iteration, even in fairly simple implementations.
+
+    Note that these primitives are necessary to export an iteration facility
+    for char sets to loop macros.
+
+    Example:
+
+    (define cs (char-set #\G #\a #\T #\e #\c #\h))
+
+    ;; Collect elts of CS into a list.
+    (let lp ((cur (char-set-cursor cs)) (ans '()))
+      (if (end-of-char-set? cur) ans
+          (lp (char-set-cursor-next cs cur)
+              (cons (char-set-ref cs cur) ans))))
+      => (#\G #\T #\a #\c #\e #\h)
+
+    ;; Equivalently, using a list unfold (from SRFI 1):
+    (unfold-right end-of-char-set?
+                  (curry char-set-ref cs)
+                  (curry char-set-cursor-next cs)
+                  (char-set-cursor cs))
+      => (#\G #\T #\a #\c #\e #\h)
+
+    Rationale: Note that the cursor API's four functions "fit" the functional
+    protocol used by the unfolders provided by the list, string and char-set
+    SRFIs (see the example above). By way of contrast, here is a simpler,
+    two-function API that was rejected for failing this criterion. Besides
+    char-set-cursor, it provided a single function that mapped a cursor and a
+    character set to two values, the indexed character and the next cursor. If
+    the cursor had exhausted the character set, then this function returned
+    false instead of the character value, and another end-of-char-set cursor.
+    In this way, the other three functions of the current API were combined
+    together.
+char-set-fold kons knil cs -> object
+    This is the fundamental iterator for character sets. Applies the function
+    kons across the character set cs using initial state value knil. That is,
+    if cs is the empty set, the procedure returns knil. Otherwise, some element
+    c of cs is chosen; let cs' be the remaining, unchosen characters. The
+    procedure returns
+
+    (char-set-fold kons (kons c knil) cs')
+
+    Examples:
+
+    ;; CHAR-SET-MEMBERS
+    (lambda (cs) (char-set-fold cons '() cs))
+
+    ;; CHAR-SET-SIZE
+    (lambda (cs) (char-set-fold (lambda (c i) (+ i 1)) 0 cs))
+
+    ;; How many vowels in the char set?
+    (lambda (cs)
+      (char-set-fold (lambda (c i) (if (vowel? c) (+ i 1) i))
+                     0 cs))
+
+char-set-unfold  f p g seed [base-cs] -> char-set
+char-set-unfold! f p g seed base-cs -> char-set
+    This is a fundamental constructor for char-sets.
+      □ G is used to generate a series of "seed" values from the initial seed:
+        seed, (g seed), (g^2 seed), (g^3 seed), ...
+      □ P tells us when to stop -- when it returns true when applied to one of
+        these seed values.
+      □ F maps each seed value to a character. These characters are added to
+        the base character set base-cs to form the result; base-cs defaults to
+        the empty set. char-set-unfold! adds the characters to base-cs in a
+        linear-update -- it is allowed, but not required, to side-effect and
+        use base-cs's storage to construct the result.
+
+    More precisely, the following definitions hold, ignoring the
+    optional-argument issues:
+
+    (define (char-set-unfold p f g seed base-cs)
+      (char-set-unfold! p f g seed (char-set-copy base-cs)))
+
+    (define (char-set-unfold! p f g seed base-cs)
+      (let lp ((seed seed) (cs base-cs))
+            (if (p seed) cs                                 ; P says we are done.
+                (lp (g seed)                                ; Loop on (G SEED).
+                    (char-set-adjoin! cs (f seed))))))      ; Add (F SEED) to set.
+
+    (Note that the actual implementation may be more efficient.)
+
+    Examples:
+
+
+    (port->char-set p) = (char-set-unfold eof-object? values
+                                          (lambda (x) (read-char p))
+                                          (read-char p))
+
+    (list->char-set lis) = (char-set-unfold null? car cdr lis)
+
+char-set-for-each proc cs -> unspecified
+    Apply procedure proc to each character in the character set cs. Note that
+    the order in which proc is applied to the characters in the set is not
+    specified, and may even change from one procedure application to another.
+
+    Nothing at all is specified about the value returned by this procedure; it
+    is not even required to be consistent from call to call. It is simply
+    required to be a value (or values) that may be passed to a command
+    continuation, e.g. as the value of an expression appearing as a
+    non-terminal subform of a begin expression. Note that in R5RS, this
+    restricts the procedure to returning a single value; non-R5RS systems may
+    not even provide this restriction.
+char-set-map proc cs -> char-set
+    proc is a char->char procedure. Apply it to all the characters in the
+    char-set cs, and collect the results into a new character set.
+
+    Essentially lifts proc from a char->char procedure to a char-set ->
+    char-set procedure.
+
+    Example:
+
+    (char-set-map char-downcase cset)
+
+
+Creating character sets
+
+char-set-copy cs -> char-set
+    Returns a copy of the character set cs. "Copy" means that if either the
+    input parameter or the result value of this procedure is passed to one of
+    the linear-update procedures described below, the other character set is
+    guaranteed not to be altered.
+
+    A system that provides pure-functional implementations of the
+    linear-operator suite could implement this procedure as the identity
+    function -- so copies are not guaranteed to be distinct by eq?.
+char-set char[1] ... -> char-set
+    Return a character set containing the given characters.
+list->char-set  char-list [base-cs] -> char-set
+list->char-set! char-list base-cs -> char-set
+    Return a character set containing the characters in the list of characters
+    char-list.
+
+    If character set base-cs is provided, the characters from char-list are
+    added to it. list->char-set! is allowed, but not required, to side-effect
+    and reuse the storage in base-cs; list->char-set produces a fresh character
+    set.
+string->char-set  s [base-cs] -> char-set
+string->char-set! s base-cs -> char-set
+    Return a character set containing the characters in the string s.
+
+    If character set base-cs is provided, the characters from s are added to
+    it. string->char-set! is allowed, but not required, to side-effect and
+    reuse the storage in base-cs; string->char-set produces a fresh character
+    set.
+char-set-filter  pred cs [base-cs] -> char-set
+char-set-filter! pred cs base-cs -> char-set
+    Returns a character set containing every character c in cs such that (pred
+    c) returns true.
+
+    If character set base-cs is provided, the characters specified by pred are
+    added to it. char-set-filter! is allowed, but not required, to side-effect
+    and reuse the storage in base-cs; char-set-filter produces a fresh
+    character set.
+
+    An implementation may not save away a reference to pred and invoke it after
+    char-set-filter or char-set-filter! returns -- that is, "lazy," on-demand
+    implementations are not allowed, as pred may have external dependencies on
+    mutable data or have other side-effects.
+
+    Rationale: This procedure provides a means of converting a character
+    predicate into its equivalent character set; the cs parameter allows the
+    programmer to bound the predicate's domain. Programmers should be aware
+    that filtering a character set such as char-set:full could be a very
+    expensive operation in an implementation that provided an extremely large
+    character type, such as 32-bit Unicode. An earlier draft of this library
+    provided a simple predicate->char-set procedure, which was rejected in
+    favor of char-set-filter for this reason.
+ucs-range->char-set  lower upper [error? base-cs] -> char-set
+ucs-range->char-set! lower upper error? base-cs -> char-set
+    Lower and upper are exact non-negative integers; lower <= upper.
+
+    Returns a character set containing every character whose ISO/IEC 10646
+    UCS-4 code lies in the half-open range [lower,upper).
+      □ If the requested range includes unassigned UCS values, these are
+        silently ignored (the current UCS specification has "holes" in the
+        space of assigned codes).
+      □ If the requested range includes "private" or "user space" codes, these
+        are handled in an implementation-specific manner; however, a UCS- or
+        Unicode-based Scheme implementation should pass them through
+        transparently.
+      □ If any code from the requested range specifies a valid, assigned UCS
+        character that has no corresponding representative in the
+        implementation's character type, then (1) an error is raised if error?
+        is true, and (2) the code is ignored if error? is false (the default).
+        This might happen, for example, if the implementation uses ASCII
+        characters, and the requested range includes non-ASCII characters.
+
+    If character set base-cs is provided, the characters specified by the range
+    are added to it. ucs-range->char-set! is allowed, but not required, to
+    side-effect and reuse the storage in base-cs; ucs-range->char-set produces
+    a fresh character set.
+
+    Note that ASCII codes are a subset of the Latin-1 codes, which are in turn
+    a subset of the 16-bit Unicode codes, which are themselves a subset of the
+    32-bit UCS-4 codes. We commit to a specific encoding in this routine,
+    regardless of the underlying representation of characters, so that client
+    code using this library will be portable. I.e., a conformant Scheme
+    implementation may use EBCDIC or SHIFT-JIS to encode characters; it must
+    simply map the UCS characters from the given range into the native
+    representation when possible, and report errors when not possible.
+->char-set x -> char-set
+    Coerces x into a char-set. X may be a string, character or char-set. A
+    string is converted to the set of its constituent characters; a character
+    is converted to a singleton set; a char-set is returned as-is. This
+    procedure is intended for use by other procedures that want to provide
+    "user-friendly," wide-spectrum interfaces to their clients.
+
+Querying character sets
+
+char-set-size cs -> integer
+    Returns the number of elements in character set cs.
+char-set-count pred cs -> integer
+    Apply pred to the chars of character set cs, and return the number of chars
+    that caused the predicate to return true.
+char-set->list cs -> character-list
+    This procedure returns a list of the members of character set cs. The order
+    in which cs's characters appear in the list is not defined, and may be
+    different from one call to another.
+char-set->string cs -> string
+    This procedure returns a string containing the members of character set cs.
+    The order in which cs's characters appear in the string is not defined, and
+    may be different from one call to another.
+char-set-contains? cs char -> boolean
+    This procedure tests char for membership in character set cs.
+
+    The MIT Scheme character-set package called this procedure
+    char-set-member?, but the argument order isn't consistent with the name.
+char-set-every pred cs -> boolean
+char-set-any   pred cs -> boolean
+    The char-set-every procedure returns true if predicate pred returns true of
+    every character in the character set cs. Likewise, char-set-any applies
+    pred to every character in character set cs, and returns the first true
+    value it finds. If no character produces a true value, it returns false.
+    The order in which these procedures sequence through the elements of cs is
+    not specified.
+
+    Note that if you need to determine the actual character on which a
+    predicate returns true, use char-set-any and arrange for the predicate to
+    return the character parameter as its true value, e.g.
+
+    (char-set-any (lambda (c) (and (char-upper-case? c) c))
+                  cs)
+
+
+Character-set algebra
+
+char-set-adjoin cs char[1] ... -> char-set
+char-set-delete cs char[1] ... -> char-set
+    Add/delete the char[i] characters to/from character set cs.
+char-set-adjoin! cs char[1] ... -> char-set
+char-set-delete! cs char[1] ... -> char-set
+    Linear-update variants. These procedures are allowed, but not required, to
+    side-effect their first parameter.
+char-set-complement cs -> char-set
+char-set-union cs[1] ... -> char-set
+char-set-intersection cs[1] ... -> char-set
+char-set-difference cs[1] cs[2] ... -> char-set
+char-set-xor cs[1] ... -> char-set
+char-set-diff+intersection cs[1] cs[2] ... -> [char-set char-set]
+    These procedures implement set complement, union, intersection, difference,
+    and exclusive-or for character sets. The union, intersection and xor
+    operations are n-ary. The difference function is also n-ary, associates to
+    the left (that is, it computes the difference between its first argument
+    and the union of all the other arguments), and requires at least one
+    argument.
+
+    Boundary cases:
+
+    (char-set-union) => char-set:empty
+    (char-set-intersection) => char-set:full
+    (char-set-xor) => char-set:empty
+    (char-set-difference cs) => cs
+
+    char-set-diff+intersection returns both the difference and the intersection
+    of the arguments -- it partitions its first parameter. It is equivalent to
+
+    (values (char-set-difference cs[1] cs[2] ...)
+            (char-set-intersection cs[1] (char-set-union cs[2] ...)))
+
+    but can be implemented more efficiently.
+
+    Programmers should be aware that char-set-complement could potentially be a
+    very expensive operation in Scheme implementations that provide a very
+    large character type, such as 32-bit Unicode. If this is a possibility,
+    sets can be complimented with respect to a smaller universe using
+    char-set-difference.
+char-set-complement! cs -> char-set
+char-set-union! cs[1] cs[2] ... -> char-set
+char-set-intersection! cs[1] cs[2] ... -> char-set
+char-set-difference! cs[1] cs[2] ... -> char-set
+char-set-xor! cs[1] cs[2] ... -> char-set
+char-set-diff+intersection! cs[1] cs[2] cs[3] ... -> [char-set char-set]
+    These are linear-update variants of the set-algebra functions. They are
+    allowed, but not required, to side-effect their first (required) parameter.
+
+    char-set-diff+intersection! is allowed to side-effect both of its two
+    required parameters, cs[1] and cs[2].
+
+Standard character sets
+
+Several character sets are predefined for convenience: 
+char-set:lower-case   Lower-case letters
+char-set:upper-case   Upper-case letters
+char-set:title-case   Title-case letters
+char-set:letter       Letters
+char-set:digit        Digits
+char-set:letter+digit Letters and digits
+char-set:graphic      Printing characters except spaces
+char-set:printing     Printing characters including spaces
+char-set:whitespace   Whitespace characters
+char-set:iso-control  The ISO control characters
+char-set:punctuation  Punctuation characters
+char-set:symbol       Symbol characters
+char-set:hex-digit    A hexadecimal digit: 0-9, A-F, a-f
+char-set:blank        Blank characters -- horizontal whitespace
+char-set:ascii        All characters in the ASCII set.
+char-set:empty        Empty set
+char-set:full         All characters
+
+Note that there may be characters in char-set:letter that are neither upper or
+lower case---this might occur in implementations that use a character type
+richer than ASCII, such as Unicode. A "graphic character" is one that would put
+ink on your page. While the exact composition of these sets may vary depending
+upon the character type provided by the underlying Scheme system, here are the
+definitions for some of the sets in an ASCII implementation:
+char-set:lower-case  a-z
+char-set:upper-case  A-Z
+char-set:letter      A-Z and a-z
+char-set:digit       0123456789
+char-set:punctuation !"#%&'()*,-./:;?@[\]_{}
+char-set:symbol      $+<=>^`|~
+char-set:whitespace  Space, newline, tab, form feed,
+                     vertical tab, carriage return
+char-set:blank       Space and tab
+char-set:graphic     letter + digit + punctuation + symbol
+char-set:printing    graphic + whitespace
+char-set:iso-control ASCII 0-31 and 127
+
+Note that the existence of the char-set:ascii set implies that the underlying
+character set is required to be at least as rich as ASCII (including ASCII's
+control characters).
+
+Rationale: The name choices reflect a shift from the older "alphabetic/numeric"
+terms found in R5RS and Posix to newer, Unicode-influenced "letter/digit"
+lexemes.
+
+Unicode, Latin-1 and ASCII definitions of the standard character sets
+
+In Unicode Scheme implementations, the base character sets are compatible with
+Java's Unicode specifications. For ASCII or Latin-1, we simply restrict the
+Unicode set specifications to their first 128 or 256 codes, respectively.
+Scheme implementations that are not based on ASCII, Latin-1 or Unicode should
+attempt to preserve the sense or spirit of these definitions.
+
+The following descriptions frequently make reference to the "Unicode character
+database." This is a file, available at URL
+ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
+
+Each line contains a description of a Unicode character. The first
+semicolon-delimited field of the line gives the hex value of the character's
+code; the second field gives the name of the character, and the third field
+gives a two-letter category. Other fields give simple 1-1 case-mappings for the
+character and other information; see
+ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.html
+
+for further description of the file's format. Note in particular the two-letter
+category specified in the third field, which is referenced frequently in the
+descriptions below.
+
+char-set:lower-case
+
+For Unicode, we follow Java's specification: a character is lowercase if
+
+  • it is not in the range [U+2000,U+2FFF], and
+  • the Unicode attribute table does not give a lowercase mapping for it, and
+  • at least one of the following is true:
+      □ the Unicode attribute table gives a mapping to uppercase for the
+        character, or
+      □ the name for the character in the Unicode attribute table contains the
+        words "SMALL LETTER" or "SMALL LIGATURE".
+
+The lower-case ASCII characters are
+abcdefghijklmnopqrstuvwxyz
+
+Latin-1 adds another 33 lower-case characters to the ASCII set:
+00B5 MICRO SIGN
+00DF LATIN SMALL LETTER SHARP S
+00E0 LATIN SMALL LETTER A WITH GRAVE
+00E1 LATIN SMALL LETTER A WITH ACUTE
+00E2 LATIN SMALL LETTER A WITH CIRCUMFLEX
+00E3 LATIN SMALL LETTER A WITH TILDE
+00E4 LATIN SMALL LETTER A WITH DIAERESIS
+00E5 LATIN SMALL LETTER A WITH RING ABOVE
+00E6 LATIN SMALL LETTER AE
+00E7 LATIN SMALL LETTER C WITH CEDILLA
+00E8 LATIN SMALL LETTER E WITH GRAVE
+00E9 LATIN SMALL LETTER E WITH ACUTE
+00EA LATIN SMALL LETTER E WITH CIRCUMFLEX
+00EB LATIN SMALL LETTER E WITH DIAERESIS
+00EC LATIN SMALL LETTER I WITH GRAVE
+00ED LATIN SMALL LETTER I WITH ACUTE
+00EE LATIN SMALL LETTER I WITH CIRCUMFLEX
+00EF LATIN SMALL LETTER I WITH DIAERESIS
+00F0 LATIN SMALL LETTER ETH
+00F1 LATIN SMALL LETTER N WITH TILDE
+00F2 LATIN SMALL LETTER O WITH GRAVE
+00F3 LATIN SMALL LETTER O WITH ACUTE
+00F4 LATIN SMALL LETTER O WITH CIRCUMFLEX
+00F5 LATIN SMALL LETTER O WITH TILDE
+00F6 LATIN SMALL LETTER O WITH DIAERESIS
+00F8 LATIN SMALL LETTER O WITH STROKE
+00F9 LATIN SMALL LETTER U WITH GRAVE
+00FA LATIN SMALL LETTER U WITH ACUTE
+00FB LATIN SMALL LETTER U WITH CIRCUMFLEX
+00FC LATIN SMALL LETTER U WITH DIAERESIS
+00FD LATIN SMALL LETTER Y WITH ACUTE
+00FE LATIN SMALL LETTER THORN
+00FF LATIN SMALL LETTER Y WITH DIAERESIS
+
+Note that three of these have no corresponding Latin-1 upper-case character:
+00B5 MICRO SIGN
+00DF LATIN SMALL LETTER SHARP S
+00FF LATIN SMALL LETTER Y WITH DIAERESIS
+
+(The compatibility micro character uppercases to the non-Latin-1 Greek capital
+mu; the German sharp s character uppercases to the pair of characters "SS," and
+the capital y-with-diaeresis is non-Latin-1.)
+
+(Note that the Java spec for lowercase characters given at
+http://java.sun.com/docs/books/jls/html/javalang.doc4.html#14345
+
+is inconsistent. U+00B5 MICRO SIGN fulfills the requirements for a lower-case
+character (as of Unicode 3.0), but is not given in the numeric list of
+lower-case character codes.)
+
+(Note that the Java spec for isLowerCase() given at
+http://java.sun.com/products/jdk/1.2/docs/api/java/lang/Character.html#
+isLowerCase(char)
+
+gives three mutually inconsistent definitions of "lower case." The first is the
+definition used in this SRFI. Following text says "A character is considered to
+be lowercase if and only if it is specified to be lowercase by the Unicode 2.0
+standard (category Ll in the Unicode specification data file)." The former spec
+excludes U+00AA FEMININE ORDINAL INDICATOR and U+00BA MASCULINE ORDINAL
+INDICATOR; the later spec includes them. Finally, the spec enumerates a list of
+characters in the Latin-1 subset; this list excludes U+00B5 MICRO SIGN, which
+is included in both of the previous specs.)
+
+char-set:upper-case
+
+For Unicode, we follow Java's specification: a character is uppercase if
+
+  • it is not in the range [U+2000,U+2FFF], and
+  • the Unicode attribute table does not give an uppercase mapping for it (this
+    excludes titlecase characters), and
+  • at least one of the following is true:
+      □ the Unicode attribute table gives a mapping to lowercase for the
+        character, or
+      □ the name for the character in the Unicode attribute table contains the
+        words "CAPITAL LETTER" or "CAPITAL LIGATURE".
+
+The upper-case ASCII characters are
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+Latin-1 adds another 30 upper-case characters to the ASCII set:
+00C0 LATIN CAPITAL LETTER A WITH GRAVE
+00C1 LATIN CAPITAL LETTER A WITH ACUTE
+00C2 LATIN CAPITAL LETTER A WITH CIRCUMFLEX
+00C3 LATIN CAPITAL LETTER A WITH TILDE
+00C4 LATIN CAPITAL LETTER A WITH DIAERESIS
+00C5 LATIN CAPITAL LETTER A WITH RING ABOVE
+00C6 LATIN CAPITAL LETTER AE
+00C7 LATIN CAPITAL LETTER C WITH CEDILLA
+00C8 LATIN CAPITAL LETTER E WITH GRAVE
+00C9 LATIN CAPITAL LETTER E WITH ACUTE
+00CA LATIN CAPITAL LETTER E WITH CIRCUMFLEX
+00CB LATIN CAPITAL LETTER E WITH DIAERESIS
+00CC LATIN CAPITAL LETTER I WITH GRAVE
+00CD LATIN CAPITAL LETTER I WITH ACUTE
+00CE LATIN CAPITAL LETTER I WITH CIRCUMFLEX
+00CF LATIN CAPITAL LETTER I WITH DIAERESIS
+00D0 LATIN CAPITAL LETTER ETH
+00D1 LATIN CAPITAL LETTER N WITH TILDE
+00D2 LATIN CAPITAL LETTER O WITH GRAVE
+00D3 LATIN CAPITAL LETTER O WITH ACUTE
+00D4 LATIN CAPITAL LETTER O WITH CIRCUMFLEX
+00D5 LATIN CAPITAL LETTER O WITH TILDE
+00D6 LATIN CAPITAL LETTER O WITH DIAERESIS
+00D8 LATIN CAPITAL LETTER O WITH STROKE
+00D9 LATIN CAPITAL LETTER U WITH GRAVE
+00DA LATIN CAPITAL LETTER U WITH ACUTE
+00DB LATIN CAPITAL LETTER U WITH CIRCUMFLEX
+00DC LATIN CAPITAL LETTER U WITH DIAERESIS
+00DD LATIN CAPITAL LETTER Y WITH ACUTE
+00DE LATIN CAPITAL LETTER THORN
+
+char-set:title-case
+
+In Unicode, a character is titlecase if it has the category Lt in the character
+attribute database. There are very few of these characters; here is the entire
+31-character list as of Unicode 3.0:
+01C5 LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON
+01C8 LATIN CAPITAL LETTER L WITH SMALL LETTER J
+01CB LATIN CAPITAL LETTER N WITH SMALL LETTER J
+01F2 LATIN CAPITAL LETTER D WITH SMALL LETTER Z
+1F88 GREEK CAPITAL LETTER ALPHA WITH PSILI AND PROSGEGRAMMENI
+1F89 GREEK CAPITAL LETTER ALPHA WITH DASIA AND PROSGEGRAMMENI
+1F8A GREEK CAPITAL LETTER ALPHA WITH PSILI AND VARIA AND PROSGEGRAMMENI
+1F8B GREEK CAPITAL LETTER ALPHA WITH DASIA AND VARIA AND PROSGEGRAMMENI
+1F8C GREEK CAPITAL LETTER ALPHA WITH PSILI AND OXIA AND PROSGEGRAMMENI
+1F8D GREEK CAPITAL LETTER ALPHA WITH DASIA AND OXIA AND PROSGEGRAMMENI
+1F8E GREEK CAPITAL LETTER ALPHA WITH PSILI AND PERISPOMENI AND PROSGEGRAMMENI
+1F8F GREEK CAPITAL LETTER ALPHA WITH DASIA AND PERISPOMENI AND PROSGEGRAMMENI
+1F98 GREEK CAPITAL LETTER ETA WITH PSILI AND PROSGEGRAMMENI
+1F99 GREEK CAPITAL LETTER ETA WITH DASIA AND PROSGEGRAMMENI
+1F9A GREEK CAPITAL LETTER ETA WITH PSILI AND VARIA AND PROSGEGRAMMENI
+1F9B GREEK CAPITAL LETTER ETA WITH DASIA AND VARIA AND PROSGEGRAMMENI
+1F9C GREEK CAPITAL LETTER ETA WITH PSILI AND OXIA AND PROSGEGRAMMENI
+1F9D GREEK CAPITAL LETTER ETA WITH DASIA AND OXIA AND PROSGEGRAMMENI
+1F9E GREEK CAPITAL LETTER ETA WITH PSILI AND PERISPOMENI AND PROSGEGRAMMENI
+1F9F GREEK CAPITAL LETTER ETA WITH DASIA AND PERISPOMENI AND PROSGEGRAMMENI
+1FA8 GREEK CAPITAL LETTER OMEGA WITH PSILI AND PROSGEGRAMMENI
+1FA9 GREEK CAPITAL LETTER OMEGA WITH DASIA AND PROSGEGRAMMENI
+1FAA GREEK CAPITAL LETTER OMEGA WITH PSILI AND VARIA AND PROSGEGRAMMENI
+1FAB GREEK CAPITAL LETTER OMEGA WITH DASIA AND VARIA AND PROSGEGRAMMENI
+1FAC GREEK CAPITAL LETTER OMEGA WITH PSILI AND OXIA AND PROSGEGRAMMENI
+1FAD GREEK CAPITAL LETTER OMEGA WITH DASIA AND OXIA AND PROSGEGRAMMENI
+1FAE GREEK CAPITAL LETTER OMEGA WITH PSILI AND PERISPOMENI AND PROSGEGRAMMENI
+1FAF GREEK CAPITAL LETTER OMEGA WITH DASIA AND PERISPOMENI AND PROSGEGRAMMENI
+1FBC GREEK CAPITAL LETTER ALPHA WITH PROSGEGRAMMENI
+1FCC GREEK CAPITAL LETTER ETA WITH PROSGEGRAMMENI
+1FFC GREEK CAPITAL LETTER OMEGA WITH PROSGEGRAMMENI
+
+There are no ASCII or Latin-1 titlecase characters.
+
+char-set:letter
+
+In Unicode, a letter is any character with one of the letter categories (Lu,
+Ll, Lt, Lm, Lo) in the Unicode character database.
+
+There are 52 ASCII letters
+abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+There are 117 Latin-1 letters. These are the 115 characters that are members of
+the Latin-1 char-set:lower-case and char-set:upper-case sets, plus
+00AA FEMININE ORDINAL INDICATOR
+00BA MASCULINE ORDINAL INDICATOR
+
+(These two letters are considered lower-case by Unicode, but not by Java or
+SRFI 14.)
+
+char-set:digit
+
+In Unicode, a character is a digit if it has the category Nd in the character
+attribute database. In Latin-1 and ASCII, the only such characters are
+0123456789. In Unicode, there are other digit characters in other code blocks,
+such as Gujarati digits and Tibetan digits.
+
+char-set:hex-digit
+
+The only hex digits are 0123456789abcdefABCDEF.
+
+char-set:letter+digit
+
+The union of char-set:letter and char-set:digit.
+
+char-set:graphic
+
+A graphic character is one that would put ink on paper. The ASCII and Latin-1
+graphic characters are the members of
+char-set:letter
+char-set:digit
+char-set:punctuation
+char-set:symbol
+
+char-set:printing
+
+A printing character is one that would occupy space when printed, i.e., a
+graphic character or a space character. char-set:printing is the union of
+char-set:whitespace and char-set:graphic.
+
+char-set:whitespace
+
+In Unicode, a whitespace character is either
+
+  • a character with one of the space, line, or paragraph separator categories
+    (Zs, Zl or Zp) of the Unicode character database.
+  • U+0009 Horizontal tabulation (\t control-I)
+  • U+000A Line feed (\n control-J)
+  • U+000B Vertical tabulation (\v control-K)
+  • U+000C Form feed (\f control-L)
+  • U+000D Carriage return (\r control-M)
+
+There are 24 whitespace characters in Unicode 3.0:
+0009 HORIZONTAL TABULATION \t control-I
+000A LINE FEED             \n control-J
+000B VERTICAL TABULATION   \v control-K
+000C FORM FEED             \f control-L
+000D CARRIAGE RETURN       \r control-M
+0020 SPACE                 Zs
+00A0 NO-BREAK SPACE        Zs
+1680 OGHAM SPACE MARK      Zs
+2000 EN QUAD               Zs
+2001 EM QUAD               Zs
+2002 EN SPACE              Zs
+2003 EM SPACE              Zs
+2004 THREE-PER-EM SPACE    Zs
+2005 FOUR-PER-EM SPACE     Zs
+2006 SIX-PER-EM SPACE      Zs
+2007 FIGURE SPACE          Zs
+2008 PUNCTUATION SPACE     Zs
+2009 THIN SPACE            Zs
+200A HAIR SPACE            Zs
+200B ZERO WIDTH SPACE      Zs
+2028 LINE SEPARATOR        Zl
+2029 PARAGRAPH SEPARATOR   Zp
+202F NARROW NO-BREAK SPACE Zs
+3000 IDEOGRAPHIC SPACE     Zs
+
+The ASCII whitespace characters are the first six characters in the above list
+-- line feed, horizontal tabulation, vertical tabulation, form feed, carriage
+return, and space. These are also exactly the characters recognised by the
+Posix isspace() procedure. Latin-1 adds the no-break space.
+
+Note: Java's isWhitespace() method is incompatible, including
+0009 HORIZONTAL TABULATION (\t control-I)
+001C FILE SEPARATOR        (control-\)
+001D GROUP SEPARATOR       (control-])
+001E RECORD SEPARATOR      (control-^)
+001F UNIT SEPARATOR        (control-_)
+
+and excluding
+00A0 NO-BREAK SPACE
+
+Java's excluding the no-break space means that tokenizers can simply break
+character streams at "whitespace" boundaries. However, the exclusion introduces
+exceptions in other places, e.g. char-set:printing is no longer simply the
+union of char-set:graphic and char-set:whitespace.
+
+char-set:iso-control
+
+The ISO control characters are the Unicode/Latin-1 characters in the ranges
+[U+0000,U+001F] and [U+007F,U+009F].
+
+ASCII restricts this set to the characters in the range [U+0000,U+001F] plus
+the character U+007F.
+
+Note that Unicode defines other control characters which do not belong to this
+set (hence the qualifying prefix "iso-" in the name). This restriction is
+compatible with the Java IsISOControl() method.
+
+char-set:punctuation
+
+In Unicode, a punctuation character is any character that has one of the
+punctuation categories in the Unicode character database (Pc, Pd, Ps, Pe, Pi,
+Pf, or Po.)
+
+ASCII has 23 punctuation characters:
+
+!"#%&'()*,-./:;?@[\]_{}
+
+Latin-1 adds six more:
+00A1 INVERTED EXCLAMATION MARK
+00AB LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+00AD SOFT HYPHEN
+00B7 MIDDLE DOT
+00BB RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+00BF INVERTED QUESTION MARK
+
+Note that the nine ASCII characters $+<=>^`|~ are not punctuation. They are
+"symbols."
+
+char-set:symbol
+
+In Unicode, a symbol is any character that has one of the symbol categories in
+the Unicode character database (Sm, Sc, Sk, or So). There are nine ASCII symbol
+characters:
+
+$+<=>^`|~
+
+Latin-1 adds 18 more:
+00A2 CENT SIGN
+00A3 POUND SIGN
+00A4 CURRENCY SIGN
+00A5 YEN SIGN
+00A6 BROKEN BAR
+00A7 SECTION SIGN
+00A8 DIAERESIS
+00A9 COPYRIGHT SIGN
+00AC NOT SIGN
+00AE REGISTERED SIGN
+00AF MACRON
+00B0 DEGREE SIGN
+00B1 PLUS-MINUS SIGN
+00B4 ACUTE ACCENT
+00B6 PILCROW SIGN
+00B8 CEDILLA
+00D7 MULTIPLICATION SIGN
+00F7 DIVISION SIGN
+
+char-set:blank
+
+Blank chars are horizontal whitespace. In Unicode, a blank character is either
+
+  • a character with the space separator category (Zs) in the Unicode character
+    database.
+  • U+0009 Horizontal tabulation (\t control-I)
+
+There are eighteen blank characters in Unicode 3.0:
+0009 HORIZONTAL TABULATION \t control-I
+0020 SPACE                 Zs
+00A0 NO-BREAK SPACE        Zs
+1680 OGHAM SPACE MARK      Zs
+2000 EN QUAD               Zs
+2001 EM QUAD               Zs
+2002 EN SPACE              Zs
+2003 EM SPACE              Zs
+2004 THREE-PER-EM SPACE    Zs
+2005 FOUR-PER-EM SPACE     Zs
+2006 SIX-PER-EM SPACE      Zs
+2007 FIGURE SPACE          Zs
+2008 PUNCTUATION SPACE     Zs
+2009 THIN SPACE            Zs
+200A HAIR SPACE            Zs
+200B ZERO WIDTH SPACE      Zs
+202F NARROW NO-BREAK SPACE Zs
+3000 IDEOGRAPHIC SPACE     Zs
+
+The ASCII blank characters are the first two characters above -- horizontal tab
+and space. Latin-1 adds the no-break space.
+
+Java doesn't have the concept of "blank" characters, so there are no
+compatibility issues.
+
+Reference implementation
+
+This SRFI comes with a reference implementation. It resides at:
+http://srfi.schemers.org/srfi-14/srfi-14.scm
+
+I have placed this source on the Net with an unencumbered, "open" copyright.
+Some of the code in the reference implementation bears a distant family
+relation to the MIT Scheme implementation, and being derived from that code, is
+covered by the MIT Scheme copyright (which is a generic BSD-style open-source
+copyright -- see the source file for details). The remainder of the code was
+written by myself for scsh or for this SRFI; I have placed this code under the
+scsh copyright, which is also a generic BSD-style open-source copyright.
+
+The code is written for portability and should be simple to port to any Scheme.
+It has only the following deviations from R4RS, clearly discussed in the
+comments:
+
+  • an error procedure;
+  • the R5RS values procedure for producing multiple return values;
+  • a simple check-arg procedure for argument checking;
+  • let-optionals* and :optional macros for for parsing, checking and
+    defaulting optional arguments from rest lists;
+  • The SRFI-19 define-record-type form;
+  • bitwise-and for the hash function;
+  • %latin1->char and %char->latin1.
+
+The library is written for clarity and well-commented; the current source is
+about 375 lines of source code and 375 lines of comments and white space. It is
+also written for efficiency. Fast paths are provided for common cases.
+
+This is not to say that the implementation can't be tuned up for a specific
+Scheme implementation. There are notes in comments addressing ways implementors
+can tune the reference implementation for performance.
+
+In short, I've written the reference implementation to make it as painless as
+possible for an implementor -- or a regular programmer -- to adopt this library
+and get good results with it.
+
+The code uses a rather simple-minded, inefficient representation for ASCII/
+Latin-1 char-sets -- a 256-character string. The character whose code is i is
+in the set if s[i] = ASCII 1 (soh, or ^a); not in the set if s[i] = ASCII 0
+(nul). A much faster and denser representation would be 16 or 32 bytes worth of
+bit string. A portable implementation using bit sets awaits standards for
+bitwise logical-ops and byte vectors.
+
+"Large" character types, such as Unicode, should use a sparse representation,
+taking care that the Latin-1 subset continues to be represented with a dense
+32-byte bit set.
+
+Acknowledgements
+
+The design of this library benefited greatly from the feedback provided during
+the SRFI discussion phase. Among those contributing thoughtful commentary and
+suggestions, both on the mailing list and by private discussion, were Paolo
+Amoroso, Lars Arvestad, Alan Bawden, Jim Bender, Dan Bornstein, Per Bothner,
+Will Clinger, Brian Denheyer, Kent Dybvig, Sergei Egorov, Marc Feeley, Matthias
+Felleisen, Will Fitzgerald, Matthew Flatt, Arthur A. Gleckler, Ben Goetter,
+Sven Hartrumpf, Erik Hilsdale, Shiro Kawai, Richard Kelsey, Oleg Kiselyov,
+Bengt Kleberg, Donovan Kolbly, Bruce Korb, Shriram Krishnamurthi, Bruce Lewis,
+Tom Lord, Brad Lucier, Dave Mason, David Rush, Klaus Schilling, Jonathan Sobel,
+Mike Sperber, Mikael Staldal, Vladimir Tsyshevsky, Donald Welsh, and Mike
+Wilson. I am grateful to them for their assistance.
+
+I am also grateful the authors, implementors and documentors of all the systems
+mentioned in the introduction. Aubrey Jaffer should be noted for his work in
+producing Web-accessible versions of the R5RS spec, which was a tremendous aid.
+
+This is not to imply that these individuals necessarily endorse the final
+results, of course.
+
+During this document's long development period, great patience was exhibited by
+Mike Sperber, who is the editor for the SRFI, and by Hillary Sullivan, who is
+not.
+
+References & links
+
+[Java]
+    The following URLs provide documentation on relevant Java classes.
+    http://java.sun.com/products/jdk/1.2/docs/api/java/lang/Character.html
+    http://java.sun.com/products/jdk/1.2/docs/api/java/lang/String.html
+    http://java.sun.com/products/jdk/1.2/docs/api/java/lang/StringBuffer.html
+    http://java.sun.com/products/jdk/1.2/docs/api/java/text/Collator.html
+    http://java.sun.com/products/jdk/1.2/docs/api/java/text/
+    package-summary.html
+[MIT-Scheme]
+    http://www.swiss.ai.mit.edu/projects/scheme/
+[R5RS]
+    Revised^5 report on the algorithmic language Scheme.
+    R. Kelsey, W. Clinger, J. Rees (editors).
+    Higher-Order and Symbolic Computation, Vol. 11, No. 1, September, 1998.
+    and ACM SIGPLAN Notices, Vol. 33, No. 9, October, 1998.
+    Available at http://www.schemers.org/Documents/Standards/.
+[SRFI]
+    The SRFI web site.
+    http://srfi.schemers.org/
+[SRFI-14]
+    SRFI-14: String libraries.
+    http://srfi.schemers.org/srfi-14/
+
+    This document, in HTML:
+        http://srfi.schemers.org/srfi-14/srfi-14.html
+    This document, in plain text format:
+        http://srfi.schemers.org/srfi-14/srfi-14.txt
+    Source code for the reference implementation:
+        http://srfi.schemers.org/srfi-14/srfi-14.scm
+    Scheme 48 module specification, with typings:
+        http://srfi.schemers.org/srfi-14/srfi-14-s48-module.scm
+    Regression-test suite:
+        http://srfi.schemers.org/srfi-14/srfi-14-tests.scm
+
+[Unicode]
+    http://www.unicode.org/
+[UnicodeData]
+    The Unicode character database.
+    ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
+    ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.html
+
+Copyright
+
+Certain portions of this document -- the specific, marked segments of text
+describing the R5RS procedures -- were adapted with permission from the R5RS
+report.
+
+All other text is copyright (C) Olin Shivers (1998, 1999, 2000). All Rights
+Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+

@@ -1,0 +1,189 @@
+▼  Data: Data Structures
+1  Imperative Queues
+2  Growable Vectors
+3  Orders and Ordered Dictionaries
+4  Splay Trees
+5  Skip Lists
+6  Interval Maps
+7  Binary Heaps
+On this page:
+make-skip-list
+make-adjustable-skip-list
+skip-list?
+adjustable-skip-list?
+skip-list-ref
+skip-list-set!
+skip-list-remove!
+skip-list-count
+skip-list-iterate-first
+skip-list-iterate-next
+skip-list-iterate-key
+skip-list-iterate-value
+skip-list-remove-range!
+skip-list-contract!
+skip-list-expand!
+skip-list-iterate-least/ >?
+skip-list-iterate-least/ >=?
+skip-list-iterate-greatest/ <?
+skip-list-iterate-greatest/ <=?
+skip-list-iterate-least
+skip-list-iterate-greatest
+skip-list-iter?
+skip-list->list
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Skip Lists
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require data/skip-list)
+
+Skip lists are a simple, efficient data structure for mutable dictionaries with
+totally ordered keys. They were described in the paper “Skip Lists: A
+Probabilistic Alternative to Balanced Trees” by William Pugh in Communications
+of the ACM, June 1990, 33(6) pp668-676.
+
+A skip-list is an ordered dictionary (dict? and ordered-dict?). It also
+supports extensions of the dictionary interface for iterator-based search and
+mutation.
+
+(make-skip-list  [ ord                                      
+                   #:key-contract key-contract              
+                   #:value-contract value-contract])   →   skip-list?
+  ord : order? = datum-order
+  key-contract : contract? = any/c
+  value-contract : contract? = any/c
+Makes a new empty skip-list. The skip-list uses ord to order keys; in addition,
+the domain contract of ord is combined with key-contract to check keys.
+
+Examples:
+
+    > (define skip-list (make-skip-list real-order))
+    > (skip-list-set! skip-list 3 'apple)
+    > (skip-list-set! skip-list 6 'cherry)
+    > (dict-map skip-list list)
+    '((3 apple) (6 cherry))
+
+    > (skip-list-ref skip-list 3)
+    'apple
+
+    > (skip-list-remove! skip-list 6)
+    > (skip-list-count skip-list)
+    1
+
+
+
+(make-adjustable-skip-list  [ #:key-contract key-contract        
+                              #:value-contract value-contract])  
+ → adjustable-skip-list?
+  key-contract : contract? = any/c
+  value-contract : contract? = any/c
+Makes a new empty skip-list that permits only exact integers as keys (in
+addition to any constraints imposed by key-contract). The resulting skip-list
+answers true to adjustable-skip-list? and supports key adjustment.
+
+(skip-list? v) → boolean?
+  v : any/c
+Returns #t if v is a skip-list, #f otherwise.
+
+(adjustable-skip-list? v) → boolean?
+  v : any/c
+Returns #t if v is a skip-list that supports key adjustment; see
+skip-list-contract! and skip-list-expand!.
+
+(skip-list-ref skip-list key [default]) → any/c
+  skip-list : skip-list?
+  key : any/c
+  default : any/c = (lambda () (error ....))
+(skip-list-set! skip-list key value) → void?
+  skip-list : skip-list?
+  key : any/c
+  value : any/c
+(skip-list-remove! skip-list key) → void?
+  skip-list : skip-list?
+  key : any/c
+(skip-list-count skip-list) → exact-nonnegative-integer?
+  skip-list : skip-list?
+(skip-list-iterate-first skip-list) → (or/c skip-list-iter? #f)
+  skip-list : skip-list?
+(skip-list-iterate-next skip-list iter)
+ → (or/c skip-list-iter? #f)
+  skip-list : skip-list?
+  iter : skip-list-iter?
+(skip-list-iterate-key skip-list iter) → any/c
+  skip-list : skip-list?
+  iter : skip-list-iter?
+(skip-list-iterate-value skip-list iter) → any/c
+  skip-list : skip-list?
+  iter : skip-list-iter?
+Implementations of dict-ref, dict-set!, dict-remove!, dict-count,
+dict-iterate-first, dict-iterate-next, dict-iterate-key, and dict-iterate-value
+, respectively.
+
+(skip-list-remove-range! skip-list from to) → void?
+  skip-list : skip-list?
+  from : any/c
+  to : any/c
+Removes all keys in [from, to); that is, all keys greater than or equal to from
+and less than to.
+
+(skip-list-contract! skip-list from to) → void?
+  skip-list : adjustable-skip-list?
+  from : exact-integer?
+  to : exact-integer?
+Like skip-list-remove-range!, but also decreases the value of all keys greater
+than or equal to to by (- to from).
+
+This operation takes time proportional to the number of elements with keys
+greater than or equal to to.
+
+(skip-list-expand! skip-list from to) → void?
+  skip-list : adjustable-skip-list?
+  from : exact-integer?
+  to : exact-integer?
+Increases the value of all keys greater than or equal to from by (- to from).
+
+This operation takes time proportional to the number of elements with keys
+greater than or equal to from.
+
+(skip-list-iterate-least/>? skip-list key)
+ → (or/c skip-list-iter? #f)
+  skip-list : skip-list?
+  key : any/c
+(skip-list-iterate-least/>=? skip-list key)
+ → (or/c skip-list-iter? #f)
+  skip-list : skip-list?
+  key : any/c
+(skip-list-iterate-greatest/<?   skip-list  
+                                 key)       
+ → (or/c skip-list-iter? #f)
+  skip-list : skip-list?
+  key : any/c
+(skip-list-iterate-greatest/<=?   skip-list  
+                                  key)       
+ → (or/c skip-list-iter? #f)
+  skip-list : skip-list?
+  key : any/c
+(skip-list-iterate-least skip-list) → (or/c skip-list-iter? #f)
+  skip-list : skip-list?
+(skip-list-iterate-greatest skip-list)
+ → (or/c skip-list-iter? #f)
+  skip-list : skip-list?
+Implementations of dict-iterate-least, dict-iterate-greatest,
+dict-iterate-least/>?, dict-iterate-least/>=?, dict-iterate-greatest/<?,
+dict-iterate-greatest/<=?, dict-iterate-least, and dict-iterate-greatest,
+respectively.
+
+(skip-list-iter? v) → boolean?
+  v : any/c
+Returns #t if v represents a position in a skip-list, #f otherwise.
+
+(skip-list->list skip-list) → (listof pair?)
+  skip-list : skip-list?
+Returns an association list with the keys and values of skip-list, in order.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,144 @@
+►  Myster X: Using Windows COM Objects in Racket
+1  Overview
+2  COM
+3  Active X and DHTML
+4  Version
+   Index
+▼ 3  Active X and DHTML
+3.1  Browsers
+3.2  Documents
+3.3  HTML Events
+3.4  HTML and Dynamic HTML
+On this page:
+mx-browser%
+current-document
+print-document
+show
+navigate
+navigate/ status
+go-back
+go-forward
+refresh
+iconize
+restore
+current-url
+register-event-handler
+unregister-event-handler
+handle-events
+stop-handling-events
+block-while-browsers
+[...search manuals...]
+  top← prev  up  next → 
+
+3.1 Browsers
+
+mx-browser% : class?
+  superclass: object%
+
+
+
+    (new mx-browser%  [ [label label]                   
+                        [width width]                   
+                        [height height]                 
+                        [x x]                           
+                        [y y]]                          
+                        [style-options style-options])  
+     → (is-a?/c mx-browser%)
+      label : string? = "MysterX"
+       width   :   (or/c exact-nonnegative-integer? (one-of/c 'default))
+               =   'default
+       height   :   (or/c exact-nonnegative-integer? (one-of/c 'default))
+                =   'default
+      x : (or/c exact-integer? (one-of/c 'default)) = 'default
+      y : (or/c exact-integer? (one-of/c 'default)) = 'default
+       style-options   :   (listof (any-of/c 'iconize 'maximize 'no-system-menu
+                                             'no-thick-border 'scrollbars))
+    Creates an instance of a MysterX browser. The label argument is a string
+    for the document caption, with default . The width, height, x, and y give
+    the size and placement of the browser window on the desktop, with defaults
+    provided by Windows. When style-options includes 'scrollbars, the vertical
+    scrollbar is disabled if scrolling is unnecessary, and the horizontal
+    scrollbar disappears if scrolling is unnecessary.
+
+    Although the browser window cannot be hidden initially, it can be iconized.
+    The restore method can be used to restore an iconized browser to an
+    ordinary window.
+
+    (send a-mx-browser current-document)
+     → (is-a?/c mx-document<%>)
+    Returns the current document in the browser.
+
+    (send a-mx-browser print-document) → void?
+    Prints the document displayed by the browser to the default printer. As an
+    unintentional side-effect, the browser window is minimized.
+
+    (send a-mx-browser show show?) → void?
+      show? : any/c
+    If show? is #f, the browser window is hidden. Otherwise, the window is
+    shown.
+
+    (send a-mx-browser navigate url) → string?
+      url : string?
+    Navigates the browser to the URL given by url. Any DHTML changes to the
+    page associated with the URL are not shown. Returns a string that is the
+    actual URL navigated to.
+
+    (send a-mx-browser navigate/status url)
+     → (list/c string? (or/c false/c integer? (one-of/c 'no-status)))
+      url : string?
+    Navigates the browser to the URL given by url. Any DHTML changes to the
+    page associated with the URL are not shown. Returns a list, whose first
+    element string that is the actual URL navigated to, and whose second
+    element is a status code, one of: #f, indicating no status could be
+    obtained; a number, such as 200 or 404, indicating the http status; or
+    'no-status, indicating that url does not denote a URL with the “http”
+    scheme.
+
+    (send a-mx-browser go-back) → string?
+    Navigates the browser back to a URL within its history list. Any DHTML
+    changes to the page associated with the URL are not shown. Returns a string
+    that is the actual URL navigated to.
+
+    (send a-mx-browser go-forward) → string?
+    Navigates the browser forward to a URL within its history list. Any DHTML
+    changes to the page associated with the URL are not shown. Returns a string
+    that is the actual URL navigated to.
+
+    (send a-mx-browser refresh) → boolean?
+    Refreshes the document in the browser. Returns #t if the refresh is
+    successful, #f otherwise.
+
+    (send a-mx-browser iconize) → void?
+    Iconizes the browser window.
+
+    (send a-mx-browser restore) → void?
+    Restores the browser window, if it has been iconized.
+
+    (send a-mx-browser current-url) → string?
+    Returns a string indicating the currently displayed URL.
+
+    (send a-mx-browser register-event-handler   elem        
+                                                f)     →   void?
+      elem : (is-a?/c mx-element%)
+      f : ((is-a?/c mx-event<%>) . -> . any)
+    Registers an event handler for the HTML element elem. The result of f is
+    discarded.
+
+    (send a-mx-browser unregister-event-handler elem) → void?
+      elem : (is-a?/c mx-element%)
+    Unregisters an event handler for an HTML element in the browser.
+
+    (send a-mx-browser handle-events) → void?
+    Creates a thread to handle events using the registered event handlers.
+
+    (send a-mx-browser stop-handling-events) → void?
+    Kills the thread currently handling events for the browser.
+
+(block-while-browsers) → void?
+Blocks until all browser windows have been closed or hidden, using the show
+method of mx-browser%. This is useful when a MysterX program file is run as a
+script, to prevent mzscheme or mred from closing prematurely.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

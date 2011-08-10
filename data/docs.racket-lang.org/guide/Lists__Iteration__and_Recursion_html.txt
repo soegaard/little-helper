@@ -1,0 +1,386 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 2  Racket Essentials
+2.1  Simple Values
+2.2  Simple Definitions and Expressions
+2.3  Lists, Iteration, and Recursion
+2.4  Pairs, Lists, and Racket Syntax
+► 2.3  Lists, Iteration, and Recursion
+2.3.1  Predefined List Loops
+2.3.2  List Iteration from Scratch
+2.3.3  Tail Recursion
+2.3.4  Recursion versus Iteration
+On this page:
+2.3.1 Predefined List Loops
+2.3.2 List Iteration from Scratch
+2.3.3 Tail Recursion
+2.3.4 Recursion versus Iteration
+[...search manuals...]
+  top← prev  up  next → 
+
+2.3 Lists, Iteration, and Recursion
+
+Racket is a dialect of the language Lisp, whose name originally stood for “LISt
+Processor.” The built-in list datatype remains a prominent feature of the
+language.
+
+The list function takes any number of values and returns a list containing the
+values:
+
+    > (list "red" "green" "blue")
+    '("red" "green" "blue")
+
+    > (list 1 2 3 4 5)
+    '(1 2 3 4 5)
+
+
+            A list usually prints with ', but the printed form of a list
+            depends on its content. See Pairs and Lists for more information.
+
+As you can see, a list result prints in the REPL as a quote ' and then a pair
+of parentheses wrapped around the printed form of the list elements. There’s an
+opportunity for confusion here, because parentheses are used for both
+expressions, such as (list "red" "green" "blue"), and printed results, such as
+'("red" "green" "blue"). In addition to the quote, parentheses for results are
+printed in blue in the documentation and in DrRacket, whereas parentheses for
+expressions are brown.
+
+Many predefined functions operate on lists. Here are a few examples:
+
+    > (length (list "hop" "skip" "jump"))        ; count the elements
+    3
+
+    > (list-ref (list "hop" "skip" "jump") 0)    ; extract by position
+    "hop"
+
+    > (list-ref (list "hop" "skip" "jump") 1)
+    "skip"
+
+    > (append (list "hop" "skip") (list "jump")) ; combine lists
+    '("hop" "skip" "jump")
+
+    > (reverse (list "hop" "skip" "jump"))       ; reverse order
+    '("jump" "skip" "hop")
+
+    > (member "fall" (list "hop" "skip" "jump")) ; check for an element
+    #f
+
+
+2.3.1 Predefined List Loops
+
+In addition to simple operations like append, Racket includes functions that
+iterate over the elements of a list. These iteration functions play a role
+similar to for in Java, Racket, and other languages. The body of a Racket
+iteration is packaged into a function to be applied to each element, so the
+lambda form becomes particularly handy in combination with iteration functions.
+
+Different list-iteration functions combine iteration results in different ways.
+The map function uses the per-element results to create a new list:
+
+    > (map sqrt (list 1 4 9 16))
+    '(1 2 3 4)
+
+    > (map (lambda (i)
+             (string-append i "!"))
+           (list "peanuts" "popcorn" "crackerjack"))
+    '("peanuts!" "popcorn!" "crackerjack!")
+
+
+The andmap and ormap functions combine the results by anding or oring:
+
+    > (andmap string? (list "a" "b" "c"))
+    #t
+
+    > (andmap string? (list "a" "b" 6))
+    #f
+
+    > (ormap number? (list "a" "b" 6))
+    #t
+
+
+The filter function keeps elements for which the body result is true, and
+discards elements for which it is #f:
+
+    > (filter string? (list "a" "b" 6))
+    '("a" "b")
+
+    > (filter positive? (list 1 -2 6 7 0))
+    '(1 6 7)
+
+
+The map, andmap, ormap, and filter functions can all handle multiple lists,
+instead of just a single list. The lists must all have the same length, and the
+given function must accept one argument for each list:
+
+    > (map (lambda (s n) (substring s 0 n))
+           (list "peanuts" "popcorn" "crackerjack")
+           (list 6 3 7))
+    '("peanut" "pop" "cracker")
+
+
+The foldl function generalizes some iteration functions. It uses the
+per-element function to both process an element and combine it with the
+“current” value, so the per-element function takes an extra first argument.
+Also, a starting “current” value must be provided before the lists:
+
+    > (foldl (lambda (elem v)
+               (+ v (* elem elem)))
+             0
+             '(1 2 3))
+    14
+
+
+Despite its generality, foldl is not as popular as the other functions. One
+reason is that map, ormap, andmap, and filter cover the most common kinds of
+list loops.
+
+Racket provides a general list comprehension form for/list, which builds a list
+by iterating through sequences. List comprehensions and related iteration forms
+are described in Iterations and Comprehensions.
+
+2.3.2 List Iteration from Scratch
+
+Although map and other iteration functions are predefined, they are not
+primitive in any interesting sense. You can write equivalent iterations using a
+handful of list primitives.
+
+Since a Racket list is a linked list, the two core operations on a non-empty
+list are
+
+  • first: get the first thing in the list; and
+
+  • rest: get the rest of the list.
+
+Examples:
+
+    > (first (list 1 2 3))
+    1
+
+    > (rest (list 1 2 3))
+    '(2 3)
+
+
+
+To create a new node for a linked list—that is, to add to the front of the
+list—use the cons function, which is short for “construct.” To get an empty
+list to start with, use the empty constant:
+
+    > empty
+    '()
+
+    > (cons "head" empty)
+    '("head")
+
+    > (cons "dead" (cons "head" empty))
+    '("dead" "head")
+
+
+To process a list, you need to be able to distinguish empty lists from
+non-empty lists, because first and rest work only on non-empty lists. The
+empty? function detects empty lists, and cons? detects non-empty lists:
+
+    > (empty? empty)
+    #t
+
+    > (empty? (cons "head" empty))
+    #f
+
+    > (cons? empty)
+    #f
+
+    > (cons? (cons "head" empty))
+    #t
+
+
+With these pieces, you can write your own versions of the length function, map
+function, and more.
+
+Examples:
+
+    (define (my-length lst)
+      (cond
+       [(empty? lst) 0]
+       [else (+ 1 (my-length (rest lst)))]))
+    > (my-length empty)
+    0
+
+    > (my-length (list "a" "b" "c"))
+    3
+
+
+
+    (define (my-map f lst)
+      (cond
+       [(empty? lst) empty]
+       [else (cons (f (first lst))
+                   (my-map f (rest lst)))]))
+     
+
+    > (my-map string-upcase (list "ready" "set" "go"))
+    '("READY" "SET" "GO")
+
+
+If the derivation of the above definitions is mysterious to you, consider
+reading How to Design Programs. If you are merely suspicious of the use of
+recursive calls instead of a looping construct, then read on.
+
+2.3.3 Tail Recursion
+
+Both the my-length and my-map functions run in O(n) time for a list of length
+n. This is easy to see by imagining how (my-length (list "a" "b" "c")) must
+evaluate:
+
+    (my-length (list "a" "b" "c"))
+    = (+ 1 (my-length (list "b" "c")))
+    = (+ 1 (+ 1 (my-length (list "c"))))
+    = (+ 1 (+ 1 (+ 1 (my-length (list)))))
+    = (+ 1 (+ 1 (+ 1 0)))
+    = (+ 1 (+ 1 1))
+    = (+ 1 2)
+    = 3
+
+For a list with n elements, evaluation will stack up n (+ 1 ...) additions, and
+then finally add them up when the list is exhausted.
+
+You can avoid piling up additions by adding along the way. To accumulate a
+length this way, we need a function that takes both a list and the length of
+the list seen so far; the code below uses a local function iter that
+accumulates the length in an argument len:
+
+    (define (my-length lst)
+      ; local function iter:
+      (define (iter lst len)
+        (cond
+         [(empty? lst) len]
+         [else (iter (rest lst) (+ len 1))]))
+      ; body of my-length calls iter:
+      (iter lst 0))
+
+Now evaluation looks like this:
+
+    (my-length (list "a" "b" "c"))
+    = (iter (list "a" "b" "c") 0)
+    = (iter (list "b" "c") 1)
+    = (iter (list "c") 2)
+    = (iter (list) 3)
+    3
+
+The revised my-length runs in constant space, just as the evaluation steps
+above suggest. That is, when the result of a function call, like (iter (list
+"b" "c") 1), is exactly the result of some other function call, like (iter (
+list "c") 2), then the first one doesn’t have to wait around for the second
+one, because that takes up space for no good reason.
+
+This evaluation behavior is sometimes called tail-call optimization, but it’s
+not merely an “optimization” in Racket; it’s a guarantee about the way the code
+will run. More precisely, an expression in tail position with respect to
+another expression does not take extra computation space over the other
+expression.
+
+In the case of my-map, O(n) space complexity is reasonable, since it has to
+generate a result of size O(n). Nevertheless, you can reduce the constant
+factor by accumulating the result list. The only catch is that the accumulated
+list will be backwards, so you’ll have to reverse it at the very end:
+
+            Attempting to reduce a constant factor like this is usually not
+            worthwhile, as discussed below.
+
+    (define (my-map f lst)
+      (define (iter lst backward-result)
+        (cond
+         [(empty? lst) (reverse backward-result)]
+         [else (iter (rest lst)
+                     (cons (f (first lst))
+                              backward-result))]))
+      (iter lst empty))
+
+It turns out that if you write
+
+    (define (my-map f lst)
+      (for/list ([i lst])
+        (f i)))
+
+then the for/list form in the function is expanded to essentially the same code
+as the iter local definition and use. The difference is merely syntactic
+convenience.
+
+2.3.4 Recursion versus Iteration
+
+The my-length and my-map examples demonstrate that iteration is just a special
+case of recursion. In many languages, it’s important to try to fit as many
+computations as possible into iteration form. Otherwise, performance will be
+bad, and moderately large inputs can lead to stack overflow. Similarly, in
+Racket, it is sometimes important to make sure that tail recursion is used to
+avoid O(n) space consumption when the computation is easily performed in
+constant space.
+
+At the same time, recursion does not lead to particularly bad performance in
+Racket, and there is no such thing as stack overflow; you can run out of memory
+if a computation involves too much context, but exhausting memory typically
+requires orders of magnitude deeper recursion than would trigger a stack
+overflow in other languages. These considerations, combined with the fact that
+tail-recursive programs automatically run the same as a loop, lead Racket
+programmers to embrace recursive forms rather than avoid them.
+
+Suppose, for example, that you want to remove consecutive duplicates from a
+list. While such a function can be written as a loop that remembers the
+previous element for each iteration, a Racket programmer would more likely just
+write the following:
+
+    (define (remove-dups l)
+      (cond
+       [(empty? l) empty]
+       [(empty? (rest l)) l]
+       [else
+        (let ([i (first l)])
+          (if (equal? i (first (rest l)))
+              (remove-dups (rest l))
+              (cons i (remove-dups (rest l)))))]))
+     
+
+    > (remove-dups (list "a" "b" "b" "b" "c" "c"))
+    '("a" "b" "c")
+
+
+In general, this function consumes O(n) space for an input list of length n,
+but that’s fine, since it produces an O(n) result. If the input list happens to
+be mostly consecutive duplicates, then the resulting list can be much smaller
+than O(n)—and remove-dups will also use much less than O(n) space! The reason
+is that when the function discards duplicates, it returns the result of a
+remove-dups call directly, so the tail-call “optimization” kicks in:
+
+    (remove-dups (list "a" "b" "b" "b" "b" "b"))
+    = (cons "a" (remove-dups (list "b" "b" "b" "b" "b")))
+    = (cons "a" (remove-dups (list "b" "b" "b" "b")))
+    = (cons "a" (remove-dups (list "b" "b" "b")))
+    = (cons "a" (remove-dups (list "b" "b")))
+    = (cons "a" (remove-dups (list "b")))
+    = (cons "a" (list "b"))
+    = (list "a" "b")
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,99 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 5  Snip and Style Classes
+ 5.1  add-color<%>
+ 5.2  image-snip%
+ 5.3  mult-color<%>
+ 5.4  readable-snip<%>
+ 5.5  snip%
+ 5.6  snip-admin%
+ 5.7  snip-class%
+ 5.8  snip-class-list<%>
+ 5.9  string-snip%
+5.10  style<%>
+5.11  style-delta%
+5.12  style-list%
+5.13  tab-snip%
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Snip and Style Classes
+
+ (require racket/snip)
+
+The racket/snip collection provides the core snip and style classes without
+depending on racket/gui/base. This separation enables libraries that can
+cooperate with an editor while also working in contexts that do not have a GUI.
+
+Snips and Administrators:
+
+  snip%                   readable-snip<%>
+
+   |- string-snip%
+
+   |   |- tab-snip%
+
+   |- image-snip%
+
+   |- editor-snip% (not provided by racket/snip)
+
+  snip-admin%
+
+
+Snip Lists:
+
+  snip-class%
+
+  snip-class-list<%>
+
+
+Styles:
+
+  style<%>         style-delta%       add-color<%>
+
+  style-list%                         mult-color<%>
+
+
+Alphabetical:
+
+    5.1 add-color<%>
+
+    5.2 image-snip%
+
+    5.3 mult-color<%>
+
+    5.4 readable-snip<%>
+
+    5.5 snip%
+
+    5.6 snip-admin%
+
+    5.7 snip-class%
+
+    5.8 snip-class-list<%>
+
+    5.9 string-snip%
+
+    5.10 style<%>
+
+    5.11 style-delta%
+
+    5.12 style-list%
+
+    5.13 tab-snip%
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,79 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 8  Input and Output
+8.1  Varieties of Ports
+8.2  Default Ports
+8.3  Reading and Writing Racket Data
+8.4  Datatypes and Serialization
+8.5  Bytes, Characters, and Encodings
+8.6  I/ O Patterns
+[...search manuals...]
+  top← prev  up  next → 
+
+8.6 I/O Patterns
+
+If you want to process individual lines of a file, then you can use for with
+in-lines:
+
+    > (define (upcase-all in)
+        (for ([l (in-lines in)])
+          (display (string-upcase l))
+          (newline)))
+    > (upcase-all (open-input-string
+                   (string-append
+                    "Hello, World!\n"
+                    "Can you hear me, now?")))
+    HELLO, WORLD!
+
+    CAN YOU HEAR ME, NOW?
+
+
+If you want to determine whether “hello” appears in a file, then you could
+search separate lines, but it’s even easier to simply apply a regular
+expression (see Regular Expressions) to the stream:
+
+    > (define (has-hello? in)
+        (regexp-match? #rx"hello" in))
+    > (has-hello? (open-input-string "hello"))
+    #t
+
+    > (has-hello? (open-input-string "goodbye"))
+    #f
+
+
+If you want to copy one port into another, use copy-port from racket/port,
+which efficiently transfers large blocks when lots of data is available, but
+also transfers small blocks immediately if that’s all that is available:
+
+    > (define o (open-output-string))
+    > (copy-port (open-input-string "broom") o)
+    > (get-output-string o)
+    "broom"
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

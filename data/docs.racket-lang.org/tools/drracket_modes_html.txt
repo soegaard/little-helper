@@ -1,0 +1,103 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drracket: modes: add-mode
+drracket: modes: mode?
+drracket: modes: get-modes
+drracket: modes: mode-name
+drracket: modes: mode-surrogate
+drracket: modes: mode-repl-submit
+drracket: modes: mode-matches-language
+[...search manuals...]
+  top← prev  up  next → 
+
+18 drracket:modes
+
+(drracket:modes:add-mode   name               
+                           surrogate          
+                           repl-submit        
+                           matches-language)  
+ → drracket:modes:mode?
+  name : string?
+  surrogate : (or/c false/c (is-a?/c mode:surrogate-text<%>))
+  repl-submit : ((is-a?/c drracket:rep:text%) number? . -> . boolean?)
+  matches-language : ((or/c false/c (listof string?)) . -> . boolean?)
+Adds a mode to DrRacket. Returns a mode value that identifies the mode.
+
+The first argument, name, is the name of the mode, used in DrRacket’s GUI to
+allow the user to select this mode.
+
+The surrogate argument is set to the definitions text and the interactions text
+(via the mode:host-text set-surrogate<%> method) whenever this mode is enabled.
+
+The repl-submit procedure is called whenever the user types a return in the
+interactions window. It is passed the interactions editor and the position
+where the last prompt occurs. If it returns #t, the text after the last prompt
+is treated as a program fragment and evaluated, according to the language
+settings. If it returns #f, the text is assumed to be an incomplete program
+fragment, and the keystroke is not treated specially.
+
+The matches-language predicate is called whenever the language changes. If it
+returns #t this mode is installed. It is passed the list of strings that
+correspond to the names of the language in the language dialog.
+
+Modes are tested in the opposite order that they are added. That is, the last
+mode to be added gets tested first when the filename changes or when the
+language changes.
+
+See also drracket:modes:get-modes.
+(drracket:modes:mode? val) → boolean?
+  val : any/c
+Determines if val is a mode.
+(drracket:modes:get-modes) → (listof drracket:modes:mode?)
+Returns all of the modes currently added to DrRacket.
+
+See also drracket:modes:add-mode.
+(drracket:modes:mode-name mode) → string?
+  mode : drracket:modes:mode?
+Extracts the name of the mode.
+
+See also drracket:modes:add-mode.
+(drracket:modes:mode-surrogate mode)
+ → (or/c false/c (is-a?/c mode:surrogate-text<%>))
+  mode : drracket:modes:mode?
+Extracts the surrogate of the mode.
+
+See also drracket:modes:add-mode.
+(drracket:modes:mode-repl-submit mode) → any
+  mode : drracket:modes:mode?
+Extracts the repl submission predicate of the mode.
+
+See also drracket:modes:add-mode.
+(drracket:modes:mode-matches-language mode)
+ → ((or/c false/c (listof string?)) . -> . boolean?)
+  mode : drracket:modes:mode?
+Extracts the language matching predicate of the mode.
+
+See also drracket:modes:add-mode.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

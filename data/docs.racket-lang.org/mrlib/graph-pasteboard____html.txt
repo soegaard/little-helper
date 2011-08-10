@@ -1,0 +1,162 @@
+►  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+▼ 6  Graphs
+6.1  graph-pasteboard<%>
+6.2  graph-pasteboard-mixin
+6.3  graph-snip<%>
+6.4  graph-snip-mixin
+6.5  Graph Functions
+On this page:
+get-arrowhead-params
+on-mouse-over-snips
+set-arrowhead-params
+set-draw-arrow-heads?
+set-flip-labels?
+draw-edges
+draw-single-edge
+update-arrowhead-polygon
+[...search manuals...]
+  top← prev  up  next → 
+
+graph-pasteboard<%> : interface?
+
+(send a-graph-pasteboard get-arrowhead-params)
+  →   number   number   number
+Returns the current settings for the arrowhead’s drawing.
+
+(send a-graph-pasteboard on-mouse-over-snips lst) → void?
+  lst : (listof (is-a?/c snip%))
+This method is called when the mouse passes over any snips in the editor. It is
+only called when the list of snips under the editor changes (ie, if the mouse
+moves, but remains over the same list of snips, the method is not called).
+Also, this method is called with the empty list if the mouse leaves the
+pasteboard.
+
+(send a-graph-pasteboard set-arrowhead-params   angle-width  
+                                                short-side   
+                                                long-size)   
+ → void?
+  angle-width : real?
+  short-side : real?
+  long-size : real?
+Sets drawing parameters for the arrowhead. The first is the angle of the
+arrowhead’s point, in radians. The second is the length of the outside line of
+the arrowhead and the last is the distance from the arrowhead’s point to the
+place where the arrowhead comes together.
+
+(send a-graph-pasteboard set-draw-arrow-heads? draw-arrow-heads?)
+ → void?
+  draw-arrow-heads? : any/c
+Sets a boolean controlling whether or not arrow heads are drawn on the edges
+between nodes.
+
+This setting does not affect self-links—only links between two different nodes.
+
+(send a-graph-pasteboard set-flip-labels? flip-labels?) → void?
+  flip-labels? : any/c
+Sets a boolean controlling whether or not arrow labels are flipped so the are
+always right-side-up. Note that if there are two nodes with edges going from
+the first to the second, and from the second to the first, and the two have
+labels, then this should be turned off or the labels will appear in the same
+space.
+
+This setting does not affect self-links—only links between two different nodes.
+
+(send a-graph-pasteboard draw-edges   dc            
+                                      left          
+                                      top           
+                                      right         
+                                      bottom        
+                                      dx            
+                                      dy)      →   void?
+  dc : (is-a?/c dc<%>)
+  left : real?
+  top : real?
+  right : real?
+  bottom : real?
+  dx : real?
+  dy : real?
+This is called by the on-paint callback of a graph pasteboard, and is expected
+to draw the edges between the snips. The argments are a subset of those passed
+to on-paint and it is only called when the before? argument to on-paint is #t.
+
+(send a-graph-pasteboard draw-single-edge   dc                
+                                            dx                
+                                            dy                
+                                            from              
+                                            to                
+                                            from-x            
+                                            from-y            
+                                            to-x              
+                                            to-y              
+                                            arrow-point-ok?)  
+ → void?
+  dc : (is-a?/c dc<%>)
+  dx : real?
+  dy : real?
+  from : (is-a?/c graph-snip<%>)
+  to : (is-a?/c graph-snip<%>)
+  from-x : real?
+  from-y : real?
+  to-x : real?
+  to-y : real?
+  arrow-point-ok? : (-> real? real? boolean?)
+This method is called to draw each edge in the graph, except for the edges that
+connect a node to itself.
+
+The dc, dx, and dy arguments are the same as in on-paint.
+
+The from-x, from-y, to-x, and to-y arguments specify points on the source and
+destination snip’s bounding box where a straight line between the centers of
+the snip would intersect.
+
+The arrow-point-ok? function returns #t when the point specified by its
+arguments is inside the smallest rectangle that covers both the source and
+destination snips, but is outside of both of the rectangles that surround the
+source and destination snips themselves.
+
+This default implementation uses update-polygon to compute the arrowheads and
+otherwise draws a straight line between the two points and then the arrowheads,
+unless the arrowhead points are not ok according to arrow-point-ok?, in which
+case it just draws the line.
+
+(send a-graph-pasteboard update-arrowhead-polygon   from-x   
+                                                    from-y   
+                                                    to-x     
+                                                    to-y     
+                                                    point1   
+                                                    point2   
+                                                    point3   
+                                                    point4)  
+ → void?
+  from-x : real?
+  from-y : real?
+  to-x : real?
+  to-y : real?
+  point1 : (is-a?/c point%)
+  point2 : (is-a?/c point%)
+  point3 : (is-a?/c point%)
+  point4 : (is-a?/c point%)
+Updates the arguments point1, point2, point3, point4 with the coordinates of an
+arrowhead for a line that connects (from-x,from-y) to (to-x,to-y).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

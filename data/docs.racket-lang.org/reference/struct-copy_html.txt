@@ -1,0 +1,92 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 4  Structures
+4.1  Defining Structure Types: struct
+4.2  Creating Structure Types
+4.3  Structure Type Properties
+4.4  Copying and Updating Structures
+4.5  Structure Utilities
+4.6  Structure Type Transformer Binding
+On this page:
+struct-copy
+[...search manuals...]
+  top← prev  up  next → 
+
+4.4 Copying and Updating Structures
+
+(struct-copy id struct-expr fld-id ...)
+ 
+fld-id   =   [field-id expr]
+         |   [field-id #:parent parent-id expr]
+Creates a new instance of the structure type id with the same field values as
+the structure produced by struct-expr, except that the value of each supplied
+field-id is instead determined by the corresponding expr. If #:parent is
+specified, the parent-id must be bound to a parent structure type of id.
+
+The id must have a transformer binding that encapsulates information about a
+structure type (i.e., like the initial identifier bound by struct), and the
+binding must supply a constructor, a predicate, and all field accessors.
+
+Each field-id is combined with id (or parent-id, if present) to form
+id-field-id (using the lexical context of field-id), which must be one of the
+accessor bindings in id. The accessor bindings determined by different
+field-ids must be distinct. The order of the field-ids need not match the order
+of the corresponding fields in the structure type.
+
+The struct-expr is evaluated first. The result must be an instance of the id
+structure type, otherwise the exn:fail:contract exception is raised. Next, the
+field exprs are evaluated in order (even if the fields that correspond to the
+field-ids are in a different order). Finally, the new structure instance is
+created.
+
+The result of struct-expr can be an instance of a sub-type of id, but the
+resulting copy is an immediate instance of id (not the sub-type).
+
+Examples:
+
+    > (struct fish (color weight) #:transparent)
+    > (define marlin (fish 'orange-and-white 11))
+    > (define dory (struct-copy fish marlin
+                                [color 'blue]))
+    > dory
+    (fish 'blue 11)
+
+    > (struct shark fish (weeks-since-eating-fish) #:transparent)
+    > (define bruce (shark 'grey 110 3))
+    > (define chum (struct-copy shark bruce
+                                [weight #:parent fish 90]
+                                [weeks-since-eating-fish 0]))
+    > chum
+    (shark 'grey 90 0)
+
+    ; subtypes can be copied as if they were supertypes,
+    ; but the result is an instance of the supertype
+    > (define not-really-chum
+        (struct-copy fish bruce
+                     [weight 90]))
+    > not-really-chum
+    (fish 'grey 90)
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

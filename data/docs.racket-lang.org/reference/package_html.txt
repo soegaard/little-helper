@@ -1,0 +1,205 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+define-package
+open-package
+package-begin
+define*
+define*-values
+define*-syntax
+define*-syntaxes
+open*-package
+package?
+package-exported-identifiers
+package-original-identifiers
+[...search manuals...]
+  top← prev  up  next → 
+
+2.23 Limiting Scope: define-package, open-package, ...
+
+ (require racket/package)
+The bindings documented in this section are provided by the racket/package
+library, not racket/base or racket.
+
+(define-package package-id exports form ...)
+(open-package package-id)
+ 
+exports   =   (id ...)
+          |   #:only (id ...)
+          |   #:all-defined
+          |   #:all-defined-except (id ...)
+
+
+            The define-package form is based on the module form of Chez Scheme
+            [Waddell99].
+
+The define-package form is similar to module, except that it can appear in any
+definition context. The forms within a define-package form can be definitions
+or expressions; definitions are not visible outside the define-package form,
+but exports determines a subset of the bindings that can be made visible
+outside the package using the definition form (open-package package-id).
+
+The (id ...) and #:only (id ...) exports forms are equivalent: exactly the
+listed ids are exported. The #:all-defined form exports all definitions from
+the package body, and #:all-defined-except (id ...) exports all definitions
+except the listed ids.
+
+All of the usual definition forms work within a define-package body, and such
+definitions are visible to all expressions within the body (and, in particular,
+the definitions can refer to each other). However, define-package handles
+define*, define*-syntax, define*-values, define*-syntaxes, and open*-package
+specially: the bindings introduced by those forms within a define-package body
+are visible only to forms that appear later in the body, and they can shadow
+any binding from preceding forms (even if the preceding binding did not use one
+of the special * definition forms). If an exported identifier is defined
+multiple times, the last definition is the exported one.
+
+Examples:
+
+    > (define-package presents (doll)
+        (define doll "Molly Coddle")
+        (define robot "Destructo"))
+    > doll
+    reference to undefined identifier: doll
+
+    > robot
+    reference to undefined identifier: robot
+
+    > (open-package presents)
+    > doll
+    "Molly Coddle"
+
+    > robot
+    reference to undefined identifier: robot
+
+    > (define-package big-russian-doll (middle-russian-doll)
+        (define-package middle-russian-doll (little-russian-doll)
+          (define little-russian-doll "Anastasia")))
+    > (open-package big-russian-doll)
+    > (open-package middle-russian-doll)
+    > little-russian-doll
+    "Anastasia"
+
+
+
+(package-begin form ...)
+Similar to define-package, but it only limits the visible of definitions
+without binding a package name. If the last form is an expression, then the
+expression is in tail position for the package-begin form, so that its result
+is the package-begin result.
+
+A package-begin form can be used as an expression, but if it is used in a
+context where definitions are allowed, then the definitions are essentially
+spliced into the enclosing context (though the defined bindings remain hidden
+outside the package-begin).
+
+Examples:
+
+    > (package-begin
+        (define secret "mimi")
+        (list secret))
+    '("mimi")
+
+    > secret
+    reference to undefined identifier: secret
+
+
+
+define*
+define*-values
+define*-syntax
+define*-syntaxes
+open*-package
+Equivalent to define, define-values, define-syntax, define-syntaxes, and
+open-package, except within a define-package or package-begin form, where they
+create bindings that are visible only to later body forms.
+
+Examples:
+
+    > (define-package mail (cookies)
+        (define* cookies (list 'sugar))
+        (define* cookies (cons 'chocolate-chip cookies)))
+    > (open-package mail)
+    > cookies
+    '(chocolate-chip sugar)
+
+    > (define-syntax-rule (define-seven id) (define id 7))
+    > (define-syntax-rule (define*-seven id)
+        (begin
+          (define-package p (id) (define-seven id))
+          (open*-package p)))
+    > (package-begin
+        (define vii 8)
+        (define*-seven vii)
+        vii)
+    compile: cannot use identifier tainted by macro
+
+    transformation in: lambda
+
+
+
+(package? v) → boolean?
+  v : any/c
+(package-exported-identifiers id) → (listof identifier?)
+  id : identifier?
+(package-original-identifiers id) → (listof identifier?)
+  id : identifier?
+The package?, package-exported-identifiers, and package-original-identifiers
+functions are exported for-syntax by racket/package.
+
+The package? predicate returns #t if v is a package value as obtained by
+syntax-local-value on an identifier that is bound to a package.
+
+Given such an identifier, the package-exported-identifiers function returns a
+list of identifiers that correspond to the bindings that would be introduced by
+opening the package in the lexical context being expanded. The
+package-original-identifiers function returns a parallel list of identifiers
+for existing bindings of package’s exports.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,108 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 9  Regular Expressions
+ 9.1  Writing Regexp Patterns
+ 9.2  Matching Regexp Patterns
+ 9.3  Basic Assertions
+ 9.4  Characters and Character Classes
+ 9.5  Quantifiers
+ 9.6  Clusters
+ 9.7  Alternation
+ 9.8  Backtracking
+ 9.9  Looking Ahead and Behind
+9.10  An Extended Example
+► 9.9  Looking Ahead and Behind
+9.9.1  Lookahead
+9.9.2  Lookbehind
+On this page:
+9.9.1 Lookahead
+9.9.2 Lookbehind
+[...search manuals...]
+  top← prev  up  next → 
+
+9.9 Looking Ahead and Behind
+
+You can have assertions in your pattern that look ahead or behind to ensure
+that a subpattern does or does not occur. These “look around” assertions are
+specified by putting the subpattern checked for in a cluster whose leading
+characters are: ?= (for positive lookahead), ?! (negative lookahead), ?<=
+(positive lookbehind), ?<! (negative lookbehind). Note that the subpattern in
+the assertion does not generate a match in the final result; it merely allows
+or disallows the rest of the match.
+
+9.9.1 Lookahead
+
+Positive lookahead with ?= peeks ahead to ensure that its subpattern could
+match.
+
+    > (regexp-match-positions #rx"grey(?=hound)"
+        "i left my grey socks at the greyhound")
+    '((28 . 32))
+
+
+The regexp #rx"grey(?=hound)" matches grey, but only if it is followed by
+hound. Thus, the first grey in the text string is not matched.
+
+Negative lookahead with ?! peeks ahead to ensure that its subpattern could not
+possibly match.
+
+    > (regexp-match-positions #rx"grey(?!hound)"
+        "the gray greyhound ate the grey socks")
+    '((27 . 31))
+
+
+The regexp #rx"grey(?!hound)" matches grey, but only if it is not followed by
+hound. Thus the grey just before socks is matched.
+
+9.9.2 Lookbehind
+
+Positive lookbehind with ?<= checks that its subpattern could match immediately
+to the left of the current position in the text string.
+
+    > (regexp-match-positions #rx"(?<=grey)hound"
+        "the hound in the picture is not a greyhound")
+    '((38 . 43))
+
+
+The regexp #rx"(?<=grey)hound" matches hound, but only if it is preceded by
+grey.
+
+Negative lookbehind with ?<! checks that its subpattern could not possibly
+match immediately to the left.
+
+    > (regexp-match-positions #rx"(?<!grey)hound"
+        "the greyhound in the picture is not a hound")
+    '((38 . 43))
+
+
+The regexp #rx"(?<!grey)hound" matches hound, but only if it is not preceded by
+grey.
+
+Lookaheads and lookbehinds can be convenient when they are not confusing.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

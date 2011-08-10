@@ -1,0 +1,58 @@
+▼  The Typed Racket Reference
+ 1  Type Reference
+ 2  Special Form Reference
+ 3  Libraries Provided With Typed Racket
+ 4  Utilities
+ 5  Typed Racket Syntax Without Type Checking
+ 6  Typed Regions
+ 7  Optimization in Typed Racket
+ 8  Legacy Forms
+ 9  Compatibility Languages
+10  Experimental Features
+On this page:
+define-type-alias
+define-typed-struct
+require/ opaque-type
+require-typed-struct
+pdefine:
+pred
+Un
+mu
+Tuple
+Parameter
+Pair
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Legacy Forms
+
+The following forms are provided by Typed Racket for backwards compatibility.
+
+define-type-alias
+Equivalent to define-type.
+define-typed-struct
+Equivalent to define-struct:
+require/opaque-type
+Similar to using the opaque keyword with require/typed.
+require-typed-struct
+Similar to using the struct keyword with require/typed.
+pdefine:
+Defines a polymorphic function.
+(pred t)
+Equivalent to (Any -> Boolean : t).
+
+Un
+An alias for U.
+mu
+An alias for Rec.
+Tuple
+An alias for List.
+Parameter
+An alias for Parameterof.
+Pair
+An alias for Pairof.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

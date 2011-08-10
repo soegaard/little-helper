@@ -1,0 +1,159 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+quasiquote
+unquote
+unquote-splicing
+[...search manuals...]
+  top← prev  up  next → 
+
+2.20 Quasiquoting: quasiquote, unquote, and unquote-splicing
+
+            +Quasiquoting: quasiquote and ` in The Racket Guide introduces
+            quasiquote.
+
+(quasiquote datum)
+The same as 'datum if datum does not include (unquote expr) or (
+unquote-splicing expr). An (unquote expr) form escapes from the quote, however,
+and the result of the expr takes the place of the (unquote expr) form in the
+quasiquote result. An (unquote-splicing expr) similarly escapes, but the expr
+must produce a list, and its elements are spliced as multiple values place of
+the (unquote-splicing expr), which must appear as the car or a quoted pair, as
+an element of a quoted vector, or as an element of a quoted prefab structure;
+in the case of a pair, if the cdr of the relevant quoted pair is empty, then
+expr need not produce a list, and its result is used directly in place of the
+quoted pair (in the same way that append accepts a non-list final argument). In
+a quoted hash table, an (unquote expr) or (unquote-splicing expr) expression
+escapes only in the second element of an entry pair (i.e., the value), while
+entry keys are always implicitly quoted. If unquote or unquote-splicing appears
+within quasiquote in any other way than as (unquote expr) or (unquote-splicing
+expr), a syntax error is reported.
+
+Examples:
+
+    > (quasiquote (0 1 2))
+    '(0 1 2)
+
+    > (quasiquote (0 (unquote (+ 1 2)) 4))
+    '(0 3 4)
+
+    > (quasiquote (0 (unquote-splicing (list 1 2)) 4))
+    '(0 1 2 4)
+
+    > (quasiquote (0 (unquote-splicing 1) 4))
+    unquote-splicing: expected argument of type <proper list>;
+
+    given 1
+
+    > (quasiquote (0 (unquote-splicing 1)))
+    '(0 . 1)
+
+
+
+A quasiquote, unquote, or unquote-splicing form is typically abbreviated with
+`, ,, or ,@, respectively. See also Reading Quotes.
+
+Examples:
+
+    > `(0 1 2)
+    '(0 1 2)
+
+    > `(1 ,(+ 1 2) 4)
+    '(1 3 4)
+
+    > `#s(stuff 1 ,(+ 1 2) 4)
+    '#s(stuff 1 3 4)
+
+    > `#hash(("a" . ,(+ 1 2)))
+    '#hash(("a" . 3))
+
+    > `#hash((,(+ 1 2) . "a"))
+    '#hash((,'(+ 1 2) . "a"))
+
+    > `(1 ,@(list 1 2) 4)
+    '(1 1 2 4)
+
+    > `#(1 ,@(list 1 2) 4)
+    '#(1 1 2 4)
+
+
+
+A quasiquote form within the original datum increments the level of
+quasiquotation: within the quasiquote form, each unquote or unquote-splicing is
+preserved, but a further nested unquote or unquote-splicing escapes. Multiple
+nestings of quasiquote require multiple nestings of unquote or unquote-splicing
+to escape.
+
+Examples:
+
+    > `(1 `,(+ 1 ,(+ 2 3)) 4)
+    '(1 `,(+ 1 5)  4)
+
+    > `(1 ```,,@,,@(list (+ 1 2)) 4)
+    '(1 ```,,@,3    4)
+
+
+
+The quasiquote form allocates only as many fresh cons cells, vectors, and boxes
+as are needed without analyzing unquote and unquote-splicing expressions. For
+example, in
+
+    `(,1 2 3)
+
+a single tail '(2 3) is used for every evaluation of the quasiquote expression.
+
+unquote
+See quasiquote, where unquote is recognized as an escape. An unquote form as an
+expression is a syntax error.
+
+unquote-splicing
+See quasiquote, where unquote-splicing is recognized as an escape. An
+unquote-splicing form as an expression is a syntax error.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

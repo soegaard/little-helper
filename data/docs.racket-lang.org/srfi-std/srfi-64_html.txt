@@ -1,0 +1,714 @@
+Title
+
+A Scheme API for test suites
+
+Author
+
+Per Bothner <per@bothner.com>
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. It will remain in draft status until
+2005/03/17, or as amended. To provide input on this SRFI, please mailto:srfi
+minus 64 at srfi dot schemers dot org. See instructions here to subscribe to
+the list. You can access previous messages via the archive of the mailing list.
+
+  • Received: 2005/01/07
+  • Draft: 2005/01/28 - 2005/03/28
+  • Revised: 2005/10/18
+  • Revised: 2006/02/24
+  • Final: 2006/06/18
+
+Abstract
+
+This defines an API for writing test suites, to make it easy to portably test
+Scheme APIs, libraries, applications, and implementations. A test suite is a
+collection of test cases that execute in the context of a test-runner. This
+specifications also supports writing new test-runners, to allow customization
+of reporting and processing the result of running test suites.
+
+Rationale
+
+The Scheme community needs a standard for writing test suites. Every SRFI or
+other library should come with a test suite. Such a test suite must be
+portable, without requiring any non-standard features, such as modules. The
+test suite implementation or "runner" need not be portable, but it is desirable
+that it be possible to write a portable basic implementation.
+
+There are other testing frameworks written in Scheme, including SchemeUnit.
+However SchemeUnit is not portable. It is also a bit on the verbose side. It
+would be useful to have a bridge between this framework and SchemeUnit so
+SchemeUnit tests could run under this framework and vice versa. There exists
+also at least one Scheme wrapper providing a Scheme interface to the `standard'
+JUnit API for Java. It would be useful to have a bridge so that tests written
+using this framework can run under a JUnit runner. Neither of these features
+are part of this specification.
+
+This API makes use of implicit dynamic state, including an implicit `test
+runner'. This makes the API convenient and terse to use, but it may be a little
+less elegant and `compositional' than using explicit test objects, such as
+JUnit-style frameworks. It is not claimed to follow either object-oriented or
+functional design principles, but I hope it is useful and convenient to use and
+extend.
+
+This proposal allows converting a Scheme source file to a test suite by just
+adding a few macros. You don't have to write the entire file in a new form,
+thus you don't have to re-indent it.
+
+All names defined by the API start with the prefix test-. All function-like
+forms are defined as syntax. They may be implemented as functions or macros or
+built-ins. The reason for specifying them as syntax is to allow specific tests
+to be skipped without evaluating sub-expressions, or for implementations to add
+features such as printing line numbers or catching exceptions.
+
+Specification
+
+While this is a moderately complex specification, you should be able to write
+simple test suites after just reading the first few sections below. More
+advanced functionality, such as writing a custom test-runner, is at the end of
+the specification.
+
+Writing basic test suites
+
+Let's start with a simple example. This is a complete self-contained
+test-suite.
+
+;; Initialize and give a name to a simple testsuite.
+(test-begin "vec-test")
+(define v (make-vector 5 99))
+;; Require that an expression evaluate to true.
+(test-assert (vector? v))
+;; Test that an expression is eqv? to some other expression.
+(test-eqv 99 (vector-ref v 2))
+(vector-set! v 2 7)
+(test-eqv 7 (vector-ref v 2))
+;; Finish the testsuite, and report results.
+(test-end "vec-test")
+
+This testsuite could be saved in its own source file. Nothing else is needed:
+We do not require any top-level forms, so it is easy to wrap an existing
+program or test to this form, without adding indentation. It is also easy to
+add new tests, without having to name individual tests (though that is
+optional).
+
+Test cases are executed in the context of a test runner, which is a object that
+accumulates and reports test results. This specification defines how to create
+and use custom test runners, but implementations should also provide a default
+test runner. It is suggested (but not required) that loading the above file in
+a top-level environment will cause the tests to be executed using an
+implementation-specified default test runner, and test-end will cause a summary
+to be displayed in an implementation-specified manner.
+
+Simple test-cases
+
+Primitive test cases test that a given condition is true. They may have a name.
+The core test case form is test-assert:
+
+(test-assert [test-name] expression)
+
+This evaluates the expression. The test passes if the result is true; if the
+result is false, a test failure is reported. The test also fails if an
+exception is raised, assuming the implementation has a way to catch exceptions.
+How the failure is reported depends on the test runner environment. The
+test-name is a string that names the test case. (Though the test-name is a
+string literal in the examples, it is an expression. It is evaluated only
+once.) It is used when reporting errors, and also when skipping tests, as
+described below. It is an error to invoke test-assert if there is no current
+test runner.
+
+The following forms may be more convenient than using test-assert directly:
+
+(test-eqv [test-name] expected test-expr)
+
+This is equivalent to:
+
+(test-assert [test-name] (eqv? expected test-expr))
+
+Similarly test-equal and test-eq are shorthand for test-assert combined with
+equal? or eq?, respectively:
+
+(test-equal [test-name] expected test-expr)
+(test-eq [test-name] expected test-expr)
+
+Here is a simple example:
+
+(define (mean x y) (/ (+ x y) 2.0))
+(test-eqv 4 (mean 3 5))
+
+For testing approximate equality of inexact reals we can use test-approximate:
+
+(test-approximate [test-name] expected test-expr error)
+
+This is equivalent to (except that each argument is only evaluated once):
+
+(test-assert [test-name]
+  (and (>= test-expr (- expected error))
+       (<= test-expr (+ expected error))))
+
+Tests for catching errors
+
+We need a way to specify that evaluation should fail. This verifies that errors
+are detected when required.
+
+(test-error [[test-name] error-type] test-expr)
+
+Evaluating test-expr is expected to signal an error. The kind of error is
+indicated by error-type.
+
+If the error-type is left out, or it is #t, it means "some kind of unspecified
+error should be signaled". For example:
+
+(test-error #t (vector-ref '#(1 2) 9))
+
+This specification leaves it implementation-defined (or for a future
+specification) what form test-error may take, though all implementations must
+allow #t. Some implementations may support SRFI-35's conditions, but these are
+only standardized for SRFI-36's I/O conditions, which are seldom useful in test
+suites. An implementation may also allow implementation-specific `exception
+types'. For example Java-based implementations may allow the names of Java
+exception classes:
+
+;; Kawa-specific example
+(test-error <java.lang.IndexOutOfBoundsException> (vector-ref '#(1 2) 9))
+
+An implementation that cannot catch exceptions should skip test-error forms.
+
+Testing syntax
+
+Testing syntax is tricky, especially if we want to check that invalid syntax is
+causes an error. The following utility function can help:
+
+(test-read-eval-string string)
+
+This function parses string (using read) and evaluates the result. The result
+of evaluation is returned from test-read-eval-string. An error is signalled if
+there are unread characters after the read is done. For example:
+(test-read-eval-string "(+ 3 4)") evaluates to 7.
+(test-read-eval-string "(+ 3 4") signals an error.
+(test-read-eval-string "(+ 3 4) ") signals an error, because there is extra
+`junk' (i.e. a space) after the list is read.
+
+The test-read-eval-string used in tests:
+
+(test-equal 7 (test-read-eval-string "(+ 3 4)"))
+(test-error (test-read-eval-string "(+ 3"))
+(test-equal #\newline (test-read-eval-string "#\\newline"))
+(test-error (test-read-eval-string "#\\newlin"))
+
+;; Skip the next 2 tests unless srfi-62 is available.
+(test-skip (cond-expand (srfi-62 0) (else 2)))
+(test-equal 5 (test-read-eval-string "(+ 1 #;(* 2 3) 4)"))
+(test-equal '(x z) (test-read-string "(list 'x #;'y 'z)"))
+
+Test groups and paths
+
+A test group is a named sequence of forms containing testcases, expressions,
+and definitions. Entering a group sets the test group name; leaving a group
+restores the previous group name. These are dynamic (run-time) operations, and
+a group has no other effect or identity. Test groups are informal groupings:
+they are neither Scheme values, nor are they syntactic forms.
+
+A test group may contain nested inner test groups. The test group path is a
+list of the currently-active (entered) test group names, oldest (outermost)
+first.
+
+(test-begin suite-name [count])
+
+A test-begin enters a new test group. The suite-name becomes the current test
+group name, and is added to the end of the test group path. Portable test
+suites should use a sting literal for suite-name; the effect of expressions or
+other kinds of literals is unspecified.
+
+Rationale: In some ways using symbols would be preferable. However, we want
+human-readable names, and standard Scheme does not provide a way to include
+spaces or mixed-case text in literal symbols.
+
+The optional count must match the number of test-cases executed by this group.
+(Nested test groups count as a single test case for this count.) This extra
+test may be useful to catch cases where a test doesn't get executed because of
+some unexpected error.
+
+Additionally, if there is no currently executing test runner, one is installed
+in an implementation-defined manner.
+
+(test-end [suite-name])
+
+A test-end leaves the current test group. An error is reported if the
+suite-name does not match the current test group name.
+
+Additionally, if the matching test-begin installed a new test-runner, then the
+test-end will de-install it, after reporting the accumulated test results in an
+implementation-defined manner.
+
+(test-group suite-name decl-or-expr ...)
+
+Equivalent to:
+
+(if (not (test-to-skip% suite-name))
+  (dynamic-wind
+    (lambda () (test-begin suite-name))
+    (lambda () decl-or-expr ...)
+    (lambda () (test-end suite-name))))
+
+This is usually equivalent to executing the decl-or-exprs within the named test
+group. However, the entire group is skipped if it matched an active test-skip
+(see later). Also, the test-end is executed in case of an exception.
+
+Handling set-up and cleanup
+
+(test-group-with-cleanup suite-name
+  decl-or-expr ...
+  cleanup-form)
+
+Execute each of the decl-or-expr forms in order (as in a <body>), and then
+execute the cleanup-form. The latter should be executed even if one of a
+decl-or-expr forms raises an exception (assuming the implementation has a way
+to catch exceptions).
+
+For example:
+
+(test-group-with-cleanup "test-file"
+  (define f (open-output-file "log"))
+  (do-a-bunch-of-tests f)
+  (close-output-port f))
+
+Conditonal test-suites and other advanced features
+
+The following describes features for controlling which tests to execute, or
+specifing that some tests are expected to fail.
+
+Test specifiers
+
+Sometimes we want to only run certain tests, or we know that certain tests are
+expected to fail. A test specifier is one-argument function that takes a
+test-runner and returns a boolean. The specifier may be run before a test is
+performed, and the result may control whether the test is executed. For
+convenience, a specifier may also be a non-procedure value, which is coerced to
+a specifier procedure, as described below for count and name.
+
+A simple example is:
+
+(if some-condition
+  (test-skip 2)) ;; skip next 2 tests
+
+(test-match-name name)
+The resulting specifier matches if the current test name (as returned by
+test-runner-test-name) is equals? to name.
+
+(test-match-nth n [count])
+This evaluates to a stateful predicate: A counter keeps track of how many times
+it has been called. The predicate matches the n'th time it is called (where 1
+is the first time), and the next (- count 1) times, where count defaults to 1.
+
+(test-match-any specifier ...)
+The resulting specifier matches if any specifier matches. Each specifier is
+applied, in order, so side-effects from a later specifier happen even if an
+earlier specifier is true.
+
+(test-match-all specifier ...)
+The resulting specifier matches if each specifier matches. Each specifier is
+applied, in order, so side-effects from a later specifier happen even if an
+earlier specifier is false.
+
+count (i.e. an integer)
+Convenience short-hand for: (test-match-nth 1 count).
+
+name (i.e. a string)
+Convenience short-hand for (test-match-name name).
+
+Skipping selected tests
+
+In some cases you may want to skip a test.
+
+(test-skip specifier)
+
+Evaluating test-skip adds the resulting specifier to the set of currently
+active skip-specifiers. Before each test (or test-group) the set of active
+skip-specifiers are applied to the active test-runner. If any specifier
+matches, then the test is skipped.
+
+For convenience, if the specifier is a string that is syntactic sugar for
+(test-match-name specifier). For example:
+
+(test-skip "test-b")
+(test-assert "test-a")   ;; executed
+(test-assert "test-b")   ;; skipped
+
+Any skip specifiers introduced by a test-skip are removed by a following
+non-nested test-end.
+
+(test-begin "group1")
+(test-skip "test-a")
+(test-assert "test-a")   ;; skipped
+(test-end "group1")      ;; Undoes the prior test-skip
+(test-assert "test-a")   ;; executed
+
+Expected failures
+
+Sometimes you know a test case will fail, but you don't have time to or can't
+fix it. Maybe a certain feature only works on certain platforms. However, you
+want the test-case to be there to remind you to fix it. You want to note that
+such tests are expected to fail.
+
+(test-expect-fail specifier)
+
+Matching tests (where matching is defined as in test-skip) are expected to
+fail. This only affects test reporting, not test execution. For example:
+
+(test-expect-fail 2)
+(test-eqv ...) ;; expected to fail
+(test-eqv ...) ;; expected to fail
+(test-eqv ...) ;; expected to pass
+
+Test-runner
+
+A test-runner is an object that runs a test-suite, and manages the state. The
+test group path, and the sets skip and expected-fail specifiers are part of the
+test-runner. A test-runner will also typically accumulate statistics about
+executed tests,
+
+(test-runner? value)
+True iff value is a test-runner object.
+
+(test-runner-current)
+(test-runner-current runner)
+Get or set the current test-runner. If an implementation supports parameter
+objects (as in SRFI-39), then test-runner-current can be a parameter object.
+Alternatively, test-runner-current may be implemented as a macro or function
+that uses a fluid or thread-local variable, or a plain global variable.
+
+(test-runner-get)
+Same as (test-runner-current), buth trows an exception if there is no current
+test-runner.
+
+(test-runner-simple)
+Creates a new simple test-runner, that prints errors and a summary on the
+standard output port.
+
+(test-runner-null)
+Creates a new test-runner, that does nothing with the test results. This is
+mainly meant for extending when writing a custom runner.
+
+Implementations may provide other test-runners, perhaps a (test-runner-gui).
+
+(test-runner-create)
+Create a new test-runner. Equivalent to ((test-runner-factory)).
+
+(test-runner-factory)
+(test-runner-factory factory)
+Get or set the current test-runner factory. A factory is a zero-argument
+function that creates a new test-runner. The default value is
+test-runner-simple, but implementations may provide a way to override the
+default. As with test-runner-current, this may be a parameter object, or use a
+per-thread, fluid, or global variable.
+
+Running specific tests with a specified runner
+
+(test-apply [runner] specifier ... procedure)
+Calls procedure with no arguments using the specified runner as the current
+test-runner. If runner is omitted, then (test-runner-current) is used. (If
+there is no current runner, one is created as in test-begin.) If one or more
+specifiers are listed then only tests matching the specifiers are executed. A
+specifier has the same form as one used for test-skip. A test is executed if it
+matches any of the specifiers in the test-apply and does not match any active
+test-skip specifiers.
+
+(test-with-runner runner decl-or-expr ...)
+Executes each decl-or-expr in order in a context where the current test-runner
+is runner.
+
+Test results
+
+Running a test sets various status properties in the current test-runner. This
+can be examined by a custom test-runner, or (more rarely) in a test-suite.
+
+Result kind
+
+Running a test may yield one of the following status symbols:
+
+'pass
+    The passed, as expected.
+'fail
+    The test failed (and was not expected to).
+'xfail
+    The test failed and was expected to.
+'xpass
+    The test passed, but was expected to fail.
+'skip
+    The test was skipped.
+
+(test-result-kind [runner])
+Return one of the above result codes from the most recent tests. Returns #f if
+no tests have been run yet. If we've started on a new test, but don't have a
+result yet, then the result kind is 'xfail is the test is expected to fail,
+'skip is the test is supposed to be skipped, or #f otherwise.
+
+(test-passed? [runner])
+True if the value of (test-result-kind [runner]) is one of 'pass or 'xpass.
+This is a convenient shorthand that might be useful in a test suite to only run
+certain tests if the previous test passed.
+
+Test result properties
+
+A test runner also maintains a set of more detailed `result properties'
+associated with the current or most recent test. (I.e. the properties of the
+most recent test are available as long as a new test hasn't started.) Each
+property has a name (a symbol) and a value (any value). Some properties are
+standard or set by the implementation; implementations can add more.
+
+(test-result-ref runner 'pname [default])
+Returns the property value associated with the pname property name. If there is
+no value associated with 'pname return default, or #f if default isn't
+specified.
+
+(test-result-set! runner 'pname value)
+Sets the property value associated with the pname property name to value.
+Usually implementation code should call this function, but it may be useful for
+a custom test-runner to add extra properties.
+
+(test-result-remove runner 'pname)
+Remove the property with the name 'pname.
+
+(test-result-clear runner)
+Remove all result properties. The implementation automatically calls
+test-result-clear at the start of a test-assert and similar procedures.
+
+(test-result-alist runner)
+Returns an association list of the current result properties. It is unspecified
+if the result shares state with the test-runner. The result should not be
+modified, on the other hand the result may be implicitly modified by future
+test-result-set! or test-result-remove calls. However, A test-result-clear does
+not modify the returned alist. Thus you can `archive' result objects from
+previous runs.
+
+Standard result properties
+
+The set of available result properties is implementation-specific. However, it
+is suggested that the following might be provided:
+
+'result-kind
+    The result kind, as defined previously. This is the only mandatory result
+    property.
+    (test-result-kind runner) is equivalent to:
+    (test-result-ref runner 'result-kind)
+'source-file
+'source-line
+    If known, the location of test statements (such as test-assert) in test
+    suite source code..
+'source-form
+    The source form, if meaningful and known.
+'expected-value
+    The expected non-error result, if meaningful and known.
+'expected-error
+    The error-type specified in a test-error, if it meaningful and known.
+'actual-value
+    The actual non-error result value, if meaningful and known.
+'actual-error
+    The error value, if an error was signalled and it is known. The actual
+    error value is implementation-defined.
+
+Writing a new test-runner
+
+This section specifies how to write a test-runner. It can be ignored if you
+just want to write test-cases.
+
+Call-back functions
+
+These call-back functions are `methods' (in the object-oriented sense) of a
+test-runner. A method test-runner-on-event is called by the implementation when
+event happens.
+
+To define (set) the callback function for event use the following expression.
+(This is normally done when initializing a test-runner.)
+(test-runner-on-event! runner event-function)
+
+An event-function takes a test-runner argument, and possibly other arguments,
+depending on the event.
+
+To extract (get) the callback function for event do this:
+(test-runner-on-event runner)
+
+To extract call the callback function for event use the following expression.
+(This is normally done by the implementation core.)
+((test-runner-on-event runner) runner other-args ...)
+
+The following call-back hooks are available.
+
+(test-runner-on-test-begin runner)
+(test-runner-on-test-begin! runner on-test-begin-function)
+(on-test-begin-function runner)
+The on-test-begin-function is called at the start of an individual testcase,
+before the test expression (and expected value) are evaluated.
+
+(test-runner-on-test-end runner)
+(test-runner-on-test-end! runner on-test-end-function)
+(on-test-end-function runner)
+The on-test-end-function is called at the end of an individual testcase, when
+the result of the test is available.
+
+(test-runner-on-group-begin runner)
+(test-runner-on-group-begin! runner on-group-begin-function)
+(on-group-begin-function runner suite-name count)
+The on-group-begin-function is called by a test-begin, including at the start
+of a test-group. The suite-name is a Scheme string, and count is an integer or
+#f.
+
+(test-runner-on-group-end runner)
+(test-runner-on-group-end! runner on-group-end-function)
+(on-group-end-function runner)
+The on-group-end-function is called by a test-end, including at the end of a
+test-group.
+
+(test-runner-on-bad-count runner)
+(test-runner-on-bad-count! runner on-bad-count-function)
+(on-bad-count-function runner actual-count expected-count)
+Called from test-end (before the on-group-end-function is called) if an
+expected-count was specified by the matching test-begin and the expected-count
+does not match the actual-count of tests actually executed or skipped.
+
+(test-runner-on-base-end-name runner)
+(test-runner-on-bad-end-name! runner on-bad-end-name-function)
+(on-bad-end-name-function runner begin-name end-name)
+Called from test-end (before the on-group-end-function is called) if a
+suite-name was specified, and it did not that the name in the matching
+test-begin.
+
+(test-runner-on-final runner)
+(test-runner-on-final! runner on-final-function)
+(on-final-function runner)
+The on-final-function takes one parameter (a test-runner) and typically
+displays a summary (count) of the tests. The on-final-function is called after
+called the on-group-end-function correspondiong to the outermost test-end. The
+default value is test-on-final-simple which writes to the standard output port
+the number of tests of the various kinds.
+
+The default test-runner returned by test-runner-simple uses the following
+call-back functions:
+(test-on-test-begin-simple runner)
+(test-on-test-end-simple runner)
+(test-on-group-begin-simple runner suite-name count)
+(test-on-group-end-simple runner)
+(test-on-bad-count-simple runner actual-count expected-count)
+(test-on-bad-end-name-simple runner begin-name end-name)
+You can call those if you want to write a your own test-runner.
+
+Test-runner components
+
+The following functions are for accessing the other components of a
+test-runner. They would normally only be used to write a new test-runner or a
+match-predicate.
+
+(test-runner-pass-count runner)
+Returns the number of tests that passed, and were expected to pass.
+
+(test-runner-fail-count runner)
+Returns the number of tests that failed, but were expected to pass.
+
+(test-runner-xpass-count runner)
+Returns the number of tests that passed, but were expected to fail.
+
+(test-runner-xfail-count runner)
+Returns the number of tests that failed, and were expected to pass.
+
+(test-runner-skip-count runner)
+Returns the number of tests or test groups that were skipped.
+
+(test-runner-test-name runner)
+Returns the name of the current test or test group, as a string. During
+execution of test-begin this is the name of the test group; during the
+execution of an actual test, this is the name of the test-case. If no name was
+specified, the name is the empty string.
+
+(test-runner-group-path runner)
+A list of names of groups we're nested in, with the outermost group first.
+
+(test-runner-group-stack runner)
+A list of names of groups we're nested in, with the outermost group last. (This
+is more efficient than test-runner-group-path, since it doesn't require any
+copying.)
+
+(test-runner-aux-value runner)
+(test-runner-aux-value! runner on-test)
+Get or set the aux-value field of a test-runner. This field is not used by this
+API or the test-runner-simple test-runner, but may be used by custom
+test-runners to store extra state.
+
+(test-runner-reset runner)
+Resets the state of the runner to its initial state.
+
+Example
+
+This is an example of a simple custom test-runner. Loading this program before
+running a test-suite will install it as the default test runner.
+
+(define (my-simple-runner filename)
+  (let ((runner (test-runner-null))
+        (port (open-output-file filename))
+        (num-passed 0)
+        (num-failed 0))
+    (test-runner-on-test! runner
+      (lambda (runner result)
+        (case (cdr (assq 'result-kind result))
+          ((pass xpass) (set! num-passed (+ num-passed 1)))
+          ((fail xfail) (set! num-failed (+ num-failed 1)))
+          (else #t))))
+    (test-runner-on-final! runner
+       (lambda (runner)
+          (format port "Passing tests: ~d.~%Failing tests: ~d.~%"
+                  num-passed num-failed)
+          (close-output-port port)))
+    runner))
+
+(test-runner-factory
+ (lambda () (my-simple-runner "/tmp/my-test.log")))
+
+Implementation
+
+The test implementation uses cond-expand (SRFI-0) to select different code
+depending on certain SRFI names (srfi-9, srfi-34, srfi-35, srfi-39), or
+implementations (kawa). It should otherwise be portable to any R5RS
+implementation.
+
+testing.scm
+
+Examples
+
+Here is srfi-25-test.scm, based converted from Jussi Piitulainen's test.scm for
+SRFI-25.
+
+Test suite
+
+Of course we need a test suite for the testing framework itself. This suite
+srfi-64-test.scm was contributed by Donovan Kolbly <donovan@rscheme.org>.
+
+Copyright
+
+Copyright (C) Per Bothner (2005, 2006)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Author: Per Bothner
+
+Editor: Francisco Solsona
+
+Last modified: Sun Jan 28 13:40:18 MET 2007
+

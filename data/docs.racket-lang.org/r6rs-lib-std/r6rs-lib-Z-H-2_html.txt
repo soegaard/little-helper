@@ -1,0 +1,223 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 1
+
+Unicode
+
+The procedures exported by the (rnrs unicode (6))library provide access to some
+aspects of the Unicode semantics for characters and strings: category
+information, case-independent comparisons, case mappings, and normalization [12
+].
+
+Some of the procedures that operate on characters or strings ignore the
+difference between upper case and lower case. These procedures have “-ci” (for
+“case insensitive”) embedded in their names.
+
+1.1  Characters
+
+(char-upcase char)    procedure 
+(char-downcase char)    procedure 
+(char-titlecase char)    procedure 
+(char-foldcase char)    procedure 
+
+These procedures take a character argument and return a character result. If
+the argument is an upper-case or title-case character, and if there is a single
+character that is its lower-case form, then char-downcase returns that
+character. If the argument is a lower-case or title-case character, and there
+is a single character that is its upper-case form, then char-upcase returns
+that character. If the argument is a lower-case or upper-case character, and
+there is a single character that is its title-case form, then char-titlecase
+returns that character. If the argument is not a title-case character and there
+is no single character that is its title-case form, then char-titlecase returns
+the upper-case form of the argument. Finally, if the character has a
+case-folded character, then char-foldcase returns that character. Otherwise the
+character returned is the same as the argument. For Turkic characters I (#\
+x130) and (#\x131), char-foldcase behaves as the identity function; otherwise
+char-foldcase is the same as char-downcase composed with char-upcase.
+
+(char-upcase #\i)         ⇒ #\I
+(char-downcase #\i)         ⇒ #\i
+(char-titlecase #\i)         ⇒ #\I
+(char-foldcase #\i)         ⇒ #\i
+
+(char-upcase #\ss)         ⇒ #\ss
+(char-downcase #\ss)         ⇒ #\ss
+(char-titlecase #\ss)         ⇒ #\ss
+(char-foldcase #\ss)         ⇒ #\ss
+
+(char-upcase #\Σ)         ⇒ #\Σ
+(char-downcase #\Σ)         ⇒ #\σ
+(char-titlecase #\Σ)         ⇒ #\Σ
+(char-foldcase #\Σ)         ⇒ #\σ
+
+(char-upcase #\ς)         ⇒ #\Σ
+(char-downcase #\ς)         ⇒ #\ς
+(char-titlecase #\ς)         ⇒ #\Σ
+(char-foldcase #\ς)         ⇒ #\σ
+
+    Note:   Note that char-titlecase does not always return a title-case
+    character.
+
+    Note:   These procedures are consistent with Unicode’s locale-independent
+    mappings from scalar values to scalar values for upcase, downcase,
+    titlecase, and case-folding operations. These mappings can be extracted
+    from UnicodeData.txt and CaseFolding.txt from the Unicode Consortium,
+    ignoring Turkic mappings in the latter.
+
+    Note that these character-based procedures are an incomplete approximation
+    to case conversion, even ignoring the user’s locale. In general, case
+    mappings require the context of a string, both in arguments and in result.
+    The string-upcase, string-downcase, string-titlecase, and string-foldcase
+    procedures (section 1.2) perform more general case conversion.
+
+(char-ci=? char[1] char[2] char[3] ...)    procedure 
+(char-ci<? char[1] char[2] char[3] ...)    procedure 
+(char-ci>? char[1] char[2] char[3] ...)    procedure 
+(char-ci<=? char[1] char[2] char[3] ...)    procedure 
+(char-ci>=? char[1] char[2] char[3] ...)    procedure 
+
+These procedures are similar to char=?, etc., but operate on the case-folded
+versions of the characters.
+
+(char-ci<? #\z #\Z)         ⇒ #f
+(char-ci=? #\z #\Z)         ⇒ #t
+(char-ci=? #\ς #\σ)         ⇒ #t
+
+(char-alphabetic? char)    procedure 
+(char-numeric? char)    procedure 
+(char-whitespace? char)    procedure 
+(char-upper-case? char)    procedure 
+(char-lower-case? char)    procedure 
+(char-title-case? char)    procedure 
+
+These procedures return #t if their arguments are alphabetic, numeric,
+whitespace, upper-case, lower-case, or title-case characters, respectively;
+otherwise they return #f.
+
+A character is alphabetic if it has the Unicode “Alphabetic” property. A
+character is numeric if it has the Unicode “Numeric” property. A character is
+whitespace if has the Unicode “White_Space” property. A character is upper case
+if it has the Unicode “Uppercase” property, lower case if it has the
+“Lowercase” property, and title case if it is in the Lt general category.
+
+(char-alphabetic? #\a)         ⇒ #t
+(char-numeric? #\1)         ⇒ #t
+(char-whitespace? #\space)         ⇒ #t
+(char-whitespace? #\x00A0)         ⇒ #t
+(char-upper-case? #\Σ)         ⇒ #t
+(char-lower-case? #\σ)         ⇒ #t
+(char-lower-case? #\x00AA)         ⇒ #t
+(char-title-case? #\I)         ⇒ #f
+(char-title-case? #\x01C5)         ⇒ #t
+
+(char-general-category char)    procedure 
+
+Returns a symbol representing the Unicode general category of char, one of Lu,
+Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Ps, Pe, Pi, Pf, Pd, Pc, Po, Sc, Sm, Sk,
+So, Zs, Zp, Zl, Cc, Cf, Cs, Co, or Cn.
+
+(char-general-category #\a)         ⇒ Ll
+(char-general-category #\space) 
+                ⇒ Zs
+(char-general-category #\x10FFFF) 
+                ⇒ Cn  
+
+1.2  Strings
+
+(string-upcase string)    procedure 
+(string-downcase string)    procedure 
+(string-titlecase string)    procedure 
+(string-foldcase string)    procedure 
+
+These procedures take a string argument and return a string result. They are
+defined in terms of Unicode’s locale-independent case mappings from Unicode
+scalar-value sequences to scalar-value sequences. In particular, the length of
+the result string can be different from the length of the input string. When
+the specified result is equal in the sense of string=? to the argument, these
+procedures may return the argument instead of a newly allocated string.
+
+The string-upcase procedure converts a string to upper case; string-downcase
+converts a string to lower case. The string-foldcase procedure converts the
+string to its case-folded counterpart, using the full case-folding mapping, but
+without the special mappings for Turkic languages. The string-titlecase
+procedure converts the first cased character of each word via char-titlecase,
+and downcases all other cased characters.
+
+(string-upcase "Hi")         ⇒ "HI"
+(string-downcase "Hi")         ⇒ "hi"
+(string-foldcase "Hi")         ⇒ "hi"
+
+(string-upcase "Strasse")         ⇒ "STRASSE"
+(string-downcase "Strasse")         ⇒ "strasse"
+(string-foldcase "Strasse")         ⇒ "strasse"
+(string-downcase "STRASSE")          ⇒ "strasse"
+
+(string-downcase "Σ")         ⇒ "σ"
+
+; Chi Alpha Omicron Sigma:
+(string-upcase "XAOΣ")         ⇒ "XAOΣ" 
+(string-downcase "XAOΣ")         ⇒ "χαoς"
+(string-downcase "XAOΣΣ")         ⇒ "χαoσς"
+(string-downcase "XAOΣ Σ")         ⇒ "χαoς σ"
+(string-foldcase "XAOΣΣ")         ⇒ "χαoσσ"
+(string-upcase "χαoς")         ⇒ "XAOΣ"
+(string-upcase "χαoσ")         ⇒ "XAOΣ"
+
+(string-titlecase "kNock KNoCK")
+        ⇒ "Knock Knock"
+(string-titlecase "who’s there?")
+        ⇒ "Who’s There?"
+(string-titlecase "r6rs")         ⇒ "R6Rs"
+(string-titlecase "R6RS")         ⇒ "R6Rs"
+
+    Note:   The case mappings needed for implementing these procedures can be
+    extracted from UnicodeData.txt, SpecialCasing.txt, WordBreakProperty.txt
+    (the “MidLetter” property partly defines case-ignorable characters), and
+    CaseFolding.txt from the Unicode Consortium.
+
+    Since these procedures are locale-independent, they may not be appropriate
+    for some locales.
+
+    Note:   Word breaking, as needed for the correct casing of Σ and for
+    string-titlecase, is specified in Unicode Standard Annex #29 [5].
+
+(string-ci=? string[1] string[2] string[3] ...)    procedure 
+(string-ci<? string[1] string[2] string[3] ...)    procedure 
+(string-ci>? string[1] string[2] string[3] ...)    procedure 
+(string-ci<=? string[1] string[2] string[3] ...)    procedure 
+(string-ci>=? string[1] string[2] string[3] ...)    procedure 
+
+These procedures are similar to string=?, etc., but operate on the case-folded
+versions of the strings.
+
+(string-ci<? "z" "Z")         ⇒ #f
+(string-ci=? "z" "Z")         ⇒ #t
+(string-ci=? "Strasse" "Strasse") 
+        ⇒ #t
+(string-ci=? "Strasse" "STRASSE")
+        ⇒ #t
+(string-ci=? "XAOΣ" "χαoσ")
+        ⇒ #t
+
+(string-normalize-nfd string)    procedure 
+(string-normalize-nfkd string)    procedure 
+(string-normalize-nfc string)    procedure 
+(string-normalize-nfkc string)    procedure 
+
+These procedures take a string argument and return a string result, which is
+the input string normalized to Unicode normalization form D, KD, C, or KC,
+respectively. When the specified result is equal in the sense of string=? to
+the argument, these procedures may return the argument instead of a newly
+allocated string.
+
+(string-normalize-nfd "\xE9;")
+        ⇒ "\x65;\x301;"
+(string-normalize-nfc "\xE9;")
+        ⇒ "\xE9;"
+(string-normalize-nfd "\x65;\x301;")
+        ⇒ "\x65;\x301;"
+(string-normalize-nfc "\x65;\x301;")
+        ⇒ "\xE9;"
+
+                        [Go to first, previous, next page;   contents;   index]
+

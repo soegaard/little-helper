@@ -1,0 +1,120 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+Extending DrRacket
+
+Robert Bruce Findler
+
+;; indexing missing
+
+ (require drracket/tool-lib)
+ (require drscheme/tool-lib)
+
+This manual describes DrRacket’s plugins interface. It assumes familiarity with
+Racket, as described in the The Racket Guide, and the The Racket Reference,
+DrRacket, as described in DrRacket: The Racket Programming Environment, and the
+GUI library, as described in The Racket Graphical Interface Toolkit. The
+Framework, as described in Framework: Racket GUI Application Framework, may
+also come in handy.
+
+The drscheme/tool-lib library is for backward compatibility; it exports all of
+the bindings of drracket/tool-lib.
+
+    1 Implementing DrRacket Plugins
+
+    2 Adding Languages to DrRacket
+
+      2.1 Adding Module-based Languages to DrRacket
+
+      2.2 Adding Arbitrary Languages to DrRacket
+
+      2.3 Language Extensions
+
+    3 Creating New Kinds of DrRacket Frames
+
+    4 Extending the Existing DrRacket Classes
+
+    5 Expanding the User’s Program Text and Breaking
+
+    6 Editor Modes
+
+    7 Language-specific capabilities
+
+      7.1 Customizing DrRacket’s behavior
+
+      7.2 Customizing DrRacket’s GUI
+
+    8 Check Syntax
+
+    9 drracket:get/extend
+
+    10 drracket:unit
+
+    11 drracket:language
+
+    12 drracket:language-configuration
+
+    13 drracket:debug
+
+    14 drracket:rep
+
+    15 drracket:frame
+
+    16 drracket:help-desk
+
+    17 drracket:eval
+
+    18 drracket:modes
+
+    19 drracket:module-language-tools
+
+    20 drracket:module-language
+
+    21 Documentation Utilities
+
+      21.1 Searching in the Docs
+
+      21.2 Bug Reporting
+
+    22 Backwards compatibility
+
+    Index
+
+
+Thanks
+
+Thanks to PLT and the early adopters of the tools interface for their feedback
+and help.
+
+A special thanks to Eli Barzilay, John Clements, Matthias Felleisen, Cormac
+Flanagan, Matthew Flatt, Max Hailperin, Philippe Meunier, and Christian
+Queinnec for their help being early clients for DrRacket plugins.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

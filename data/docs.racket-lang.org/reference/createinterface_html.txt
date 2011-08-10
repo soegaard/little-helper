@@ -1,0 +1,99 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+On this page:
+interface
+interface*
+[...search manuals...]
+  top← prev  up  next → 
+
+5.1 Creating Interfaces
+
+            +Classes and Objects in The Racket Guide introduces classes,
+            objects, and interfaces.
+
+(interface (super-interface-expr ...) id ...)
+Produces an interface. The ids must be mutually distinct.
+
+Each super-interface-expr is evaluated (in order) when the interface expression
+is evaluated. The result of each super-interface-expr must be an interface
+value, otherwise the exn:fail:object exception is raised. The interfaces
+returned by the super-interface-exprs are the new interface’s superinterfaces,
+which are all extended by the new interface. Any class that implements the new
+interface also implements all of the superinterfaces.
+
+The result of an interface expression is an interface that includes all of the
+specified ids, plus all identifiers from the superinterfaces. Duplicate
+identifier names among the superinterfaces are ignored, but if a superinterface
+contains one of the ids in the interface expression, the exn:fail:object
+exception is raised.
+
+If no super-interface-exprs are provided, then the derivation requirement of
+the resulting interface is trivial: any class that implements the interface
+must be derived from object%. Otherwise, the implementation requirement of the
+resulting interface is the most specific requirement from its superinterfaces.
+If the superinterfaces specify inconsistent derivation requirements, the
+exn:fail:object exception is raised.
+
+Examples:
+
+    (define file-interface
+      (interface () open close read-byte write-byte))
+    (define directory-interface
+      (interface (file-interface) file-list parent-directory))
+
+
+(interface* (super-interface-expr ...)
+            ([property-expr val-expr] ...)
+  id ...)
+Like interface, but also associates to the interface the structure-type
+properties produced by the property-exprs with the corresponding val-exprs.
+
+Whenever the resulting interface (or a sub-interface derived from it) is
+explicitly implemented by a class through the class* form, each property is
+attached with its value to a structure type that instantiated by instances of
+the class. Specifically, the property is attached to a structure type with zero
+immediate fields, which is extended to produce the internal structure type for
+instances of the class (so that no information about fields is accessible to
+the structure type property’s guard, if any).
+
+Example:
+
+    (define i (interface* () ([prop:custom-write
+                               (lambda (obj port mode) (void))])
+                method1 method2 method3))
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

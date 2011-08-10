@@ -1,0 +1,71 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 3  High-Level Scribble API
+3.1  Base Document Format
+3.2  Racket Manual Format
+3.3  SIGPLAN Paper Format
+3.4  JFP Paper Format
+3.5  LNCS Paper Format
+On this page:
+abstract
+include-abstract
+authors
+institutes
+institute
+email
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+3.5 LNCS Paper Format
+
+ #lang scribble/lncs
+The scribble/lncs language is like scribble/manual, but configured with Latex
+style defaults to use the "llncs.cls" class file.
+The class file must be downloaded from Springer and installed into the scribble
+/lncs collection directory. (Run a module in the language scribble/lncs to
+learn the precise paths where the file may go.)
+
+(abstract pre-content ...) → block?
+  pre-content : pre-content?
+Generates a nested flow for a paper abstract.
+
+(include-abstract module-path)
+Similar to include-section, but incorporates the document in the specified
+module as an abstract. The document must have no title or sub-parts.
+
+(authors auth ...)
+ 
+auth   =   (author pre-content-expr ...)
+       |   (author #:inst str-expr pre-content-expr ...)
+ 
+       pre-content-expr   :   pre-content?
+       str-expr    :   string?
+
+A replacement for author from scribble/base.
+
+The #:inst should be a number that matches up to one of the arguments to
+institutes.
+
+(institutes (institute pre-content-expr ...) ...)
+ 
+   pre-content-expr   :   pre-content?
+The pre-content-exprs are used as the institutions of the authors.
+
+institute
+For use only in institutes.
+
+(email pre-content-expr ...)
+Specifies an email address; must be used inside institute.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

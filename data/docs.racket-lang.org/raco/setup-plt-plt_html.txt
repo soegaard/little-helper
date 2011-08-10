@@ -1,0 +1,270 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 6  raco setup: Installation Management
+6.1  Running raco setup
+6.2  "info.rkt" File Format
+6.3  API for Installation
+6.4  API for Installing ".plt" Archives
+6.5  API for Finding Installation Directories
+6.6  API for Reading "info.rkt" Files
+6.7  API for Relative Paths
+6.8  API for Cross-References for Installed Manuals
+► 6.3  API for Installation
+6.3.1  raco setup Unit
+6.3.2  Options Unit
+6.3.3  Options Signature
+On this page:
+6.3.1 raco setup Unit
+setup@
+6.3.2 Options Unit
+setup: option@
+6.3.3 Options Signature
+setup-option^
+setup-program-name
+verbose
+make-verbose
+compiler-verbose
+clean
+compile-mode
+make-zo
+make-info-domain
+make-launchers
+make-docs
+make-user
+make-planet
+avoid-main-installation
+call-install
+call-post-install
+pause-on-errors
+parallel-workers
+force-unpacks
+specific-collections
+specific-planet-dirs
+archives
+archive-implies-reindex
+current-target-directory-getter
+current-target-plt-directory-getter
+[...search manuals...]
+  top← prev  up  next → 
+
+6.3 API for Installation
+
+The setup/setup-unit library provides raco setup in unit form. The associated
+setup/option-sig and setup/option-unit libraries provides the interface for
+setting options for the run of raco setup.
+
+For example, to unpack a single ".plt" archive "x.plt", set the archives
+parameter to (list "x.plt") and leave specific-collections as null.
+
+Link the options and setup units so that your option-setting code is
+initialized between them, e.g.:
+
+    (compound-unit
+      ...
+      (link ...
+        [((OPTIONS : setup-option^)) setup:option@]
+        [() my-init-options@ OPTIONS]
+        [() setup@ OPTIONS ...])
+      ...)
+
+6.3.1 raco setup Unit
+
+ (require setup/setup-unit)
+
+setup@ : unit?
+Imports
+
+  • setup-option^
+
+  • compiler^
+
+  • compiler:option^
+
+  • launcher^
+
+  • dynext:file^
+
+and exports nothing. Invoking setup@ starts the setup process.
+
+6.3.2 Options Unit
+
+ (require setup/option-unit)
+
+setup:option@ : unit?
+Imports nothing and exports setup-option^.
+
+6.3.3 Options Signature
+
+ (require setup/option-sig)
+
+setup-option^ : signature
+Provides parameters used to control raco setup in unit form.
+
+    (setup-program-name) → string?
+    (setup-program-name name) → void?
+      name : string?
+    The prefix used when printing status messages. The default is "raco setup".
+
+    (verbose) → boolean?
+    (verbose on?) → void?
+      on? : any/c
+    If on, prints message from make to stderr. The default is #f.
+
+    (make-verbose) → boolean?
+    (make-verbose on?) → void?
+      on? : any/c
+    If on, verbose make. The default is #f.
+
+    (compiler-verbose) → boolean?
+    (compiler-verbose on?) → void?
+      on? : any/c
+    If on, verbose compiler. The default is #f.
+
+    (clean) → boolean?
+    (clean on?) → void?
+      on? : any/c
+    If on, delete ".zo" and ".so"/".dll"/".dylib" files in the specified
+    collections. The default is #f.
+
+    (compile-mode) → (or/c path? false/c)
+    (compile-mode path) → void?
+      path : (or/c path? false/c)
+    If a path is given, use a ".zo" compiler other than plain compile, and
+    build to (build-path "compiled" (compile-mode)). The default is #f.
+
+    (make-zo) → boolean?
+    (make-zo on?) → void?
+      on? : any/c
+    If on, compile ".zo". The default is #t.
+
+    (make-info-domain) → boolean?
+    (make-info-domain on?) → void?
+      on? : any/c
+    If on, update "info-domain/compiled/cache.rkt" for each collection path.
+    The default is #t.
+
+    (make-launchers) → boolean?
+    (make-launchers on?) → void?
+      on? : any/c
+    If on, make collection "info.rkt"-specified launchers. The default is #t.
+
+    (make-docs) → boolean?
+    (make-docs on?) → void?
+      on? : any/c
+    If on, build documentation. The default is #t.
+
+    (make-user) → boolean?
+    (make-user on?) → void?
+      on? : any/c
+    If on, build the user-specific collection tree. The default is #t.
+
+    (make-planet) → boolean?
+    (make-planet on?) → void?
+      on? : any/c
+    If on, build the planet cache. The default is #t.
+
+    (avoid-main-installation) → boolean?
+    (avoid-main-installation on?) → void?
+      on? : any/c
+    If on, avoid building bytecode in the main installation tree when building
+    other bytecode (e.g., in a user-specific collection). The default is #f.
+
+    (call-install) → boolean?
+    (call-install on?) → void?
+      on? : any/c
+    If on, call collection "info.rkt"-specified setup code. The default is #t.
+
+    (call-post-install) → boolean?
+    (call-post-install on?) → void?
+      on? : any/c
+    If on, call collection "info.rkt"-specified post-install code. The default
+    is #t.
+
+    (pause-on-errors) → boolean?
+    (pause-on-errors on?) → void?
+      on? : any/c
+    If on, in the event of an error, prints a summary error and waits for stdin
+    input before terminating. The default is #f.
+
+    (parallel-workers) → exact-nonnegative-integer?
+    (parallel-workers num) → void?
+      num : exact-nonnegative-integer?
+    Determines the number of places to use for compiling bytecode and for
+    building the documentation. The default is (min (processor-count) 8).
+
+    (force-unpacks) → boolean?
+    (force-unpacks on?) → void?
+      on? : any/c
+    If on, ignore version and already-installed errors when unpacking a ".plt"
+    archive. The default is #f.
+
+    (specific-collections) → (listof (listof path-string?))
+    (specific-collections colls) → void?
+      colls : (listof (listof path-string?))
+    A list of collections to set up; the empty list means set-up all
+    collections if the archives list and specific-planet-dirs is is also '().
+    The default is '().
+
+    (specific-planet-dirs)
+          (listof (list/c string?
+      →                   string?
+                          exact-nonnegative-integer?
+                          exact-nonnegative-integer?))
+    (specific-planet-dirs dir) → void?
+                 (listof (list/c string?
+       dir   :                   string?
+                                 exact-nonnegative-integer?
+                                 exact-nonnegative-integer?))
+    A list of planet package version specs to set up; the empty list means to
+    set-up all planet collections if the archives list and specific-collections
+    is also '(). The default is '().
+
+    (archives) → (listof path-string?)
+    (archives arch) → void?
+      arch : (listof path-string?)
+    A list of ".plt" archives to unpack; any collections specified by the
+    archives are set-up in addition to the collections listed in
+    specific-collections. The default is null.
+
+    (archive-implies-reindex) → boolean?
+    (archive-implies-reindex on?) → void?
+      on? : any/c
+    If on, when archives has a non-empty list of packages, if any documentation
+    is built, then suitable documentation start pages, search pages, and master
+    index pages are re-built. The default is #t.
+
+    (current-target-directory-getter) → (-> . path-string?)
+    (current-target-directory-getter thunk) → void?
+      thunk : (-> . path-string?)
+    A thunk that returns the target directory for unpacking a relative ".plt"
+    archive; when unpacking an archive, either this or the procedure in
+    current-target-plt-directory-getter will be called. The default is
+    current-directory.
+
+    (current-target-plt-directory-getter)
+          (path-string?
+      →    path-string?
+           (listof path-string?) . -> . path-string?)
+    (current-target-plt-directory-getter proc) → void?
+                  (path-string?
+       proc   :    path-string?
+                   (listof path-string?) . -> . path-string?)
+    A procedure that takes a preferred path, a path to the parent of the main
+    "collects" directory, and a list of path choices; it returns a path for a
+    "plt-relative" install; when unpacking an archive, either this or the
+    procedure in current-target-directory-getter will be called, and in the
+    former case, this procedure may be called multiple times. The default is (
+    lambda (preferred main-parent-dir choices) preferred).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,302 @@
+►  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+▼ 7  Hierarchical List Control
+7.1  hierarchical-list%
+7.2  hierarchical-list-item<%>
+7.3  hierarchical-list-compound-item<%>
+7.4  Snips in a hierarchical-list% Instance
+On this page:
+get-selected
+new-item
+set-no-sublists
+new-list
+delete-item
+get-items
+selectable
+on-select
+on-click
+on-double-select
+on-item-opened
+on-item-closed
+sort
+can-do-edit-operation?
+do-edit-operation
+select-prev
+select-next
+select-first
+select-last
+select-in
+select-out
+page-up
+page-down
+select
+click-select
+on-select-always
+on-click-always
+allow-deselect
+Inherited methods:
+from editor-canvas%
+allow-scroll-to-last
+allow-tab-exit
+call-as-primary-owner
+force-display-focus
+get-editor
+get-line-count
+horizontal-inset
+lazy-refresh
+on-char
+on-event
+on-focus
+on-paint
+on-size
+scroll-to
+scroll-with-bottom-base
+set-editor
+set-line-count
+vertical-inset
+wheel-step
+from canvas<%>
+accept-tab-focus
+flush
+get-canvas-background
+get-dc
+min-client-height
+min-client-width
+on-tab-in
+resume-flush
+set-canvas-background
+set-resize-corner
+suspend-flush
+warp-pointer
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-move
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+[...search manuals...]
+  top← prev  up  next → 
+
+hierarchical-list% : class?
+  superclass: editor-canvas%
+
+Creates a hierarchical-list control.
+
+(new hierarchical-list%    [parent parent]  
+                         [ [style style]])  
+ → (is-a?/c hierarchical-list%)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+               (listof (one-of/c 'no-border 'control-border 'combo
+                                 'no-hscroll 'no-vscroll
+   style   :                     'hide-hscroll 'hide-vscroll
+                                 'auto-vscroll 'auto-hscroll
+                                 'resize-corner 'deleted 'transparent))
+           =   '(no-hscroll)
+Creates the control.
+
+If the style 'transparent is passed, then the use-style-background method will
+be called with #t when editor snips are created as part of the hierarchical
+list, ensuring that the entire control is transparent.
+
+(send a-hierarchical-list get-selected)
+  →   (or/c (is-a?/c hierarchical-list-item<%>)
+            false/c)
+Returns the currently selected item, if any.
+
+(send a-hierarchical-list new-item [mixin])
+ → (is-a?/c hierarchical-list-item<%>)
+               ((implementation?/c hierarchical-list-item<%>)
+   mixin   :    . -> .
+                (implementation?/c hierarchical-list-item<%>))
+           =   (lambda (%) %)
+Creates and returns a new (empty) item in the list. See hierarchical-list-item
+<%> for methods to fill in the item’s label.
+
+The mixin argument is applied to a class implementing hierarchical-list-item<%>
+, and the resulting class is instantiated as the list item.
+
+(send a-hierarchical-list set-no-sublists no-sublists?) → void?
+  no-sublists? : any/c
+Enables/disables sublist mode. When sublists are disabled, space to the left of
+the list items (that would normally align non-list items with list items) is
+omitted. This method can be called only when the list is empty.
+
+(send a-hierarchical-list new-list [mixin])
+ → (is-a?/c hierarchical-list-compound-item<%>)
+               ((implementation?/c hierarchical-list-compound-item<%>)
+   mixin   :    . -> .
+                (implementation?/c hierarchical-list-compound-item<%>))
+           =   (lambda (%) %)
+Creates and returns a new (empty) sub-list in the list. See
+hierarchical-list-compound-item<%> for methods to fill in the item’s label and
+content.
+
+The mixin argument is applied to a class implementing
+hierarchical-list-compound-item<%>, and the resulting class is instantiated as
+the sub-list.
+
+(send a-hierarchical-list delete-item i) → void?
+  i : (is-a?/c hierarchical-list-item<%>)
+Deletes immediate item or sub-list i from the list.
+
+(send a-hierarchical-list get-items)
+ → (listof (is-a?/c hierarchical-list-item<%>))
+Returns a list of all immediate items in the list control.
+
+(send a-hierarchical-list selectable) → boolean?
+(send a-hierarchical-list selectable on?) → void?
+  on? : any/c
+Reports whether items are selectable, or enables/disables item selection.
+
+(send a-hierarchical-list on-select i) → any
+  i : (or/c (is-a?/c hierarchical-list-item<%>) false/c)
+Called for new select of i, where i is #f if no item is now selected.
+
+(send a-hierarchical-list on-click i) → any
+  i : (is-a?/c hierarchical-list-item<%>)
+Called when an item is clicked on, but selection for that item is not allowed.
+Selection can be disallowed by selectable or set-allow-selection in
+hierarchical-list-item<%>.
+
+(send a-hierarchical-list on-double-select i) → any
+  i : (is-a?/c hierarchical-list-item<%>)
+Called for a double-click on i.
+
+(send a-hierarchical-list on-item-opened i) → any
+  i : (is-a?/c hierarchical-list-compound-item<%>)
+Called when the arrow for i is turned down.
+
+(send a-hierarchical-list on-item-closed i) → any
+  i : (is-a?/c hierarchical-list-compound-item<%>)
+Called when the arrow for i is turned up.
+
+(send a-hierarchical-list sort    less-than-proc        
+                                [ recur?])         →   void?
+                        ((is-a?/c hierarchical-list-item<%>)
+   less-than-proc   :    (is-a?/c hierarchical-list-item<%>)
+                         . -> . any/c)
+  recur? : any/c = #t
+Sorts items in the list by calling less-than-proc on pairs of items. If recur?
+is true, items in sub-lists are sorted recursively.
+
+(send a-hierarchical-list can-do-edit-operation?    op            
+                                                  [ recursive?])  
+ → boolean?
+  op : symbol?
+  recursive? : any/c = #t
+Like can-do-edit-operation? in editor<%>. The default implementation always
+returns #f.
+
+(send a-hierarchical-list do-edit-operation    op                  
+                                             [ recursive?])   →   void?
+  op : symbol?
+  recursive? : any/c = #t
+Like do-edit-operation in editor<%>. The default implementation does nothing.
+
+(send a-hierarchical-list select-prev) → void?
+(send a-hierarchical-list select-next) → void?
+(send a-hierarchical-list select-first) → void?
+(send a-hierarchical-list select-last) → void?
+(send a-hierarchical-list select-in) → void?
+(send a-hierarchical-list select-out) → void?
+(send a-hierarchical-list page-up) → void?
+(send a-hierarchical-list page-down) → void?
+Move the selection, scroll, and call on-select.
+
+(send a-hierarchical-list select i) → void?
+  i : (or/c (is-a?/c hierarchical-list-item<%>) false/c)
+Moves the selection, scrolls as necessary to show it, and calls on-select
+unless disabled via on-select-always.
+
+The allow-deselect method controls whether i is allowed to be #f to deselect
+the currently selected item.
+
+(send a-hierarchical-list click-select i) → void?
+  i : (or/c (is-a?/c hierarchical-list-item<%>) false/c)
+Like select, but always calls on-select.
+
+(send a-hierarchical-list on-select-always) → boolean?
+(send a-hierarchical-list on-select-always always?) → void?
+  always? : any/c
+Gets/sets whether the on-select method is called in response to select (as
+opposed to click-select).
+
+The initial mode enables on-select calls always.
+
+(send a-hierarchical-list on-click-always) → boolean?
+(send a-hierarchical-list on-click-always always?) → void?
+  always? : any/c
+Gets/sets whether the on-click method is called in response to all mouse clicks
+(as opposed to only when selected). on-click is called before on-select, if it
+is called (if the click results in selction).
+
+This is initially disabled, by default.
+
+(send a-hierarchical-list allow-deselect) → boolean?
+(send a-hierarchical-list allow-deselect allow?) → void?
+  allow? : any/c
+
+Gets/sets whether the on-select can be called with a #f argument to deselect
+the current item (leaving none selected).
+
+The initial mode does not allow deselection.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

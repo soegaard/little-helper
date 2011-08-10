@@ -1,0 +1,156 @@
+▼  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+On this page:
+ffi-lib?
+ffi-lib
+get-ffi-obj
+set-ffi-obj!
+make-c-parameter
+define-c
+ffi-obj-ref
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Loading Foreign Libraries
+
+The FFI is normally used by extracting functions and other objects from shared
+objects (a.k.a. shared libraries or dynamically loaded libraries). The ffi-lib
+function loads a shared object.
+
+(ffi-lib? v) → boolean?
+  v : any/c
+Returns #t if v is the result of ffi-lib, #f otherwise.
+
+(ffi-lib path [version]) → any
+  path : (or/c path-string? #f)
+  version : (or/c string? (listof (or/c string? #f)) #f) = #f
+Returns a foreign-library value. Normally,
+
+  • path is a path without a version or suffix (i.e., without ".dll", ".so", or
+    ".dylib"); and
+
+  • version is a list of versions to try in order with #f (i.e., no version) as
+    the last element of the list; for example, '("2" #f) indicates version 2
+    with a fallback to a versionless library.
+
+A string or #f version is equivalent to a list containing just the string or #
+f, and an empty string (by itself or in a list) is equivalent to #f.
+
+Beware of relying on versionless library names. On some platforms, versionless
+library names are provided only by development packages. At the same time,
+other platforms may require a versionless fallback. A list of version strings
+followed by #f is typically best for version.
+
+Assuming that path is not #f, the result from ffi-lib represents the library
+found by the following search process:
+
+  • If path is not an absolute path, look in each directory reported by
+    get-lib-search-dirs. In each directory, try path with the first version in
+    version, adding a suitable suffix if path does not already end in the
+    suffix, then try the second version in version, etc. (If version is an
+    empty list, no paths are tried in this step.)
+
+  • Try the same filenames again, but without converting the path to an
+    absolute path, which allows the operating system to use its own search
+    paths. (If version is an empty list, no paths are tried in this step.)
+
+  • Try path without adding any version or suffix, and without converting to an
+    absolute path.
+
+  • Try the version-adjusted filenames again, but relative to the current
+    directory. (If version is an empty list, no paths are tried in this step.)
+
+  • Try path without adding any version or suffix, but converted to an absolute
+    path relative to the current directory.
+
+If none of the paths succeed, the error is reported from trying the first path
+from the second bullet above or (if version is an empty list) from the third
+bullet above. A library file may exist but fail to load for some reason; the
+eventual error message will unfortunately name the fallback from the second or
+third bullet, since some operating systems offer no way to determine why a
+given library path failed.
+
+If path is #f, then the resulting foreign-library value represents all
+libraries loaded in the current process, including libraries previously opened
+with ffi-lib. In particular, use #f to access C-level functionality exported by
+the run-time system (as described in Inside: Racket C API). The version
+argument is ignored when path is #f.
+
+Due to the way the operating system performs dynamic binding, loaded libraries
+are associated with Racket (or DrRacket) for the duration of the process.
+Re-evaluating ffi-lib (or hitting the Run button in DrRacket) will not force a
+re-load of the corresponding library.
+
+(get-ffi-obj objname lib type [failure-thunk]) → any
+  objname : (or/c string? bytes? symbol?)
+  lib : (or/c ffi-lib? path-string? #f)
+  type : ctype?
+  failure-thunk : (or/c (-> any) #f) = #f
+Looks for the given object name objname in the given lib library. If lib is not
+a foreign-library value produced by ffi-lib, it is converted to one by calling
+ffi-lib. If objname is found in lib, it is converted to Racket using the given
+type. Types are described in C Types; in particular the get-ffi-obj procedure
+is most often used with function types created with _fun.
+
+Keep in mind that get-ffi-obj is an unsafe procedure; see Overview for details.
+
+If the object is not found, and failure-thunk is provided, it is used to
+produce a return value. For example, a failure thunk can be provided to report
+a specific error if an object is not found:
+
+    (define foo
+      (get-ffi-obj "foo" foolib (_fun _int -> _int)
+        (lambda ()
+          (error 'foolib
+                 "installed foolib does not provide \"foo\""))))
+
+The default (also when failure-thunk is provided as #f) is to raise an
+exception.
+
+(set-ffi-obj! objname lib type new) → void?
+  objname : (or/c string? bytes? symbol?)
+  lib : (or/c ffi-lib? path-string? #f)
+  type : ctype?
+  new : any/c
+Looks for objname in lib similarly to get-ffi-obj, but then it stores the given
+new value into the library, converting it to a C value. This can be used for
+setting library customization variables that are part of its interface,
+including Racket callbacks.
+
+(make-c-parameter objname lib type)   →   (and/c (-> any)
+                                                 (any/c -> void?))
+  objname : (or/c string? bytes? symbol?)
+  lib : (or/c ffi-lib? path-string? #f)
+  type : ctype?
+Returns a parameter-like procedure that can either references the specified
+foreign value, or set it. The arguments are handled as in get-ffi-obj.
+
+A parameter-like function is useful in case Racket code and library code
+interact through a library value. Although make-c-parameter can be used with
+any time, it is not recommended to use this for foreign functions, since each
+reference through the parameter will construct the low-level interface before
+the actual call.
+
+(define-c id lib-expr type-expr)
+Defines id behave like a Racket binding, but id is actually redirected through
+a parameter-like procedure created by make-c-parameter. The id is used both for
+the Racket binding and for the foreign object’s name.
+
+(ffi-obj-ref objname lib [failure-thunk]) → any
+  objname : (or/c string? bytes? symbol?)
+  lib : (or/c ffi-lib? path-string? #f)
+  failure-thunk : (or/c (-> any) #f) = #f
+Returns a pointer object for the specified foreign object. This procedure is
+for rare cases where make-c-parameter is insufficient, because there is no type
+to cast the foreign object to (e.g., a vector of numbers).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

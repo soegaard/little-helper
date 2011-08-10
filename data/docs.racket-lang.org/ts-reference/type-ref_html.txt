@@ -1,0 +1,776 @@
+▼  The Typed Racket Reference
+ 1  Type Reference
+ 2  Special Form Reference
+ 3  Libraries Provided With Typed Racket
+ 4  Utilities
+ 5  Typed Racket Syntax Without Type Checking
+ 6  Typed Regions
+ 7  Optimization in Typed Racket
+ 8  Legacy Forms
+ 9  Compatibility Languages
+10  Experimental Features
+► 1  Type Reference
+1.1  Base Types
+1.2  Singleton Types
+1.3  Containers
+1.4  Syntax Objects
+1.5  Other Type Constructors
+1.6  Other Types
+On this page:
+Any
+Nothing
+1.1 Base Types
+1.1.1 Numeric Types
+Number
+Complex
+Float-Complex
+Real
+Float
+Nonnegative-Float
+Inexact-Real
+Exact-Rational
+Integer
+Natural
+Exact-Nonnegative-Integer
+Exact-Positive-Integer
+Fixnum
+Nonnegative-Fixnum
+Positive-Fixnum
+Zero
+Byte
+Exact-Number
+Float-Negative-Zero
+Float-Positive-Zero
+Float-Zero
+Flonum
+Flonum-Negative-Zero
+Flonum-Positive-Zero
+Flonum-Zero
+Index
+Inexact-Complex
+Inexact-Real-Negative-Zero
+Inexact-Real-Positive-Zero
+Inexact-Real-Zero
+Negative-Exact-Rational
+Negative-Float
+Negative-Flonum
+Negative-Inexact-Real
+Negative-Integer
+Negative-Real
+Negative-Single-Flonum
+Nonnegative-Exact-Rational
+Nonnegative-Flonum
+Nonnegative-Inexact-Real
+Nonnegative-Real
+Nonnegative-Single-Flonum
+Nonpositive-Exact-Rational
+Nonpositive-Fixnum
+Nonpositive-Float
+Nonpositive-Flonum
+Nonpositive-Inexact-Real
+Nonpositive-Integer
+Nonpositive-Real
+Nonpositive-Single-Flonum
+One
+Positive-Byte
+Positive-Exact-Rational
+Positive-Float
+Positive-Flonum
+Positive-Index
+Positive-Inexact-Real
+Positive-Integer
+Positive-Real
+Positive-Single-Flonum
+Real-Zero
+Single-Flonum
+Single-Flonum-Complex
+Single-Flonum-Negative-Zero
+Single-Flonum-Positive-Zero
+Single-Flonum-Zero
+1.1.2 Other Base Types
+Boolean
+True
+False
+String
+Keyword
+Symbol
+Char
+Void
+Input-Port
+Output-Port
+Port
+Path
+Path-String
+Path-For-Some-System
+Regexp
+PRegexp
+Byte-Regexp
+Byte-PRegexp
+Bytes
+Namespace
+Namespace-Anchor
+Variable-Reference
+Null
+EOF
+Continuation-Mark-Set
+Prompt-Tag
+Undefined
+Module-Path
+Module-Path-Index
+Resolved-Module-Path
+Compiled-Module-Expression
+Compiled-Expression
+Internal-Definition-Context
+Pretty-Print-Style-Table
+Special-Comment
+Struct-Type-Property
+Impersonator-Property
+Read-Table
+Bytes-Converter
+Parameterization
+Custodian
+Inspector
+Security-Guard
+UDP-Socket
+TCP-Listener
+Logger
+Log-Receiver
+Log-Level
+Thread
+Thread-Group
+Subprocess
+Place
+Place-Channel
+Semaphore
+Will-Executor
+Pseudo-Random-Generator
+1.2 Singleton Types
+1.3 Containers
+Pairof
+Listof
+List
+List*
+MListof
+MPairof
+Boxof
+Vectorof
+Vector
+Fl Vector
+Hash Table
+Setof
+Channelof
+Parameterof
+Promise
+Futureof
+Sequenceof
+Custodian-Boxof
+Thread-Cellof
+1.4 Syntax Objects
+Syntaxof
+Identifier
+Syntax
+Syntax-E
+Sexpof
+Sexp
+Datum
+Ephemeronof
+1.5 Other Type Constructors
+->
+Procedure
+U
+case->
+All
+Values
+Rec
+→
+∀
+1.6 Other Types
+Option
+Opaque
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Type Reference
+
+Any
+Any Racket value. All other types are subtypes of Any.
+
+Nothing
+The empty type. No values inhabit this type, and any expression of this type
+will not evaluate to a value.
+
+1.1 Base Types
+
+1.1.1 Numeric Types
+
+Number
+Complex
+Float-Complex
+Real
+Float
+Nonnegative-Float
+Inexact-Real
+Exact-Rational
+Integer
+Natural
+Exact-Nonnegative-Integer
+Exact-Positive-Integer
+Fixnum
+Nonnegative-Fixnum
+Positive-Fixnum
+Zero
+Byte
+Exact-Number
+Float-Negative-Zero
+Float-Positive-Zero
+Float-Zero
+Flonum
+Flonum-Negative-Zero
+Flonum-Positive-Zero
+Flonum-Zero
+Index
+Inexact-Complex
+Inexact-Real-Negative-Zero
+Inexact-Real-Positive-Zero
+Inexact-Real-Zero
+Negative-Exact-Rational
+Negative-Float
+Negative-Flonum
+Negative-Inexact-Real
+Negative-Integer
+Negative-Real
+Negative-Single-Flonum
+Nonnegative-Exact-Rational
+Nonnegative-Flonum
+Nonnegative-Inexact-Real
+Nonnegative-Real
+Nonnegative-Single-Flonum
+Nonpositive-Exact-Rational
+Nonpositive-Fixnum
+Nonpositive-Float
+Nonpositive-Flonum
+Nonpositive-Inexact-Real
+Nonpositive-Integer
+Nonpositive-Real
+Nonpositive-Single-Flonum
+One
+Positive-Byte
+Positive-Exact-Rational
+Positive-Float
+Positive-Flonum
+Positive-Index
+Positive-Inexact-Real
+Positive-Integer
+Positive-Real
+Positive-Single-Flonum
+Real-Zero
+Single-Flonum
+Single-Flonum-Complex
+Single-Flonum-Negative-Zero
+Single-Flonum-Positive-Zero
+Single-Flonum-Zero
+These types represent the hierarchy of numbers of Racket. Integer includes only
+integers that are exact numbers, corresponding to the predicate exact-integer?.
+Real includes both exact and inexact reals. An Inexact-Real can be either 32-
+or 64-bit floating-point numbers. Float is restricted to 64-bit floats, which
+are the default in Racket.
+
+Examples:
+
+    > 7
+    - : Positive-Byte
+
+    7
+
+    > 8.3
+    - : Positive-Flonum
+
+    8.3
+
+    > (/ 8 3)
+    - : Positive-Exact-Rational
+
+    8/3
+
+    > 0
+    - : Zero
+
+    0
+
+    > -12
+    - : Negative-Fixnum
+
+    -12
+
+    > 3+4i
+    - : Exact-Number
+
+    3+4i
+
+
+
+1.1.2 Other Base Types
+
+Boolean
+True
+False
+String
+Keyword
+Symbol
+Char
+Void
+Input-Port
+Output-Port
+Port
+Path
+Path-String
+Path-For-Some-System
+Regexp
+PRegexp
+Byte-Regexp
+Byte-PRegexp
+Bytes
+Namespace
+Namespace-Anchor
+Variable-Reference
+Null
+EOF
+Continuation-Mark-Set
+Prompt-Tag
+Undefined
+Module-Path
+Module-Path-Index
+Resolved-Module-Path
+Compiled-Module-Expression
+Compiled-Expression
+Internal-Definition-Context
+Pretty-Print-Style-Table
+Special-Comment
+Struct-Type-Property
+Impersonator-Property
+Read-Table
+Bytes-Converter
+Parameterization
+Custodian
+Inspector
+Security-Guard
+UDP-Socket
+TCP-Listener
+Logger
+Log-Receiver
+Log-Level
+Thread
+Thread-Group
+Subprocess
+Place
+Place-Channel
+Semaphore
+Will-Executor
+Pseudo-Random-Generator
+These types represent primitive Racket data.
+
+Examples:
+
+    > #t
+    - : True
+
+    #t
+
+    > #f
+    - : False
+
+    #f
+
+    > "hello"
+    "hello"
+
+    > (current-input-port)
+    - : Input-Port
+
+    #<input-port:string>
+
+    > (current-output-port)
+    - : Output-Port
+
+    #<output-port:string>
+
+    > (string->path "/")
+    - : Path
+
+    #<path:/>
+
+    > #rx"a*b*"
+    - : Regexp
+
+    #rx"a*b*"
+
+    > #px"a*b*"
+    - : Regexp
+
+    #px"a*b*"
+
+    > '#"bytes"
+    - : Bytes
+
+    #"bytes"
+
+    > (current-namespace)
+    - : Namespace
+
+    #<namespace:0>
+
+    > #\b
+    - : Char
+
+    #\b
+
+    > (thread (lambda () (add1 7)))
+    - : Thread
+
+    #<thread>
+
+
+
+1.2 Singleton Types
+
+Some kinds of data are given singleton types by default. In particular,
+booleans, symbols, and keywords have types which consist only of the particular
+boolean, symbol, or keyword. These types are subtypes of Boolean, Symbol and
+Keyword, respectively.
+
+Examples:
+
+    > #t
+    - : True
+
+    #t
+
+    > '#:foo
+    - : #:foo
+
+    '#:foo
+
+    > 'bar
+    - : 'bar
+
+    'bar
+
+
+
+1.3 Containers
+
+The following base types are parameteric in their type arguments.
+
+(Pairof s t)
+is the pair containing s as the car and t as the cdr
+
+Examples:
+
+    > (cons 1 2)
+    - : (Pairof One Positive-Byte)
+
+    '(1 . 2)
+
+    > (cons 1 "one")
+    - : (Pairof One String)
+
+    '(1 . "one")
+
+
+
+(Listof t)
+Homogenous lists of t
+(List t ...)
+is the type of the list with one element, in order, for each type provided to
+the List type constructor.
+(List t ... trest ... bound)
+is the type of a list with one element for each of the ts, plus a sequence of
+elements corresponding to trest, where bound must be an identifier denoting a
+type variable bound with ....
+(List* t t1 ... s)
+is equivalent to (Pairof t (List* t1 ... s)).
+
+Examples:
+
+    > (list 'a 'b 'c)
+    - : (List 'a 'b 'c)
+
+    '(a b c)
+
+    > (map symbol->string (list 'a 'b 'c))
+    - : (Pairof String (Listof String))
+
+    '("a" "b" "c")
+
+
+
+(MListof t)
+Homogenous mutable lists of t.
+(MPairof t u)
+Mutable pairs of t and u.
+
+(Boxof t)
+A box of t
+
+Example:
+
+    > (box "hello world")
+    - : (Boxof String)
+
+    '#&"hello world"
+
+
+
+(Vectorof t)
+Homogenous vectors of t
+(Vector t ...)
+is the type of the list with one element, in order, for each type provided to
+the Vector type constructor.
+FlVector
+An flvector.
+
+Examples:
+
+    > (vector 1 2 3)
+    - : (Vector Integer Integer Integer)
+
+    '#(1 2 3)
+
+    > #(a b c)
+    - : (Vector Symbol Symbol Symbol)
+
+    '#(a b c)
+
+
+
+(HashTable k v)
+is the type of a hash table with key type k and value type v.
+
+Example:
+
+    > #hash((a . 1) (b . 2))
+    - : (HashTable Symbol Integer)
+
+    '#hash((b . 2) (a . 1))
+
+
+
+(Setof t)
+is the type of a set of t.
+Example:
+
+    > (set 0 1 2 3)
+    - : (Setof Byte)
+
+    #<set: 0 1 2 3>
+
+
+
+(Channelof t)
+A channel on which only ts can be sent.
+Example:
+
+    > (ann (make-channel) (Channelof Symbol))
+    - : (Channelof Symbol)
+
+    #<channel>
+
+
+
+(Parameterof t)
+(Parameterof s t)
+A parameter of t. If two type arguments are supplied, the first is the type the
+parameter accepts, and the second is the type returned.
+Examples:
+
+    > current-input-port
+    - : (Parameterof Input-Port)
+
+    #<procedure:current-input-port>
+
+    > current-directory
+    - : (Parameterof Path-String Path)
+
+    #<procedure:current-directory>
+
+
+
+(Promise t)
+A promise of t.
+Example:
+
+    > (delay 3)
+    - : (Promise Positive-Byte)
+
+    #<promise:eval:35:0>
+
+
+
+(Futureof t)
+A future which produce a value of type t when touched.
+
+(Sequenceof t ...)
+A sequence that produces values of the types t ... on each iteration.
+
+(Custodian-Boxof t)
+A custodian box of t.
+(Thread-Cellof t)
+A thread cell of t.
+
+1.4 Syntax Objects
+
+The following types represent syntax objects and their content.
+
+(Syntaxof t)
+A syntax object with content of type t. Applying syntax-e to a value of type (
+Syntaxof t) produces a value of type t.
+
+Identifier
+A syntax object containing a symbol. Equivalent to (Syntaxof Symbol).
+
+Syntax
+A syntax object containing only symbols, keywords, strings, characters, boolean
+s, numbers, boxes containing Syntax, vectors of Syntax, or (possibly improper)
+lists of Syntax. Equivalent to (Syntaxof Syntax-E).
+
+Syntax-E
+The content of syntax objects of type Syntax. Applying syntax-e to a value of
+type Syntax produces a value of type Syntax-E.
+
+(Sexpof t)
+The recursive union of t with symbols, keywords, strings, characters, booleans,
+numbers, boxes, vectors, and (possibly improper) lists.
+
+Sexp
+Applying syntax->datum to a value of type Syntax produces a value of type Sexp.
+Equivalent to (Sexpof Nothing).
+
+Datum
+Applying datum->syntax to a value of type Datum produces a value of type Syntax
+. Equivalent to (Sexpof Syntax).
+
+(Ephemeronof t)
+An ephemeron whose value is of type t.
+
+1.5 Other Type Constructors
+
+(dom ... -> rng)
+(dom ... rest * -> rng)
+(dom ... rest ... bound -> rng)
+(dom -> rng : pred)
+is the type of functions from the (possibly-empty) sequence dom ... to the rng
+type. The second form specifies a uniform rest argument of type rest, and the
+third form specifies a non-uniform rest argument of type rest with bound bound.
+In the third form, the second occurrence of ... is literal, and bound must be
+an identifier denoting a type variable. In the fourth form, there must be only
+one dom and pred is the type checked by the predicate.
+
+Examples:
+
+    > (λ: ([x : Number]) x)
+    - : (Number -> Number : ((! False @ 0) | (False @ 0)) (0))
+
+    #<procedure>
+
+    > (λ: ([x : Number]    y : String *)  (length y))
+    - : (Number String * -> Index)
+
+    #<procedure>
+
+    > ormap
+    - : (All (a c b ...) ((a b ... b -> c) (Listof a) (Listof b) ... b -> c))
+
+    #<procedure:ormap>
+
+    > string?
+    - : (Any -> Boolean : String)
+
+    #<procedure:string?>
+
+
+
+Procedure
+is the supertype of all function types.
+
+(U t ...)
+is the union of the types t ....
+Example:
+
+    > (λ: ([x : Real])(if (> 0 x) "yes" 'no))
+    - : (Real -> (U String 'no) : (Top | Bot))
+
+    #<procedure>
+
+
+(case-> fun-ty ...)
+is a function that behaves like all of the fun-tys, considered in order from
+first to last. The fun-tys must all be function types constructed with ->.
+Example:
+
+    > (: add-map : (case->
+                     [(Listof Integer) -> (Listof Integer)]
+                     [(Listof Integer) (Listof Integer) -> (Listof Integer)]))
+
+For the definition of add-map look into case-lambda:.
+
+(t t1 t2 ...)
+is the instantiation of the parametric type t at types t1 t2 ...
+(All (v ...) t)
+is a parameterization of type t, with type variables v .... If t is a function
+type constructed with ->, the outer pair of parentheses around the function
+type may be omitted.
+Examples:
+
+    > (: list-lenght : (All (A) (Listof A) -> Natural))
+    > (define (list-lenght lst)
+        (if (null? lst)
+            0
+            (add1 (list-lenght (cdr lst)))))
+
+
+(Values t ...)
+is the type of a sequence of multiple values, with types t .... This can only
+appear as the return type of a function.
+Example:
+
+    > (values 1 2 3)
+    - : (Values One Positive-Byte Positive-Byte)
+
+    1
+
+    2
+
+    3
+
+
+v
+where v is a number, boolean or string, is the singleton type containing only
+that value
+(quote val)
+where val is a Racket value, is the singleton type containing only that value
+i
+where i is an identifier can be a reference to a type name or a type variable
+(Rec n t)
+is a recursive type where n is bound to the recursive type in the body t
+Examples:
+
+    > (define-type IntList (Rec List (Pair Integer (U List Null))))
+    > (define-type (List A) (Rec List (Pair A (U List Null))))
+
+
+→
+An alias for ->.
+∀
+An alias for All.
+
+1.6 Other Types
+
+(Option t)
+Either t or #f
+(Opaque t)
+A type constructed using require-opaque-type.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

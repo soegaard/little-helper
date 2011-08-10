@@ -1,0 +1,238 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+list-prefix?
+take-common-prefix
+drop-common-prefix
+split-common-prefix
+filter-multiple
+extend
+check-duplicate
+map/ values
+map2
+remf
+[...search manuals...]
+  top← prev  up  next → 
+
+18 Lists
+
+ (require unstable/list)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(list-prefix? l r) → boolean?
+  l : list?
+  r : list?
+True if l is a prefix of r.
+Example:
+
+    > (list-prefix? '(1 2) '(1 2 3 4 5))
+    #t
+
+
+
+(take-common-prefix l r #:same? same?) → list?
+  l : list?
+  r : list?
+  same? : equal?
+Returns the longest common prefix of l and r.
+
+Example:
+
+    > (take-common-prefix '(a b c d) '(a b x y z))
+    '(a b)
+
+
+
+(drop-common-prefix l r #:same same?)   →   list?   list?
+  l : list?
+  r : list?
+  same? : equal?
+Returns the tails of l and r with the common prefix removed.
+
+Example:
+
+    > (drop-common-prefix '(a b c d) '(a b x y z))
+    '(c d)
+
+    '(x y z)
+
+
+
+(split-common-prefix l r #:same? same?)   →   list?   list?   list?
+  l : list?
+  r : list?
+  same? : equal?
+Returns the longest common prefix together with the tails of l and r with the
+common prefix removed.
+
+Example:
+
+    > (split-common-prefix '(a b c d) '(a b x y z))
+    '(a b)
+
+    '(c d)
+
+    '(x y z)
+
+
+
+            The subsequent bindings were added by Sam Tobin-Hochstadt.
+
+(filter-multiple l f ...)   →   list?   ...
+  l : list?
+  f : procedure?
+Produces (values (filter f l) ...).
+
+Example:
+
+    > (filter-multiple (list 1 2 3 4 5) even? odd?)
+    '(2 4)
+
+    '(1 3 5)
+
+
+
+(extend l1 l2 v) → list?
+  l1 : list?
+  l2 : list?
+  v : any/c
+Extends l2 to be as long as l1 by adding (- (length l1) (length l2)) copies of
+v to the end of l2.
+
+Example:
+
+    > (extend '(1 2 3) '(a) 'b)
+    '(a b b)
+
+
+
+            The subsequent bindings were added by Ryan Culpepper.
+
+(check-duplicate    lst                      
+                  [ #:key extract-key        
+                    #:same? same?])     →   (or/c any/c #f)
+  lst : list?
+  extract-key : (-> any/c any/c) = (lambda (x) x)
+   same?   :   (or/c (any/c any/c . -> . any/c)   =   equal?
+                     dict?)
+Returns the first duplicate item in lst. More precisely, it returns the first x
+such that there was a previous y where (same? (extract-key x) (extract-key y)).
+
+The same? argument can either be an equivalence predicate such as equal? or
+eqv? or a dictionary. In the latter case, the elements of the list are mapped
+to #t in the dictionary until an element is discovered that is already mapped
+to a true value. The procedures equal?, eqv?, and eq? automatically use a
+dictionary for speed.
+
+Examples:
+
+    > (check-duplicate '(1 2 3 4))
+    #f
+
+    > (check-duplicate '(1 2 3 2 1))
+    2
+
+    > (check-duplicate '((a 1) (b 2) (a 3)) #:key car)
+    '(a 3)
+
+    > (define id-t (make-free-id-table))
+    > (check-duplicate (syntax->list #'(a b c d a b))
+                       #:same? id-t)
+    #<syntax:13:0 a>
+
+    > (dict-map id-t list)
+    '((#<syntax:13:0 d> #t) (#<syntax:13:0 b> #t) (#<syntax:13:0 c> #t) (#
+    <syntax:13:0 a> #t))
+
+
+
+            The subsequent bindings were added by Carl Eastlund.
+
+(map/values n f lst ...)   →   (listof B_1)   ...   (listof B_n)
+  n : natural-number/c
+  f : (-> A ... (values B_1 ... B_n))
+  lst : (listof A)
+Produces lists of the respective values of f applied to the elements in lst ...
+sequentially.
+
+Example:
+
+    > (map/values
+       3
+       (lambda (x)
+         (values (+ x 1) x (- x 1)))
+       (list 1 2 3))
+    '(2 3 4)
+
+    '(1 2 3)
+
+    '(0 1 2)
+
+
+
+(map2 f lst ...)   →   (listof B)   (listof C)
+  f : (-> A ... (values B C))
+  lst : (listof A)
+Produces a pair of lists of the respective values of f applied to the elements
+in lst ... sequentially.
+
+Example:
+
+    > (map2 (lambda (x) (values (+ x 1) (- x 1))) (list 1 2 3))
+    '(2 3 4)
+
+    '(0 1 2)
+
+
+
+            The subsequent bindings were added by David Van Horn.
+
+(remf pred lst) → list?
+  pred : procedure?
+  lst : list?
+Returns a list that is like lst, omitting the first element of lst for which
+pred produces a true value.
+
+Example:
+
+    > (remf negative? '(1 -2 3 4 -5))
+    '(1 3 4 -5)
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

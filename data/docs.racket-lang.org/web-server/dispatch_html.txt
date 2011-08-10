@@ -1,0 +1,304 @@
+▼  Web Applications in Racket
+1  Running Web Servlets
+2  Stateful Servlets
+3  Stateless Servlets
+4  HTTP: Hypertext Transfer Protocol
+5  URL-Based Dispatch
+6  Formlets: Functional Form Abstraction
+7  Templates: Separation of View
+8  Page: Short-hand for Common Patterns
+9  Troubleshooting and Tips
+   Index
+► 5  URL-Based Dispatch
+5.1  Using web-server/ dispatch
+5.2  API Reference
+5.3  Imperative Dispatch Containers
+5.4  Built-in URL patterns
+5.5  Extending web-server/ dispatch
+On this page:
+5.1 Using web-server/ dispatch
+5.2 API Reference
+dispatch-rules
+dispatch-rules+ applies
+dispatch-case
+dispatch-url
+serve/ dispatch
+5.3 Imperative Dispatch Containers
+container?
+define-container
+dispatch-rules!
+5.4 Built-in URL patterns
+number-arg
+integer-arg
+real-arg
+string-arg
+symbol-arg
+5.5 Extending web-server/ dispatch
+define-bidi-match-expander
+bidi-match-going-in?
+define-coercion-match-expander
+make-coerce-safe?
+[...search manuals...]
+  top← prev  up  next → 
+
+5 URL-Based Dispatch
+
+ (require web-server/dispatch)
+
+The library allows the creation of two-way mappings between permanent URLs and
+request-handling procedures.
+
+            This library was inspired by the (planet untyped/dispatch) package.
+
+5.1 Using web-server/dispatch
+
+Suppose you are writing a blog application and want pretty URLs for different
+views of the site. You would define some URL dispatching rules as follows:
+
+    > (define-values (blog-dispatch blog-url)
+        (dispatch-rules
+         [("") list-posts]
+         [("posts" (string-arg)) review-post]
+         [("archive" (integer-arg) (integer-arg)) review-archive]
+         [else list-posts]))
+
+And define your request handlers as follows:
+
+    > (define (list-posts req) `(list-posts))
+    > (define (review-post req p) `(review-post ,p))
+    > (define (review-archive req y m) `(review-archive ,y ,m))
+
+Now when a request is sent to your application, it will be directed to the
+appropriate handler:
+
+    > (define (url->request u)
+        (make-request #"GET" (string->url u) empty
+                      (delay empty) #f "1.2.3.4" 80 "4.3.2.1"))
+    > (blog-dispatch
+       (url->request "http://www.chrlsnchrg.com"))
+    '(list-posts)
+
+    > (blog-dispatch
+       (url->request "http://www.chrlsnchrg.com/"))
+    '(list-posts)
+
+    > (blog-dispatch
+       (url->request
+        "http://www.chrlsnchrg.com/posts/Extracurricular-Activity"))
+    '(review-post "Extracurricular-Activity")
+
+    > (blog-dispatch
+       (url->request "http://www.chrlsnchrg.com/archive/1984/10"))
+    '(review-archive 1984 10)
+
+    > (blog-dispatch
+       (url->request "http://www.chrlsnchrg.com/contact"))
+    '(list-posts)
+
+
+You can also generate these pretty URLs from procedure calls:
+
+    > (blog-url list-posts)
+    "/"
+
+    > (blog-url review-post "Another-Saturday-Night")
+    "/posts/Another-Saturday-Night"
+
+    > (blog-url review-archive 1984 11)
+    "/archive/1984/11"
+
+
+After mastering the world of blogging software, you decide to put the
+ubiquitous Add-Two-Numbers.com out of business with Sum.com:
+
+    > (define-values (sum-dispatch sum-url)
+        (dispatch-rules
+         [((integer-arg) ...) sum]
+         [else (lambda (req) (sum req empty))]))
+    > (define (sum req is)
+        (apply + is))
+    > (sum-dispatch (url->request "http://www.sum.com/"))
+    0
+
+    > (sum-dispatch (url->request "http://www.sum.com/2"))
+    2
+
+    > (sum-dispatch (url->request "http://www.sum.com/2/3/4"))
+    9
+
+    > (sum-dispatch (url->request "http://www.sum.com/5/10/15/20"))
+    50
+
+    > (sum-url sum empty)
+    "/"
+
+    > (sum-url sum (list 1))
+    "/1"
+
+    > (sum-url sum (list 2 3 5 7))
+    "/2/3/5/7"
+
+
+5.2 API Reference
+
+(dispatch-rules
+ [dispatch-pattern dispatch-fun]
+ ...
+ [else else-fun])
+(dispatch-rules
+ [dispatch-pattern dispatch-fun]
+ ...)
+ 
+       else-fun   :   (request? . -> . any)
+       dispatch-fun   :   (request? any/c ... . -> . any)
+
+Returns two values: the first is a dispatching function with the contract (->
+request? any) that calls the appropriate dispatch-fun based on the first
+dispatch-pattern that matches the request’s URL; the second is a URL-generating
+function with the contract (-> procedure? any/c ... string?) that generates a
+URL using dispatch-pattern for the dispatch-fun given as its first argument.
+
+If else-fun is left out, one is provided that calls (next-dispatcher) to signal
+to the Web Server that this dispatcher does not apply.
+
+  dispatch-pattern   =   ()
+                     |   (string . dispatch-pattern)
+                     |   (bidi-match-expander ... . dispatch-pattern)
+                     |   (bidi-match-expander . dispatch-pattern)
+
+(dispatch-rules+applies
+ [dispatch-pattern dispatch-fun]
+ ...
+ [else else-fun])
+(dispatch-rules+applies
+ [dispatch-pattern dispatch-fun]
+ ...)
+ 
+       else-fun   :   (request? . -> . any)
+       dispatch-fun   :   (request? any/c ... . -> . any)
+
+Like dispatch-rules, except returns a third value with the contract (->
+request? boolean?) that returns #t if the dispatching rules apply to the
+request and #f otherwise.
+
+(dispatch-case
+ [dispatch-pattern dispatch-fun]
+ ...
+ [else else-fun])
+(dispatch-case
+ [dispatch-pattern dispatch-fun]
+ ...)
+ 
+       else-fun   :   (request? . -> . any)
+       dispatch-fun   :   (request? any/c ... . -> . any)
+
+Returns a dispatching function as described by dispatch-rules.
+
+(dispatch-url
+ [dispatch-pattern dispatch-fun]
+ ...)
+ 
+   dispatch-fun   :   (request? any/c ... . -> . any)
+Returns a URL-generating function as described by dispatch-rules.
+
+(serve/dispatch dispatch) → void
+  dispatch : (request? . -> . can-be-response?)
+Calls serve/servlet with a #:servlet-regexp argument (#rx"") so that every
+request is handled by dispatch.
+
+5.3 Imperative Dispatch Containers
+
+dispatch-rules is purely functional. This presents a more declarative
+interface, but inhibits some programming and modularity patterns. Containers
+provide an imperative overlay atop dispatch-rules.
+
+(container? x) → boolean?
+  x : any/c
+Identifies containers.
+
+(define-container container-id (dispatch-id url-id))
+Defines container-id as a container as well as dispatch-id as its dispatching
+function and url-id as its URL lookup function.
+
+(dispatch-rules! container-expr [dispatch-pattern dispatch-fun] ...)
+Like dispatch-rules, but imperatively adds the patterns to the container
+specified by container-expr. The new rules are consulted before any rules
+already in the container.
+
+5.4 Built-in URL patterns
+
+web-server/dispatch builds in a few useful URL component patterns.
+
+(number-arg)
+A bi-directional match expander that parses a number? from the URL and
+generates a URL with a number’s encoding as a string.
+
+(integer-arg)
+A bi-directional match expander that parses a integer? from the URL and
+generates a URL with a integer’s encoding as a string.
+
+(real-arg)
+A bi-directional match expander that parses a real? from the URL and generates
+a URL with a real’s encoding as a string.
+
+(string-arg)
+A bi-directional match expander that parses a string? from the URL and
+generates a URL containing the string.
+
+(symbol-arg)
+A bi-directional match expander that parses a symbol? from the URL and
+generates a URL with a symbol’s encoding as a string.
+
+5.5 Extending web-server/dispatch
+
+ (require web-server/dispatch/extend)
+
+You can create new URL component patterns by defining bi-directional match
+expanders.
+
+(define-bidi-match-expander id in-xform out-xform)
+Binds id to a bi-directional match expander where in-xform is a match expander
+(defined by define-match-expander) that is used when parsing URLs and out-xform
+is one used when generating URLs.
+
+Both in-xform and out-xform should use the syntax (xform arg ... id) where the
+args are specific to id and compatible with both in-xform and out-xform. id
+will typically be provided automatically by dispatch-rules.
+
+bidi-match-going-in?
+A syntax parameter used by bi-directional match expanders to determine if a URL
+is being parsed or generated.
+
+When defining new patterns, you may find it useful to use these helper
+functions:
+
+(define-coercion-match-expander id test? coerce)
+Binds id to a match expander that expands (id x) to (? test? (app coerce x))
+(i.e., uses test? to determine if the pattern matches and coerce to transform
+the binding.)
+
+(make-coerce-safe? coerce) → (any/c . -> . boolean?)
+  coerce : (any/c . -> . any/c)
+Returns a function that returns #t if coerce would not throw an exception or
+return #f on its input.
+
+Examples:
+
+    > (define string->number? (make-coerce-safe? string->number))
+    > (string->number? "1")
+    #t
+
+    > (string->number? "1.2")
+    #t
+
+    > (string->number? "+inf.0")
+    #t
+
+    > (string->number? "one")
+    #f
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,30 @@
+▼  Scriblib: Extra Scribble Libraries
+1  Examples Using the GUI Toolbox
+2  Figures
+3  Bibliographies
+4  Bib Te X Bibliographies
+5  Footnotes
+6  Conditional Content
+On this page:
+define-bibtex-cite
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+4 BibTeX Bibliographies
+
+ (require scriblib/bibtex)
+
+(define-bibtex-cite bib-pth ~cite-id citet-id generate-bibliography-id)
+Parses bib-pth as a BibTeX database.
+
+Uses define-cite from scriblib/autobib, but augments the ~cite-id and citet-id
+functions so that rather than accepting bib? structures, they accept citation
+key strings.
+
+Each string is broken along spaces into citations keys that are looked up in
+the BibTeX database and turned into bib? structures.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

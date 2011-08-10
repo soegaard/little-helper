@@ -1,0 +1,126 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 6  raco setup: Installation Management
+6.1  Running raco setup
+6.2  "info.rkt" File Format
+6.3  API for Installation
+6.4  API for Installing ".plt" Archives
+6.5  API for Finding Installation Directories
+6.6  API for Reading "info.rkt" Files
+6.7  API for Relative Paths
+6.8  API for Cross-References for Installed Manuals
+► 6.7  API for Relative Paths
+6.7.1  Representing paths relative to "collects"
+6.7.2  Displaying paths relative to a common root
+On this page:
+6.7.1 Representing paths relative to "collects"
+path->main-collects-relative
+main-collects-relative->path
+6.7.2 Displaying paths relative to a common root
+path->relative-string/ library
+path->relative-string/ setup
+make-path->relative-string
+[...search manuals...]
+  top← prev  up  next → 
+
+6.7 API for Relative Paths
+
+The Racket installation tree can usually be moved around the filesystem. To
+support this, care must be taken to avoid absolute paths. The following two
+APIs cover two aspects of this: a way to convert a path to a value that is
+relative to the "collets" tree, and a way to display such paths (e.g., in error
+messages).
+
+6.7.1 Representing paths relative to "collects"
+
+ (require setup/main-collects)
+
+(path->main-collects-relative path)
+ → (or/c path? (cons/c 'collects (listof bytes?)))
+  path : (or/c bytes? path-string?)
+Checks whether path has a prefix that matches the prefix to the main "collects"
+directory as determined by (find-collects-dir). If so, the result is a list
+starting with 'collects and containing the remaining path elements as byte
+strings. If not, the path is returned as-is.
+
+The path argument should be a complete path. Applying simplify-path before
+path->main-collects-relative is usually a good idea.
+
+For historical reasons, path can be a byte string, which is converted to a path
+using bytes->path.
+
+(main-collects-relative->path rel) → path?
+   rel   :   (or/c bytes? path-string?
+                   (cons/c 'collects (listof bytes?)))
+The inverse of path->main-collects-relative: if rel is a pair that starts with
+'collects, then it is converted back to a path relative to (find-collects-dir).
+
+For historical reasons, if rel is any kind of value other than specified in the
+contract above, it is returned as-is.
+
+6.7.2 Displaying paths relative to a common root
+
+ (require setup/path-to-relative)
+
+(path->relative-string/library    path             
+                                [ default])   →   any/c
+  path : path-string?
+   default   :   (or/c (-> path-string? any/c) any/c)
+             =   (lambda (x) (if (path? x) (path->string x) x))
+Produces a string suitable for display in error messages. If the path is an
+absolute one that is inside the "collects" tree, the result will be a string
+that begins with "<collects>/". Similarly, a path in the user-specific collects
+results in a prefix of "<user-collects>/", and a PLaneT path results in "
+<planet>/".
+
+If the path is not absolute, or if it is not in any of these, it is returned
+as-is (converted to a string if needed). If default is given, it specifies the
+return value instead: it can be a procedure which is applied onto the path to
+get the result, or the result itself.
+
+Note that this function can be a non-string only if default is given, and it
+does not return a string.
+
+(path->relative-string/setup path [default]) → any
+  path : path-string?
+   default   :   (or/c (-> path-string? any/c) any/c)
+             =   (lambda (x) (if (path? x) (path->string x) x))
+Similar to path->relative-string/library, but more suited for output during
+compilation: "collects" paths are shown with no prefix, and in the
+user-specific collects with just a "<user>" prefix.
+
+If the path is not absolute, or if it is not in any of these, it is returned
+as-is (converted to a string if needed). If default is given, it specifies the
+return value instead: it can be a procedure which is applied onto the path to
+get the result, or the result itself.
+
+Note that this function can be a non-string only if default is given, and it
+does not return a string.
+
+(make-path->relative-string dirs [default])
+ → (path-string? any/c . -> . any)
+  dirs : (listof (cons (-> path?) string?))
+   default   :   (or/c (-> path-string? any/c) any/c)
+             =   (lambda (x) (if (path? x) (path->string x) x))
+This function produces functions like path->relative-string/library and path->
+relative-string/setup.
+
+dirs determines the prefix substitutions. It should be an association list
+mapping a path-producing thunk to a prefix string for paths in the specified
+path.
+
+default determines the default for the resulting function (which can always be
+overridden by an additional argument to this function).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,333 @@
+►  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+▼ 2  Die Macht der Abstraktion
+2.1  Signaturen
+2.2  let, letrec und let*
+2.3  Primitive Operationen
+On this page:
+*
++
+-
+/
+<
+<=
+=
+>
+>=
+abs
+acos
+angle
+asin
+atan
+ceiling
+complex?
+cos
+current-seconds
+denominator
+even?
+exact->inexact
+exact?
+exp
+expt
+floor
+gcd
+imag-part
+inexact->exact
+inexact?
+integer?
+lcm
+log
+magnitude
+make-polar
+max
+min
+modulo
+natural?
+negative?
+number->string
+number?
+numerator
+odd?
+positive?
+quotient
+random
+rational?
+real-part
+real?
+remainder
+round
+sin
+sqrt
+string->number
+tan
+zero?
+boolean=?
+boolean?
+false?
+not
+true?
+append
+cons
+cons?
+empty
+empty?
+first
+fold
+length
+list
+list-ref
+make-pair
+pair?
+rest
+reverse
+computer
+computer-hard-drive
+computer-processor
+computer-ram
+computer?
+make-computer
+chocolate-cookie
+chocolate-cookie-chocolate
+chocolate-cookie-cookie
+chocolate-cookie?
+make-chocolate-cookie
+string->strings-list
+string-append
+string-length
+string<=?
+string<?
+string=?
+string>=?
+string>?
+string?
+strings-list->string
+for-each
+map
+violation
+write-newline
+write-string
+[...search manuals...]
+  top← prev  up  next → 
+
+2.3 Primitive Operationen
+
+* : (number number number ... -> number)
+Produkt berechnen
++ : (number number number ... -> number)
+Summe berechnen
+- : (number number ... -> number)
+bei mehr als einem Argument Differenz zwischen der ersten und der Summe aller
+weiteren Argumente berechnen; bei einem Argument Zahl negieren
+/ : (number number number ... -> number)
+das erste Argument durch das Produkt aller weiteren Argumente berechnen
+< : (real real real ... -> boolean)
+Zahlen auf kleiner-als testen
+<= : (real real real ... -> boolean)
+Zahlen auf kleiner-gleich testen
+= : (number number number ... -> boolean)
+Zahlen auf Gleichheit testen
+> : (real real real ... -> boolean)
+Zahlen auf gro:sser-als testen
+>= : (real real real ... -> boolean)
+Zahlen auf gro:sser-gleich testen
+abs : (real -> real)
+Absolutwert berechnen
+acos : (number -> number)
+Arcuscosinus berechnen (in Radian)
+angle : (number -> real)
+Winkel einer komplexen Zahl berechnen
+asin : (number -> number)
+Arcussinus berechnen (in Radian)
+atan : (number -> number)
+Arcustangens berechnen (in Radian)
+ceiling : (real -> integer)
+na:chste ganze Zahl oberhalb einer rellen Zahlen berechnen
+complex? : (any -> boolean)
+feststellen, ob ein Wert eine komplexe Zahl ist
+cos : (number -> number)
+Cosinus berechnen (Argument in Radian)
+current-seconds : (-> natural)
+aktuelle Zeit in Sekunden seit einem unspezifizierten Startzeitpunkt berechnen
+denominator : (rational -> natural)
+Nenner eines Bruchs berechnen
+even? : (integer -> boolean)
+feststellen, ob eine Zahl gerade ist
+exact->inexact : (number -> number)
+eine Zahl durch eine inexakte Zahl anna:hern
+exact? : (number -> boolean)
+feststellen, ob eine Zahl exakt ist
+exp : (number -> number)
+Exponentialfunktion berechnen (e hoch Argument)
+expt : (number number -> number)
+Potenz berechnen (erstes Argument hoch zweites Argument)
+floor : (real -> integer)
+na:chste ganze Zahl unterhalb einer rellen Zahlen berechnen
+gcd : (integer integer ... -> natural)
+gro:ssten gemeinsamen Teiler berechnen
+imag-part : (number -> real)
+imagina:ren Anteil einer komplexen Zahl extrahieren
+inexact->exact : (number -> number)
+eine Zahl durch eine exakte Zahl anna:hern
+inexact? : (number -> boolean)
+feststellen, ob eine Zahl inexakt ist
+integer? : (any -> boolean)
+feststellen, ob ein Wert eine ganze Zahl ist
+lcm : (integer integer ... -> natural)
+kleinstes gemeinsames Vielfaches berechnen
+log : (number -> number)
+natu:rlichen Logarithmus (Basis e) berechnen
+magnitude : (number -> real)
+Abstand zum Ursprung einer komplexen Zahl berechnen
+make-polar : (real real -> number)
+komplexe Zahl aus Abstand zum Ursprung und Winkel berechnen
+max : (real real ... -> real)
+Maximum berechnen
+min : (real real ... -> real)
+Minimum berechnen
+modulo : (integer integer -> integer)
+Divisionsmodulo berechnen
+natural? : (any -> boolean)
+feststellen, ob ein Wert eine natu:rliche Zahl (inkl. 0) ist
+negative? : (number -> boolean)
+feststellen, ob eine Zahl negativ ist
+number->string : (number -> string)
+Zahl in Zeichenkette umwandeln
+number? : (any -> boolean)
+feststellen, ob ein Wert eine Zahl ist
+numerator : (rational -> integer)
+Za:hler eines Bruchs berechnen
+odd? : (integer -> boolean)
+feststellen, ob eine Zahl ungerade ist
+positive? : (number -> boolean)
+feststellen, ob eine Zahl positiv ist
+quotient : (integer integer -> integer)
+ganzzahlig dividieren
+random : (natural -> natural)
+eine natu:rliche Zufallszahl berechnen, die kleiner als das Argument ist
+rational? : (any -> boolean)
+feststellen, ob eine Zahl rational ist
+real-part : (number -> real)
+reellen Anteil einer komplexen Zahl extrahieren
+real? : (any -> boolean)
+feststellen, ob ein Wert eine reelle Zahl ist
+remainder : (integer integer -> integer)
+Divisionsrest berechnen
+round : (real -> integer)
+relle Zahl auf eine ganze Zahl runden
+sin : (number -> number)
+Sinus berechnen (Argument in Radian)
+sqrt : (number -> number)
+Quadratwurzel berechnen
+string->number : (string -> (mixed number false))
+Zeichenkette in Zahl umwandeln, falls mo:glich
+tan : (number -> number)
+Tangens berechnen (Argument in Radian)
+zero? : (number -> boolean)
+feststellen, ob eine Zahl Null ist
+boolean=? : (boolean boolean -> boolean)
+Booleans auf Gleichheit testen
+boolean? : (any -> boolean)
+feststellen, ob ein Wert ein boolescher Wert ist
+false? : (any -> boolean)
+feststellen, ob ein Wert #f ist
+not : (boolean -> boolean)
+booleschen Wert negieren
+true? : (any -> boolean)
+feststellen, ob ein Wert #t ist
+append : ((list-of %a) ... -> (list-of %a))
+mehrere Listen aneinanderha:ngen
+cons : (%a (list-of %a) -> (list-of %a))
+erzeuge ein Paar aus Element und Liste
+cons? : (any -> boolean)
+feststellen, ob ein Wert ein Paar ist
+empty : list
+die leere Liste
+empty? : (any -> boolean)
+feststellen, ob ein Wert die leere Liste ist
+first : ((list-of %a) -> %a)
+erstes Element eines Paars extrahieren
+fold : (%b (%a %b -> %b) (list-of %a) -> %b)
+Liste einfalten.
+length : ((list-of %a) -> natural)
+La:nge einer Liste berechnen
+list : (%a ... -> (list-of %a))
+Liste aus den Argumenten konstruieren
+list-ref : ((list-of %a) natural -> %a)
+das Listenelement an der gegebenen Position extrahieren
+make-pair : (%a (list-of %a) -> (list-of %a))
+erzeuge ein Paar aus Element und Liste
+pair? : (any -> boolean)
+feststellen, ob ein Wert ein Paar ist
+rest : ((list-of %a) -> (list-of %a))
+Rest eines Paars extrahieren
+reverse : ((list-of %a) -> (list-of %a))
+Liste in umgekehrte Reihenfolge bringen
+computer : signature
+Signatur fu:r Computer
+computer-hard-drive : (computer -> rational)
+Festplattenkapazita:t aus Computer extrahieren
+computer-processor : (computer -> string)
+Prozessorname aus Computer extrahieren
+computer-ram : (computer -> rational)
+Arbeitsspeicher aus Computer extrahieren
+computer? : (any -> boolean)
+feststellen, ob Wert ein Computer ist
+make-computer : (string rational rational -> computer)
+Computer aus Prozessorname, Arbeitsspeicher und Festplattenkapazita:t
+konstruieren
+chocolate-cookie : signature
+Signatur fu:r Schokokekse
+chocolate-cookie-chocolate : (chocolate-cookie -> number)
+Schoko-Anteil eines Schokokekses extrahieren
+chocolate-cookie-cookie : (chocolate-cookie -> number)
+Keks-Anteil eines Schokokekses extrahieren
+chocolate-cookie? : (any -> boolean)
+feststellen, ob ein Wert ein Schokokeks ist
+make-chocolate-cookie : (number number -> chocolate-cookie)
+Schokokeks aus Schoko- und Keks-Anteil konstruieren
+string->strings-list : (string -> (list string))
+Eine Zeichenkette in eine Liste von Zeichenketten mit einzelnen Zeichen
+umwandeln
+string-append : (string string ... -> string)
+Ha:ngt Zeichenketten zu einer Zeichenkette zusammen
+string-length : (string -> natural)
+Liefert La:nge einer Zeichenkette
+string<=? : (string string string ... -> boolean)
+Zeichenketten lexikografisch auf kleiner-gleich testen
+string<? : (string string string ... -> boolean)
+Zeichenketten lexikografisch auf kleiner-als testen
+string=? : (string string string ... -> boolean)
+Zeichenketten auf Gleichheit testen
+string>=? : (string string string ... -> boolean)
+Zeichenketten lexikografisch auf gro:sser-gleich testen
+string>? : (string string string ... -> boolean)
+Zeichenketten lexikografisch auf gro:sser-als testen
+string? : (any -> boolean)
+feststellen, ob ein Wert eine Zeichenkette ist
+strings-list->string : ((list string) -> string)
+Eine Liste von Zeichenketten in eine Zeichenkette umwandeln
+for-each : ((%a -> %b) (list %a) -> unspecific)
+Prozedur von vorn nach hinten auf alle Elemente einer Liste anwenden
+map : ((%a -> %b) (list %a) -> (list %b))
+Prozedur auf alle Elemente einer Liste anwenden, Liste der Resultate berechnen
+violation : (string -> unspecific)
+Programmm mit Fehlermeldung abbrechen
+write-newline : (-> unspecific)
+Zeilenumbruch ausgeben
+write-string : (string -> unspecific)
+Zeichenkette in REPL ausgeben
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

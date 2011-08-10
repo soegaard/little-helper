@@ -1,0 +1,62 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+On this page:
+void?
+void
+[...search manuals...]
+  top← prev  up  next → 
+
+3.18 Void and Undefined
+
+The constant #<void> is returned by most forms and procedures that have a
+side-effect and no useful result. The constant #<undefined> is used as the
+initial value for letrec bindings.
+
+(void? v) → void?
+  v : any/c
+Returns #t if v is the constant #<void>, #f otherwise.
+
+(void v ...) → void?
+  v : any/c
+Returns the constant #<void>. Each v argument is ignored.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

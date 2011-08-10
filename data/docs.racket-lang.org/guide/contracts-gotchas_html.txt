@@ -1,0 +1,179 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Contracts and Boundaries
+7.2  Simple Contracts on Functions
+7.3  Contracts on Functions in General
+7.4  Contracts: A Thorough Example
+7.5  Contracts on Structures
+7.6  Abstract Contracts using #: exists and #: ∃
+7.7  Additional Examples
+7.8  Gotchas
+► 7.8  Gotchas
+7.8.1  Contracts and eq?
+7.8.2  Exists Contracts and Predicates
+7.8.3  Defining Recursive Contracts
+7.8.4  Mixing set! and provide/ contract
+On this page:
+7.8.1 Contracts and eq?
+7.8.2 Exists Contracts and Predicates
+7.8.3 Defining Recursive Contracts
+7.8.4 Mixing set! and provide/ contract
+[...search manuals...]
+  top← prev  up  next → 
+
+7.8 Gotchas
+
+7.8.1 Contracts and eq?
+
+As a general rule, adding a contract to a program should either leave the
+behavior of the program unchanged, or should signal a contract violation. And
+this is almost true for Racket contracts, with one exception: eq?.
+
+The eq? procedure is designed to be fast and does not provide much in the way
+of guarantees, except that if it returns true, it means that the two values
+behave identically in all respects. Internally, this is implemented as pointer
+equality at a low-level so it exposes information about how Racket is
+implemented (and how contracts are implemented).
+
+Contracts interact poorly with eq? because function contract checking is
+implemented internally as wrapper functions. For example, consider this module:
+
+    #lang racket
+     
+    (define (make-adder x)
+      (if (= 1 x)
+          add1
+          (lambda (y) (+ x y))))
+    (provide/contract [make-adder (-> number? (-> number? number?))])
+
+It exports the make-adder function that is the usual curried addition function,
+except that it returns Racket’s add1 when its input is 1.
+
+You might expect that
+
+    (eq? (make-adder 1)
+         (make-adder 1))
+
+would return #t, but it does not. If the contract were changed to any/c (or
+even (-> number? any/c)), then the eq? call would return #t.
+
+Moral: Do not use eq? on values that have contracts.
+
+7.8.2 Exists Contracts and Predicates
+
+Much like the eq? example above, #:∃ contracts can change the behavior of a
+program.
+
+Specifically, the null? predicate (and many other predicates) return #f for #:∃
+contracts, and changing one of those contracts to any/c means that null? might
+now return #t instead, resulting in arbitrarily different behavior depending on
+this boolean might flow around in the program.
+
+ #lang racket/exists
+
+To work around the above problem, the racket/exists library behaves just like
+the racket, but where predicates signal errors when given #:∃ contracts.
+
+Moral: Do not use predicates on #:∃ contracts, but if you’re not sure, use
+racket/exists to be safe.
+
+7.8.3 Defining Recursive Contracts
+
+When defining a self-referential contract, it is natural to use define. For
+example, one might try to write a contract on streams like this:
+
+    > (define stream/c
+       (promise/c
+        (or/c
+         null?
+         (cons/c number? stream/c))))
+    reference to undefined identifier: stream/c
+
+
+Unfortunately, this does not work because the value of stream/c is needed
+before it is defined. Put another way, all of the combinators evaluate their
+arguments eagerly, even thought the values that they accept do not.
+
+Instead, use
+
+    (define stream/c
+     (promise/c
+      (or/c
+       null?
+       (cons/c 1
+               (recursive-contract stream/c)))))
+
+The use of recursive-contract delays the evaluation of the identifier stream/c
+until after the contract is first checked, long enough to ensure that stream/c
+is defined.
+
+See also Checking Properties of Data Structures.
+
+7.8.4 Mixing set! and provide/contract
+
+The contract library assumes that variables exported via provide/contract are
+not assigned to, but does not enforce it. Accordingly, if you try to set! those
+variables, you may be surprised. Consider the following example:
+
+    > (module server racket
+        (define (inc-x!) (set! x (+ x 1)))
+        (define x 0)
+        (provide/contract [inc-x! (-> void?)]
+                          [x integer?]))
+    > (module client racket
+        (require 'server)
+      
+        (define (print-latest) (printf "x is ~s\n" x))
+      
+        (print-latest)
+        (inc-x!)
+        (print-latest))
+    > (require 'client)
+    x is 0
+
+    x is 0
+
+
+Both calls to print-latest print 0, even though the value of x has been
+incremented (and the change is visible inside the module x).
+
+To work around this, export accessor functions, rather than exporting the
+variable directly, like this:
+
+    #lang racket
+     
+    (define (get-x) x)
+    (define (inc-x!) (set! x (+ x 1)))
+    (define x 0)
+    (provide/contract [inc-x! (-> void?)]
+                      [get-x (-> integer?)])
+
+Moral: This is a bug that we will address in a future release.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

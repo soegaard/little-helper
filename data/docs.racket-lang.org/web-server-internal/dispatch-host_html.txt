@@ -1,0 +1,42 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 2  Dispatchers
+ 2.1  General
+ 2.2  Mapping URLs to Paths
+ 2.3  Sequencing
+ 2.4  Timeouts
+ 2.5  Lifting Procedures
+ 2.6  Filtering Requests
+ 2.7  Procedure Invocation upon Request
+ 2.8  Logging
+ 2.9  Password Protection
+2.10  Virtual Hosts
+2.11  Serving Files
+2.12  Serving Servlets
+2.13  Statistics
+2.14  Limiting Requests
+On this page:
+make
+[...search manuals...]
+  top← prev  up  next → 
+
+2.10 Virtual Hosts
+
+ (require web-server/dispatchers/dispatch-host)
+The web-server/dispatchers/dispatch-host module defines a dispatcher
+constructor that calls a different dispatcher based upon the host requested.
+(make lookup-dispatcher) → dispatcher/c
+  lookup-dispatcher : (symbol? . -> . dispatcher/c)
+Extracts a host from the URL requested, or the Host HTTP header, calls
+lookup-dispatcher with the host, and invokes the returned dispatcher. If no
+host can be extracted, then 'none is used.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

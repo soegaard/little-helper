@@ -1,0 +1,197 @@
+▼  Redex: Practical Semantics Engineering
+1  Patterns
+2  Terms
+3  Languages
+4  Reduction Relations
+5  Metafunctions and Relations
+6  Testing
+7  GUI
+8  Typesetting
+   Index
+On this page:
+term
+hole
+in-hole
+term-let
+redex-let
+redex-let*
+term-match
+term-match/ single
+plug
+variable-not-in
+variables-not-in
+exn: fail: redex?
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Terms
+
+Object language expressions in Redex are written using term. It is similar to
+Racket’s quote (in many cases it is identical) in that it constructs lists as
+the visible representation of terms.
+
+The grammar of terms is (note that an ellipsis stands for repetition unless
+otherwise indicated):
+
+           term   =   identifier
+                  |   (term-sequence ...)
+                  |   ,racket-expression
+                  |   (in-hole term term)
+                  |   hole
+                  |   #t
+                  |   #f
+                  |   string
+                       
+  term-sequence   =   term
+                  |   ,@racket-expression
+                  |   ... ; literal ellipsis
+
+  • A term written identifier is equivalent to the corresponding symbol, unless
+    the identifier is bound by term-let (or in a pattern elsewhere) or is hole
+    (as below).
+
+  • A term written (term-sequence ...) constructs a list of the terms
+    constructed by the sequence elements.
+
+  • A term written ,racket-expression evaluates the racket-expression and
+    substitutes its value into the term at that point.
+
+  • A term written ,@racket-expression evaluates the racket-expression, which
+    must produce a list. It then splices the contents of the list into the
+    expression at that point in the sequence.
+
+  • A term written (in-hole tttterm tttterm) is the dual to the pattern in-hole
+    – it accepts a context and an expression and uses plug to combine them.
+
+  • A term written hole produces a hole.
+
+  • A term written as a literal boolean or a string produces the boolean or the
+    string.
+
+(term term)
+This form is used for construction of a term.
+
+It behaves similarly to quasiquote, except for a few special forms that are
+recognized (listed below) and that names bound by term-let are implicitly
+substituted with the values that those names were bound to, expanding ellipses
+as in-place sublists (in the same manner as syntax-case patterns).
+
+For example,
+
+    (term-let ([body '(+ x 1)]
+               [(expr ...) '(+ - (values * /))]
+               [((id ...) ...) '((a) (b) (c d))])
+      (term (let-values ([(id ...) expr] ...) body)))
+
+evaluates to
+
+    '(let-values ([(a) +]
+                  [(b) -]
+                  [(c d) (values * /)])
+       (+ x 1))
+
+It is an error for a term variable to appear in an expression with an
+ellipsis-depth different from the depth with which it was bound by term-let. It
+is also an error for two term-let-bound identifiers bound to lists of different
+lengths to appear together inside an ellipsis.
+
+hole
+Recognized specially within term. A hole form is an error elsewhere.
+
+in-hole
+Recognized specially within reduction-relation. An in-hole form is an error
+elsewhere.
+
+(term-let ([tl-pat expr] ...) body)
+ 
+    tl-pat   =   identifier
+             |   (tl-pat-ele ...)
+                  
+tl-pat-ele   =   tl-pat
+             |   tl-pat ... ; a literal ellipsis
+Matches each given id pattern to the value yielded by evaluating the
+corresponding expr and binds each variable in the id pattern to the appropriate
+value (described below). These bindings are then accessible to the term
+syntactic form.
+
+Note that each ellipsis should be the literal symbol consisting of three dots
+(and the ... elsewhere indicates repetition as usual). If tl-pat is an
+identifier, it matches any value and binds it to the identifier, for use inside
+term. If it is a list, it matches only if the value being matched is a list
+value and only if every subpattern recursively matches the corresponding list
+element. There may be a single ellipsis in any list pattern; if one is present,
+the pattern before the ellipses may match multiple adjacent elements in the
+list value (possibly none).
+
+This form is a lower-level form in Redex, and not really designed to be used
+directly. For let-like forms that use Redex’s full pattern matching facilities,
+see redex-let, redex-let*, term-match, term-match/single.
+
+(redex-let language ([pattern expression] ...) body ...+)
+Like term-let but the left-hand sides are Redex patterns, interpreted according
+to the specified language. It is a syntax error for two left-hand sides to bind
+the same pattern variable.
+
+This form raises an exception recognized by exn:fail:redex? if any right-hand
+side does not match its left-hand side in exactly one way.
+
+In some contexts, it may be more efficient to use term-match/single (lifted out
+of the context).
+
+(redex-let* language ([pattern expression] ...) body ...+)
+The let* analog of redex-let.
+
+(term-match language [pattern expression] ...)
+This produces a procedure that accepts term (or quoted) expressions and checks
+them against each pattern. The function returns a list of the values of the
+expression where the pattern matches. If one of the patterns matches multiple
+times, the expression is evaluated multiple times, once with the bindings in
+the pattern for each match.
+
+When evaluating a term-match expression, the patterns are compiled in an effort
+to speed up matching. Using the procedural result multiple times to avoid
+compiling the patterns multiple times.
+
+(term-match/single language [pattern expression] ...)
+This produces a procedure that accepts term (or quoted) expressions and checks
+them against each pattern. The function returns the expression behind the first
+sucessful match. If that pattern produces multiple matches, an error is
+signaled. If no patterns match, an error is signaled.
+
+Raises an exception recognized by exn:fail:redex? if no clauses match or if one
+of the clauses matches multiple ways.
+
+When evaluating a term-match/single expression, the patterns are compiled in an
+effort to speed up matching. Using the procedural result multiple times to
+avoid compiling the patterns multiple times.
+
+(plug context expression) → any
+  context : any/c
+  expression : any/c
+The first argument to this function is an sexpression to plug into. The second
+argument is the sexpression to replace in the first argument. It returns the
+replaced term. This is also used when a term sub-expression contains in-hole.
+
+(variable-not-in t var) → symbol?
+  t : any/c
+  var : symbol?
+This helper function accepts an sexpression and a variable. It returns a
+variable not in the sexpression with a prefix the same as the second argument.
+
+(variables-not-in t vars) → (listof symbol?)
+  t : any/c
+  vars : (listof symbol?)
+This function, like variable-not-in, makes variables that do no occur in its
+first argument, but it returns a list of such variables, one for each variable
+in its second argument.
+
+Does not expect the input symbols to be distinct, but does produce variables
+that are always distinct.
+
+(exn:fail:redex? v) → boolean?
+  v : any/c
+Returns #t if its argument is a Redex exception record, and #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

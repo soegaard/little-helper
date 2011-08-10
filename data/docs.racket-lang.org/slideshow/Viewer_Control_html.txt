@@ -1,0 +1,68 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 3  Making Slides
+3.1  Primary Slide Functions
+3.2  Slide Registration
+3.3  Viewer Control
+3.4  Constants and Layout Variables
+3.5  Configuration
+3.6  Pict-Staging Helper
+3.7  Slides to Picts
+On this page:
+start-at-recent-slide
+enable-click-advance!
+set-use-background-frame!
+set-page-numbers-visible!
+current-page-number-font
+current-page-number-color
+current-page-number-adjust
+[...search manuals...]
+  top← prev  up  next → 
+
+3.3 Viewer Control
+
+(start-at-recent-slide) → void?
+Sets the starting slide for the talk to the most recently created slide. If
+this function is used multiple times, the last use overrides the earlier uses.
+
+(enable-click-advance! on?) → void?
+  on? : any/c
+Enables or disables slide advance as a result of a mouse click.
+
+(set-use-background-frame! on?) → void?
+  on? : any/c
+Enables or disables the creation of a background frame, which is typically
+useful only when make-slide-inset is used are active. The last enable/disable
+before the first slide registration takes effect once and for all.
+
+(set-page-numbers-visible! on?) → void?
+  on? : any/c
+Determines whether slide numbers are initially visible in the viewer.
+
+(current-page-number-font) → (is-a?/c font%)
+(current-page-number-font font) → void?
+  font : (is-a?/c font%)
+Parameter that determines the font used to draw the page number (if visible).
+
+(current-page-number-color) → (or/c string? (is-a?/c color%))
+(current-page-number-color color) → void?
+  color : (or/c string? (is-a?/c color%))
+Parameter that determines the color used to draw the page number (if visible).
+
+(current-page-number-adjust) → (-> number? string? string?)
+(current-page-number-adjust proc) → void?
+  proc : (-> number? string? string?)
+Parameter that controls the precise text that appears to indicate the page
+numbers (if visible). The input to the function is the default string and the
+slide number, and the result is what is drawn in the bottom right corner. The
+default parameter value just returns its first argument.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

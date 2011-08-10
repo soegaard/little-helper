@@ -1,0 +1,98 @@
+►  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+▼ 7  Hierarchical List Control
+7.1  hierarchical-list%
+7.2  hierarchical-list-item<%>
+7.3  hierarchical-list-compound-item<%>
+7.4  Snips in a hierarchical-list% Instance
+On this page:
+new-item
+set-no-sublists
+new-list
+delete-item
+get-items
+open
+close
+toggle-open/ closed
+is-open
+get-arrow-snip
+Inherited methods:
+from hierarchical-list-item<%>
+click-select
+get-allow-selection?
+get-clickable-snip
+get-editor
+is-selected?
+select
+set-allow-selection
+user-data
+[...search manuals...]
+  top← prev  up  next → 
+
+hierarchical-list-compound-item<%> : interface?
+  implements:  hierarchical-list-item<%>
+Instantiate this interface via new-list.
+
+(send a-hierarchical-list-compound-item new-item [mixin])
+ → (is-a?/c hierarchical-list-item<%>)
+               ((implementation?/c hierarchical-list-item<%>)
+   mixin   :    . -> .
+                (implementation?/c hierarchical-list-item<%>))
+           =   (lambda (%) %)
+Like new-item in hierarchical-list%.
+
+(send a-hierarchical-list-compound-item set-no-sublists no-sublists?)
+ → void?
+  no-sublists? : any/c
+Like set-no-sublists in hierarchical-list%.
+
+(send a-hierarchical-list-compound-item new-list [mixin])
+ → (is-a?/c hierarchical-list-compound-item<%>)
+               ((implementation?/c hierarchical-list-compound-item<%>)
+   mixin   :    . -> .
+                (implementation?/c hierarchical-list-compound-item<%>))
+           =   (lambda (%) %)
+Like new-list in hierarchical-list%.
+
+(send a-hierarchical-list-compound-item delete-item i) → void?
+  i : (is-a?/c hierarchical-list-item<%>)
+Deletes immediate item or sub-list i from the sub-list.
+
+(send a-hierarchical-list-compound-item get-items)
+ → (listof (is-a?/c hierarchical-list-item<%>))
+Returns a list of all immediate items in the sub-list.
+
+(send a-hierarchical-list-compound-item open) → void?
+(send a-hierarchical-list-compound-item close) → void?
+(send a-hierarchical-list-compound-item toggle-open/closed)
+ → void?
+Shows or hides the items of this sub-list.
+
+(send a-hierarchical-list-compound-item is-open) → boolean?
+Reports whether the items of this sub-list are visible.
+
+(send a-hierarchical-list-compound-item get-arrow-snip)
+ → (is-a?/c snip%)
+Returns a snip that corresponds to the arrow to hide/show items of the
+sub-list. The result is intended for use by automatic test suites.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

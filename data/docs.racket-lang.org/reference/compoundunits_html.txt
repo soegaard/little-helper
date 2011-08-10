@@ -1,0 +1,99 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 6  Units
+ 6.1  Creating Units
+ 6.2  Invoking Units
+ 6.3  Linking Units and Creating Compound Units
+ 6.4  Inferred Linking
+ 6.5  Generating A Unit from Context
+ 6.6  Structural Matching
+ 6.7  Extending the Syntax of Signatures
+ 6.8  Unit Utilities
+ 6.9  Unit Contracts
+6.10  Single-Unit Modules
+6.11  Single-Signature Modules
+6.12  Transformer Helpers
+On this page:
+compound-unit
+[...search manuals...]
+  top← prev  up  next → 
+
+6.3 Linking Units and Creating Compound Units
+
+(compound-unit
+  (import link-binding ...)
+  (export tagged-link-id ...)
+  (link linkage-decl ...))
+ 
+  link-binding   =   (link-id : tagged-sig-id)
+                      
+tagged-link-id   =   (tag id link-id)
+                 |   link-id
+                      
+  linkage-decl   =   ((link-binding ...) unit-expr tagged-link-id ...)
+Links several units into one new compound unit without immediately invoking any
+of the linked units. The unit-exprs in the link clause determine the units to
+be linked in creating the compound unit. The unit-exprs are evaluated when the
+compound-unit form is evaluated.
+
+The import clause determines the imports of the compound unit. Outside the
+compound unit, these imports behave as for a plain unit; inside the compound
+unit, they are propagated to some of the linked units. The export clause
+determines the exports of the compound unit. Again, outside the compound unit,
+these exports are treated the same as for a plain unit; inside the compound
+unit, they are drawn from the exports of the linked units. Finally, the
+left-hand and right-hand parts of each declaration in the link clause specify
+how the compound unit’s imports and exports are propagated to the linked units.
+
+Individual elements of an imported or exported signature are not available
+within the compound unit. Instead, imports and exports are connected at the
+level of whole signatures. Each specific import or export (i.e., an instance of
+some signature, possibly tagged) is given a link-id name. Specifically, a
+link-id is bound by the import clause or the left-hand part of a declaration in
+the link clause. A bound link-id is referenced in the right-hand part of a
+declaration in the link clause or by the export clause.
+
+The left-hand side of a link declaration gives names to each expected export of
+the unit produced by the corresponding unit-expr. The actual unit may export
+additional signatures, and it may export an extension of a specific signature
+instead of just the specified one. If the unit does not export one of the
+specified signatures (with the specified tag, if any), the exn:fail:contract
+exception is raised when the compound-unit form is evaluated.
+
+The right-hand side of a link declaration specifies the imports to be supplied
+to the unit produced by the corresponding unit-expr. The actual unit may import
+fewer signatures, and it may import a signature that is extended by the
+specified one. If the unit imports a signature (with a particular tag) that is
+not included in the supplied imports, the exn:fail:contract exception is raised
+when the compound-unit form is evaluated. Each link-id supplied as an import
+must be bound either in the import clause or in some declaration within the
+link clause.
+
+The order of declarations in the link clause determines the order of invocation
+of the linked units. When the compound unit is invoked, the unit produced by
+the first unit-expr is invoked first, then the second, and so on. If the order
+specified in the link clause is inconsistent with init-depend declarations of
+the actual units, then the exn:fail:contract exception is raised when the
+compound-unit form is evaluated.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

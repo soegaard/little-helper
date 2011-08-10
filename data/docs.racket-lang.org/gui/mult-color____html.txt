@@ -1,0 +1,87 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 5  Snip and Style Classes
+ 5.1  add-color<%>
+ 5.2  image-snip%
+ 5.3  mult-color<%>
+ 5.4  readable-snip<%>
+ 5.5  snip%
+ 5.6  snip-admin%
+ 5.7  snip-class%
+ 5.8  snip-class-list<%>
+ 5.9  string-snip%
+5.10  style<%>
+5.11  style-delta%
+5.12  style-list%
+5.13  tab-snip%
+On this page:
+get
+get-b
+get-g
+get-r
+set
+set-b
+set-g
+set-r
+[...search manuals...]
+  top← prev  up  next → 
+
+mult-color<%> : interface?
+A mult-color<%> object is used to scale the RGB values of a color% object. A
+mult-color<%> object exist only within a style-delta% object.
+
+See also get-foreground-mult and get-background-mult.
+
+(send a-mult-color get r g b) → void?
+  r : (box/c real?)
+  g : (box/c real?)
+  b : (box/c real?)
+Gets all of the scaling values.
+
+The r box is filled with the scaling value for the red component of the color.
+The g box is filled with the scaling value for the green component of the
+color. The b box is filled with the scaling value for the blue component of the
+color.
+
+(send a-mult-color get-b) → real?
+Gets the multiplicative scaling value for the blue component of the color.
+
+(send a-mult-color get-g) → real?
+Gets the multiplicative scaling value for the green component of the color.
+
+(send a-mult-color get-r) → real?
+Gets the multiplicative scaling value for the red component of the color.
+
+(send a-mult-color set r g b) → void?
+  r : real?
+  g : real?
+  b : real?
+Sets all of the scaling values.
+
+(send a-mult-color set-b v) → void?
+  v : real?
+Sets the multiplicative scaling value for the blue component of the color.
+
+(send a-mult-color set-g v) → void?
+  v : real?
+Sets the multiplicative scaling value for the green component of the color.
+
+(send a-mult-color set-r v) → void?
+  v : real?
+Sets the additive value for the red component of the color.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

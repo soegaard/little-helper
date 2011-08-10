@@ -1,0 +1,59 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 15  Memory Management
+15.1  Weak Boxes
+15.2  Ephemerons
+15.3  Wills and Executors
+15.4  Garbage Collection
+On this page:
+make-weak-box
+weak-box-value
+weak-box?
+[...search manuals...]
+  top← prev  up  next → 
+
+15.1 Weak Boxes
+
+A weak box is similar to a normal box (see Boxes), but when the garbage
+collector (see Garbage Collection) can prove that the content value of a weak
+box is only reachable via weak references, the content of the weak box is
+replaced with #f. A weak reference is a reference through a weak box, through a
+key reference in a weak hash table (see Hash Tables), through a value in an
+ephemeron where the value can be replaced by #f (see Ephemerons), or through a
+custodian (see Custodians).
+
+(make-weak-box v) → weak-box?
+  v : any/c
+Returns a new weak box that initially contains v.
+
+(weak-box-value weak-box) → any
+  weak-box : weak-box?
+Returns the value contained in weak-box. If the garbage collector has proven
+that the previous content value of weak-box was reachable only through a weak
+reference, then #f is returned.
+
+(weak-box? v) → boolean?
+  v : any/c
+Returns #t if v is a weak box, #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

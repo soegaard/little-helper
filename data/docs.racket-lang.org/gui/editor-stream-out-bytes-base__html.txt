@@ -1,0 +1,61 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+get-bytes
+Inherited methods:
+from editor-stream-out-base%
+bad?
+seek
+tell
+write
+write-bytes
+[...search manuals...]
+  top← prev  up  next → 
+
+editor-stream-out-bytes-base% : class?
+  superclass: editor-stream-out-base%
+
+An editor-stream-out-bytes-base% object can be used to write editor data into a
+byte string.
+
+(new editor-stream-out-bytes-base%)
+ → (is-a?/c editor-stream-out-bytes-base%)
+Creates an empty stream.
+
+(send an-editor-stream-out-bytes-base get-bytes) → bytes?
+Returns the current contents of the stream.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,52 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+close-icon%
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Close Icon
+
+ (require mrlib/close-icon)
+The close-icon% class provides a clickable close button icon.
+
+close-icon% : class?
+  superclass: canvas%
+
+
+
+    (new close-icon%    [parent parent]                  
+                      [ [callback callback]]             
+                        [bg-color bg-color]              
+                      [ [horizontal-pad horizontal-pad]  
+                        [vertical-pad vertical-pad]])    
+     → (is-a?/c close-icon%)
+      parent : (is-a? area-container<%>)
+      callback : (-> any) = void
+      bg-color : (or/c #f string (is-a?/c color%))
+      horizontal-pad : positive-integer? = 4
+      vertical-pad : positive-integer? = 4
+    The callback is called when the close icon is clicked.
+
+    If bg-color is specified, it is used as the background color of the icon.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

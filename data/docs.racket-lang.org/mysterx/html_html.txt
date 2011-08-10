@@ -1,0 +1,36 @@
+►  Myster X: Using Windows COM Objects in Racket
+1  Overview
+2  COM
+3  Active X and DHTML
+4  Version
+   Index
+► 3  Active X and DHTML
+3.1  Browsers
+3.2  Documents
+3.3  HTML Events
+3.4  HTML and Dynamic HTML
+▼ 3.4  HTML and Dynamic HTML
+3.4.1  HTML Elements
+3.4.2  Generating Active X HTML
+3.4.3  CSS
+3.4.4  Colors
+[...search manuals...]
+  top← prev  up  next → 
+
+3.4 HTML and Dynamic HTML
+
+The mx-element% class encapsulates HTML elements. By calling the methods of the
+class, you can change the appearance of elements, and place new HTML before or
+after the element. While the methods are described here, a good DHTML
+reference, such as Goodman’s Dynamic HTML will have more complete information.
+
+Many of the mx-element% methods have two variants, a version that takes or
+returns Racket data, and another -native version that takes or returns a
+string. For methods that return values of element properties, we assume two
+characteristics, which we do not mention in the methods’ documentation: 1)
+Native methods return the empty string for properties that have not been set,
+and 2) non-native methods raise an error for properties that have not been set.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

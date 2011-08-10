@@ -1,0 +1,149 @@
+▼  Data: Data Structures
+1  Imperative Queues
+2  Growable Vectors
+3  Orders and Ordered Dictionaries
+4  Splay Trees
+5  Skip Lists
+6  Interval Maps
+7  Binary Heaps
+On this page:
+make-queue
+enqueue!
+dequeue!
+queue->list
+queue-length
+queue-empty?
+queue?
+in-queue
+queue/ c
+nonempty-queue/ c
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Imperative Queues
+
+Carl Eastlund <cce@racket-lang.org>
+
+ (require data/queue)
+
+This module provides a simple mutable queue representation, first-in/first-out
+only. Operations on queues mutate it in a thread-unsafe way.
+
+(make-queue) → queue/c
+Produces an empty queue.
+
+(enqueue! q v) → void?
+  q : queue/c
+  v : any/c
+Adds an element to the back of a queue.
+
+(dequeue! q) → any/c
+  q : nonempty-queue/c
+Removes an element from the front of a nonempty queue, and returns that
+element.
+
+Examples:
+
+    (define q (make-queue))
+    > (enqueue! q 1)
+    > (dequeue! q)
+    1
+
+    > (enqueue! q 2)
+    > (enqueue! q 3)
+    > (dequeue! q)
+    2
+
+    > (dequeue! q)
+    3
+
+
+
+(queue->list queue) → (listof any/c)
+  queue : queue/c
+Returns an immutable list containing the elements of the queue in the order the
+elements were added.
+
+Examples:
+
+    (define queue (make-queue))
+    > (enqueue! queue 8)
+    > (enqueue! queue 9)
+    > (enqueue! queue 0)
+    > (queue->list queue)
+    '(8 9 0)
+
+
+
+(queue-length queue) → integer?
+  queue : queue/c
+Returns the number of elements in the queue.
+
+Examples:
+
+    (define queue (make-queue))
+    > (queue-length queue)
+    0
+
+    > (enqueue! queue 5)
+    > (enqueue! queue 12)
+    > (queue-length queue)
+    2
+
+    > (dequeue! queue)
+    5
+
+    > (queue-length queue)
+    1
+
+
+
+(queue-empty? q) → boolean?
+  q : queue/c
+Recognizes whether a queue is empty or not.
+
+Examples:
+
+    (define q (make-queue))
+    > (queue-empty? q)
+    #t
+
+    > (enqueue! q 1)
+    > (queue-empty? q)
+    #f
+
+    > (dequeue! q)
+    1
+
+    > (queue-empty? q)
+    #t
+
+
+
+(queue? v) → boolean?
+  v : any/c
+This predicate recognizes queues.
+
+Examples:
+
+    > (queue? (make-queue))
+    #t
+
+    > (queue? 'not-a-queue)
+    #f
+
+
+
+(in-queue queue) → sequence?
+  queue : queue?
+Returns a sequence whose elements are the elements of queue.
+
+queue/c : flat-contract?
+nonempty-queue/c : flat-contract?
+These contracts recognize queues; the latter requires the queue to contain at
+least one value.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

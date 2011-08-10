@@ -1,0 +1,322 @@
+►  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+▼ 3  Die Macht der Abstraktion mit Zuweisungen
+3.1  define-record-procedures-2
+3.2  define-record-procedures-parametric-2
+3.3  begin
+3.4  set!
+3.5  Signaturen
+3.6  Definitionen
+3.7  lambda
+3.8  Primitive Operationen
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Die Macht der Abstraktion mit Zuweisungen
+
+This is documentation for the language level Die Macht der Abstraktion mit
+Zuweisungen to go with the German textbook Die Macht der Abstraktion.
+
+      program   =   def-or-expr...
+                     
+  def-or-expr   =   definition
+                |   expr
+                |   test-case
+                     
+   definition   =   (define id expr)
+                |   (define-record-procedures id id id (id ...))
+                |   (define-record-procedures-parametric (id id ...) id id (id
+                    ...))
+                |   (: id sig)
+                |   (define-record-procedures-2 id id id (field-spec ...))
+                |   (define-record-procedures-parametric-2 id id id id id 
+                    (field-spec ...))
+                     
+   field-spec   =   id
+                |   (id id)
+                     
+         expr   =   (expr expr ...) ; Prozedurapplikation
+                |   #t
+                |   #f
+                |   number
+                |   string
+                |   (lambda (id ...) expr)
+                |   id ; Bezeichner
+                |   (cond (expr expr) (expr expr) ...)
+                |   (cond (expr expr) ... (else expr))
+                |   (if expr expr)
+                |   (and expr ...)
+                |   (or expr ...)
+                |   (let ((id expr) ...) expr)
+                |   (letrec ((id expr) ...) expr)
+                |   (let* ((id expr) ...) expr)
+                |   (begin expr expr ...)
+                |   (signature sig)
+                |   (for-all ((id sig) ...) expr)
+                |   (==> expr expr)
+                |   (set! id expr)
+                     
+          sig   =   id
+                |   (predicate expr)
+                |   (one-of expr ...)
+                |   (mixed sig ...)
+                |   (sig ... -> sig) ; Prozedur-Signatur
+                |   (list sig)
+                |   %a %b %c ; Signatur-Variable
+                |   (combined sig ...)
+                |   signature
+                     
+    test-case   =   (check-expect expr expr)
+                |   (check-within expr expr expr)
+                |   (check-member-of expr expr ...)
+                |   (check-range expr expr expr)
+                |   (check-error expr expr)
+                |   (check-property expr)
+
+Ein id ist eine Folge von Zeichen, die weder Leerzeichen noch eins der
+folgenden Zeichen entha:lt:
+   " , ' ` ( ) [ ] { } | ; #
+Ein number ist eine Zahl wie z.B. 123, 3/2 oder 5.5.
+Ein string ist eine Zeichenkette, und durch ein Paar von " umschlossen. So sind
+z.B. "abcdef", "This is a string" und "Dies ist eine Zeichenkette, die \"
+entha:lt." Zeichenketten.
+
+ Zahlen
+
+  * :  (number number number ... -> number)
+
+  + :  (number number number ... -> number)
+
+  - :  (number number ... -> number)
+
+  / :  (number number number ... -> number)
+
+  < :  (real real real ... -> boolean)
+
+  <= :  (real real real ... -> boolean)
+
+  = :  (number number number ... -> boolean)
+
+  > :  (real real real ... -> boolean)
+
+  >= :  (real real real ... -> boolean)
+
+  abs :  (real -> real)
+
+  acos :  (number -> number)
+
+  angle :  (number -> real)
+
+  asin :  (number -> number)
+
+  atan :  (number -> number)
+
+  ceiling :  (real -> integer)
+
+  complex? :  (any -> boolean)
+
+  cos :  (number -> number)
+
+  current-seconds :  (-> natural)
+
+  denominator :  (rational -> natural)
+
+  even? :  (integer -> boolean)
+
+  exact->inexact :  (number -> number)
+
+  exact? :  (number -> boolean)
+
+  exp :  (number -> number)
+
+  expt :  (number number -> number)
+
+  floor :  (real -> integer)
+
+  gcd :  (integer integer ... -> natural)
+
+  imag-part :  (number -> real)
+
+  inexact->exact :  (number -> number)
+
+  inexact? :  (number -> boolean)
+
+  integer? :  (any -> boolean)
+
+  lcm :  (integer integer ... -> natural)
+
+  log :  (number -> number)
+
+  magnitude :  (number -> real)
+
+  make-polar :  (real real -> number)
+
+  max :  (real real ... -> real)
+
+  min :  (real real ... -> real)
+
+  modulo :  (integer integer -> integer)
+
+  natural? :  (any -> boolean)
+
+  negative? :  (number -> boolean)
+
+  number->string :  (number -> string)
+
+  number? :  (any -> boolean)
+
+  numerator :  (rational -> integer)
+
+  odd? :  (integer -> boolean)
+
+  positive? :  (number -> boolean)
+
+  quotient :  (integer integer -> integer)
+
+  random :  (natural -> natural)
+
+  rational? :  (any -> boolean)
+
+  real-part :  (number -> real)
+
+  real? :  (any -> boolean)
+
+  remainder :  (integer integer -> integer)
+
+  round :  (real -> integer)
+
+  sin :  (number -> number)
+
+  sqrt :  (number -> number)
+
+  string->number :  (string -> (mixed number false))
+
+  tan :  (number -> number)
+
+  zero? :  (number -> boolean)
+
+ boolesche Werte
+
+  boolean=? :  (boolean boolean -> boolean)
+
+  boolean? :  (any -> boolean)
+
+  false? :  (any -> boolean)
+
+  not :  (boolean -> boolean)
+
+  true? :  (any -> boolean)
+
+ Listen
+
+  append :  ((list-of %a) ... -> (list-of %a))
+
+  cons :  (%a (list-of %a) -> (list-of %a))
+
+  cons? :  (any -> boolean)
+
+  empty :  list
+
+  empty? :  (any -> boolean)
+
+  first :  ((list-of %a) -> %a)
+
+  fold :  (%b (%a %b -> %b) (list-of %a) -> %b)
+
+  length :  ((list-of %a) -> natural)
+
+  list :  (%a ... -> (list-of %a))
+
+  list-ref :  ((list-of %a) natural -> %a)
+
+  make-pair :  (%a (list-of %a) -> (list-of %a))
+
+  pair? :  (any -> boolean)
+
+  rest :  ((list-of %a) -> (list-of %a))
+
+  reverse :  ((list-of %a) -> (list-of %a))
+
+ Computer
+
+  computer :  signature
+
+  computer-hard-drive :  (computer -> rational)
+
+  computer-processor :  (computer -> string)
+
+  computer-ram :  (computer -> rational)
+
+  computer? :  (any -> boolean)
+
+  make-computer :  (string rational rational -> computer)
+
+ Schokokekse
+
+  chocolate-cookie :  signature
+
+  chocolate-cookie-chocolate :  (chocolate-cookie -> number)
+
+  chocolate-cookie-cookie :  (chocolate-cookie -> number)
+
+  chocolate-cookie? :  (any -> boolean)
+
+  make-chocolate-cookie :  (number number -> chocolate-cookie)
+
+ Zeichenketten
+
+  string->strings-list :  (string -> (list string))
+
+  string-append :  (string string ... -> string)
+
+  string-length :  (string -> natural)
+
+  string<=? :  (string string string ... -> boolean)
+
+  string<? :  (string string string ... -> boolean)
+
+  string=? :  (string string string ... -> boolean)
+
+  string>=? :  (string string string ... -> boolean)
+
+  string>? :  (string string string ... -> boolean)
+
+  string? :  (any -> boolean)
+
+  strings-list->string :  ((list string) -> string)
+
+ Symbole
+
+ Verschiedenes
+
+  apply :  (procedure (list %a) -> %b)
+
+  eq? :  (%a %b -> boolean)
+
+  equal? :  (%a %b -> boolean)
+
+  for-each :  ((%a -> %b) (list %a) -> unspecific)
+
+  map :  ((%a -> %b) (list %a) -> (list %b))
+
+  violation :  (string -> unspecific)
+
+  write-newline :  (-> unspecific)
+
+  write-string :  (string -> unspecific)
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

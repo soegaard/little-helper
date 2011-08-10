@@ -1,0 +1,111 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 8  Input and Output
+8.1  Varieties of Ports
+8.2  Default Ports
+8.3  Reading and Writing Racket Data
+8.4  Datatypes and Serialization
+8.5  Bytes, Characters, and Encodings
+8.6  I/ O Patterns
+[...search manuals...]
+  top← prev  up  next → 
+
+8.4 Datatypes and Serialization
+
+Prefab structure types (see Prefab Structure Types) automatically support 
+serialization: they can be written to an output stream, and a copy can be read
+back in from an input stream:
+
+    > (define-values (in out) (make-pipe))
+    > (write #s(sprout bean) out)
+    > (read in)
+    '#s(sprout bean)
+
+
+Other structure types created by struct, which offer more abstraction than
+prefab structure types, normally write either using #<....> notation (for
+opaque structure types) or using #(....) vector notation (for transparent
+structure types). In neither can the result be read back in as an instance of
+the structure type:
+
+    > (struct posn (x y))
+    > (write (posn 1 2))
+    #<posn>
+
+    > (define-values (in out) (make-pipe))
+    > (write (posn 1 2) out)
+    > (read in)
+    UNKNOWN::0: read: bad syntax `#<'
+
+
+    > (struct posn (x y) #:transparent)
+    > (write (posn 1 2))
+    #(struct:posn 1 2)
+
+    > (define-values (in out) (make-pipe))
+    > (write (posn 1 2) out)
+    > (define v (read in))
+    > v
+    '#(struct:posn 1 2)
+
+    > (posn? v)
+    #f
+
+    > (vector? v)
+    #t
+
+
+The serializable-struct form defines a structure type that can be serialized to
+a value that can be printed using write and restored via read. The serialized
+result can be deserialized to get back an instance of the original structure
+type. The serialization form and functions are provided by the racket/serialize
+library.
+
+Examples:
+
+    > (require racket/serialize)
+    > (serializable-struct posn (x y) #:transparent)
+    > (deserialize (serialize (posn 1 2)))
+    (posn 1 2)
+
+    > (write (serialize (posn 1 2)))
+    ((2) 1 ((#f . deserialize-info:posn-v0)) 0 () () (0 1 2))
+
+    > (define-values (in out) (make-pipe))
+    > (write (serialize (posn 1 2)) out)
+    > (deserialize (read in))
+    (posn 1 2)
+
+
+
+In addition to the names bound by struct, serializable-struct binds an
+identifier with deserialization information, and it automatically provides the
+deserialization identifier from a module context. This deserialization
+identifier is accessed reflectively when a value is deserialized.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,70 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 5  Snip and Style Classes
+ 5.1  add-color<%>
+ 5.2  image-snip%
+ 5.3  mult-color<%>
+ 5.4  readable-snip<%>
+ 5.5  snip%
+ 5.6  snip-admin%
+ 5.7  snip-class%
+ 5.8  snip-class-list<%>
+ 5.9  string-snip%
+5.10  style<%>
+5.11  style-delta%
+5.12  style-list%
+5.13  tab-snip%
+On this page:
+add
+find
+find-position
+nth
+number
+[...search manuals...]
+  top← prev  up  next → 
+
+snip-class-list<%> : interface?
+Each eventspace has its own instance of snip-class-list<%>, obtained with (
+get-the-snip-class-list). New instances cannot be created directly. Each
+instance keeps a list of snip classes. This list is needed for loading snips
+from a file. See also Snip Classes.
+
+(send a-snip-class-list add snipclass) → void?
+  snipclass : (is-a?/c snip-class%)
+Adds a snip class to the list. If a class with the same name already exists in
+the list, this one will not be added.
+
+(send a-snip-class-list find name)
+ → (or/c (is-a?/c snip-class%) false/c)
+  name : string?
+Finds a snip class from the list with the given name, returning #f if none is
+found.
+
+(send a-snip-class-list find-position class)
+ → exact-nonnegative-integer?
+  class : (is-a?/c snip-class%)
+Returns an index into the list for the specified class.
+
+(send a-snip-class-list nth n)
+ → (or/c (is-a?/c snip-class%) false/c)
+  n : exact-nonnegative-integer?
+Returns the nth class in the list, or #f if the list has n classes or less.
+
+(send a-snip-class-list number) → exact-nonnegative-integer?
+Returns the number of snip classes in the list.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

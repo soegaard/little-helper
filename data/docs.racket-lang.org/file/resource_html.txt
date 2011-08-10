@@ -1,0 +1,110 @@
+▼  File: Racket File Format Libraries
+1  Convertible: Data-Conversion Protocol
+2  gzip Compression and File Creation
+3  gzip Decompression
+4  zip File Creation
+5  tar File Creation
+6  MD5 Message Digest
+7  SHA1 Message Digest
+8  GIF File Writing
+9  Windows Registry
+   Bibliography
+   Index
+On this page:
+get-resource
+write-resource
+[...search manuals...]
+  top← prev  up  next → 
+
+9 Windows Registry
+
+ (require file/resource)
+
+(get-resource    section        
+                 entry          
+               [ value-box      
+                 file           
+                 #:type type])  
+ → (or/c #f string? bytes? exact-integer? #t)
+  section : string?
+  entry : string?
+   value-box   :   (or/f #f (box/c (or/c string? bytes? exact-integer?)))
+               =   #f
+  file : (or/c #f fail-path?) = #f
+  type : (or/c 'string 'bytes 'integer) = derived-from-value-box
+Gets a value from the Windows registry or an ".ini" file. For backward
+compatibilty, the result is #f for platforms other than Windows. The registry
+is read when file is #f and when section is "HKEY_CLASSES_ROOT", 
+"HKEY_CURRENT_CONFIG", "HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE", or 
+"HKEY_USERS". When file is #f and section is not one of the special registry
+strings, then (build-path (find-system-path 'home-dir) "mred.ini") is read.
+
+The resource value is keyed on the combination of section and entry. The result
+is #f if no value is found for the specified section and entry. If value-box is
+a box, then the result is #t if a value is found, and the box is filled with
+the value; when value-box is #f, the result is the found value.
+
+The type argument determines how a value in the resource is converted to a
+Racket value. If value-box is a box, then the default type is derived from the
+initial box content, otherwise the default type is 'string.
+
+Registry values of any format can be extracted. Values using the registry
+format REG_SZ are treated as strings, and values with the format REG_DWORD are
+treated as 32-bit signed integers. All other formats are treated as raw bytes.
+Data from the registry is converted to the requested type as follows:
+
+  • A REG_SZ registry value is converted to an integer using string->number
+    (using 0 if the result is not an exact integer), and it is converted to
+    bytes using string->bytes/utf-8.
+
+  • A REG_DWORD registry value is converted to a string or byte string via
+    number->string and (for byte strings) string->bytes/utf-8.
+
+  • Any other kind of registry value is converted to a string or integer using
+    bytes->string/utf-8 and (for integers) string->number.
+
+Resources from ".ini" files are always strings, and are converted like REG_SZ
+registry values.
+
+To get the “default” value for a registry entry, use a trailing backslash. For
+example, the following expression gets a command line for starting a browser:
+
+    (get-resource "HKEY_CLASSES_ROOT"
+                  "htmlfile\\shell\\open\\command\\")
+
+(write-resource    section                            
+                   entry                              
+                   value                              
+                 [ file                               
+                   #:type type                        
+                   #:create-key? create-key?])   →   boolean?
+  section : string?
+  entry : string?
+  value : (or/c string? bytes? exact-integer?)
+  file : (or/c path-string? #f) = #f
+  type : (or/c 'string 'bytes 'integer) = 'string
+  create-key? : any/c = #f
+Write a value to the Windows registry or an ".ini" file. For backward
+compatibilty, the result is #f for platforms other than Windows. The registry
+is written when file is #f and when section is "HKEY_CLASSES_ROOT",
+"HKEY_CURRENT_CONFIG", "HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE", or
+"HKEY_USERS". When file is #f and section is not one of the special registry
+strings, then (build-path (find-system-path 'home-dir) "mred.ini") is written.
+
+The resource value is keyed on the combination of section and entry. If
+create-key? is false when writing to the registry, the resource entry must
+already exist, otherwise the write fails. The result is #f if the write fails
+or #t if it succeeds.
+
+The type argument determines the format of the value written to the registry:
+'string writes using the REG_SZ format, 'bytes writes using the REG_BINARY
+format, and 'dword writes using the REG_DWORD format. Any kind of value can be
+converted for any kind of type using the inverse of the conversions for
+get-resource.
+
+When writing to an ".ini" file, the format is always a string, independent of
+type.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

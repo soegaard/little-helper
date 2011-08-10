@@ -1,0 +1,77 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 17  Running Racket
+17.1  Running Racket or GRacket
+17.2  Libraries and Collections
+17.3  Interactive Help
+17.4  Interactive Module Loading
+17.5  Debugging
+On this page:
+enter!
+[...search manuals...]
+  top← prev  up  next → 
+
+17.4 Interactive Module Loading
+
+ (require racket/enter)
+The bindings documented in this section are provided by the racket/enter and
+racket/init libraries, which means that they are available when the Racket
+executable is started with no command-line arguments. They are not provided by
+racket/base or racket.
+
+(enter! module-path)
+(enter! #f)
+(enter! module-path flag ...+)
+ 
+flag   =   #:quiet
+       |   #:verbose-reload
+       |   #:verbose
+       |   #:dont-re-require-enter
+Intended for use in a REPL, such as when racket is started in interactive mode.
+When a module-path is provided (in the same sense as for require), the
+corresponding module is loaded or invoked, and the current namespace is changed
+to the body of the module via module->namespace. When #f is provided, then the
+current namespace is restored to the original one.
+
+If invoking module-path requires loading any files, then modification dates of
+the files are recorded. If the file is modified, then a later enter! re-loads
+the module from source; see also Module Re-declarations. Similarly if a later
+enter! transitively requires a modified module, then the required module is
+re-loaded. Re-loading support works only for modules that are first loaded
+(either directly or indirectly through transitive requires) via enter!.
+
+Additional flags can customize aspects of enter!:
+
+  • When enter! loads or re-loads a module from a file, it can print a message
+    to (current-error-port). Use the #:verbose flag to print a message about
+    such loads and re-loads, #:verbose-reload to print a message only for
+    re-loaded modules, and #:quiet for no printouts. The default reporting
+    corresponds to #:verbose-reload.
+
+  • After switching namespaces to the designated module, enter! automatically
+    requires racket/enter into the namespace, so that enter! can be used to
+    switch namespaces again. In some cases, requiring racket/enter might not be
+    desirable (e.g., in a tool that uses racket/enter); use the
+    #:dont-re-require-enter flag to disable the require.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

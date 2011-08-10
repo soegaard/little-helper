@@ -1,0 +1,46 @@
+▼  The Typed Racket Guide
+1  Quick Start
+2  Beginning Typed Racket
+3  Specifying Types
+4  Types in Typed Racket
+5  Optimization in Typed Racket
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Quick Start
+
+Given a module written in the racket language, using Typed Racket requires the
+following steps:
+
+ 1. Change the language to typed/racket.
+
+ 2. Change the uses of (require mod) to (require typed/mod).
+
+ 3. Annotate structure definitions and top-level definitions with their types.
+
+Then, when the program is run, it will automatically be typechecked before any
+execution, and any type errors will be reported. If there are any type errors,
+the program will not run.
+
+Here is an example program, written in the racket language:
+
+    #lang racket
+    (define-struct pt (x y))
+     
+    ; mag : pt -> number
+    (define (mag p)
+      (sqrt (+ (sqr (pt-x p)) (sqr (pt-y p)))))
+
+Here is the same program, in typed/racket:
+
+    #lang typed/racket
+    (define-struct: pt ([x : Real] [y : Real]))
+     
+    (: mag (pt -> Number))
+    (define (mag p)
+      (sqrt (+ (sqr (pt-x p)) (sqr (pt-y p)))))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

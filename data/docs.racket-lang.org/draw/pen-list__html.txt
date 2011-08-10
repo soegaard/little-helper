@@ -1,0 +1,82 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+find-or-create-pen
+[...search manuals...]
+  top← prev  up  next → 
+
+pen-list% : class?
+  superclass: object%
+
+A pen-list% object maintains a list of pen% objects to avoid repeatedly
+creating pen objects. A pen% object in a pen list cannot be mutated.
+
+A global pen list the-pen-list is created automatically.
+
+(new pen-list%) → (is-a?/c pen-list%)
+Creates an empty pen list.
+
+(send a-pen-list find-or-create-pen    color         
+                                       width         
+                                       style         
+                                     [ cap           
+                                       join])   →   (is-a?/c pen%)
+  color : (is-a?/c color%)
+  width : (real-in 0 255)
+               (one-of/c 'transparent 'solid 'xor 'hilite
+   style   :             'dot 'long-dash 'short-dash 'dot-dash
+                         'xor-dot 'xor-long-dash 'xor-short-dash
+                         'xor-dot-dash)
+  cap : (one-of/c 'round 'projecting 'butt) = 'round
+  join : (one-of/c 'round 'bevel 'miter) = 'round
+(send a-pen-list find-or-create-pen    color-name  
+                                       width       
+                                       style       
+                                     [ cap         
+                                       join])      
+ → (or/c (is-a?/c pen%) false/c)
+  color-name : string?
+  width : (real-in 0 255)
+               (one-of/c 'transparent 'solid 'xor 'hilite
+   style   :             'dot 'long-dash 'short-dash 'dot-dash
+                         'xor-dot 'xor-long-dash 'xor-short-dash
+                         'xor-dot-dash)
+  cap : (one-of/c 'round 'projecting 'butt) = 'round
+  join : (one-of/c 'round 'bevel 'miter) = 'round
+Finds a pen of the given specification, or creates one and adds it to the list.
+The arguments are the same as for creating a pen% instance plus a cap and join
+style as for set-cap and set-join. When color-name is provided, however, the
+return value is #f when no color matching color-name can be found in
+the-color-database.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

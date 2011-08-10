@@ -1,0 +1,245 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 6  Units
+ 6.1  Creating Units
+ 6.2  Invoking Units
+ 6.3  Linking Units and Creating Compound Units
+ 6.4  Inferred Linking
+ 6.5  Generating A Unit from Context
+ 6.6  Structural Matching
+ 6.7  Extending the Syntax of Signatures
+ 6.8  Unit Utilities
+ 6.9  Unit Contracts
+6.10  Single-Unit Modules
+6.11  Single-Signature Modules
+6.12  Transformer Helpers
+On this page:
+unit
+define-signature
+open
+define-values-for-export
+contracted
+only
+except
+rename
+prefix
+import
+export
+link
+tag
+init-depend
+extends
+[...search manuals...]
+  top← prev  up  next → 
+
+6.1 Creating Units
+
+(unit
+  (import tagged-sig-spec ...)
+  (export tagged-sig-spec ...)
+  init-depends-decl
+  unit-body-expr-or-defn
+  ...)
+ 
+  tagged-sig-spec   =   sig-spec
+                    |   (tag id sig-spec)
+                         
+         sig-spec   =   sig-id
+                    |   (prefix id sig-spec)
+                    |   (rename sig-spec (id id) ...)
+                    |   (only sig-spec id ...)
+                    |   (except sig-spec id ...)
+                         
+init-depends-decl   =  
+                    |   (init-depend tagged-sig-id ...)
+                         
+    tagged-sig-id   =   sig-id
+                    |   (tag id sig-id)
+Produces a unit that encapsulates its unit-body-expr-or-defns. Expressions in
+the unit body can refer to identifiers bound by the sig-specs of the import
+clause, and the body must include one definition for each identifier of a
+sig-spec in the export clause. An identifier that is exported cannot be set!ed
+in either the defining unit or in importing units, although the implicit
+assignment to initialize the variable may be visible as a mutation.
+
+Each import or export sig-spec ultimately refers to a sig-id, which is an
+identifier that is bound to a signature by define-signature.
+
+In a specific import or export position, the set of identifiers bound or
+required by a particular sig-id can be adjusted in a few ways:
+
+  • (prefix id sig-spec) as an import binds the same as sig-spec, except that
+    each binding is prefixed with id. As an export, this form causes
+    definitions using the id prefix to satisfy the exports required by
+    sig-spec.
+
+  • (rename sig-spec (id id) ...) as an import binds the same as sig-spec,
+    except that the first id is used for the binding instead of the second id
+    (where sig-spec by itself must imply a binding that is bound-identifier=?
+    to second id). As an export, this form causes a definition for the first id
+    to satisfy the export named by the second id in sig-spec.
+
+  • (only sig-spec id ...) as an import binds the same as sig-spec, but
+    restricted to just the listed ids (where sig-spec by itself must imply a
+    binding that is bound-identifier=? to each id). This form is not allowed
+    for an export.
+
+  • (except sig-spec id ...) as an import binds the same as sig-spec, but
+    excluding all listed ids (where sig-spec by itself must imply a binding
+    that is bound-identifier=? to each id). This form is not allowed for an
+    export.
+
+As suggested by the grammar, these adjustments to a signature can be nested
+arbitrarily.
+
+A unit’s declared imports are matched with actual supplied imports by
+signature. That is, the order in which imports are supplied to a unit when
+linking is irrelevant; all that matters is the signature implemented by each
+supplied import. One actual import must be provided for each declared import.
+Similarly, when a unit implements multiple signatures, the order of the export
+signatures does not matter.
+
+To support multiple imports or exports for the same signature, an import or
+export can be tagged using the form (tag id sig-spec). When an import
+declaration of a unit is tagged, then one actual import must be given the same
+tag (with the same signature) when the unit is linked. Similarly, when an
+export declaration is tagged for a unit, then references to that particular
+export must explicitly use the tag.
+
+A unit is prohibited syntactically from importing two signatures that are not
+distinct, unless they have different tags; two signatures are distinct only if
+they share no ancestor through extends. The same syntactic constraint applies
+to exported signatures. In addition, a unit is prohibited syntactically from
+importing the same identifier twice (after renaming and other transformations
+on a sig-spec), exporting the same identifier twice (again, after renaming), or
+exporting an identifier that is imported.
+
+When units are linked, the bodies of the linked units are executed in an order
+that is specified at the linking site. An optional (init-depend tagged-sig-id
+...) declaration constrains the allowed orders of linking by specifying that
+the current unit must be initialized after the unit that supplies the
+corresponding import. Each tagged-sig-id in an init-depend declaration must
+have a corresponding import in the import clause.
+
+(define-signature id extension-decl
+  (sig-elem ...))
+ 
+extension-decl   =  
+                 |   extends sig-id
+                      
+      sig-elem   =   id
+                 |   (define-syntaxes (id ...) expr)
+                 |   (define-values (id ...) expr)
+                 |   (define-values-for-export (id ...) expr)
+                 |   (contracted [id contract] ...)
+                 |   (open sig-spec)
+                 |   (struct id (field ...) struct-option ...)
+                 |   (sig-form-id . datum)
+                      
+         field   =   id
+                 |   [id #:mutable]
+                      
+ struct-option   =   #:mutable
+                 |   #:constructor-name constructor-id
+                 |   #:extra-constructor-name constructor-id
+                 |   #:omit-constructor
+                 |   #:omit-define-syntaxes
+                 |   #:omit-define-values
+Binds an identifier to a signature that specifies a group of bindings for
+import or export:
+
+  • Each id in a signature declaration means that a unit implementing the
+    signature must supply a variable definition for the id. That is, id is
+    available for use in units importing the signature, and id must be defined
+    by units exporting the signature.
+
+  • Each define-syntaxes form in a signature declaration introduces a macro
+    that is available for use in any unit that imports the signature. Free
+    variables in the definition’s expr refer to other identifiers in the
+    signature first, or the context of the define-signature form if the
+    signature does not include the identifier.
+
+  • Each define-values form in a signature declaration introduces code that
+    effectively prefixes every unit that imports the signature. Free variables
+    in the definition’s expr are treated the same as for define-syntaxes.
+
+  • Each define-values-for-export form in a signature declaration introduces
+    code that effectively suffixes every unit that exports the signature. Free
+    variables in the definition’s expr are treated the same as for
+    define-syntaxes.
+
+  • Each contracted form in a signature declaration means that a unit exporting
+    the signature must supply a variable definition for each id in that form.
+    If the signature is imported, then uses of id inside the unit are protected
+    by the appropriate contracts using the unit as the negative blame. If the
+    signature is exported, then the exported values are protected by the
+    appropriate contracts which use the unit as the positive blame, but
+    internal uses of the exported identifiers are not protected. Variables in
+    the contract expressions are treated the same as for define-syntaxes.
+
+  • Each (open sig-spec) adds to the signature everything specified by
+    sig-spec.
+
+  • Each (struct id (field ...) struct-option ...) adds all of the identifiers
+    that would be bound by (struct id (field ...) field-option ...), where the
+    extra option #:omit-constructor omits the constructor identifier.
+
+  • Each (sig-form-id . datum) extends the signature in a way that is defined
+    by sig-form-id, which must be bound by define-signature-form. One such
+    binding is for struct/ctc.
+
+When a define-signature form includes an extends clause, then the define
+signature automatically includes everything in the extended signature.
+Furthermore, any implementation of the new signature can be used as an
+implementation of the extended signature.
+
+(open sig-spec)
+Allowed only in a sig-elem; see define-signature.
+(define-values-for-export (id ...) expr)
+Allowed only in a sig-elem; see define-signature.
+(contracted [id contract] ...)
+Allowed only in a sig-elem; see define-signature.
+(only sig-spec id ...)
+Allowed only in a sig-spec; see unit.
+(except sig-spec id ...)
+Allowed only in a sig-spec; see unit.
+(rename sig-spec (id id) ...)
+Allowed only in a sig-spec; see unit.
+(prefix id sig-spec)
+Allowed only in a sig-spec; see unit.
+(import tagged-sig-spec ...)
+Allowed only in certain forms; see, for example, unit.
+(export tagged-sig-spec ...)
+Allowed only in certain forms; see, for example, unit.
+(link linkage-decl ...)
+Allowed only in certain forms; see, for example, compound-unit.
+(tag id sig-spec)
+(tag id sig-id)
+Allowed only in certain forms; see, for example, unit.
+(init-depend tagged-sig-id ...)
+Allowed only in a init-depend-decl; see unit.
+
+extends
+Allowed only within define-signature.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

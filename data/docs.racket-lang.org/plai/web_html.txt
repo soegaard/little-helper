@@ -1,0 +1,45 @@
+▼  Programming Languages: Application and Interpretation
+1  PLAI Scheme
+2  GC Collector Scheme
+3  GC Mutator Scheme
+4  Web Application Scheme
+► 4  Web Application Scheme
+4.1  Web Application Exports
+On this page:
+4.1 Web Application Exports
+start
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Web Application Scheme
+
+ #lang plai/web
+
+The Web Application Scheme language allows you to write server-side Web
+applications for the PLT Web Server.
+
+For more information about writing Web applications, see: Web Applications in
+Racket.
+
+When you click on the Run button in DrRacket, your Web application is launched
+in the Web server.
+
+The application is available at http://localhost:8000/servlets/standalone.rkt.
+
+The Web Application Scheme language will automatically load this URL in your
+Web browser.
+
+You may use no-web-browser to prevent the browser from being launched and
+static-files-path to serve additional static files.
+
+4.1 Web Application Exports
+
+A Web application must define a procedure start:
+
+(start initial-request) → response?
+  initial-request : request?
+The initial request to a Web application is serviced by this procedure.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

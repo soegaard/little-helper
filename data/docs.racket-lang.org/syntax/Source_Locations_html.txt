@@ -1,0 +1,556 @@
+▼  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+► 9  Source Locations
+9.1  Representations
+9.2  Quoting
+On this page:
+9.1 Representations
+source-location?
+source-location-list?
+source-location-vector?
+check-source-location!
+build-source-location
+build-source-location-list
+build-source-location-vector
+build-source-location-syntax
+source-location-known?
+source-location-source
+source-location-line
+source-location-column
+source-location-position
+source-location-span
+source-location-end
+update-source-location
+source-location->string
+source-location->prefix
+9.2 Quoting
+quote-srcloc
+quote-source-file
+quote-line-number
+quote-column-number
+quote-character-position
+quote-character-span
+quote-module-name
+quote-module-path
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+9 Source Locations
+
+Carl Eastlund <cce@ccs.neu.edu>
+
+There are two libraries in this collection for dealing with source locations;
+one for manipulating representations of them, and the other for quoting the
+location of a particular piece of source code.
+
+9.1 Representations
+
+ (require syntax/srcloc)
+
+This module defines utilities for manipulating representations of source
+locations, including both srcloc structures and all the values accepted by
+datum->syntax’s third argument: syntax objects, lists, vectors, and #f.
+
+(source-location? x) → boolean?
+  x : any/c
+(source-location-list? x) → boolean?
+  x : any/c
+(source-location-vector? x) → boolean?
+  x : any/c
+These functions recognize valid source location representations. The first,
+source-location?, recognizes srcloc structures, syntax objects, lists, and
+vectors with appropriate structure, as well as #f. The latter predicates
+recognize only valid lists and vectors, respectively.
+
+Examples:
+
+    > (source-location? #f)
+    #t
+
+    > (source-location? #'here)
+    #t
+
+    > (source-location? (make-srcloc 'here 1 0 1 0))
+    #t
+
+    > (source-location? (make-srcloc 'bad 1 #f 1 0))
+    #f
+
+    > (source-location? (list 'here 1 0 1 0))
+    #t
+
+    > (source-location? (list* 'bad 1 0 1 0 'tail))
+    #f
+
+    > (source-location? (vector 'here 1 0 1 0))
+    #t
+
+    > (source-location? (vector 'bad 0 0 0 0))
+    #f
+
+
+
+(check-source-location! name x) → void?
+  name : symbol?
+  x : any/c
+This procedure checks that its input is a valid source location. If it is, the
+procedure returns (void). If it is not, check-source-location! raises a
+detailed error message in terms of name and the problem with x.
+
+Examples:
+
+    > (check-source-location! 'this-example #f)
+    > (check-source-location! 'this-example #'here)
+    > (check-source-location! 'this-example (make-srcloc 'here 1 0 1 0))
+    > (check-source-location! 'this-example (make-srcloc 'bad 1 #f 1 0))
+    this-example: expected a source location with line number
+
+    and column number both numeric or both #f; got 1 and #f
+
+    respectively: (srcloc 'bad 1 #f 1 0)
+
+    > (check-source-location! 'this-example (list 'here 1 0 1 0))
+    > (check-source-location! 'this-example (list* 'bad 1 0 1 0 'tail))
+    this-example: expected a source location (a list of 5
+
+    elements); got an improper list: '(bad 1 0 1 0 . tail)
+
+    > (check-source-location! 'this-example (vector 'here 1 0 1 0))
+    > (check-source-location! 'this-example (vector 'bad 0 0 0 0))
+    this-example: expected a source location with a positive
+
+    line number or #f (second element); got line number 0:
+
+    '#(bad 0 0 0 0)
+
+
+
+(build-source-location loc ...) → srcloc?
+  loc : source-location?
+(build-source-location-list loc ...) → source-location-list?
+  loc : source-location?
+(build-source-location-vector loc ...) → source-location-vector?
+  loc : source-location?
+(build-source-location-syntax loc ...) → syntax?
+  loc : source-location?
+These procedures combine multiple (zero or more) source locations, merging
+locations within the same source and reporting #f for locations that span
+sources. They also convert the result to the desired representation: srcloc,
+list, vector, or syntax object, respectively.
+
+Examples:
+
+    > (build-source-location)
+    (srcloc #f #f #f #f #f)
+
+    > (build-source-location-list)
+    '(#f #f #f #f #f)
+
+    > (build-source-location-vector)
+    '#(#f #f #f #f #f)
+
+    > (build-source-location-syntax)
+    #<syntax ()>
+
+    > (build-source-location #f)
+    (srcloc #f #f #f #f #f)
+
+    > (build-source-location-list #f)
+    '(#f #f #f #f #f)
+
+    > (build-source-location-vector #f)
+    '#(#f #f #f #f #f)
+
+    > (build-source-location-syntax #f)
+    #<syntax ()>
+
+    > (build-source-location (list 'here 1 2 3 4))
+    (srcloc 'here 1 2 3 4)
+
+    > (build-source-location-list (make-srcloc 'here 1 2 3 4))
+    '(here 1 2 3 4)
+
+    > (build-source-location-vector (make-srcloc 'here 1 2 3 4))
+    '#(here 1 2 3 4)
+
+    > (build-source-location-syntax (make-srcloc 'here 1 2 3 4))
+    #<syntax:1:2 ()>
+
+    > (build-source-location (list 'here 1 2 3 4) (vector 'here 5 6 7 8))
+    (srcloc 'here 1 2 3 12)
+
+    > (build-source-location-list (make-srcloc 'here 1 2 3 4) (vector
+     'here 5 6 7 8))
+    '(here 1 2 3 12)
+
+    > (build-source-location-vector (make-srcloc 'here 1 2 3 4) (vector
+     'here 5 6 7 8))
+    '#(here 1 2 3 12)
+
+    > (build-source-location-syntax (make-srcloc 'here 1 2 3 4) (vector
+     'here 5 6 7 8))
+    #<syntax:1:2 ()>
+
+    > (build-source-location (list 'here 1 2 3 4) (vector 'there 5 6 7 8))
+    (srcloc #f #f #f #f #f)
+
+    > (build-source-location-list (make-srcloc 'here 1 2 3 4) (vector
+     'there 5 6 7 8))
+    '(#f #f #f #f #f)
+
+    > (build-source-location-vector (make-srcloc 'here 1 2 3 4) (vector
+     'there 5 6 7 8))
+    '#(#f #f #f #f #f)
+
+    > (build-source-location-syntax (make-srcloc 'here 1 2 3 4) (vector
+     'there 5 6 7 8))
+    #<syntax ()>
+
+
+
+(source-location-known? loc) → boolean?
+  loc : source-location?
+This predicate reports whether a given source location contains more
+information than simply #f.
+
+Examples:
+
+    > (source-location-known? #f)
+    #f
+
+    > (source-location-known? (make-srcloc #f #f #f #f #f))
+    #f
+
+    > (source-location-known? (make-srcloc 'source 1 2 3 4))
+    #t
+
+    > (source-location-known? (list #f #f #f #f #f))
+    #f
+
+    > (source-location-known? (vector 'source #f #f #f #f))
+    #t
+
+    > (source-location-known? (datum->syntax #f null #f))
+    #t
+
+    > (source-location-known? (datum->syntax #f null (list 'source #f #f #f #
+    f)))
+    #t
+
+
+
+(source-location-source loc) → any/c
+  loc : source-location?
+(source-location-line loc)
+ → (or/c orexact-positive-integer? #f)
+  loc : source-location?
+(source-location-column loc)
+ → (or/c exact-nonnegative-integer? #f)
+  loc : source-location?
+(source-location-position loc)
+ → (or/c exact-positive-integer? #f)
+  loc : source-location?
+(source-location-span loc)
+ → (or/c exact-nonnegative-integer? #f)
+  loc : source-location?
+These accessors extract the fields of a source location.
+
+Examples:
+
+    > (source-location-source #f)
+    #f
+
+    > (source-location-line (make-srcloc 'source 1 2 3 4))
+    1
+
+    > (source-location-column (list 'source 1 2 3 4))
+    2
+
+    > (source-location-position (vector 'source 1 2 3 4))
+    3
+
+    > (source-location-span (datum->syntax #f null (list 'source 1 2 3 4)))
+    4
+
+
+
+(source-location-end loc)
+ → (or/c exact-nonnegative-integer? #f)
+  loc : source-location?
+This accessor produces the end position of a source location (the sum of its
+position and span, if both are numbers) or #f.
+
+Examples:
+
+    > (source-location-end #f)
+    #f
+
+    > (source-location-end (make-srcloc 'source 1 2 3 4))
+    7
+
+    > (source-location-end (list 'source 1 2 3 #f))
+    #f
+
+    > (source-location-end (vector 'source 1 2 #f 4))
+    #f
+
+
+
+(update-source-location   loc                        
+                          #:source source            
+                          #:line line                
+                          #:column column            
+                          #:position position        
+                          #:span span)          →   source-location?
+  loc : source-location?
+  source : any/c
+  line : (or/c exact-nonnegative-integer? #f)
+  column : (or/c exact-positive-integer? #f)
+  position : (or/c exact-nonnegative-integer? #f)
+  span : (or/c exact-positive-integer? #f)
+Produces a modified version of loc, replacing its fields with source, line,
+column, position, and/or span, if given.
+
+Examples:
+
+    > (update-source-location #f #:source 'here)
+    '(here #f #f #f #f)
+
+    > (update-source-location (list 'there 1 2 3 4) #:line 20 #:column 79)
+    '(there 20 79 3 4)
+
+    > (update-source-location (vector 'everywhere 1 2 3 4) #:position #f 
+    #:span #f)
+    '#(everywhere 1 2 #f #f)
+
+
+
+(source-location->string loc) → string?
+  loc : source-location?
+(source-location->prefix loc) → string?
+  loc : source-location?
+These procedures convert source locations to strings for use in error messages.
+The first produces a string describing the source location; the second appends
+": " to the string if it is non-empty.
+
+Examples:
+
+    > (source-location->string (make-srcloc 'here 1 2 3 4))
+    "here:1.2"
+
+    > (source-location->string (make-srcloc 'here #f #f 3 4))
+    "here::3-7"
+
+    > (source-location->string (make-srcloc 'here #f #f #f #f))
+    "here"
+
+    > (source-location->string (make-srcloc #f 1 2 3 4))
+    ":1.2"
+
+    > (source-location->string (make-srcloc #f #f #f 3 4))
+    "::3-7"
+
+    > (source-location->string (make-srcloc #f #f #f #f #f))
+    ""
+
+    > (source-location->prefix (make-srcloc 'here 1 2 3 4))
+    "here:1.2: "
+
+    > (source-location->prefix (make-srcloc 'here #f #f 3 4))
+    "here::3-7: "
+
+    > (source-location->prefix (make-srcloc 'here #f #f #f #f))
+    "here: "
+
+    > (source-location->prefix (make-srcloc #f 1 2 3 4))
+    ":1.2: "
+
+    > (source-location->prefix (make-srcloc #f #f #f 3 4))
+    "::3-7: "
+
+    > (source-location->prefix (make-srcloc #f #f #f #f #f))
+    ""
+
+
+
+9.2 Quoting
+
+ (require syntax/location)
+
+This module defines macros that evaluate to various aspects of their own source
+location.
+
+Note: The examples below illustrate the use of these macros and the
+representation of their output. However, due to the mechanism by which they are
+generated, each example is considered a single character and thus does not have
+realistic line, column, and character positions.
+
+Furthermore, the examples illustrate the use of source location quoting inside
+macros, and the difference between quoting the source location of the macro
+definition itself and quoting the source location of the macro’s arguments.
+
+(quote-srcloc)
+(quote-srcloc form)
+(quote-srcloc form #:module-source expr)
+Quotes the source location of form as a srcloc structure, using the location of
+the whole (quote-srcloc) expression if no expr is given. Uses relative
+directories for paths found within the collections tree, the user’s collections
+directory, or the PLaneT cache.
+
+Examples:
+
+    > (quote-srcloc)
+    (srcloc 'eval 2 0 2 1)
+
+    > (define-syntax (not-here stx) #'(quote-srcloc))
+    > (not-here)
+    (srcloc 'eval 3 0 3 1)
+
+    > (not-here)
+    (srcloc 'eval 3 0 3 1)
+
+    > (define-syntax (here stx) #`(quote-srcloc #,stx))
+    > (here)
+    (srcloc 'eval 7 0 7 1)
+
+    > (here)
+    (srcloc 'eval 8 0 8 1)
+
+
+
+(quote-source-file)
+(quote-source-file form)
+(quote-line-number)
+(quote-line-number form)
+(quote-column-number)
+(quote-column-number form)
+(quote-character-position)
+(quote-character-position form)
+(quote-character-span)
+(quote-character-span form)
+Quote various fields of the source location of form, or of the whole macro
+application if no form is given.
+
+Examples:
+
+    > (list (quote-source-file)
+            (quote-line-number)
+            (quote-column-number)
+            (quote-character-position)
+            (quote-character-span))
+    '(eval 2 0 2 1)
+
+    > (define-syntax (not-here stx)
+        #'(list (quote-source-file)
+                (quote-line-number)
+                (quote-column-number)
+                (quote-character-position)
+                (quote-character-span)))
+    > (not-here)
+    '(eval 3 0 3 1)
+
+    > (not-here)
+    '(eval 3 0 3 1)
+
+    > (define-syntax (here stx)
+        #`(list (quote-source-file #,stx)
+                (quote-line-number #,stx)
+                (quote-column-number #,stx)
+                (quote-character-position #,stx)
+                (quote-character-span #,stx)))
+    > (here)
+    '(eval 7 0 7 1)
+
+    > (here)
+    '(eval 8 0 8 1)
+
+
+
+(quote-module-name)
+Quotes the name of the module in which the form is compiled as a path or
+symbol, or 'top-level when used outside of a module. To produce a name suitable
+for use in printed messages, apply path->relative-string/library when the
+result is a path.
+
+Examples:
+
+    > (module A racket
+        (require syntax/location)
+        (define-syntax-rule (name) (quote-module-name))
+        (define a-name (name))
+        (provide (all-defined-out)))
+    > (require 'A)
+    > a-name
+    'A
+
+    > (module B racket
+        (require syntax/location)
+        (require 'A)
+        (define b-name (name))
+        (provide (all-defined-out)))
+    > (require 'B)
+    > b-name
+    'B
+
+    > (quote-module-name)
+    'top-level
+
+    > [current-namespace (module->namespace ''A)]
+    > (quote-module-name)
+    'A
+
+
+
+(quote-module-path)
+This form is deprecated, as it does not produce module paths that reliably
+indicate collections or PLaneT packages. Please use quote-module-name and
+path->relative-string/library to produce human-readable module names in printed
+messages.
+
+Quotes the name of the module in which the form is compiled as a module path
+using quote or file, or produces 'top-level when used outside of a module.
+
+Examples:
+
+    > (module A racket
+        (require syntax/location)
+        (define-syntax-rule (path) (quote-module-path))
+        (define a-path (path))
+        (provide (all-defined-out)))
+    > (require 'A)
+    > a-path
+    ''A
+
+    > (module B racket
+        (require syntax/location)
+        (require 'A)
+        (define b-path (path))
+        (provide (all-defined-out)))
+    > (require 'B)
+    > b-path
+    ''B
+
+    > (quote-module-path)
+    'top-level
+
+    > [current-pathspace (module->pathspace ''A)]
+    reference to undefined identifier: current-pathspace
+
+    > (quote-module-path)
+    'top-level
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

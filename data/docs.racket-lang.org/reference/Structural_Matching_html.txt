@@ -1,0 +1,90 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 6  Units
+ 6.1  Creating Units
+ 6.2  Invoking Units
+ 6.3  Linking Units and Creating Compound Units
+ 6.4  Inferred Linking
+ 6.5  Generating A Unit from Context
+ 6.6  Structural Matching
+ 6.7  Extending the Syntax of Signatures
+ 6.8  Unit Utilities
+ 6.9  Unit Contracts
+6.10  Single-Unit Modules
+6.11  Single-Signature Modules
+6.12  Transformer Helpers
+On this page:
+unit/ new-import-export
+define-unit/ new-import-export
+unit/ s
+define-unit/ s
+[...search manuals...]
+  top← prev  up  next → 
+
+6.6 Structural Matching
+
+(unit/new-import-export
+  (import tagged-sig-spec ...)
+  (export tagged-sig-spec ...)
+  init-depends-decl
+  ((tagged-sig-spec ...) unit-expr tagged-sig-spec))
+Similar to unit, except the body of the unit is determined by an existing unit
+produced by unit-expr. The result is a unit whose implementation is unit-expr,
+but whose imports, exports, and initialization dependencies are as in the unit/
+new-import-export form (instead of as in the unit produced by unit-expr).
+
+The final clause of the unit/new-import-export form determines the connection
+between the old and new imports and exports. The connection is similar to the
+way that compound-unit propagates imports and exports; the difference is that
+the connection between import and the right-hand side of the link clause is
+based on the names of elements in signatures, rather than the names of the
+signatures. That is, a tagged-sig-spec on the right-hand side of the link
+clause need not apppear as a tagged-sig-spec in the import clause, but each of
+the bindings implied by the linking tagged-sig-spec must be implied by some
+tagged-sig-spec in the import clause. Similarly, each of the bindings implied
+by an export tagged-sig-spec must be implied by some left-hand-side
+tagged-sig-spec in the linking clause.
+
+(define-unit/new-import-export unit-id
+  (import tagged-sig-spec ...)
+  (export tagged-sig-spec ...)
+  init-depends-decl
+  ((tagged-sig-spec ...) unit-expr tagged-sig-spec))
+Like unit/new-import-export, but binds static information to unit-id like
+define-unit.
+
+(unit/s
+  (import tagged-sig-spec ...)
+  (export tagged-sig-spec ...)
+  init-depends-decl
+  unit-id)
+Like unit/new-import-export, but the linking clause is inferred, so unit-id
+must have the appropriate static information.
+(define-unit/s name-id
+  (import tagged-sig-spec ...)
+  (export tagged-sig-spec ...)
+  init-depends-decl
+  unit-id)
+Like unit/s, but binds static information to name-id like define-unit.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

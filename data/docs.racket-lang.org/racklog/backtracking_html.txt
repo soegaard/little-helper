@@ -1,0 +1,75 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Backtracking
+
+It is helpful to go into the following evaluation (Predicates with Rules) in a
+little detail:
+
+    (%which ()
+      (%computer-literate 'Penelope))
+
+The starting goal is:
+
+    G0 = (%computer-literate Penelope)
+
+(I’ve taken out the quote because Penelope is the result of evaluating
+'Penelope.)
+
+Racklog tries to match this with the head of the first clause of
+%computer-literate. It succeeds, generating a binding [person . Penelope].
+
+But this means it now has two new goals — subgoals — to solve. These are the
+goals in the body of the matching clause, with the logic variables substituted
+by their instantiations:
+
+    G1 = (%knows Penelope TeX)
+    G2 = (%knows Penelope Racket)
+
+For G1, Racklog attempts matches with the clauses of %knows, and succeeds at
+the fifth try. (There are no subgoals in this case, because the bodies of these
+“fact” clauses are empty, in contrast to the “rule” clauses of
+%computer-literate.) Racklog then tries to solve G2 against the clauses of
+%knows, and since there is no clause stating that Penelope knows Racket, it
+fails.
+
+All is not lost though. Racklog now backtracks to the goal that was solved just
+before, viz., G1. It retries G1, ie, tries to solve it in a different way. This
+entails searching down the previously unconsidered %knows clauses for G1, ie,
+the sixth onwards. Obviously, Racklog fails again, because the fact that
+Penelope knows TeX occurs only once.
+
+Racklog now backtracks to the goal before G1, ie, G0. We abandon the current
+successful match with the first clause-head of %computer-literate, and try the
+next clause-head. Racklog succeeds, again producing a binding [person .
+Penelope], and two new subgoals:
+
+    G3 = (%knows Penelope TeX)
+    G4 = (%knows Penelope Prolog)
+
+It is now easy to trace that Racklog finds both G3 and G4 to be true. Since
+both of G0’s subgoals are true, G0 is itself considered true. And this is what
+Racklog reports. The interested reader can now trace why the following query
+has a different denouement:
+
+    > (%which ()
+        (%computer-literate 'Telemachus))
+    #f
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

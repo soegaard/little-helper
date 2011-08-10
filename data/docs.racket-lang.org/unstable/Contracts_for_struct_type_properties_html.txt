@@ -1,0 +1,153 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+struct-type-property/ c
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Contracts for struct type properties
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require unstable/prop-contract)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(struct-type-property/c value-contract) → contract?
+  value-contract : contract?
+Produces a contract for struct type properties. When the contract is applied to
+a struct type property, it produces a wrapped struct type property that applies
+value-contract to the value associated with the property when used to create a
+new struct type (via struct, make-struct-type, etc).
+
+The struct type property’s accessor function is not affected; it must be
+protected separately.
+
+Examples:
+
+    > (module propmod racket
+        (require racket/contract
+                 unstable/prop-contract)
+        (define-values (prop prop? prop-ref)
+          (make-struct-type-property 'prop))
+        (define (prop-app x v)
+          (((prop-ref x) x) v))
+        (provide/contract
+         [prop? (-> any/c boolean?)]
+         [prop (struct-type-property/c
+                (-> prop? (-> number? boolean?)))]
+         [prop-app (-> prop? number? boolean?)])
+        (provide prop-ref))
+    > (module structmod racket
+        (require 'propmod)
+        (struct s (f) #:property prop (lambda (s) (s-f s)))
+        (provide (struct-out s)))
+    > (require 'propmod 'structmod)
+    > (define s1 (s even?))
+    > (prop-app s1 5)
+    #f
+
+    > (prop-app s1 'apple)
+    prop-app: contract violation, expected <number?>, given:
+
+    'apple
+
+      contract from propmod, blaming top-level
+
+      contract: (-> prop? number? boolean?)
+
+            at: eval:2.0
+
+    > (define s2 (s "not a fun"))
+    > (prop-app s2 5)
+    prop: contract violation, expected a procedure that accepts
+
+    1 mandatory argument without any keywords, given: "not a
+
+    fun"
+
+      contract from propmod, blaming structmod
+
+      contract:
+
+        (struct-type-property/c
+
+        (-> prop? (-> number? boolean?)))
+
+      at: eval:2.0
+
+    > (define s3 (s list))
+    > (prop-app s3 5)
+    prop: contract violation, expected <boolean?>, given: '(5)
+
+      contract from propmod, blaming structmod
+
+      contract:
+
+        (struct-type-property/c
+
+        (-> prop? (-> number? boolean?)))
+
+      at: eval:2.0
+
+    > ((prop-ref s3) 'apple)
+    prop: self-contract violation, expected <prop?>, given:
+
+    'apple
+
+      contract from propmod, blaming propmod
+
+      contract:
+
+        (struct-type-property/c
+
+        (-> prop? (-> number? boolean?)))
+
+      at: eval:2.0
+
+
+The first contract error above is a simple function contract violation on
+prop-app. The second and third contract errors above blame the structmod
+module, because it accepted the struct type property contract. To avoid blame,
+structmod should have placed a contract on s. The final contract error,
+involving s3, blames propmod because the struct type property contract obliges
+propmod to make sure the property’s value is not misused, but propmod allows
+direct access to the property value via prop-ref. To avoid blame, propmod
+should remove the export of prop-ref or protect it with a contract.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

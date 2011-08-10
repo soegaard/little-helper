@@ -1,0 +1,72 @@
+►  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+▼ 3  Control Snips
+3.1  snip-wrapper%
+3.2  text-button-snip%
+3.3  button-snip%
+3.4  toggle-button-snip%
+Inherited methods:
+from snip%
+adjust-cursor
+blink-caret
+can-do-edit-operation?
+copy
+do-edit-operation
+draw
+equal-hash-code-of
+equal-secondary-hash-code-of
+equal-to?
+find-scroll-step
+get-admin
+get-count
+get-extent
+get-flags
+get-num-scroll-steps
+get-scroll-step-offset
+get-snipclass
+get-style
+get-text
+get-text!
+is-owned?
+match?
+merge-with
+next
+on-char
+on-event
+other-equal-to?
+own-caret
+partial-offset
+previous
+release-from-owner
+resize
+set-admin
+set-count
+set-flags
+set-snipclass
+set-style
+set-unmodified
+size-cache-invalid
+split
+write
+[...search manuals...]
+  top← prev  up  next → 
+
+text-button-snip% : class?
+  superclass: snip%
+
+A button with a text label.
+
+(new text-button-snip%   [label label]         
+                         [callback callback])  
+ → (is-a?/c text-button-snip%)
+  label : string?
+  callback : ((is-a?/c text-button-snip%) (is-a?/c event%) . -> . void)
+The callback is called when the button is clicked.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

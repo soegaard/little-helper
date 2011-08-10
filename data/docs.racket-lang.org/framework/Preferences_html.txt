@@ -1,0 +1,154 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+preferences: put-preferences/ gui
+preferences: get-preference/ gui
+preferences: add-panel
+preferences: add-editor-checkbox-panel
+preferences: add-general-checkbox-panel
+preferences: add-warnings-checkbox-panel
+preferences: add-scheme-checkbox-panel
+preferences: add-to-warnings-checkbox-panel
+preferences: add-to-scheme-checkbox-panel
+preferences: add-to-editor-checkbox-panel
+preferences: add-to-general-checkbox-panel
+preferences: add-font-panel
+preferences: show-dialog
+preferences: hide-dialog
+preferences: add-on-close-dialog-callback
+preferences: add-can-close-dialog-callback
+[...search manuals...]
+  top← prev  up  next → 
+
+26 Preferences
+
+(preferences:put-preferences/gui   name-list        
+                                   val-list)   →   any
+  name-list : (listof symbol?)
+  val-list : (listof any/c)
+Like put-preferences, but has more sophisticated error handling. In particular,
+it
+
+  • waits for three consecutive failures before informing the user
+
+  • gives the user the opportunity to “steal” the lockfile after the third
+    failure, and
+
+  • when failures occur, it remembers what its arguments were and if any
+    preference save eventually succeeds, all of the past failures are also
+    written at that point.
+
+(preferences:get-preference/gui    sym              
+                                 [ default])   →   any/c
+  sym : symbol?
+   default   :   (-> void?)
+             =   (λ () (error 'get-preference/gui "unknown pref ~s" sym))
+Like get-preference, but has more sophisticated error handling. In particular,
+it passes a #:timeout-lock-there argument that informs the user that the
+preferences file is locked (and offers the alternative of not showing the
+message again).
+(preferences:add-panel labels f) → void?
+  labels : (or/c string? (cons/c string? (listof string?)))
+           (->i ([parent (is-a?/c area-container-window<%>)])
+                ()
+                [_ (parent)
+                   (let ([old-children (send parent get-children)])
+   f   :             (and/c (is-a?/c area-container-window<%>)
+                            (λ (child)
+                              (andmap eq?
+                                      (append old-children (list child))
+                                      (send parent get-children)))))])
+preferences:add-preference-panel adds the result of f with name labels to the
+preferences dialog box.
+
+The labels determine where this preference panel is placed in the dialog. If
+the list is just one string, the preferences panel is placed at the top level
+of the dialog. If there are more strings, a hierarchy of nested panels is
+created and the new panel is added at the end. If multiple calls to
+preferences:add-preference-panel pass the same prefix of strings, those panels
+are placed in the same children.
+
+When the preference dialog is opened for the first time, the function f is
+called with a panel, and f is expected to add a new child panel to it and add
+whatever preferences configuration controls it wants to that panel. Then, f’s
+should return the panel it added.
+(preferences:add-editor-checkbox-panel) → void?
+Adds a preferences panel for configuring options related to editing.
+(preferences:add-general-checkbox-panel) → void?
+Adds a catch-all preferences panel for options.
+(preferences:add-warnings-checkbox-panel) → void?
+Adds a preferences panel for configuring options relating to warnings.
+(preferences:add-scheme-checkbox-panel) → void?
+Adds a preferences panel for configuring options related to Racket.
+(preferences:add-to-warnings-checkbox-panel proc) → void?
+  proc : ((is-a?/c vertical-panel%) . -> . void?)
+Saves proc until the preferences panel is created, when it is called with the
+Misc. panel to add new children to the panel.
+(preferences:add-to-scheme-checkbox-panel proc) → void?
+  proc : ((is-a?/c vertical-panel%) . -> . void?)
+Saves proc until the preferences panel is created, when it is called with the
+Racket preferences panel to add new children to the panel.
+(preferences:add-to-editor-checkbox-panel proc) → void?
+  proc : ((is-a?/c vertical-panel%) . -> . void?)
+Saves proc until the preferences panel is created, when it is called with the
+editor preferences panel to add new children to the panel.
+(preferences:add-to-general-checkbox-panel proc) → void?
+  proc : ((is-a?/c vertical-panel%) . -> . void?)
+Saves proc until the preferences panel is created, when it is called with the
+general preferences panel to add new children to the panel.
+(preferences:add-font-panel) → void?
+Adds a font selection preferences panel to the preferences dialog.
+(preferences:show-dialog) → void?
+Shows the preferences dialog.
+(preferences:hide-dialog) → void?
+Hides the preferences dialog.
+(preferences:add-on-close-dialog-callback cb) → void?
+  cb : (-> void?)
+Registers cb. Next time the user clicks the OK button the preferences dialog,
+all of the cb functions are called, assuming that each of the callbacks passed
+to preferences:add-can-close-dialog-callback succeed.
+(preferences:add-can-close-dialog-callback cb) → void?
+  cb : (-> boolean?)
+Registers cb. Next time the user clicks the OK button the preferences dialog,
+all of the cb functions are called. If any of them return #f, the dialog is not
+closed.
+
+See also preferences:add-on-close-dialog-callback.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

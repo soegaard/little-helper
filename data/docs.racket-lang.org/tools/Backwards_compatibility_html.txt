@@ -1,0 +1,806 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drscheme: debug: profile-definitions-text-mixin
+drscheme: debug: profile-tab-mixin
+drscheme: debug: profile-unit-frame-mixin
+drscheme: debug: test-coverage-interactions-text-mixin
+drscheme: debug: test-coverage-definitions-text-mixin
+drscheme: debug: test-coverage-tab-mixin
+drscheme: unit: tab%
+drscheme: unit: tab<%>
+drscheme: unit: frame%
+drscheme: unit: frame<%>
+drscheme: unit: definitions-canvas%
+drscheme: unit: get-definitions-text%
+drscheme: unit: definitions-text<%>
+drscheme: unit: interactions-canvas%
+drscheme: rep: drs-bindings-keymap-mixin
+drscheme: rep: text%
+drscheme: rep: text<%>
+drscheme: rep: context<%>
+drscheme: frame: <%>
+drscheme: frame: mixin
+drscheme: frame: basics-mixin
+drscheme: frame: basics<%>
+drscheme: language: language<%>
+drscheme: language: module-based-language<%>
+drscheme: language: simple-module-based-language<%>
+drscheme: language: simple-module-based-language%
+drscheme: language: simple-module-based-language->module-based-language-mixin
+drscheme: language: module-based-language->language-mixin
+drscheme: tracing: tab-mixin
+drscheme: tracing: frame-mixin
+drscheme: module-language: module-language<%>
+drscheme: module-language-tools: frame-mixin
+drscheme: module-language-tools: frame<%>
+drscheme: module-language-tools: tab-mixin
+drscheme: module-language-tools: tab<%>
+drscheme: module-language-tools: definitions-text-mixin
+drscheme: module-language-tools: definitions-text<%>
+drscheme: debug: error-display-handler/ stacktrace
+drscheme: debug: make-debug-error-display-handler
+drscheme: debug: hide-backtrace-window
+drscheme: debug: add-prefs-panel
+drscheme: debug: open-and-highlight-in-file
+drscheme: debug: show-backtrace-window/ edition-pairs
+drscheme: debug: show-backtrace-window
+drscheme: debug: srcloc->edition/ pair
+drscheme: eval: set-basic-parameters
+drscheme: eval: get-snip-classes
+drscheme: eval: expand-program
+drscheme: eval: traverse-program/ multiple
+drscheme: eval: expand-program/ multiple
+drscheme: eval: build-user-eventspace/ custodian
+drscheme: get/ extend: extend-tab
+drscheme: get/ extend: extend-interactions-text
+drscheme: get/ extend: get-interactions-text
+drscheme: get/ extend: extend-definitions-text
+drscheme: get/ extend: get-definitions-text
+drscheme: get/ extend: extend-interactions-canvas
+drscheme: get/ extend: get-interactions-canvas
+drscheme: get/ extend: extend-definitions-canvas
+drscheme: get/ extend: get-definitions-canvas
+drscheme: get/ extend: extend-unit-frame
+drscheme: get/ extend: get-unit-frame
+drscheme: help-desk: help-desk
+drscheme: language-configuration: get-languages
+drscheme: language-configuration: add-language
+drscheme: language-configuration: get-settings-preferences-symbol
+drscheme: language-configuration: language-settings
+drscheme: language-configuration: language-settings-settings
+drscheme: language-configuration: language-settings-language
+drscheme: language-configuration: language-settings?
+drscheme: language-configuration: language-dialog
+drscheme: language-configuration: fill-language-dialog
+drscheme: language: register-capability
+drscheme: language: capability-registered?
+drscheme: language: get-capability-default
+drscheme: language: get-capability-contract
+drscheme: language: add-snip-value
+drscheme: language: extend-language-interface
+drscheme: language: get-default-mixin
+drscheme: language: get-language-extensions
+drscheme: language: put-executable
+drscheme: language: create-executable-gui
+drscheme: language: create-module-based-stand-alone-executable
+drscheme: language: create-module-based-distribution
+drscheme: language: create-distribution-for-executable
+drscheme: language: create-module-based-launcher
+drscheme: language: simple-module-based-language-convert-value
+drscheme: language: setup-printing-parameters
+drscheme: language: text/ pos-text
+drscheme: language: text/ pos-start
+drscheme: language: text/ pos-end
+drscheme: language: text/ pos?
+drscheme: language: text/ pos
+drscheme: language: make-text/ pos
+drscheme: language: simple-settings-case-sensitive
+drscheme: language: simple-settings-printing-style
+drscheme: language: simple-settings-fraction-style
+drscheme: language: simple-settings-show-sharing
+drscheme: language: simple-settings-insert-newlines
+drscheme: language: simple-settings-annotations
+drscheme: language: simple-settings?
+drscheme: language: simple-settings
+drscheme: language: make-simple-settings
+drscheme: language: simple-settings->vector
+drscheme: modes: add-mode
+drscheme: modes: mode?
+drscheme: modes: get-modes
+drscheme: modes: mode-name
+drscheme: modes: mode-surrogate
+drscheme: modes: mode-repl-submit
+drscheme: modes: mode-matches-language
+drscheme: module-language-tools: add-opt-out-toolbar-button
+drscheme: module-language: add-module-language
+drscheme: module-language: module-language-put-file-mixin
+drscheme: rep: get-welcome-delta
+drscheme: rep: get-dark-green-delta
+drscheme: rep: get-drs-bindings-keymap
+drscheme: rep: current-rep
+drscheme: rep: current-value-port
+drscheme: unit: get-program-editor-mixin
+drscheme: unit: add-to-program-editor-mixin
+drscheme: unit: open-drscheme-window
+drscheme: unit: add-search-help-desk-menu-item
+[...search manuals...]
+  top← prev  up  next → 
+
+22 Backwards compatibility
+
+This section lists the bindings that begin with drscheme: provided by the tools
+library; they are here for backwards compatibility and to provide links to the
+drracket: versions of the names.
+
+drscheme:debug:profile-definitions-text-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:debug:profile-definitions-text-mixin instead.
+drscheme:debug:profile-tab-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:debug:profile-tab-mixin instead.
+drscheme:debug:profile-unit-frame-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:debug:profile-unit-frame-mixin instead.
+drscheme:debug:test-coverage-interactions-text-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:debug:test-coverage-interactions-text-mixin instead.
+drscheme:debug:test-coverage-definitions-text-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:debug:test-coverage-definitions-text-mixin instead.
+drscheme:debug:test-coverage-tab-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:debug:test-coverage-tab-mixin instead.
+drscheme:unit:tab% : any/c
+This is provided for backwards compatibility; new code should use
+drracket:unit:tab% instead.
+drscheme:unit:tab<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:unit:tab<%> instead.
+drscheme:unit:frame% : any/c
+This is provided for backwards compatibility; new code should use
+drracket:unit:frame% instead.
+drscheme:unit:frame<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:unit:frame<%> instead.
+drscheme:unit:definitions-canvas% : any/c
+This is provided for backwards compatibility; new code should use
+drracket:unit:definitions-canvas% instead.
+drscheme:unit:get-definitions-text% : any/c
+This is provided for backwards compatibility; new code should use
+drracket:unit:get-definitions-text% instead.
+drscheme:unit:definitions-text<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:unit:definitions-text<%> instead.
+drscheme:unit:interactions-canvas% : any/c
+This is provided for backwards compatibility; new code should use
+drracket:unit:interactions-canvas% instead.
+drscheme:rep:drs-bindings-keymap-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:rep:drs-bindings-keymap-mixin instead.
+drscheme:rep:text% : any/c
+This is provided for backwards compatibility; new code should use
+drracket:rep:text% instead.
+drscheme:rep:text<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:rep:text<%> instead.
+drscheme:rep:context<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:rep:context<%> instead.
+drscheme:frame:<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:frame:<%> instead.
+drscheme:frame:mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:frame:mixin instead.
+drscheme:frame:basics-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:frame:basics-mixin instead.
+drscheme:frame:basics<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:frame:basics<%> instead.
+drscheme:language:language<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:language:language<%> instead.
+drscheme:language:module-based-language<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:language:module-based-language<%> instead.
+drscheme:language:simple-module-based-language<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-module-based-language<%> instead.
+drscheme:language:simple-module-based-language% : any/c
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-module-based-language% instead.
+drscheme:language:simple-module-based-language->module-based-language-mixin : 
+any/c
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-module-based-language->module-based-language-mixin
+instead.
+drscheme:language:module-based-language->language-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:language:module-based-language->language-mixin instead.
+drscheme:tracing:tab-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:tracing:tab-mixin instead.
+drscheme:tracing:frame-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:tracing:frame-mixin instead.
+drscheme:module-language:module-language<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:module-language:module-language<%> instead.
+drscheme:module-language-tools:frame-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:module-language-tools:frame-mixin instead.
+drscheme:module-language-tools:frame<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:module-language-tools:frame<%> instead.
+drscheme:module-language-tools:tab-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:module-language-tools:tab-mixin instead.
+drscheme:module-language-tools:tab<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:module-language-tools:tab<%> instead.
+drscheme:module-language-tools:definitions-text-mixin : any/c
+This is provided for backwards compatibility; new code should use
+drracket:module-language-tools:definitions-text-mixin instead.
+drscheme:module-language-tools:definitions-text<%> : any/c
+This is provided for backwards compatibility; new code should use
+drracket:module-language-tools:definitions-text<%> instead.
+
+                                         (->* (string? any/c)
+                                              ((or/c false/c (listof srcloc?))
+                                               #:definitions-text (or/c #f (
+drscheme:debug:error-display-handler     is-a?/c drracket:unit:definitions-text
+/stacktrace                           :  <%>))
+                                               #:interactions-text (or/c #f (
+                                         is-a?/c drracket:rep:text<%>)))
+                                          
+                                              any/c)
+This is provided for backwards compatibility; new code should use
+drracket:debug:error-display-handler/stacktrace instead.
+                                                    (-> (-> string? (or/c any/c
+drscheme:debug:make-debug-error-display-handler  :   exn?) any)
+                                                        (-> string? (or/c any/c
+                                                     exn?) any))
+This is provided for backwards compatibility; new code should use
+drracket:debug:make-debug-error-display-handler instead.
+drscheme:debug:hide-backtrace-window : (-> void?)
+This is provided for backwards compatibility; new code should use
+drracket:debug:hide-backtrace-window instead.
+drscheme:debug:add-prefs-panel : (-> void?)
+This is provided for backwards compatibility; new code should use
+drracket:debug:add-prefs-panel instead.
+                                              (->* ((or/c srcloc? (listof srcloc?)))
+                                                   ((or/c #f (cons/c (λ (x) (and (
+                                              weak-box? x)
+                                                                                 (let 
+                                              ([v (weak-box-value x)])
+drscheme:debug:open-and-highlight-in-file  :                                       (or 
+                                              (not v)
+                                                                                       
+                                              (is-a?/c v editor<%>)))))
+                                                                     number?)))
+                                                   void?)
+This is provided for backwards compatibility; new code should use
+drracket:debug:open-and-highlight-in-file instead.
+                                         (-> string?
+                                             (listof srcloc?)
+                                             (listof (or/c #f (cons/c (λ (x) (and (
+                                         weak-box? x)
+                                                                                  (let 
+                                         ([v (weak-box-value x)])
+drscheme:debug:show-backtrace-window                                                (or 
+/edition-pairs                        :  (not v)
+                                                                                        
+                                         (is-a?/c v editor<%>)))))
+                                                                      number?)))
+                                             (or/c #f (is-a?/c 
+                                         drracket:unit:definitions-text<%>))
+                                             (or/c #f (is-a?/c drracket:rep:text<%>))
+                                             void?)
+This is provided for backwards compatibility; new code should use
+drracket:debug:show-backtrace-window/edition-pairs instead.
+                                         (->* (string?
+                                               (or/c exn?
+                                                     (listof srcloc?)
+                                                     (non-empty-listof (cons/c 
+drscheme:debug:show-backtrace-window  :  string? (listof srcloc?)))))
+                                              ((or/c #f (is-a?/c 
+                                         drracket:rep:text<%>))
+                                               (or/c #f (is-a?/c 
+                                         drracket:unit:definitions-text<%>)))
+                                              void?)
+This is provided for backwards compatibility; new code should use
+drracket:debug:show-backtrace-window instead.
+                            (->* (srcloc?
+                                  (or/c #f (is-a?/c drracket:rep:text<%>))
+                                  (or/c #f (is-a?/c drracket:unit:definitions-text
+                            <%>)))
+                                 ((or/c #f (and/c hash? hash-equal?)))
+                                 (or/c #f (cons/c (let 
+drscheme:debug:srcloc->     ([weak-box-containing-an-editor?
+edition/pair             :                               (λ (x) (and (weak-box? x)
+                                                                     (let ([v (
+                            weak-box-value x)])
+                                                                       (or (not v)
+                                                                           (is-a?/c
+                             v editor<%>)))))])
+                                                    weak-box-containing-an-editor?)
+                                                  number?)))
+This is provided for backwards compatibility; new code should use
+drracket:debug:srcloc->edition/pair instead.
+                                       (->* ((listof (is-a?/c snip-class%)))
+drscheme:eval:set-basic-parameters  :       (#:gui-modules? boolean?)
+                                            void?)
+This is provided for backwards compatibility; new code should use
+drracket:eval:set-basic-parameters instead.
+drscheme:eval:get-snip-classes : (-> (listof (is-a?/c snip-class%)))
+This is provided for backwards compatibility; new code should use
+drracket:eval:get-snip-classes instead.
+                                 (->* ((or/c port? drracket:language:text/pos?)
+                                       drracket:language-configuration:language-settings?
+                                       boolean?
+                                       (-> void?)
+                                       (-> void?)
+drscheme:eval:expand-program  :        (-> (or/c eof-object? syntax? (cons/c string? any/
+                                 c))
+                                           (-> any)
+                                           any))
+                                      (#:gui-modules? boolean?)
+                                      void?)
+This is provided for backwards compatibility; new code should use
+drracket:eval:expand-program instead.
+                                   (->* (
+                                   drracket:language-configuration:language-settings?
+                                         (-> void?)
+                                         (-> void?))
+                                        (#:gui-modules? boolean?)
+drscheme:eval:traverse-program  :       (-> (or/c port? drracket:language:text/pos?)
+/multiple                                   (-> (or/c eof-object? syntax? (cons/c 
+                                   string? any/c))
+                                                (-> any)
+                                                any)
+                                            boolean?
+                                            void?))
+This is provided for backwards compatibility; new code should use
+drracket:eval:traverse-program/multiple instead.
+                                 (->* (
+                                 drracket:language-configuration:language-settings?
+                                       boolean?
+                                       (-> void?)
+                                       (-> void?))
+drscheme:eval:expand-program          (#:gui-modules? boolean?)
+/multiple                     :       (-> (or/c port? drracket:language:text/pos?)
+                                          (-> (or/c eof-object? syntax? (cons/c 
+                                 string? any/c))
+                                              (-> any)
+                                              any)
+                                          boolean?
+                                          void?))
+This is provided for backwards compatibility; new code should use
+drracket:eval:expand-program/multiple instead.
+                                        (->* (
+                                        drracket:language-configuration:language-settings?
+drscheme:eval:build-user-eventspace  :        (-> void?)
+/custodian                                    (-> void?))
+                                             (#:gui-modules? boolean?)
+                                             (values eventspace? custodian?))
+This is provided for backwards compatibility; new code should use
+drracket:eval:build-user-eventspace/custodian instead.
+
+                            (case->
+drscheme:get/                ((make-mixin-contract drracket:unit:tab<%>) . ->
+extend:extend-tab        :  . void?)
+                             ((make-mixin-contract drracket:unit:tab<%>) 
+                            boolean? . -> . void?))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:extend-tab instead.
+                                    (case->
+drscheme:get/                        ((make-mixin-contract drracket:rep:text<%>
+extend:extend-interactions-text  :  ) . -> . void?)
+                                     ((make-mixin-contract drracket:rep:text<%>
+                                    ) boolean? . -> . void?))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:extend-interactions-text instead.
+drscheme:get/extend:get-interactions-text : (-> (implementation?/c 
+drracket:rep:text<%>))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:get-interactions-text instead.
+                                   (case->
+                                    ((make-mixin-contract 
+drscheme:get/                   :  drracket:unit:definitions-text<%>) . -> . void?)
+extend:extend-definitions-text      ((make-mixin-contract 
+                                   drracket:unit:definitions-text<%>) boolean? . -> . 
+                                   void?))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:extend-definitions-text instead.
+drscheme:get/extend:get-definitions-text : (-> (implementation?/c 
+drracket:unit:definitions-text<%>))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:get-definitions-text instead.
+                                      (case->
+drscheme:get/                          ((make-mixin-contract drracket:unit:interactions-canvas%
+extend:extend-interactions-canvas  :  ) . -> . void?)
+                                       ((make-mixin-contract drracket:unit:interactions-canvas%
+                                      ) boolean? . -> . void?))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:extend-interactions-canvas instead.
+drscheme:get/extend:get-interactions-canvas : (-> (subclass?/c 
+drracket:unit:interactions-canvas%))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:get-interactions-canvas instead.
+                                     (case->
+drscheme:get/                         ((make-mixin-contract drracket:unit:definitions-canvas%
+extend:extend-definitions-canvas  :  ) . -> . void?)
+                                      ((make-mixin-contract drracket:unit:definitions-canvas%
+                                     ) boolean? . -> . void?))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:extend-definitions-canvas instead.
+drscheme:get/extend:get-definitions-canvas : (-> (subclass?/c 
+drracket:unit:definitions-canvas%))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:get-definitions-canvas instead.
+                               (case->
+drscheme:get/                   ((make-mixin-contract drracket:unit:frame%) .
+extend:extend-unit-frame    :  -> . void?)
+                                ((make-mixin-contract drracket:unit:frame%) 
+                               boolean? . -> . void?))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:extend-unit-frame instead.
+drscheme:get/extend:get-unit-frame : (-> (subclass?/c drracket:unit:frame%))
+This is provided for backwards compatibility; new code should use drracket:get/
+extend:get-unit-frame instead.
+                                 (->* ()
+                                      ((or/c #f string?)
+drscheme:help-desk:help-desk  :        (or/c #f string? (list/c string? string?
+                                 )))
+                                      any)
+This is provided for backwards compatibility; new code should use
+drracket:help-desk:help-desk instead.
+drscheme:language-configuration:get-languages : (-> (listof (is-a?/c 
+drracket:language:language<%>)))
+This is provided for backwards compatibility; new code should use
+drracket:language-configuration:get-languages instead.
+                                                 ((and/c (is-a?/c 
+drscheme:language-configuration:add-language  :  drracket:language:language<%>)
+                                                  drracket:language:object/c)
+                                                  . -> . void?)
+This is provided for backwards compatibility; new code should use
+drracket:language-configuration:add-language instead.
+drscheme:language-configuration:get-settings-preferences-symbol : (-> symbol?)
+This is provided for backwards compatibility; new code should use
+drracket:language-configuration:get-settings-preferences-symbol instead.
+                                                      ((or/c (is-a?/c drracket:language:language<%>) 
+                                                      drracket:language:object/c)
+drscheme:language-configuration:language-settings  :   any/c
+                                                       . -> .
+                                                       drracket:language-configuration:language-settings?)
+This is provided for backwards compatibility; new code should use
+drracket:language-configuration:language-settings instead.
+                                                               (-> 
+drscheme:language-configuration:language-settings-settings  :  drracket:language-configuration:language-settings?
+                                                                   any/c)
+This is provided for backwards compatibility; new code should use
+drracket:language-configuration:language-settings-settings instead.
+                                                               (drracket:language-configuration:language-settings?
+drscheme:language-configuration:language-settings-language  :   . -> .
+                                                                (or/c (is-a?/c drracket:language:language<%>) 
+                                                               drracket:language:object/c))
+This is provided for backwards compatibility; new code should use
+drracket:language-configuration:language-settings-language instead.
+drscheme:language-configuration:language-settings? : (any/c . -> . boolean?)
+This is provided for backwards compatibility; new code should use
+drracket:language-configuration:language-settings? instead.
+                                                    (->* (boolean? 
+                                                    drracket:language-configuration:language-settings?)
+drscheme:language-configuration:language-dialog  :       ((or/c false/c (is-a?/c top-level-window<%>)))
+                                                         (or/c false/c 
+                                                    drracket:language-configuration:language-settings?))
+This is provided for backwards compatibility; new code should use
+drracket:language-configuration:language-dialog instead.
+                                                         (->*
+                                                          ((is-a?/c vertical-panel%)
+                                                           (is-a?/c area-container<%>)
+                                                           drracket:language-configuration:language-settings?)
+drscheme:language-configuration:fill-language-dialog  :   ((or/c false/c (is-a?/c top-level-window<%>))
+                                                           (-> symbol? void?))
+                                                          (values (-> (is-a?/c drracket:language:language<%>))
+                                                                  (-> any/c)
+                                                                  (-> any/c (is-a?/c mouse-event%) any)))
+This is provided for backwards compatibility; new code should use
+drracket:language-configuration:fill-language-dialog instead.
+                                          (->i ([s symbol?]
+                                                [the-contract contract?]
+drscheme:language:register-capability  :        [default (the-contract)
+                                           the-contract])
+                                               ()
+                                               [res void?])
+This is provided for backwards compatibility; new code should use
+drracket:language:register-capability instead.
+drscheme:language:capability-registered? : (-> symbol? boolean?)
+This is provided for backwards compatibility; new code should use
+drracket:language:capability-registered? instead.
+                                             (->i ([s (and/c symbol? 
+                                             drracket:language:capability-registered?)])
+drscheme:language:get-capability-default  :       ()
+                                                  [res (s) (
+                                             drracket:language:get-capability-contract s)])
+This is provided for backwards compatibility; new code should use
+drracket:language:get-capability-default instead.
+                                              (-> (and/c symbol? 
+drscheme:language:get-capability-contract  :  drracket:language:capability-registered?)
+                                                  contract?)
+This is provided for backwards compatibility; new code should use
+drracket:language:get-capability-contract instead.
+                                     (->* ((-> any/c boolean?)
+drscheme:language:add-snip-value  :        (-> any/c (is-a?/c snip%)))
+                                          ((-> any/c))
+                                          void?)
+This is provided for backwards compatibility; new code should use
+drracket:language:add-snip-value instead.
+                                                (-> interface?
+drscheme:language:extend-language-interface  :      (make-mixin-contract 
+                                                drracket:language:language<%>)
+                                                    void?)
+This is provided for backwards compatibility; new code should use
+drracket:language:extend-language-interface instead.
+drscheme:language:get-default-mixin : (-> (make-mixin-contract 
+drracket:language:language<%>))
+This is provided for backwards compatibility; new code should use
+drracket:language:get-default-mixin instead.
+drscheme:language:get-language-extensions : (-> (listof interface?))
+This is provided for backwards compatibility; new code should use
+drracket:language:get-language-extensions instead.
+                                     ((is-a?/c top-level-window<%>)
+                                      path?
+                                      (or/c boolean? (symbols
+drscheme:language:put-executable  :   'launcher 'standalone 'distribution))
+                                      boolean?
+                                      string?
+                                      . -> . (or/c false/c path?))
+This is provided for backwards compatibility; new code should use
+drracket:language:put-executable instead.
+                                            ((or/c false/c (is-a?/c top-level-window<%>))
+                                             (or/c false/c string?)
+                                             (or/c (λ (x) (eq? x #t)) (symbols
+                                             'launcher 'standalone 'distribution))
+                                             (or/c (λ (x) (eq? x #t)) (symbols 'mzscheme 'mred))
+drscheme:language:create-executable-gui  :   . -> .
+                                             (or/c false/c
+                                                   (list/c (symbols
+                                             'no-show 'launcher 'stand-alone 'distribution)
+                                                           (symbols 'no-show 'mred 'mzscheme)
+                                                           string?)))
+This is provided for backwards compatibility; new code should use
+drracket:language:create-executable-gui instead.
+                                                                 ((or/c path? 
+                                                                 string?)
+                                                                  (or/c path? 
+                                                                 string?) any/c
+drscheme:language:create-module-based-stand-alone-executable  :   any/c any/c 
+                                                                 boolean? 
+                                                                 boolean?
+                                                                  . -> .
+                                                                  void?)
+This is provided for backwards compatibility; new code should use
+drracket:language:create-module-based-stand-alone-executable instead.
+                                                       ((or/c path? string?)
+                                                        (or/c path? string?) 
+drscheme:language:create-module-based-distribution  :  any/c any/c any/c 
+                                                       boolean? boolean?
+                                                        . -> .
+                                                        void?)
+This is provided for backwards compatibility; new code should use
+drracket:language:create-module-based-distribution instead.
+                                                         ((or/c path? string?)
+                                                          boolean?
+drscheme:language:create-distribution-for-executable  :   (-> path? void?)
+                                                          . -> .
+                                                          void?)
+This is provided for backwards compatibility; new code should use
+drracket:language:create-distribution-for-executable instead.
+                                                   ((or/c path? string?) (or/c 
+                                                   path? string?) any/c any/c 
+drscheme:language:create-module-based-launcher  :  any/c boolean? boolean?
+                                                                         . -> .
+                                                                         void?)
+This is provided for backwards compatibility; new code should use
+drracket:language:create-module-based-launcher instead.
+drscheme:language:simple-module-based-language-convert-value : (-> any/c 
+drracket:language:simple-settings? any)
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-module-based-language-convert-value instead.
+drscheme:language:setup-printing-parameters : (-> (-> any) 
+drracket:language:simple-settings? (or/c number? 'infinity) any)
+This is provided for backwards compatibility; new code should use
+drracket:language:setup-printing-parameters instead.
+drscheme:language:text/pos-text : (drracket:language:text/pos? . -> . (is-a?/c 
+text%))
+This is provided for backwards compatibility; new code should use
+drracket:language:text/pos-text instead.
+drscheme:language:text/pos-start : (drracket:language:text/pos? . -> . number?)
+This is provided for backwards compatibility; new code should use
+drracket:language:text/pos-start instead.
+drscheme:language:text/pos-end : (drracket:language:text/pos? . -> . number?)
+This is provided for backwards compatibility; new code should use
+drracket:language:text/pos-end instead.
+drscheme:language:text/pos? : (any/c . -> . boolean?)
+This is provided for backwards compatibility; new code should use
+drracket:language:text/pos? instead.
+                               ((is-a?/c text%) number? number?
+drscheme:language:text/pos  :                   . -> .
+                                                drracket:language:text/pos?)
+This is provided for backwards compatibility; new code should use
+drracket:language:text/pos instead.
+                                   ((is-a?/c text%) number? number?
+drscheme:language:make-text/    :                   . -> .
+pos                                                 drracket:language:text/pos?
+                                   )
+This is provided for backwards compatibility; new code should use
+drracket:language:make-text/pos instead.
+drscheme:language:simple-settings-case-sensitive : (
+drracket:language:simple-settings? . -> . boolean?)
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-settings-case-sensitive instead.
+                                                     (drracket:language:simple-settings?
+drscheme:language:simple-settings-printing-style  :   . -> .
+                                                      (symbols
+                                                      'constructor 'quasiquote 'write 'trad-write 'print))
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-settings-printing-style instead.
+                                                     (drracket:language:simple-settings?
+                                                      . -> .
+drscheme:language:simple-settings-fraction-style  :   (symbols 'mixed-fraction
+                                                               'mixed-fraction-e
+                                                               'repeating-decimal
+                                                               'repeating-decimal-e))
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-settings-fraction-style instead.
+                                                   (drracket:language:simple-settings?
+drscheme:language:simple-settings-show-sharing  :   . -> .
+                                                    boolean?)
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-settings-show-sharing instead.
+                                                      (drracket:language:simple-settings?
+drscheme:language:simple-settings-insert-newlines  :   . -> .
+                                                       boolean?)
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-settings-insert-newlines instead.
+                                                  (drracket:language:simple-settings?
+drscheme:language:simple-settings-annotations  :   . -> .
+                                                   (symbols 'none 'debug 'debug/
+                                                  profile 'test-coverage))
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-settings-annotations instead.
+drscheme:language:simple-settings? : (any/c . -> . boolean?)
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-settings? instead.
+                                      (-> boolean?
+                                          (symbols 'constructor 'quasiquote 'write 'trad-write 'print)
+                                          (symbols
+drscheme:language:simple-settings  :   'mixed-fraction 'mixed-fraction-e 'repeating-decimal 'repeating-decimal-e)
+                                          boolean?
+                                          boolean?
+                                          (symbols 'none 'debug 'debug/profile 'test-coverage)
+                                          drracket:language:simple-settings?)
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-settings instead.
+                                           (-> boolean?
+                                               (symbols 'constructor 'quasiquote 'write 'trad-write 'print)
+                                               (symbols
+drscheme:language:make-simple-settings  :   'mixed-fraction 'mixed-fraction-e 'repeating-decimal 'repeating-decimal-e)
+                                               boolean?
+                                               boolean?
+                                               (symbols 'none 'debug 'debug/profile 'test-coverage)
+                                               drracket:language:simple-settings?)
+This is provided for backwards compatibility; new code should use
+drracket:language:make-simple-settings instead.
+drscheme:language:simple-settings->vector : (drracket:language:simple-settings?
+ . -> . vector?)
+This is provided for backwards compatibility; new code should use
+drracket:language:simple-settings->vector instead.
+                            (string?
+                             (or/c false/c (is-a?/c mode:surrogate-text<%>))
+                             ((is-a?/c drracket:rep:text%) number? . -> . 
+drscheme:modes:add-mode  :  boolean?)
+                             ((or/c false/c (listof string?)) . -> . boolean?)
+                             . -> .
+                             drracket:modes:mode?)
+This is provided for backwards compatibility; new code should use
+drracket:modes:add-mode instead.
+drscheme:modes:mode? : (any/c . -> . boolean?)
+This is provided for backwards compatibility; new code should use
+drracket:modes:mode? instead.
+drscheme:modes:get-modes : (-> (listof drracket:modes:mode?))
+This is provided for backwards compatibility; new code should use
+drracket:modes:get-modes instead.
+drscheme:modes:mode-name : (drracket:modes:mode? . -> . string?)
+This is provided for backwards compatibility; new code should use
+drracket:modes:mode-name instead.
+drscheme:modes:mode-surrogate : (drracket:modes:mode? . -> . (or/c false/c (
+is-a?/c mode:surrogate-text<%>)))
+This is provided for backwards compatibility; new code should use
+drracket:modes:mode-surrogate instead.
+drscheme:modes:mode-repl-submit : (drracket:modes:mode? . -> . any)
+This is provided for backwards compatibility; new code should use
+drracket:modes:mode-repl-submit instead.
+drscheme:modes:mode-matches-language : (drracket:modes:mode? . -> . ((or/c 
+false/c (listof string?)) . -> . boolean?))
+This is provided for backwards compatibility; new code should use
+drracket:modes:mode-matches-language instead.
+                                                              (-> (-> (is-a?/c 
+                                                              top-level-window<%>)
+                                                                      (is-a?/c 
+drscheme:module-language-tools:add-opt-out-toolbar-button  :  area-container<%>)
+                                                                      (is-a?/c 
+                                                              switchable-button%))
+                                                                  symbol?
+                                                                  void?)
+This is provided for backwards compatibility; new code should use
+drracket:module-language-tools:add-opt-out-toolbar-button instead.
+drscheme:module-language:add-module-language : (-> any)
+This is provided for backwards compatibility; new code should use
+drracket:module-language:add-module-language instead.
+drscheme:module-language:module-language-put-file-mixin : (-> (implementation?/
+c text:basic<%>) (implementation?/c text:basic<%>))
+This is provided for backwards compatibility; new code should use
+drracket:module-language:module-language-put-file-mixin instead.
+drscheme:rep:get-welcome-delta : (-> (is-a?/c style-delta%))
+This is provided for backwards compatibility; new code should use
+drracket:rep:get-welcome-delta instead.
+drscheme:rep:get-dark-green-delta : (-> (is-a?/c style-delta%))
+This is provided for backwards compatibility; new code should use
+drracket:rep:get-dark-green-delta instead.
+drscheme:rep:get-drs-bindings-keymap : (-> (is-a?/c keymap%))
+This is provided for backwards compatibility; new code should use
+drracket:rep:get-drs-bindings-keymap instead.
+drscheme:rep:current-rep : (-> (or/c false/c (is-a?/c drracket:rep:text%)))
+This is provided for backwards compatibility; new code should use
+drracket:rep:current-rep instead.
+drscheme:rep:current-value-port : (-> (or/c false/c port?))
+This is provided for backwards compatibility; new code should use
+drracket:rep:current-value-port instead.
+drscheme:unit:get-program-editor-mixin : (-> ((subclass?/c text%) . -> . (
+subclass?/c text%)))
+This is provided for backwards compatibility; new code should use
+drracket:unit:get-program-editor-mixin instead.
+drscheme:unit:add-to-program-editor-mixin : (((subclass?/c text%) . -> . (
+subclass?/c text%)) . -> . void?)
+This is provided for backwards compatibility; new code should use
+drracket:unit:add-to-program-editor-mixin instead.
+                                       (case->
+drscheme:unit:open-drscheme-window  :   (-> (is-a?/c drracket:unit:frame%))
+                                        ((or/c string? false/c) . -> . (is-a?/c
+                                        drracket:unit:frame%)))
+This is provided for backwards compatibility; new code should use
+drracket:unit:open-drscheme-window instead.
+drscheme:unit:add-search-help-desk-menu-item : (->* ((is-a?/c text%) (is-a?/c 
+menu-item-container<%>) exact-nonnegative-integer?) ((-> any)) void?)
+This is provided for backwards compatibility; new code should use
+drracket:unit:add-search-help-desk-menu-item instead.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

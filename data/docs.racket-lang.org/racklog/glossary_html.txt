@@ -1,0 +1,436 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+► 11  Glossary of Racklog Primitives
+ 11.1  Racket Predicates
+ 11.2  User Interface
+ 11.3  Relations
+ 11.4  Racklog Variables
+ 11.5  Cut
+ 11.6  Racklog Operators
+ 11.7  Unification
+ 11.8  Numeric Predicates
+ 11.9  List Predicates
+11.10  Set Predicates
+11.11  Racklog Predicates
+11.12  Racklog Variable Manipulation
+On this page:
+11.1 Racket Predicates
+logic-var?
+atomic-struct?
+atom?
+compound-struct?
+compound?
+unifiable?
+answer-value?
+answer?
+goal/ c
+11.2 User Interface
+%which
+%more
+%find-all
+11.3 Relations
+%rel
+%empty-rel
+%assert!
+%assert-after!
+11.4 Racklog Variables
+_
+%let
+11.5 Cut
+%cut-delimiter
+!
+11.6 Racklog Operators
+%fail
+%true
+%repeat
+%and
+%or
+%not
+%if-then-else
+11.7 Unification
+%=
+%/ =
+%==
+%/ ==
+%is
+use-occurs-check?
+11.8 Numeric Predicates
+%<
+%<=
+%=/ =
+%=: =
+%>
+%>=
+11.9 List Predicates
+%append
+%member
+11.10 Set Predicates
+%set-of
+%set-of-1
+%bag-of
+%bag-of-1
+%free-vars
+11.11 Racklog Predicates
+%compound
+%constant
+%var
+%nonvar
+11.12 Racklog Variable Manipulation
+%freeze
+%melt
+%melt-new
+%copy
+[...search manuals...]
+  top← prev  up  next → 
+
+11 Glossary of Racklog Primitives
+
+11.1 Racket Predicates
+
+(logic-var? x) → boolean?
+  x : any/c
+Identifies a logic variable.
+
+(atomic-struct? x) → boolean?
+  x : any/c
+Identifies structures that the (current-inspector) cannot inspect.
+
+(atom? x) → boolean?
+  x : any/c
+Identifies atomic values that may appear in Racklog programs. Equivalent to the
+contract (or/c boolean? number? string? bytes? char? symbol? regexp? pregexp?
+byte-regexp? byte-pregexp? keyword? null? procedure? void? set? atomic-struct?
+).
+
+(compound-struct? x) → boolean?
+  x : any/c
+Identifies structures that the (current-inspector) can inspect.
+
+(compound? x) → boolean?
+  x : any/c
+Identifies compound values that may appear in Racklog programs. Equivalent to
+the contract (or/c pair? vector? mpair? box? hash? compound-struct?).
+
+(unifiable? x) → boolean?
+  x : any/c
+Identifies values that may appear in Racklog programs. Essentialy either an
+atom?, logic-var?, or compound? that contains unifiable?s.
+
+(answer-value? x) → boolean?
+  x : any/c
+Identifies values that may appear in answer?. Essentially unifiable?s that do
+not contain logic-var?s.
+
+(answer? x) → boolean?
+  x : any/c
+Identifies answers returned by %more and %which. Equivalent to the contract (or
+/c false/c (listof (cons/c symbol? answer-value?))).
+
+goal/c : contract?
+A contract for goals.
+
+11.2 User Interface
+
+(%which (V ...) G ...)
+ 
+       V   :   identifier?
+       G   :   goal/c
+
+Returns an answer? of the variables V, ..., that satisfies all of G, ... If G,
+..., cannot be satisfied, returns #f. Calling the thunk %more produces more
+instantiations, if available.
+
+(%more) → answer?
+The thunk %more produces more instantiations of the variables in the most
+recent %which-form that satisfy the goals in that %which-form. If no more
+solutions can be found, %more returns #f.
+
+(%find-all (V ...) G ...)
+ 
+       V   :   identifier?
+       G   :   goal/c
+
+Like (list (%which (V ...) G ...) (%more) ...) with as many (%more)s as there
+are answers. (This will not terminate if there are an infinite number of
+answers.)
+
+11.3 Relations
+
+(%rel (V ...) clause ...)
+ 
+clause   =   [(E ...) G ...]
+ 
+       V   :   identifier?
+       E   :   expression?
+       G   :   goal/c
+
+Returns a predicate function. Each clause C signifies that the goal created by
+applying the predicate object to anything that matches (E ...) is deemed to
+succeed if all the goals G, ..., can, in their turn, be shown to succeed.
+
+(%empty-rel E ...) → goal/c
+  E : unifiable?
+The goal (%empty-rel E ...) always fails. The value %empty-rel is used as a
+starting value for predicates that can later be enhanced with %assert! and
+%assert-after!.
+
+(%assert! Pname (V ...) clause ...)
+ 
+       Pname   :   identifier?
+       V   :   identifier?
+
+Adds the clauses clauses, ..., to the end of the predicate that is the value of
+the Racket variable Pname. The variables V, ..., are local logic variables for
+clause, ....
+
+(%assert-after! Pname (V ...) clause ...)
+ 
+       Pname   :   identifier?
+       V   :   identifier?
+
+Like %assert!, but adds the new clauses to the front of the existing predicate.
+
+11.4 Racklog Variables
+
+(_) → logic-var?
+A thunk that produces a new logic variable. Can be used in situations where we
+want a logic variable but don’t want to name it. (%let, in contrast, introduces
+new lexical names for the logic variables it creates.)
+
+(%let (V ...) expr ...)
+ 
+   V   :   identifier?
+Introduces V, ..., as lexically scoped logic variables to be used in expr, ...
+
+11.5 Cut
+
+(%cut-delimiter . any)
+Introduces a cut point. See The Cut (!).
+
+!
+The cut goal, see The Cut (!).
+
+May only be used syntactically inside %cut-delimiter or %rel.
+
+11.6 Racklog Operators
+
+%fail : goal/c
+The goal %fail always fails.
+
+%true : goal/c
+The goal %true succeeds. Fails on retry.
+
+(%repeat) → goal/c
+The goal (%repeat) always succeeds (even on retries). Useful for failure-driven
+loops.
+
+(%and G ...)
+ 
+   G   :   goal/c
+The goal (%and G ...) succeeds if all the goals G, ..., succeed.
+
+(%or G ...)
+ 
+   G   :   goal/c
+The goal (%or G ...) succeeds if one of G, ..., tried in that order, succeeds.
+
+(%not G) → goal/c
+  G : goal/c
+The goal (%not G) succeeds if G fails.
+
+(%if-then-else G1 G2 G3) → goal/c
+  G1 : goal/c
+  G2 : goal/c
+  G3 : goal/c
+The goal (%if-then-else G1 G2 G3) tries G1 first: if it succeeds, tries G2; if
+not, tries G3.
+
+11.7 Unification
+
+(%= E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+The goal (%= E1 E2) succeeds if E1 can be unified with E2. Any resulting
+bindings for logic variables are kept.
+
+(%/= E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+%/= is the negation of %=. The goal (%/= E1 E2) succeeds if E1 can not be
+unified with E2.
+
+(%== E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+The goal (%== E1 E2) succeeds if E1 is identical to E2. They should be
+structurally equal. If containing logic variables, they should have the same
+variables in the same position. Unlike a %=-call, this goal will not bind any
+logic variables.
+
+(%/== E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+%/== is the negation of %==. The goal (%/== E1 E2) succeeds if E1 and E2 are
+not identical.
+
+(%is E1 E2)
+The goal (%is E1 E2) unifies with E1 the result of evaluating E2 as a Racket
+expression. E2 may contain logic variables, which are dereferenced
+automatically. Fails if E2 contains unbound logic variables.
+
+(use-occurs-check?) → boolean?
+(use-occurs-check? on?) → void?
+  on? : boolean?
+If this is false (the default), Racklog’s unification will not use the occurs
+check. If it is true, the occurs check is enabled.
+
+11.8 Numeric Predicates
+
+(%< E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+The goal (%< E1 E2) succeeds if E1 and E2 are bound to numbers and E1 is less
+than E2.
+
+(%<= E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+The goal (%<= E1 E2) succeeds if E1 and E2 are bound to numbers and E1 is less
+than or equal to E2.
+
+(%=/= E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+The goal (%=/= E1 E2) succeeds if E1 and E2 are bound to numbers and E1 is not
+equal to E2.
+
+(%=:= E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+The goal (%=:= E1 E2) succeeds if E1 and E2 are bound to numbers and E1 is
+equal to E2.
+
+(%> E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+The goal (%> E1 E2) succeeds if E1 and E2 are bound to numbers and E1 is
+greater than E2.
+
+(%>= E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+The goal (%>= E1 E2) succeeds if E1 and E2 are bound to numbers and E1 is
+greater than or equal to E2.
+
+11.9 List Predicates
+
+(%append E1 E2 E3) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+  E3 : unifiable?
+The goal (%append E1 E2 E3) succeeds if E3 is unifiable with the list obtained
+by appending E1 and E2.
+
+(%member E1 E2) → goal/c
+  E1 : unifiable?
+  E2 : unifiable?
+The goal (%member E1 E2) succeeds if E1 is a member of the list in E2.
+
+11.10 Set Predicates
+
+(%set-of E1 G E2) → goal/c
+  E1 : unifiable?
+  G : goal/c
+  E2 : unifiable?
+The goal (%set-of E1 G E2) unifies with E2 the set of all the instantiations of
+E1 for which goal G succeeds.
+
+(%set-of-1 E1 G E2) → goal/c
+  E1 : unifiable?
+  G : goal/c
+  E2 : unifiable?
+Similar to %set-of, but fails if the set is empty.
+
+(%bag-of E1 G E2) → goal/c
+  E1 : unifiable?
+  G : goal/c
+  E2 : unifiable?
+The goal (%bag-of E1 G E2) unifies with E2 the bag (multiset) of all the
+instantiations of E1 for which goal G succeeds.
+
+(%bag-of-1 E1 G E2) → goal/c
+  E1 : unifiable?
+  G : goal/c
+  E2 : unifiable?
+Similar to %bag-of, but fails if the bag is empty.
+
+(%free-vars (V ...) G)
+ 
+       V   :   identifier?
+       G   :   goal/c
+
+Identifies the occurrences of the variables V, ..., in goal G as free. It is
+used to avoid existential quantification in calls to set predicates (%bag-of,
+%set-of, &c.).
+
+11.11 Racklog Predicates
+
+(%compound E) → goal/c
+  E : unifiable?
+The goal (%compound E) succeeds if E is a compound value.
+
+(%constant E) → goal/c
+  E : unifiable?
+The goal (%constant E) succeeds if E is an atomic value.
+
+(%var E) → goal/c
+  E : unifiable?
+The goal (%var E) succeeds if E is not completely instantiated, ie, it has at
+least one unbound variable in it.
+
+(%nonvar E) → goal/c
+  E : unifiable?
+%nonvar is the negation of %var. The goal (%nonvar E) succeeds if E is
+completely instantiated, ie, it has no unbound variable in it.
+
+11.12 Racklog Variable Manipulation
+
+(%freeze S F) → goal/c
+  S : unifiable?
+  F : unifiable?
+The goal (%freeze S F) unifies with F a new frozen version of the structure in
+S. Freezing implies that all the unbound variables are preserved. F can
+henceforth be used as bound object with no fear of its variables getting bound
+by unification.
+
+(%melt F S) → goal/c
+  F : unifiable?
+  S : unifiable?
+The goal (%melt F S) unifies S with the thawed (original) form of the frozen
+structure in F.
+
+(%melt-new F S) → goal/c
+  F : unifiable?
+  S : unifiable?
+The goal (%melt-new F S) unifies S with a thawed copy of the frozen structure
+in F. This means new logic variables are used for unbound logic variables in F.
+
+(%copy F S) → goal/c
+  F : unifiable?
+  S : unifiable?
+The goal (%copy F S) unifies with S a copy of the frozen structure in F.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,81 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+▼ 4.3  Manual Forms
+ 4.3.1  Typesetting Code
+ 4.3.2  Documenting Modules
+ 4.3.3  Documenting Forms, Functions, Structure Types, and Values
+ 4.3.4  Documenting Classes and Interfaces
+ 4.3.5  Documenting Signatures
+ 4.3.6  Various String Forms
+ 4.3.7  Links
+ 4.3.8  Indexing
+ 4.3.9  Images
+4.3.10  Bibliography
+4.3.11  Miscellaneous
+4.3.12  Index-Entry Descriptions
+On this page:
+indexed-racket
+indexed-scheme
+idefterm
+pidefterm
+indexed-file
+indexed-envvar
+[...search manuals...]
+  top← prev  up  next → 
+
+4.3.8 Indexing
+
+See also Indexing.
+
+(indexed-racket datum ...)
+A combination of racket and as-index, with the following special cases when a
+single datum is provided:
+
+  • If datum is a quote form, then the quote is removed from the key (so that
+    it’s sorted using its unquoted form).
+
+  • If datum is a string, then quotes are removed from the key (so that it’s
+    sorted using the string content).
+
+(indexed-scheme datum ...)
+Compatibility alias for indexed-racket.
+
+(idefterm pre-content ...) → element?
+  pre-content : pre-content?
+Combines as-index and defterm. The content normally should be plural, rather
+than singular. Consider using deftech, instead, which always indexes.
+
+(pidefterm pre-content ...) → element?
+  pre-content : pre-content?
+Like idefterm, but plural: adds an “s” on the end of the content for the index
+entry. Consider using deftech, instead.
+
+(indexed-file pre-content ...) → element?
+  pre-content : pre-content?
+A combination of file and as-index, but where the sort key for the index iterm
+does not include quotes.
+
+(indexed-envvar pre-content ...) → element?
+  pre-content : pre-content?
+A combination of envvar and as-index.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

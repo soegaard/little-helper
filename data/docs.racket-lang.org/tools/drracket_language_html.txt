@@ -1,0 +1,1368 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drracket: language: simple-module-based-language<%>
+get-language-numbers
+get-language-position
+get-module
+get-one-line-summary
+get-reader
+drracket: language: simple-module-based-language%
+get-language-numbers
+get-language-position
+get-module
+get-one-line-summary
+get-reader
+drracket: language: simple-module-based-language->module-based-language-mixin
+config-panel
+default-settings
+default-settings?
+get-init-code
+get-transformer-module
+marshall-settings
+on-execute
+render-value
+render-value/ format
+unmarshall-settings
+use-mred-launcher
+drracket: language: module-based-language<%>
+config-panel
+default-settings
+default-settings?
+get-init-code
+get-language-numbers
+get-language-position
+get-module
+get-one-line-summary
+get-reader
+get-transformer-module
+marshall-settings
+on-execute
+render-value
+render-value/ format
+unmarshall-settings
+use-mred-launcher
+use-namespace-require/ copy?
+drracket: language: module-based-language->language-mixin
+front-end/ complete-program
+front-end/ interaction
+get-language-name
+on-execute
+drracket: language: language<%>
+capability-value
+config-panel
+create-executable
+default-settings
+default-settings?
+first-opened
+front-end/ complete-program
+front-end/ finished-complete-program
+front-end/ interaction
+get-comment-character
+get-language-name
+get-language-numbers
+get-language-position
+get-language-url
+get-metadata
+get-metadata-lines
+get-one-line-summary
+get-reader-module
+get-style-delta
+extra-repl-information
+marshall-settings
+metadata->settings
+on-execute
+order-manuals
+render-value
+render-value/ format
+unmarshall-settings
+drracket: language: object/ c
+drracket: language: register-capability
+drracket: language: capability-registered?
+drracket: language: get-capability-default
+drracket: language: get-capability-contract
+drracket: language: add-snip-value
+drracket: language: extend-language-interface
+drracket: language: get-default-mixin
+drracket: language: get-language-extensions
+drracket: language: put-executable
+drracket: language: create-executable-gui
+drracket: language: create-module-based-stand-alone-executable
+drracket: language: create-module-based-distribution
+drracket: language: create-distribution-for-executable
+drracket: language: create-module-based-launcher
+drracket: language: simple-module-based-language-convert-value
+drracket: language: setup-printing-parameters
+drracket: language: text/ pos-text
+drracket: language: text/ pos-start
+drracket: language: text/ pos-end
+drracket: language: text/ pos?
+drracket: language: text/ pos
+drracket: language: make-text/ pos
+drracket: language: simple-settings-case-sensitive
+drracket: language: simple-settings-printing-style
+drracket: language: simple-settings-fraction-style
+drracket: language: simple-settings-show-sharing
+drracket: language: simple-settings-insert-newlines
+drracket: language: simple-settings-annotations
+drracket: language: simple-settings?
+drracket: language: simple-settings
+drracket: language: make-simple-settings
+drracket: language: simple-settings->vector
+[...search manuals...]
+  top← prev  up  next → 
+
+11 drracket:language
+
+drracket:language:simple-module-based-language<%> : interface?
+This interface represents the bare essentials when defining a module-based
+language. Use the drracket:language:simple-module-based-language->
+module-based-language-mixin mixin to construct an implementation of
+drracket:language:module-based-language<%> from an implementation of this
+interface.
+The class drracket:language:simple-module-based-language% provides an
+implementation of this interface.
+
+
+    (send a-drracket:language:simple-module-based-language get-language-numbers)
+     → (cons number (listof number))
+    Returns a list of numbers, whose length must be the same as the result of
+    get-language-position. Each number indicates the sorted order of the
+    language positions in the language dialog.
+
+    (send a-drracket:language:simple-module-based-language get-language-position)
+     → (cons string (listof string))
+    This method is the same as get-language-position.
+
+    (send a-drracket:language:simple-module-based-language get-module)
+     → s-expression
+    This method specifies the module that defines the language.
+
+    This method replaces front-end/complete-program and front-end/interaction.
+
+    The result is expected to be the module (its initial require) except as
+    value, ie quoted.
+
+    (send a-drracket:language:simple-module-based-language get-one-line-summary)
+     → string?
+    The result of this method is shown in the language dialog when the user
+    selects this language.
+
+    (send a-drracket:language:simple-module-based-language get-reader)
+     → (->* () (any/c input-port?) (or/c syntax? eof-object?))
+    This method must return a procedure that is used to read syntax from a port
+    in the same manner as read-syntax. It is used as the reader for this
+    language.
+
+drracket:language:simple-module-based-language% : class?
+  superclass: object%
+
+  extends:  drracket:language:simple-module-based-language<%>
+
+
+    (make-object drracket:language:simple-module-based-language%  
+            module                                                
+            language-position                                     
+        [   language-numbers                                      
+            one-line-summary                                      
+            documentation-reference]                              
+            reader                                                
+            language-id)                                          
+     → (is-a?/c drracket:language:simple-module-based-language%)
+      module : s-expression
+      language-position : (cons string (listof string))
+       language-numbers   :   (cons number (listof number))
+                          =   (map (lambda (x) 0) language-position)
+      one-line-summary : string? = ""
+      documentation-reference : (or/c false/c something-else) = #f
+      reader : (->* () (any/c input-port?) (or/c syntax? eof-object?))
+      language-id : string?
+    The init args are used as the results of the get-module and
+    get-language-position methods.
+
+    (send a-drracket:language:simple-module-based-language get-language-numbers)
+     → (cons number (listof number))
+    Overrides get-language-numbers in
+    drracket:language:simple-module-based-language<%>.
+    returns the corresponding init arg.
+
+    (send a-drracket:language:simple-module-based-language get-language-position)
+     → s-expression
+    Overrides get-language-position in
+    drracket:language:simple-module-based-language<%>.
+    returns the corresponding init arg.
+
+    (send a-drracket:language:simple-module-based-language get-module)
+     → (cons string (listof string))
+    Overrides get-module in drracket:language:simple-module-based-language<%>.
+    returns the corresponding init arg.
+
+    (send a-drracket:language:simple-module-based-language get-one-line-summary)
+     → string?
+    Overrides get-one-line-summary in
+    drracket:language:simple-module-based-language<%>.
+    returns the corresponding initialization argument.
+
+    (send a-drracket:language:simple-module-based-language get-reader)
+     → (->* () (any/c input-port?) (or/c syntax? eof-object?))
+    Overrides get-reader in drracket:language:simple-module-based-language<%>.
+    returns the corresponding init arg.
+
+drracket:language:simple-module-based-language->module-based-language-mixin : (
+class? . -> . class?)
+  argument extends/            drracket:language:simple-module-based-language
+implements:                    <%>
+  result implements:  drracket:language:module-based-language<%>
+
+This mixin uses a struct definition for its settings:
+
+    (define-struct drracket:language:simple-settings
+      (case-sensitive  ; boolean?
+       printing-style  ; (symbols 'constructor 'quasiquote 'write 'print)
+       fraction-style  ; (symbols 'mixed-fraction 'mixed-fraction-e
+                       ;  'repeating-decimal 'repeating-decimal-e)
+       show-sharing    ; boolean?
+       insert-newlines ; boolean?
+       annotations))   ; (symbols 'none 'debug 'debug/profile
+                       ;  'test-coverage)
+
+The settings in this structure reflect the settings show in the language
+configuration dialog for languages constructed with this mixin. The first
+controls the input for the language. The rest specify printing controls for the
+language. The style 'print is the default style, as normally used in the Racket
+REPL. The sharing field determines if cycles and sharing in values are
+displayed when the value is rendered. The insert newlines field determines if
+values in the repl are formatted with write style-line printouts, or with
+pretty-print multi-line printouts.
+
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language config-panel)
+     → (case-> (-> settings) (settings -> void))
+    Overrides <method not found>.
+    Constructs a configuration panel that lets the user configure all of the
+    settings for this language.
+
+    See also drracket:language:simple-module-based-language->
+    module-based-language-mixin for details of the simple-settings structure,
+    this mixin’s settings type.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language default-settings)
+     → settings
+    Overrides <method not found>.
+    The defaults for the settings are
+      □ case-sensitive is #f
+
+      □ printing-style is 'write
+
+      □ show-sharing is #f
+
+      □ insert-newlines is #t
+
+    See also drracket:language:simple-module-based-language->
+    module-based-language-mixin for details of the simple-settings structure,
+    this mixins settings type.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language default-settings?)
+     → boolean?
+    Overrides <method not found>.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language get-init-code settings)
+     → sexpression
+      settings : settings
+    Overrides <method not found>.
+    Creates an s-expression of a module that sets the current-inspector,
+    read-case-sensitive, and error-value->string parameters. Additionally, it
+    may load errortrace, if debugging is enabled.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language get-transformer-module)
+     → s-expression
+    Overrides <method not found>.
+    Returns 'mzscheme.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language marshall-settings)
+     → writable
+    Overrides <method not found>.
+    Constructs a vector from the structure.
+
+    See also drracket:language:simple-module-based-language->
+    module-based-language-mixin for details of the simple-settings structure,
+    this mixins settings type.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language on-execute)
+     → void?
+    Overrides <method not found>.
+    Sets the case sensitivity of the language.
+
+    Sets the structure inspector to a new inspector, saving the original
+    inspector for use during printing.
+
+    Sets the global-port-print-handler to print based on the settings
+    structure, but without any newlines.
+
+    If debugging is enabled, it sets the current-eval handler to one that
+    annotates each evaluated program with debugging annotations. Additionally,
+    it sets the error-display-handler to show the debugging annotations when an
+    error is raised.
+
+    See also drracket:language:simple-module-based-language->
+    module-based-language-mixin for details of the simple-settings structure,
+    this mixin’s settings type.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language render-value)
+     → void?
+    Overrides <method not found>.
+    Translates the value to a string, based on the settings.
+
+    Restores a super struct inspector to render structs properly. (See also
+    on-execute)
+
+    See also drracket:language:simple-module-based-language->
+    module-based-language-mixin for details of the simple-settings structure,
+    this mixin’s settings type.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language render-value/format)
+     → void?
+    Overrides <method not found>.
+    Translates the value to a string, based on the settings.
+
+    Restores a super struct inspector to render structs properly. (See also
+    on-execute.)
+
+    See also drracket:language:simple-module-based-language->
+    module-based-language-mixin for details of the simple-settings structure,
+    this mixin’s settings type.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language unmarshall-settings)
+     → (or/c false/c settings)
+    Overrides <method not found>.
+    Builds a settings structure from the vector, or #f if the vector doesn’t
+    match the types of the structure.
+
+    See also drracket:language:simple-module-based-language->
+    module-based-language-mixin for details of the simple-settings structure,
+    this mixin’s settings type.
+
+    (send a-drracket:language:simple-module-based-language->
+    module-based-language use-mred-launcher)
+     → boolean?
+    Overrides <method not found>.
+    Returns #t.
+
+drracket:language:module-based-language<%> : interface?
+This interface is for languages that can be implemented with Racket modules.
+Use the drracket:language:module-based-language->language-mixin mixin to
+construct an implementation of drracket:language:language<%> from an
+implementation of this interface.
+
+
+    (send a-drracket:language:module-based-language config-panel parent)
+     → (case-> (-> settings) (settings -> void))
+      parent : (is-a?/c panel%)
+    This method is the same as config-panel.
+
+    (send a-drracket:language:module-based-language default-settings)
+     → settings
+    This method is the same as default-settings.
+
+    (send a-drracket:language:module-based-language default-settings? settings)
+     → boolean?
+      settings : settings
+    This method is the same as default-settings?.
+
+    (send a-drracket:language:module-based-language get-init-code settings)
+     → sexp
+      settings : settings
+    Returns a module in sexpression form that is used for creating executables.
+    The module must provide a thunk, called init-code.
+
+    When either a stand-alone executable or a launcher is created, the module
+    is required, and init-code is invoked. This procedure is expected to set up
+    the environment, based on the settings.
+
+    (send a-drracket:language:module-based-language get-language-numbers)
+     → (cons number (listof number))
+    This method is the same as get-language-numbers.
+
+    (send a-drracket:language:module-based-language get-language-position)
+     → (cons string (listof string))
+    This method is the same as get-language-position.
+
+    (send a-drracket:language:module-based-language get-module)
+     → s-expression
+    This method specifies the module that defines the language. It is used to
+    initialize the user’s namespace.
+
+    The result is expected to be the module (its initial require) except as
+    value, ie quoted.
+
+    See also get-transformer-module.
+
+    (send a-drracket:language:module-based-language get-one-line-summary)
+     → string?
+    The result of this method is shown in the language dialog when the user
+    selects this language.
+
+    (send a-drracket:language:module-based-language get-reader)
+     → (->* () (any/c input-port?) (or/c syntax? eof-object?))
+    This method must return a procedure that is used to read syntax from a port
+    in the same manner as read-syntax. It is used as the reader for this
+    language.
+
+    (send a-drracket:language:module-based-language get-transformer-module)
+     → (or/c quoted-module-path #f)
+    This method specifies the module that defines the transformation language.
+    It is used to initialize the transformer portion of the user’s namespace.
+
+    The result is expected to be the module (its initial require) except as
+    value, i.e., quoted or #f.
+
+    If the result is #f, no module is required into the transformer part of the
+    namespace.
+
+    See also get-module.
+
+    (send a-drracket:language:module-based-language marshall-settings settings)
+     → writable
+      settings : settings
+    This method is the same as marshall-settings.
+
+    (send a-drracket:language:module-based-language on-execute  
+          settings                                              
+          run-on-user-thread)                                   
+     → void?
+      settings : settings
+      run-on-user-thread : ((-> void) -> void)
+    This method is the same as on-execute.
+
+    (send a-drracket:language:module-based-language render-value  
+                  value                                           
+                  settings                                        
+                  port)                                           
+     → void?
+      value : TST
+      settings : settings
+      port : port
+    This method is the same as render-value.
+
+    (send a-drracket:language:module-based-language render-value/format  
+                  value                                                  
+                  settings                                               
+                  port                                                   
+                  width)                                                 
+     → void?
+      value : TST
+      settings : settings
+      port : port
+      width : (or/c number (symbols 'infinity))
+    This method is the same as render-value/format.
+
+    (send a-drracket:language:module-based-language unmarshall-settings input)
+     → (or/c settings false/c)
+      input : writable
+    This method is the same as unmarshall-settings.
+
+    (send a-drracket:language:module-based-language use-mred-launcher)
+     → boolean?
+    This method is called when an executable is created to determine if the
+    executable should use the GRacket or the Racket binary.
+
+    (send a-drracket:language:module-based-language use-namespace-require/copy?
+    )
+     → boolean?
+    Specification: The result of this method controls how the module is
+    attached to the user’s namespace. If the method returns #t, the Racket
+    primitive namespace-require/copy is used and if it returns #f,
+    namespace-require is used. Default implementation: Returns #f by default.
+
+drracket:language:module-based-language->language-mixin : (class? . -> . class?
+)
+  argument extends/implements:  drracket:language:module-based-language<%>
+  result implements:  drracket:language:language<%>
+
+
+    (send a-drracket:language:module-based-language->language front-end/
+    complete-program)
+     → (-> (or/c sexp/c syntax? eof-object?))
+    Overrides <method not found>.
+    Reads a syntax object, from input. Does not use settings.
+
+    For languages that use these mixins, there is no difference between this
+    method and front-end/interaction.
+
+    (send a-drracket:language:module-based-language->language front-end/
+    interaction)
+     → (-> (or/c sexp/c syntax? eof-object?))
+    Overrides <method not found>.
+    Reads a syntax object, from input. Does not use settings.
+
+    For languages that use these mixins, there is no difference between this
+    method and front-end/complete-program.
+
+    (send a-drracket:language:module-based-language->language get-language-name
+    )
+     → string?
+    Overrides <method not found>.
+    Returns the last element of the list returned by get-language-position.
+
+    (send a-drracket:language:module-based-language->language on-execute)
+     → void?
+    Overrides on-execute in drracket:language:module-based-language<%>.
+    Calls the super method.
+
+    Uses namespace-require to install the result of get-module and Uses
+    namespace-transformer-require to install the result of
+    get-transformer-module into the user’s namespace.
+
+drracket:language:language<%> : interface?
+Implementations of this interface are languages that DrRacket supports.
+See Adding Languages to DrRacket for an overview of adding languages to
+DrRacket.
+
+
+    (send a-drracket:language:language capability-value key) → any
+      key : symbol
+    Specification: Returns the language-specific value for some capability. See
+    also drracket:language:register-capability. Default implementation: By
+    default, returns the value from: drracket:language:get-capability-default.
+
+    (send a-drracket:language:language config-panel parent)
+     → (case-> (-> settings) (settings -> void))
+      parent : (is-a?/c panel%)
+    This method used by the language configuration dialog to construct the
+    “details” panel for this language. It accepts a parent panel and returns a
+    get/set function that either updates the GUI to the argument or returns the
+    settings for the current GUI.
+
+    (send a-drracket:language:language create-executable  
+          settings                                        
+          parent                                          
+          program-filename)                               
+     → void?
+      settings : settings
+      parent : (or/c (is-a?/c dialog%) (is-a?/c frame%))
+      program-filename : string?
+    This method creates an executable in the given language. The
+    program-filename is the name of the program to store in the executable and
+    executable-filename is the name of a file where the executable goes.
+
+    See also drracket:language:create-module-based-stand-alone-executable and
+    drracket:language:create-module-based-launcher.
+
+    (send a-drracket:language:language default-settings)
+     → settings
+    Specifies the default settings for this language.
+
+    (send a-drracket:language:language default-settings? settings)
+     → boolean?
+      settings : settings
+    Return #t if the input settings matches the default settings obtained via
+    default-settings.
+
+    (send a-drracket:language:language first-opened settings)
+     → void?
+      settings : settings
+    This method is called after the language is initialized, but no program has
+    yet been run. It is called from the user’s eventspace’s main thread.
+
+    See also initialize-console.
+
+    Calling this method should not escape. DrRacket calls this method in a
+    parameterize where the error-escape-handler is set to an escaping
+    continuation that continues initializing the interactions window. Thus,
+    raising an exception will report the error in the user’s interactions
+    window as if this were a bug in the user’s program. Escaping in any other
+    way, however, can cause DrRacket to fail to start up.
+
+    Also, IO system will deadlock if the first-opened method does IO on the
+    user’s IO ports, so the calling context of first-opened sets the
+    current-output-port and current-error-port to ports that just collect all
+    of the IO that happened and then replay it later in the initialization of
+    the user’s program.
+
+    Contrary to the method contract spec, DrRacket will also invoke this method
+    if it has zero arguments, passing nothing; the zero argument version is for
+    backwards compatibility and is not recommended.
+
+    (send a-drracket:language:language front-end/complete-program  
+                port                                               
+                settings)                                          
+     → (-> (or/c sexp/c syntax? eof-object?))
+      port : port
+      settings : settings
+    front-end/complete-program method reads and parses a program in the
+    language. The port argument contains all of the data to be read (until eof)
+    and the name of the port (obtained via object-name) is a value representing
+    the source of the program (typically an editor, but may also be a string
+    naming a file or some other value). The settings argument is the current
+    settings for the language.
+
+    The front-end/complete-program method is expected to return a thunk that is
+    called repeatedly to get all of the expressions in the program. When all
+    expressions have been read, the thunk is expected to return eof.
+
+    This method is only called for programs in the definitions window. Notably,
+    it is not called for programs that are loaded or evaled. See current-load
+    and current-eval for those.
+
+    This method is expected to raise an appropriate exception if the program is
+    malformed, eg an exn:syntax or exn:read.
+
+    This is called on the user’s thread, as is the thunk it returns.
+
+    Implementations of this method should not return fully expanded
+    expressions, since there are two forms of expansion, using either expand or
+    expand-top-level-with-compile-time-evals and the use of the expanded code
+    dictates which applies.
+
+    See also front-end/interaction and front-end/finished-complete-program.
+
+    (send a-drracket:language:language front-end/finished-complete-program
+     settings)
+     → any
+      settings : settings
+    This method is called when Run is clicked, but only after front-end/
+    complete-program has been called. Specifically, front-end/complete-program
+    is first called to get a thunk that reads from the program. That thunk is
+    called some number of times, eventually returning eof, or raising an
+    exception. Then, this method is called.
+
+    This method is called on the user’s main eventspace thread, and without a
+    prompt or other control delimiter. It must return without raising an error,
+    or else the DrRacket window will be wedged.
+
+    (send a-drracket:language:language front-end/interaction  
+                port                                          
+                settings)                                     
+     → (-> (or/c sexp/c syntax? eof-object?))
+      port : input-port
+      settings : settings
+    This method is just like front-end/complete-program except that it is
+    called with program fragments, for example the expressions entered in the
+    interactions window. It is also used in other contexts by tools to expand
+    single expressions.
+
+    See also front-end/finished-complete-program.
+
+    (send a-drracket:language:language get-comment-character)
+      →   string?   char?
+    Returns text to be used for the “Insert Large Letters” menu item in
+    DrRacket. The first result is a prefix to be placed at the beginning of
+    each line and the second result is a character to be used for each pixel in
+    the letters.
+
+    (send a-drracket:language:language get-language-name)
+     → string?
+    Returns the name of the language, as shown in the REPL when executing
+    programs in the language and in the bottom left of the DrRacket window.
+
+    (send a-drracket:language:language get-language-numbers)
+     → (cons number (listof number))
+    This method is used in a manner analogous to get-language-position.
+
+    Each element in the list indicates how the names at that point in dialog
+    will be sorted. Names with lower numbers appear first. If two languages are
+    added to DrRacket with the same strings (as given by the
+    get-language-position method) the corresponding numbers returned by this
+    method must be the same. Additionally, no two languages can have the same
+    set of numbers.
+
+    (Note: this method should always return the same result, for the same
+    language.)
+
+    (send a-drracket:language:language get-language-position)
+     → (cons string (listof string))
+    This method returns a list of strings that is used to organize this
+    language with the other languages. Each entry in that list is a category or
+    subcategory of the language and the last entry in the list is the name of
+    the language itself. In the language dialog, each element in the list
+    except for the last will be a nested turn down triangle on the left of the
+    dialog. The final entry will be the name that the user can choose to select
+    this language. Names that are the same will be combined into the same
+    turndown entry.
+
+    For example, if one language’s position is:
+
+
+        (list "General Category" "Specific Category" "My Language")
+
+    and another’s is:
+
+
+        (list "General Category" "Specific Category" "My Other Language")
+
+    The language dialog will collapse the first two elements in the list,
+    resulting in only a pair of nested turn-down triangles, not parallel pairs
+    of nested turn-down triangles.
+
+    (send a-drracket:language:language get-language-url)
+     → (or/c string? false/c)
+    Specification: Returns a url for the language. Default implementation: If
+    the result isn’t #f, the name of the language is clickable in the
+    interactions window and clicking takes you to this url.
+
+    (send a-drracket:language:language get-metadata   modname    
+                                                      settings)  
+     → string?
+      modname : symbol?
+      settings : any/c
+    This method is only called when get-reader-module returns an sexp.
+
+    It is expected to return a string that contains N lines, where N is the
+    result of calling get-metadata-lines. The string is prefixed to the buffer
+    before the file is saved by DrRacket, and removed from the buffer after it
+    is opened in DrRacket.
+
+    The string is expect to be a prefix to the file that sets up a reader for
+    files in this language, using #reader.
+
+    The modname argument’s printed form is the same as the file’s name, but
+    without the path, and without an extension. The settings argument is the
+    current language’s settings value.
+
+    See also metadata->settings, get-metadata-lines, and get-reader-module.
+
+    (send a-drracket:language:language get-metadata-lines)
+     → number
+    This method is only called when get-reader-module returns an sexp.
+
+    The result of the method is a count of the number of lines in the strings
+    that get-metadata returns. The get-metadata function does not necessarily
+    return the same string each time it is called (see metadata->settings) but
+    it is expected to always return a string with a fixed number of lines, as
+    indicated by the result of this method.
+
+    (send a-drracket:language:language get-one-line-summary)
+     → string?
+    Specification: The result of this method is shown in the language dialog
+    when the user selects this language. Default implementation:
+
+    (send a-drracket:language:language get-reader-module)
+     → (or/c sexp-representing-a-require-spec false/c)
+    The result of this method is used when saving or loading files.
+
+    If the result is a sexp, saved files get a prefix inserted at the beginning
+    (the prefix is determined by calling get-metadata). When the file is then
+    loaded, DrRacket recognizes this prefix and sets the language back to match
+    the saved file.
+
+    See also metadata->settings, get-metadata-lines, and get-metadata.
+
+    (send a-drracket:language:language get-style-delta)
+     → (or/c #f (is-a?/c style-delta%) (listof (list/c (is-a?/c style-delta%) 
+    number? number?)))
+    The style delta that this method returns is used in the language dialog and
+    the DrRacket REPL when the language’s name is printed.
+
+    When it is #f, no styling is used.
+
+    If the result is a list, each element is expected to be a list of three
+    items, a style-delta, and two numbers. The style delta will be applied to
+    the corresponding portion of the name.
+
+    (send a-drracket:language:language extra-repl-information  
+                settings                                       
+                port)                                          
+     → void?
+      settings : settings
+      port : output-port?
+    This method is called on the DrRacket eventspace main thread to insert
+    extra information into the REPL to reflect the state of the program.
+
+    It is used, for example, to print out the “Teachpack” lines in the HtDP
+    languages.
+
+    (send a-drracket:language:language marshall-settings settings)
+     → writable
+      settings : settings
+    Translates an instance of the settings type into a Racket object that can
+    be written out to disk.
+
+    (send a-drracket:language:language metadata->settings metadata)
+     → settings
+      metadata : string?
+    This method is only called when get-reader-module returns an sexp.
+
+    When a file is opened in DrRacket, if this language’s get-reader-module
+    returns an sexp, the prefix of the file (the first N lines, where N is the
+    number returned by get-metadata-lines) is scanned for "#reader" followed by
+    the result of get-reader-module. If that pattern is found, the language is
+    set to this language. Also, the entire prefix is passed, as a string, to
+    this method which returns a settings value, used as the settings for this
+    language.
+
+    (send a-drracket:language:language on-execute  
+          settings                                 
+          run-on-user-thread)                      
+     → any
+      settings : settings
+      run-on-user-thread : ((-> any) -> any)
+    The on-execute method is called on DrRacket’s eventspace’s main thread
+    before any evaluation happens when the Run button is clicked. It is also
+    called when a new DrRacket tab (or window) is created to initialize the
+    empty interactions window.
+
+    Use this method to initialize Racket’s Parameters for the user. When this
+    function is called, the user’s thread has already been created, as has its
+    custodian. These parameters have been changed from the defaults in Racket:
+      □ current-custodian is set to a new custodian.
+
+      □ 
+        current-namespace has been set to a newly created empty namespace. This
+        namespace has the following modules copied (with
+        namespace-attach-module) from DrRacket’s original namespace:
+          ☆ 'mzscheme
+
+          ☆ 'mred
+
+      □ read-curly-brace-as-paren is #t,
+
+      □ read-square-bracket-as-paren is #t,
+
+      □ The port-write-handler and port-display-handler have been set to
+        procedures that call pretty-print and pretty-display instead of write
+        and display. When pretty-print and pretty-display are called by these
+        parameters, the pretty-print-columns parameter is set to 'infinity, so
+        the output looks just like write and display. This is done so that
+        special scheme values can be displayed as snips.
+
+      □ The current-print-covert-hook is to a procedure so that snip%s are just
+        returned directly to be inserted into the interactions text% object.
+
+      □ The output and input ports are set to point to the interactions window
+        with these parameters: current-input-port, current-output-port, and
+        current-error-port.
+
+      □ The event-dispatch-handler is set so that DrRacket can perform some
+        initial setup and close down around the user’s code.
+
+      □ The current-directory and current-load-relative-directory are set to
+        the directory where the definitions file is saved, or if it isn’t
+        saved, to the initial directory where DrRacket started up.
+
+      □ The snip-class-list, returned by get-the-snip-class-list is initialized
+        with all of the snipclasses in DrRacket’s eventspace’s snip-class-list.
+
+      □ The error-print-source-location parameter is set to #f and the
+        error-display-handler is set to a handler that creates an error message
+        from the exception record, with font and color information and inserts
+        that error message into the definitions window.
+
+    The run-on-user-thread arguments accepts thunks and runs them on the user’s
+    eventspace’s main thread. The output ports are not yet functioning, so
+    print outs should be directed to the original DrRacket output port, if
+    necessary.
+
+    This thunk is wrapped in a with-handlers that catches all exceptions
+    matching exn:fail? and then prints out the exception message to the
+    original output port of the DrRacket process.
+
+    (send a-drracket:language:language order-manuals manuals)
+      →   (listof bytes?)   boolean?
+      manuals : (listof bytes?)
+    Returns a sublist of its input, that specifies the manuals (and their
+    order) to search in. The boolean result indicates if doc.txt files should
+    be searched.
+
+    (send a-drracket:language:language render-value   value     
+                                                      settings  
+                                                      port)     
+     → void?
+      value : TST
+      settings : settings
+      port : port
+    This method is just like render-value/format except that it is expected to
+    put the entire value on a single line with no newline after the value.
+
+    (send a-drracket:language:language render-value/format  
+                value                                       
+                settings                                    
+                port                                        
+                width)                                      
+     → void?
+      value : TST
+      settings : settings
+      port : port
+      width : (or/c number (symbols 'infinity))
+    This method is used to print values into a port, for display to a user. The
+    final argument is a maximum width to use (in characters) when formatting
+    the value.
+
+    This method is expected to format the value by inserting newlines in
+    appropriate places and is expected to render a newline after the value.
+
+    See also render-value.
+
+    (send a-drracket:language:language unmarshall-settings input)
+     → (or/c settings false/c)
+      input : writable
+    Translates a Racket value into a settings, returning #f if that is not
+    possible.
+
+drracket:language:object/c : contract?
+
+    (object-contract
+     (config-panel (-> (is-a?/c area-container<%>)
+                       (case-> (-> any/c void?)
+                               (-> any/c))))
+     (create-executable (-> any/c
+                            (or/c (is-a?/c dialog%) (is-a?/c frame%))
+                            path?
+                            void?))
+     (default-settings (-> any/c))
+     (default-settings? (-> any/c boolean?))
+     (front-end/complete-program (-> input-port?
+                                     any/c
+                                     (-> any/c)))
+     (front-end/interaction (-> input-port?
+                                any/c
+                                (-> any/c)))
+     (get-language-name (-> string?))
+     (get-language-numbers (-> (cons/c number? (listof number?))))
+     (get-language-position (-> (cons/c string? (listof string?))))
+     (get-language-url (-> (or/c false/c string?)))
+     (get-one-line-summary (-> string?))
+     (get-comment-character (-> (values string? char?)))
+     (get-style-delta
+      (-> (or/c false/c
+                (is-a?/c style-delta%)
+                (listof
+                 (list/c (is-a?/c style-delta%)
+                         number?
+                         number?)))))
+     (marshall-settings (-> any/c printable/c))
+     (on-execute (-> any/c (-> (-> any) any) any))
+     (render-value (-> any/c
+                       any/c
+                       output-port?
+                       void?))
+     (render-value/format (-> any/c
+                              any/c
+                              output-port?
+                              (or/c number? (symbols 'infinity))
+                              any))
+     (unmarshall-settings (-> printable/c any))
+     
+     (capability-value
+      (->i ((s (and/c symbol?
+                      drracket:language:capability-registered?)))
+           (res (s) (drracket:language:get-capability-contract s)))))
+
+(drracket:language:register-capability   s                   
+                                         the-contract        
+                                         default)       →   void?
+  s : symbol?
+  the-contract : contract?
+  default : the-contract
+Registers a new capability with a default value for each language and a
+contract on the values the capability might have.
+
+By default, these capabilities are registered as DrRacket starts up:
+
+  • 'drracket:check-syntax-button : boolean? = #t— controls the visiblity of
+    the check syntax button
+
+  • 'drracket:language-menu-title : string? = (string-constant
+    scheme-menu-name)— controls the name of the menu just to the right of the
+    language menu (named “Racket” by default)
+
+  • 'drscheme:define-popup : (or/c #f (list/c string? string? string?) (cons/c
+    string? string?)) = (list "(define" "(define ...)" "δ")— specifies the
+    prefix that the define popup should look for and what label it should have,
+    or #f if it should not appear at all.
+
+    If the list of three strings alternative is used, the first string is the
+    prefix that is looked for when finding definitions. The second and third
+    strings are used as the label of the control, in horizontal and vertical
+    mode, respectively.
+
+    The pair of strings alternative is deprecated. If it is used, the pair (
+    cons a-str b-str) is the same as (list a-str b-str "δ").
+
+  • 'drscheme:help-context-term : (or/c false/c string?) = #f— specifies a
+    context query for documentation searches that are initiated in this
+    language, can be #f (no change to the user’s setting) or a string to be
+    used as a context query (note: the context is later maintained as a cookie,
+    "" is different from #f in that it clears the stored context)
+
+  • 'drscheme:special:insert-fraction : boolean? = #t— determines if the insert
+    fraction menu item in the special menu is visible
+
+  • 'drscheme:special:insert-lambda : boolean? = #t— determines if the insert
+    lambda menu item in the special menu is visible
+
+  • 'drscheme:special:insert-large-letters : boolean? = #t— determines if the
+    insert large letters menu item in the special menu is visible
+
+  • 'drscheme:special:insert-image : boolean? = #t— determines if the insert
+    image menu item in the special menu is visible
+
+  • 'drscheme:special:insert-comment-box : boolean? = #t— determines if the
+    insert comment box menu item in the special menu is visible
+
+  • 'drscheme:special:insert-gui-tool : boolean? = #t— determines if the insert
+    gui menu item in the special menu is visible
+
+  • 'drscheme:special:slideshow-menu-item : boolean? = #t— determines if the
+    insert pict box menu item in the special menu is visible
+
+  • 'drscheme:special:insert-text-box : boolean? = #t— determines if the insert
+    text box menu item in the special menu is visible
+
+  • 'drscheme:special:xml-menus : boolean? = #t— determines if the insert
+    scheme box, insert scheme splice box, and the insert xml box menu item in
+    the special menu are visible
+
+  • 'drscheme:autocomplete-words : (listof string?) = '()— determines the list
+    of words that are used when completing words in this language
+
+  • 'drscheme:tabify-menu-callback : (or/c false/c (-> (is-a?/c text%) number?
+    number? void?)) = (λ (t a b) (send t tabify-selection a b))— is used as the
+    callback when the “Reindent” or “Reindent All” menu is selected. The first
+    argument is the editor, and the second and third are a range in the editor.
+
+(drracket:language:capability-registered? s) → boolean?
+  s : symbol?
+Indicates if drracket:language:register-capability has been called with s.
+(drracket:language:get-capability-default s)
+ → (drracket:language:get-capability-contract s)
+  s : (and/c symbol? drracket:language:capability-registered?)
+Returns the default for a particular capability.
+(drracket:language:get-capability-contract s) → contract?
+  s : (and/c symbol? drracket:language:capability-registered?)
+Returns the contract for a given capability, which was specified when
+drracket:language:register-capability was called.
+(drracket:language:add-snip-value    test-value           
+                                     convert-value        
+                                   [ setup-thunk])   →   void?
+  test-value : (-> any/c boolean?)
+  convert-value : (-> any/c (is-a?/c snip%))
+  setup-thunk : (-> any/c) = void
+Registers a handler to convert values into snips as they are printed in the
+REPL.
+
+The test-snip argument is called to determine if this handler can convert the
+value and the convert-value argument is called to build a snip. The (optional)
+setup-thunk is called just after the user’s namespace and other setings are
+built, but before any of the user’s code is evaluated.
+
+All three functions are called on the user’s thread and with the user’s
+settings.
+(drracket:language:extend-language-interface  
+    interface                                 
+    default-implementation)                   
+ → void?
+  interface : interface?
+  default-implementation : (make-mixin-contract drracket:language:language<%>)
+This function can only be called in phase 1 (see Implementing DrRacket Plugins
+for details).
+
+Each language added passed to drracket:language-configuration:add-language must
+implement interface.
+
+The default-implementation is a mixin that provides a default implementation of
+interface. Languages that are unaware of the specifics of extension use
+default-implementation via drracket:language:get-default-mixin.
+(drracket:language:get-default-mixin)
+ → (make-mixin-contract drracket:language:language<%>)
+This function can only be called in phase 2 (see Implementing DrRacket Plugins
+for details).
+
+The result of this function is the composite of all of the
+default-implementation arguments passed to
+drracket:language:extend-language-interface.
+(drracket:language:get-language-extensions)
+ → (listof interface?)
+This function can only be called in phase 2 (see Implementing DrRacket Plugins
+for details).
+
+Returns a list of the interfaces passed to
+drracket:language:extend-language-interface.
+(drracket:language:put-executable   parent            
+                                    program-filename  
+                                    mode              
+                                    mred?             
+                                    title)            
+ → (or/c false/c path?)
+  parent : (is-a?/c top-level-window<%>)
+  program-filename : path?
+  mode : (or/c boolean? (symbols 'launcher 'standalone 'distribution))
+  mred? : boolean?
+  title : string?
+Calls the GRacket primitive put-file with arguments appropriate for creating an
+executable from the file program-filename.
+
+The arguments mred? and mode indicates what type of executable this should be
+(and the dialog may be slightly different on some platforms, depending on these
+arguments). For historical reasons, #f is allowed for mode as an alias for
+'launcher, and #t is allowed for mode as an alias for 'stand-alone.
+
+The title argument is used as the title to the primitive put-file or
+get-directory primitive.
+(drracket:language:create-executable-gui   parent        
+                                           program-name  
+                                           show-type     
+                                           show-base)    
+      (or/c false/c
+  →         (list/c (symbols 'no-show 'launcher 'stand-alone 'distribution)
+                    (symbols 'no-show 'mred 'mzscheme)
+                    string?))
+  parent : (or/c false/c (is-a?/c top-level-window<%>))
+  program-name : (or/c false/c string?)
+  show-type : (or/c (λ (x) (eq? x #t)) (symbols
+ 'launcher 'standalone 'distribution))
+  show-base : (or/c (λ (x) (eq? x #t)) (symbols 'mzscheme 'mred))
+Opens a dialog to prompt the user about their choice of executable. If
+show-type is #t, the user is prompted about a choice of executable:
+stand-alone, launcher, or distribution; otherwise, the symbol determines the
+type. If show-base is #t, the user is prompted about a choice of base binary:
+mzscheme or mred; otherwise the symbol determines the base.
+
+The program-name argument is used to construct the default executable name in a
+platform-specific manner.
+
+The parent argument is used for the parent of the dialog.
+
+The result of this function is #f if the user cancel’s the dialog and a list of
+three items indicating what options they chose. If either show-type or
+show-base was not #t, the corresponding result will be 'no-show, otherwise it
+will indicate the user’s choice.
+(drracket:language:create-module-based-stand-alone-executable  
+    program-filename                                           
+    executable-filename                                        
+    module-language-spec                                       
+    transformer-module-language-spec                           
+    init-code                                                  
+    gui?                                                       
+    use-copy?)                                                 
+ → void?
+  program-filename : (or/c path? string?)
+  executable-filename : (or/c path? string?)
+  module-language-spec : any/c
+  transformer-module-language-spec : any/c
+  init-code : any/c
+  gui? : boolean?
+  use-copy? : boolean?
+This procedure creates a stand-alone executable in the file executable-filename
+that runs the program program-filename.
+
+The arguments module-language-spec and transformer-module-language-spec specify
+the settings of the initial namespace, both the transformer portion and the
+regular portion. Both may be #f to indicate there are no initial bindings.
+
+The init-code argument is an s-expression representing the code for a module.
+This module is expected to provide the identifer init-code, bound to a
+procedure of no arguments. That module is required and the init-code procedure
+is executed to initialize language-specific settings before the code in
+program-filename runs.
+
+The gui? argument indicates if a GRacket or Racket stand-alone executable is
+created.
+
+The use-copy? argument indicates if the initial namespace should be populated
+with namespace-require/copy or namespace-require.
+(drracket:language:create-module-based-distribution  
+    program-filename                                 
+    distribution-filename                            
+    module-language-spec                             
+    transformer-module-language-spec                 
+    init-code                                        
+    gui?                                             
+    use-copy?)                                       
+ → void?
+  program-filename : (or/c path? string?)
+  distribution-filename : (or/c path? string?)
+  module-language-spec : any/c
+  transformer-module-language-spec : any/c
+  init-code : any/c
+  gui? : boolean?
+  use-copy? : boolean?
+Like drracket:language:create-module-based-stand-alone-executable, but packages
+the stand-alone executable into a distribution.
+(drracket:language:create-distribution-for-executable  
+      distribution-filename                            
+      gui?                                             
+      make-executable)                                 
+ → void?
+  distribution-filename : (or/c path? string?)
+  gui? : boolean?
+  make-executable : (-> path? void?)
+Creates a distribution where the given make-executable procedure creates the
+stand-alone executable to be distributed. The make-executable procedure is
+given the name of the executable to create. The gui? argument is needed in case
+the executable’s name (which
+drracket:language:create-distribution-for-executable must generate) depends on
+the type of executable. During the distribution-making process, a progress
+dialog is shown to the user, and the user can click an Abort button that sends
+a break to the current thread.
+(drracket:language:create-module-based-launcher  
+    program-filename                             
+    executable-filename                          
+    module-language-spec                         
+    transformer-module-language-spec             
+    init-code                                    
+    gui?                                         
+    use-copy?)                                   
+ → void?
+  program-filename : (or/c path? string?)
+  executable-filename : (or/c path? string?)
+  module-language-spec : any/c
+  transformer-module-language-spec : any/c
+  init-code : any/c
+  gui? : boolean?
+  use-copy? : boolean?
+This procedure is identical to
+drracket:language:create-module-based-stand-alone-executable, except that it
+creates a launcher instead of a stand-alone executable.
+(drracket:language:simple-module-based-language-convert-value  
+            value                                              
+            settings)                                          
+ → any
+  value : any/c
+  settings : drracket:language:simple-settings?
+The result can be either one or two values. The first result is the converted
+value. The second result is #t if the converted value should be printed with
+write (or pretty-write), #f if the converted result should be printed with
+print (or pretty-print); the default second result is #t.
+
+The default implementation of this method depends on the
+simple-settings-printing-style field of settings. If it is 'print, the result
+is (values value #f). If it is 'write or 'trad-write, the result is just value.
+Otherwise, the result is produce by adjusting the constructor-style-printing
+and show-sharing parameters based on settings, setting
+current-print-convert-hook to ignore snips, and then applying print-convert to
+value.
+(drracket:language:setup-printing-parameters   thunk           
+                                               settings        
+                                               width)     →   any
+  thunk : (-> any)
+  settings : drracket:language:simple-settings?
+  width : (or/c number? 'infinity)
+Sets all of the pretty-print and print-convert parameters either to the
+defaults to values based on settings and then invokes thunk, returning what it
+returns.
+(drracket:language:text/pos-text text/pos) → (is-a?/c text%)
+  text/pos : drracket:language:text/pos?
+Selects the text% from a text/pos.
+(drracket:language:text/pos-start text/pos) → number?
+  text/pos : drracket:language:text/pos?
+Selects the starting position from a text/pos.
+(drracket:language:text/pos-end text/pos) → number?
+  text/pos : drracket:language:text/pos?
+Selects the ending position from a text/pos.
+(drracket:language:text/pos? val) → boolean?
+  val : any/c
+Returns #t if val is a text/pos, and #f otherwise.
+(drracket:language:text/pos text start end)
+ → drracket:language:text/pos?
+  text : (is-a?/c text%)
+  start : number?
+  end : number?
+Constructs a text/pos.
+(drracket:language:make-text/pos   text   
+                                   start  
+                                   end)   
+ → drracket:language:text/pos?
+  text : (is-a?/c text%)
+  start : number?
+  end : number?
+An alias for drracket:language:text/pos
+(drracket:language:simple-settings-case-sensitive simple-settings)
+ → boolean?
+  simple-settings : drracket:language:simple-settings?
+Extracts the case-sensitive setting from a simple-settings.
+(drracket:language:simple-settings-printing-style simple-settings)
+ → (symbols 'constructor 'quasiquote 'write 'trad-write 'print)
+  simple-settings : drracket:language:simple-settings?
+Extracts the printing-style setting from a simple-settings.
+(drracket:language:simple-settings-fraction-style simple-settings)
+      (symbols 'mixed-fraction
+  →            'mixed-fraction-e
+               'repeating-decimal
+               'repeating-decimal-e)
+  simple-settings : drracket:language:simple-settings?
+Extracts the fraction-style setting from a simple-settings.
+(drracket:language:simple-settings-show-sharing simple-settings)
+ → boolean?
+  simple-settings : drracket:language:simple-settings?
+Extracts the show-sharing setting from a simple-settings.
+(drracket:language:simple-settings-insert-newlines simple-settings)
+ → boolean?
+  simple-settings : drracket:language:simple-settings?
+Extracts the insert-newline setting from a simple-settings.
+(drracket:language:simple-settings-annotations simple-settings)
+ → (symbols 'none 'debug 'debug/profile 'test-coverage)
+  simple-settings : drracket:language:simple-settings?
+Extracts the debugging setting from a simple-settings.
+(drracket:language:simple-settings? val) → boolean?
+  val : any/c
+Determines if val is a simple-settings.
+(drracket:language:simple-settings   case-sensitive   
+                                     printing-style   
+                                     fraction-style   
+                                     show-sharing     
+                                     insert-newlines  
+                                     annotations)     
+ → drracket:language:simple-settings?
+  case-sensitive : boolean?
+  printing-style : (symbols 'constructor 'quasiquote 'write 'trad-write 'print)
+  fraction-style : (symbols
+ 'mixed-fraction 'mixed-fraction-e 'repeating-decimal 'repeating-decimal-e)
+  show-sharing : boolean?
+  insert-newlines : boolean?
+  annotations : (symbols 'none 'debug 'debug/profile 'test-coverage)
+Constructs a simple settings.
+(drracket:language:make-simple-settings   case-sensitive   
+                                          printing-style   
+                                          fraction-style   
+                                          show-sharing     
+                                          insert-newlines  
+                                          annotations)     
+ → drracket:language:simple-settings?
+  case-sensitive : boolean?
+  printing-style : (symbols 'constructor 'quasiquote 'write 'trad-write 'print)
+  fraction-style : (symbols
+ 'mixed-fraction 'mixed-fraction-e 'repeating-decimal 'repeating-decimal-e)
+  show-sharing : boolean?
+  insert-newlines : boolean?
+  annotations : (symbols 'none 'debug 'debug/profile 'test-coverage)
+An alias for drracket:language:simple-settings.
+(drracket:language:simple-settings->vector simple-settings)
+ → vector?
+  simple-settings : drracket:language:simple-settings?
+Constructs a vector whose elements are the fields of simple-settings.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

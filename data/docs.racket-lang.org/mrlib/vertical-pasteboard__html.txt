@@ -1,0 +1,270 @@
+►  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+▼ 1  Aligned Pasteboard
+1.1  aligned-pasteboard<%>
+1.2  horizontal-pasteboard%
+1.3  vertical-pasteboard%
+1.4  aligned-editor-snip%
+1.5  aligned-editor-canvas%
+1.6  aligned-pasteboard-parent<%>
+1.7  stretchable-snip<%>
+On this page:
+after-delete
+after-insert
+after-reorder
+resized
+Inherited methods:
+from aligned-pasteboard<%>
+get-aligned-min-height
+get-aligned-min-width
+realign
+set-aligned-min-sizes
+from pasteboard%
+add-selected
+after-interactive-move
+after-interactive-resize
+after-move-to
+after-resize
+after-select
+can-delete?
+can-insert?
+can-interactive-move?
+can-interactive-resize?
+can-move-to?
+can-reorder?
+can-resize?
+can-select?
+change-style
+copy-self-to
+delete
+do-copy
+do-paste
+do-paste-x-selection
+erase
+find-next-selected-snip
+find-snip
+get-center
+get-dragable
+get-scroll-step
+get-selection-visible
+insert
+interactive-adjust-mouse
+interactive-adjust-move
+interactive-adjust-resize
+is-selected?
+lower
+move
+move-to
+no-selected
+on-default-event
+on-delete
+on-double-click
+on-insert
+on-interactive-move
+on-interactive-resize
+on-move-to
+on-reorder
+on-resize
+on-select
+raise
+remove
+remove-selected
+resize
+set-after
+set-before
+set-dragable
+set-scroll-step
+set-selected
+set-selection-visible
+from editor<%>
+add-canvas
+add-undo
+adjust-cursor
+after-edit-sequence
+after-load-file
+after-save-file
+auto-wrap
+begin-edit-sequence
+begin-write-header-footer-to-file
+blink-caret
+can-do-edit-operation?
+can-load-file?
+can-save-file?
+clear
+clear-undos
+copy
+copy-self
+cut
+dc-location-to-editor-location
+default-style-name
+do-edit-operation
+editor-location-to-dc-location
+end-edit-sequence
+end-write-header-footer-to-file
+find-first-snip
+find-scroll-line
+get-active-canvas
+get-admin
+get-canvas
+get-canvases
+get-dc
+get-descent
+get-extent
+get-file
+get-filename
+get-flattened-text
+get-focus-snip
+get-inactive-caret-threshold
+get-keymap
+get-load-overwrites-styles
+get-max-height
+get-max-undo-history
+get-max-view-size
+get-max-width
+get-min-height
+get-min-width
+get-paste-text-only
+get-snip-data
+get-snip-location
+get-space
+get-style-list
+get-view-size
+global-to-local
+in-edit-sequence?
+insert-box
+insert-file
+insert-image
+insert-port
+invalidate-bitmap-cache
+is-locked?
+is-modified?
+is-printing?
+kill
+load-file
+local-to-global
+locations-computed?
+lock
+locked-for-flow?
+locked-for-read?
+locked-for-write?
+needs-update
+num-scroll-lines
+on-change
+on-char
+on-default-char
+on-display-size
+on-display-size-when-ready
+on-edit-sequence
+on-event
+on-focus
+on-load-file
+on-local-char
+on-local-event
+on-new-box
+on-new-image-snip
+on-paint
+on-save-file
+on-snip-modified
+own-caret
+paste
+paste-x-selection
+print
+print-to-dc
+put-file
+read-footer-from-file
+read-from-file
+read-header-from-file
+redo
+refresh
+refresh-delayed?
+release-snip
+remove-canvas
+save-file
+save-port
+scroll-editor-to
+scroll-line-location
+scroll-to
+select-all
+set-active-canvas
+set-admin
+set-caret-owner
+set-cursor
+set-filename
+set-inactive-caret-threshold
+set-keymap
+set-load-overwrites-styles
+set-max-height
+set-max-undo-history
+set-max-width
+set-min-height
+set-min-width
+set-modified
+set-paste-text-only
+set-snip-data
+set-style-list
+size-cache-invalid
+style-has-changed
+undo
+use-file-text-mode
+write-footers-to-file
+write-headers-to-file
+write-to-file
+[...search manuals...]
+  top← prev  up  next → 
+
+vertical-pasteboard% : class?
+  superclass: pasteboard%
+
+  extends:  aligned-pasteboard<%>
+(new vertical-pasteboard% ...superclass-args...)
+ → (is-a?/c vertical-pasteboard%)
+Passes all arguments to super-init.
+
+(send a-vertical-pasteboard after-delete snip) → void?
+  snip : (is-a?/c snip%)
+Overrides after-delete in pasteboard%.
+
+(send a-vertical-pasteboard after-insert   snip          
+                                           before        
+                                           x             
+                                           y)       →   void?
+  snip : (is-a?/c snip%)
+  before : (or/c (is-a?/c snip%) false/c)
+  x : real?
+  y : real?
+Overrides after-insert in pasteboard%.
+
+(send a-vertical-pasteboard after-reorder   snip            
+                                            to-snip         
+                                            before?)   →   boolean?
+  snip : (is-a?/c snip%)
+  to-snip : (is-a?/c snip%)
+  before? : any/c
+Overrides after-reorder in pasteboard%.
+
+(send a-vertical-pasteboard resized   snip                
+                                      redraw-now?)   →   void?
+  snip : (is-a?/c snip%)
+  redraw-now? : any/c
+Overrides resized in editor<%>.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

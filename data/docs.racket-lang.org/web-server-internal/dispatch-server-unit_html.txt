@@ -1,0 +1,99 @@
+▼  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+► 1  Dispatching Server
+1.1  Dispatching Server Signatures
+1.2  Dispatching Server Unit
+1.3  Threads and Custodians
+On this page:
+1.1 Dispatching Server Signatures
+dispatch-server^
+serve
+serve-ports
+dispatch-server-config^
+port
+listen-ip
+max-waiting
+initial-connection-timeout
+read-request
+dispatch
+1.2 Dispatching Server Unit
+dispatch-server@
+1.3 Threads and Custodians
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Dispatching Server
+
+The Web Server is just a configuration of a dispatching server.
+
+1.1 Dispatching Server Signatures
+
+ (require web-server/private/dispatch-server-sig)
+The web-server/private/dispatch-server-sig library provides two signatures.
+
+dispatch-server^ : signature
+
+
+    The dispatch-server^ signature is an alias for web-server^.
+
+    (serve)
+     → (->* () (#:confirmation-channel (or/c false/c async-channel?)) (-> void
+    ))
+    Runs the server—the confirmation channel will be send an exception if one
+    occurs starting the server or the port number if there is none—and returns
+    a procedure that shuts down the server.
+
+    (serve-ports ip op) → void
+      ip : input-port?
+      op : output-port?
+    Serves a single connection represented by the ports ip and op.
+
+dispatch-server-config^ : signature
+
+
+    port : tcp-listen-port?
+    Specifies the port to serve on.
+    listen-ip : (or/c string? false/c)
+    Passed to tcp-listen.
+    max-waiting : exact-integer?
+    Passed to tcp-listen.
+    initial-connection-timeout : integer?
+    Specifies the initial timeout given to a connection.
+    (read-request c p port-addresses)   →   any/c   boolean?
+      c : connection?
+      p : tcp-listen-port?
+      port-addresses : (input-port? . -> . (values string? string?))
+    Defines the way the server reads requests off connections to be passed to
+    dispatch.
+    dispatch : (-> connection? any/c void)
+    How to handle requests.
+
+1.2 Dispatching Server Unit
+
+ (require web-server/private/dispatch-server-unit)
+The web-server/private/dispatch-server-unit module provides the unit that
+actually implements a dispatching server.
+
+dispatch-server@  :  (unit/c (import tcp^ dispatch-server-config^)
+                             (export dispatch-server^))
+Runs the dispatching server config in a very basic way, except that it uses
+Connection Manager to manage connections.
+
+1.3 Threads and Custodians
+
+The dispatching server runs in a dedicated thread. Every time a connection is
+initiated, a new thread is started to handle it. Connection threads are created
+inside a dedicated custodian that is a child of the server’s custodian. When
+the server is used to provide servlets, each servlet also receives a new
+custodian that is a child of the server’s custodian not the connection
+custodian.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,162 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+=?
+<?
+>?
+<=?
+>=?
+1+
+1-
+gentmp
+flush-output-port
+real-time
+atom?
+define-structure
+getprop
+putprop
+new-cafe
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/compat)
+
+The mzlib/compat library defines a number of procedures and syntactic forms
+that are commonly provided by other Scheme implementations. Most of the
+procedures are aliases for mzscheme procedures.
+
+(=? n ...+) → boolean?
+  n : number?
+(<? n ...+) → boolean?
+  n : real?
+(>? n ...+) → boolean?
+  n : real?
+(<=? n ...+) → boolean?
+  n : real?
+(>=? n ...+) → boolean?
+  n : real?
+Same as =, <, etc.
+
+(1+ n) → number?
+  n : number?
+(1- n) → number?
+  n : number?
+Same as add1 and sub1.
+
+(gentmp [base]) → symbol?
+  base : (or/c string? symbol?) = "g"
+Same as gensym.
+
+(flush-output-port [o]) → void?
+  o : output-port? = (current-output-port)
+Same as flush-output.
+
+(real-time) → exact-integer?
+Same as current-milliseconds.
+
+(atom? v) → any
+  v : any/c
+Same as (not (pair? v)) (which does not actually imply an atomic value).
+
+(define-structure (name-id field-id ...))
+(define-structure (name-id field-id ...)
+                  ((init-field-id init-expr) ...))
+Like define-struct, except that the name-id is moved inside the parenthesis for
+fields. In addition, init-field-ids can be specified with automatic
+initial-value expression.
+
+The init-field-ids do not have corresponding arguments for the make-name-id
+constructor. Instead, each init-field-id’s init-expr is evaluated to obtain the
+field’s value when the constructor is called. The field-ids are bound in
+init-exprs, but not other init-field-ids.
+
+Examples:
+
+    > (define-structure (add left right) ([sum (+ left right)]))
+    > (add-sum (make-add 3 6))
+    9
+
+
+
+(getprop sym property [default]) → any/c
+  sym : symbol?
+  property : symbol?
+  default : any/c = #f
+(putprop sym property value) → void?
+  sym : symbol?
+  property : symbol?
+  value : any/c
+The getprop function gets a property value associated with sym. The property
+argument names the property to be found. If the property is not found, default
+is returned.
+
+The properties obtained with getprop are the ones installed with putprop.
+
+(new-cafe [eval-handler]) → any
+  eval-handler : (any/c . -> . any) = #f
+Emulates Chez Scheme’s new-cafe by installing eval-handler into the
+current-eval parameter while running read-eval-print. In addition, current-exit
+is set to escape from the call to new-cafe.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

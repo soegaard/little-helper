@@ -1,0 +1,416 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 9  raco ctool: Working with C Code
+9.1  Compiling and Linking C Extensions
+9.2  Embedding Modules via C
+9.3  Compiling to Native Code via C
+9.4  API for Raw Compilation
+► 9.4  API for Raw Compilation
+9.4.1  Bytecode Compilation
+9.4.2  Compilation via C
+9.4.3  Loading compiler support
+9.4.4  Options for the Compiler
+9.4.5  The Compiler as a Unit
+On this page:
+9.4.1 Bytecode Compilation
+compile-zos
+compile-collection-zos
+compile-directory-zos
+9.4.2 Compilation via C
+compile-extensions
+compile-extensions-to-c
+compile-c-extensions
+9.4.3 Loading compiler support
+current-compiler-dynamic-require-wrapper
+9.4.4 Options for the Compiler
+somewhat-verbose
+verbose
+setup-prefix
+clean-intermediate-files
+compile-subcollections
+compile-for-embedded
+propagate-constants
+assume-primitives
+stupid
+vehicles
+vehicles: monoliths
+seed
+max-exprs-per-top-level-set
+unpack-environments
+debug
+test
+9.4.5 The Compiler as a Unit
+9.4.5.1 Signatures
+compiler^
+compiler: option^
+compiler: inner^
+eval-compile-prefix
+compile-extension
+compile-extension-to-c
+compile-c-extension
+9.4.5.2 Main Compiler Unit
+compiler@
+9.4.5.3 Options Unit
+compiler: option@
+9.4.5.4 Compiler Inner Unit
+comp@
+[...search manuals...]
+  top← prev  up  next → 
+
+9.4 API for Raw Compilation
+
+ (require compiler/compiler)
+The compiler/compiler library provides the functionality of mzc for compilation
+to bytecode and via C, but through a Racket API.
+
+9.4.1 Bytecode Compilation
+
+((compile-zos    expr                         
+               [ #:module? module?            
+                 #:verbose? verbose?])        
+                 racket-files                 
+                 dest-dir)               →   void?
+  expr : any/c
+  module? : any/c = #f
+  verbose? : any/c = #f
+  racket-files : (listof path-string?)
+  dest-dir : (or/c path-string? false/c (one-of/c 'auto))
+Supplying just expr returns a compiler that is initialized with the expression
+expr, as described below.
+
+The compiler takes a list of Racket files and compiles each of them to
+bytecode, placing the resulting bytecode in a ".zo" file within the directory
+specified by dest-dir. If dest-dir is #f, each bytecode result is placed in the
+same directory as its source file. If dest-dir is 'auto, each bytecode file is
+placed in a "compiled" subdirectory relative to the source; the directory is
+created if necessary.
+
+If expr is anything other than #f, then a namespace is created for compiling
+the files that are supplied later, and expr is evaluated to initialize the
+created namespace. For example, expr might load a set of macros. In addition,
+the expansion-time part of each expression later compiled is evaluated in the
+namespace before being compiled, so that the effects are visible when compiling
+later expressions.
+
+If expr is #f, then no compilation namespace is created (the current namespace
+is used), and expressions in the files are assumed to compile independently (so
+there’s no need to evaluate the expansion-time part of an expression to
+compile).
+
+Typically, expr is #f for compiling module files, and it is (void) for
+compiling files with top-level definitions and expressions.
+
+If module? is #t, then the given files are read and compiled as modules (so
+there is no dependency on the current namespace’s top-level environment).
+
+If verbose? is #t, the output file for each given file is reported through the
+current output port.
+
+(compile-collection-zos                         
+     collection ...+                            
+   [ #:skip-path skip-path                      
+     #:skip-doc-sources? skip-docs?             
+     #:managed-compile-zo managed-compile-zo])  
+ → void?
+  collection : string?
+  skip-path : (or/c path-string? #f) = #f
+  skip-docs? : any/c = #f
+   managed-compile-zo   :   (path-string? . -> . void?)
+                        =   (make-caching-managed-compile-zo)
+Compiles the specified collection’s files to ".zo" files by using
+managed-compile-zo on each source file. The ".zo" files are placed into the
+collection’s "compiled" directory.
+
+By default, all files with the extension ".rkt", ".ss", or ".scm" in a
+collection are compiled, as are all such files within subdirectories, execept
+that any file or directory whose path starts with skip-path is skipped.
+(“Starts with” means that the simplified path p’s byte-string form after (
+simplify-path p #f)starts with the byte-string form of (simplify-path skip-path
+#f).)
+
+The collection compiler reads the collection’s "info.rkt" file (see "info.rkt"
+File Format) to obtain further instructions for compiling the collection. The
+following fields are used:
+
+  • name : The name of the collection as a string, used only for status and
+    error reporting.
+
+  • compile-omit-paths : A list of immediate file and directory paths that
+    should not be compiled. Alternatively, this field’s value 'all, which is
+    equivalent to specifying all files and directories in the collection (to
+    effectively ignore the collection for compilation). Automatically omitted
+    files and directories are "compiled", "doc", and those whose names start
+    with ..
+
+    Files that are required by other files, however, are always compiled in the
+    process of compiling the requiring file—even when the required file is
+    listed with this field or when the field’s value is 'all.
+
+  • compile-omit-files : A list of filenames (without directory paths); that
+    are not compiled, in addition to the contents of compile-omit-paths. Do not
+    use this field; it is for backward compatibility.
+
+  • scribblings : A list of pairs, each of which starts with a path for
+    documentation source. The sources (and the files that they require) are
+    compiled in the same way as ".rkt", ".ss", and ".scm" files, unless the
+    provided skip-docs? argument is a true value.
+
+(compile-directory-zos                          
+     path                                       
+     info                                       
+   [ #:verbose verbose?                         
+     #:skip-path skip-path                      
+     #:skip-doc-sources? skip-docs?             
+     #:managed-compile-zo managed-compile-zo])  
+ → void?
+  path : path-string?
+  info : ()
+  verbose? : any/c = #f
+  skip-path : (or/c path-string? #f) = #f
+  skip-docs? : any/c = #f
+   managed-compile-zo   :   (path-string? . -> . void?)
+                        =   (make-caching-managed-compile-zo)
+Like compile-collection-zos, but compiles the given directory rather than a
+collection. The info function behaves like the result of get-info to supply
+"info.rkt" fields, instead of using an "info.rkt" file (if any) in the
+directory.
+
+9.4.2 Compilation via C
+
+((compile-extensions   expr)               
+                       racket-files        
+                       dest-dir)      →   void?
+  expr : any/c
+  racket-files : (listof path-string?)
+  dest-dir : (or/c path-string? false/c (one-of/c 'auto))
+Like compile-zos, but the racket-files are compiled to native-code extensions
+via C. If dest-dir is 'auto, each extension file (".dll", ".so", or ".dylib")
+is placed in a subdirectory relative to the source produced by (build-path
+"compiled" "native" (system-library-subpath)); the directory is created if
+necessary.
+
+((compile-extensions-to-c   expr)               
+                            racket-files        
+                            dest-dir)      →   void?
+  expr : any/c
+  racket-files : (listof path-string?)
+  dest-dir : (or/c path-string? false/c (one-of/c 'auto))
+Like compile-extensions, but only ".c" files are produced, not extensions.
+
+(compile-c-extensions c-files dest-dir) → void?
+  c-files : (listof path-string?)
+  dest-dir : (or/c path-string? false/c (one-of/c 'auto))
+Compiles each ".c" file (usually produced with compile-extensions-to-c) in
+c-files to an extension. The dest-dir argument is handled as in
+compile-extensions.
+
+9.4.3 Loading compiler support
+
+The compiler unit loads certain tools on demand via dynamic-require and
+get-info. If the namespace used during compilation is different from the
+namespace used to load the compiler, or if other load-related parameters are
+set, then the following parameter can be used to restore settings for
+dynamic-require.
+
+(current-compiler-dynamic-require-wrapper)
+ → ((-> any) . -> . any)
+(current-compiler-dynamic-require-wrapper proc) → void?
+  proc : ((-> any) . -> . any)
+A parameter whose value is a procedure that takes a thunk to apply. The default
+wrapper sets the current namespace (via parameterize) before calling the thunk,
+using the namespace in which the compiler/compiler library was originally
+instantiated.
+
+9.4.4 Options for the Compiler
+
+ (require compiler/option)
+The compiler/option module provides options (in the form of parameters) that
+control the compiler’s behaviors.
+
+More options are defined by the dynext/compile and dynext/link libraries, which
+control the actual C compiler and linker that are used for compilation via C.
+
+(somewhat-verbose) → boolean?
+(somewhat-verbose on?) → void?
+  on? : any/c
+A #t value for the parameter causes the compiler to print the files that it
+compiles and produces. The default is #f.
+
+(verbose) → boolean?
+(verbose on?) → void?
+  on? : any/c
+A #t value for the parameter causes the compiler to print verbose messages
+about its operations. The default is #f.
+
+(setup-prefix) → string?
+(setup-prefix str) → void?
+  str : string?
+A parameter that specifies a string to embed in public function names when
+compiling via C. This is used mainly for compiling extensions with the
+collection name so that cross-extension conflicts are less likely in
+architectures that expose the public names of loaded extensions. The default is
+"".
+
+(clean-intermediate-files) → boolean?
+(clean-intermediate-files clean?) → void?
+  clean? : any/c
+A #f value for the parameter keeps intermediate ".c" and ".o" files generated
+during compilation via C. The default is #t.
+
+(compile-subcollections) → (one-of/c #t #f)
+(compile-subcollections cols) → void?
+  cols : (one-of/c #t #f)
+A parameter that specifies whether sub-collections are compiled by
+compile-collection-zos. The default is #t.
+
+(compile-for-embedded) → boolean?
+(compile-for-embedded embed?) → void?
+  embed? : any/c
+A #t values for this parameter creates ".c" files and object files to be linked
+directly with an embedded Racket run-time system, instead of ".c" files and
+object files to be dynamically loaded into Racket as an extension. The default
+is #f.
+
+(propagate-constants) → boolean?
+(propagate-constants prop?) → void?
+  prop? : any/c
+A parameter to control the compiler’s constant propagating when compiling via
+C. The default is #t.
+
+(assume-primitives) → boolean?
+(assume-primitives assume?) → void?
+  assume? : any/c
+A #t parameter value effectively adds (require mzscheme) to the beginning of
+the program. This parameter is useful only when compiling non-module code. The
+default is #f.
+
+(stupid) → boolean?
+(stupid allow?) → void?
+  allow? : any/c
+A parameter that allow obvious non-syntactic errors, such as ((lambda () 0) 1 2
+3), when compiling via C. The default is #f.
+
+(vehicles) → symbol?
+(vehicles mode) → void?
+  mode : symbol?
+A parameter that controls how closures are compiled via C. The possible values
+are:
+
+  • 'vehicles:automatic : automatic grouping
+
+  • 'vehicles:functions : groups within a procedure
+
+  • 'vehicles:monolithic : groups randomly
+
+(vehicles:monoliths) → exact-nonnegative-integer?
+(vehicles:monoliths count) → void?
+  count : exact-nonnegative-integer?
+A parameter that determines the number of random groups for
+'vehicles:monolithic mode.
+
+(seed) → exact-nonnegative-integer?
+(seed val) → void?
+  val : exact-nonnegative-integer?
+Sets the randomizer seed for 'vehicles:monolithic mode.
+
+(max-exprs-per-top-level-set) → exact-nonnegative-integer?
+(max-exprs-per-top-level-set n) → void?
+  n : exact-nonnegative-integer?
+A parameter that determines the number of top-level Racket expressions crammed
+into one C function when compiling via C. The default is 25.
+
+(unpack-environments) → boolean?
+(unpack-environments unpack?) → void?
+  unpack? : any/c
+Setting this parameter to #f might help compilation via C for register-poor
+architectures. The default is #t.
+
+(debug) → boolean?
+(debug on?) → void?
+  on? : any/c
+A #t creates a "debug.txt" debugging file when compiling via C. The default is
+#f.
+
+(test) → boolean?
+(test on?) → void?
+  on? : any/c
+A #t value for this parameter causes compilation via C to ignore top-level
+expressions with syntax errors. The default is #f.
+
+9.4.5 The Compiler as a Unit
+
+9.4.5.1 Signatures
+
+ (require compiler/sig)
+
+compiler^ : signature
+Includes all of the names exported by compiler/compiler.
+
+compiler:option^ : signature
+Includes all of the names exported by compiler/option.
+
+compiler:inner^ : signature
+The high-level compiler/compiler interface relies on a low-level implementation
+of the extension compiler, which is available from compiler/comp-unit as
+implementing the compiler:inner^ signature.
+
+    (eval-compile-prefix expr) → void?
+      expr : any/c
+    Evaluates expr. Future calls to compile-extension or compile-extension-to-c
+    see the effects of the evaluation.
+
+    (compile-extension racket-source dest-dir) → void?
+      racket-source : path-string?
+      dest-dir : path-string?
+    Compiles a single Racket file to an extension.
+
+    (compile-extension-to-c   racket-source        
+                              dest-dir)       →   void?
+      racket-source : path-string?
+      dest-dir : path-string?
+    Compiles a single Racket file to a ".c" file.
+
+    (compile-c-extension c-source dest-dir) → void?
+      c-source : path-string?
+      dest-dir : path-string?
+    Compiles a single ".c" file to an extension.
+
+9.4.5.2 Main Compiler Unit
+
+ (require compiler/compiler-unit)
+
+compiler@ : unit?
+Provides the exports of compiler/compiler in unit form, where C-compiler
+operations are imports to the unit.
+
+The unit imports compiler:option^, dynext:compile^, dynext:link^, and
+dynext:file^. It exports compiler^.
+
+9.4.5.3 Options Unit
+
+ (require compiler/option-unit)
+
+compiler:option@ : unit?
+Provides the exports of compiler/option in unit form. It imports no signatures,
+and exports compiler:option^.
+
+9.4.5.4 Compiler Inner Unit
+
+ (require compiler/comp-unit)
+
+comp@ : unit?
+The unit imports compiler:option^, dynext:compile^, dynext:link^, and
+dynext:file^. It exports compiler:inner^.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

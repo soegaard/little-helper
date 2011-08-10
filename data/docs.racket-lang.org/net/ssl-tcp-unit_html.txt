@@ -1,0 +1,76 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+On this page:
+make-ssl-tcp@
+[...search manuals...]
+  top← prev  up  next → 
+
+18 SSL Unit: tcp^ via SSL
+
+ (require net/ssl-tcp-unit)
+The net/ssl-tcp-unit library provides a function for creating a tcp^
+implementation with openssl functionality.
+
+(make-ssl-tcp@   server-cert-file                
+                 server-key-file                 
+                 server-root-cert-files          
+                 server-suggest-auth-file        
+                 client-cert-file                
+                 client-key-file                 
+                 client-root-cert-files)    →   unit?
+  server-cert-file : (or/c path-string? false/c)
+  server-key-file : (or/c path-string? false/c)
+  server-root-cert-files : (or/c (listof path-string?) false/c)
+  server-suggest-auth-file : path-string?
+  client-cert-file : (or/c path-string? false/c)
+  client-key-file : (or/c path-string? false/c)
+  client-root-cert-files : (listof path-string?)
+Returns a unit that implements tcp^ using the SSL functions from openssl. The
+arguments to make-ssl-tcp@ control the certificates and keys uses by server and
+client connections:
+
+  • server-cert-file — a PEM file for a server’s certificate; #f means no
+    certificate (which is unlikely to work with any SSL client)
+
+  • server-key-file — a private key PEM to go with server-cert-file; #f means
+    no key (which is likely renders a certificate useless)
+
+  • server-root-cert-files — a list of PEM files for trusted root certificates;
+    #f disables verification of peer client certificates
+
+  • server-suggest-auth-file — PEM file for root certificates to be suggested
+    to peer clients that must supply certificates
+
+  • client-cert-file — a PEM file for a client’s certificate; #f means no
+    certificate (which is usually fine)
+
+  • client-key-file — a private key PEM to go with client-cert-file; #f means
+    no key (which is likely renders a certificate useless)
+
+  • client-root-cert-files — a list of PEM files for trusted root certificates;
+    #f disables verification of peer server certificates
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

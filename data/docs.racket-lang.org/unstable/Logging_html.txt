@@ -1,0 +1,108 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+with-logging-to-port
+with-intercepted-logging
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+19 Logging
+
+Vincent St-Amour <stamourv@racket-lang.org>
+
+ (require unstable/logging)
+
+This module provides tools for logging.
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(with-logging-to-port    port                   
+                         proc                   
+                       [ #:level level])   →   any
+  port : output-port?
+  proc : (-> any)
+  level : (or/c 'fatal 'error 'warning 'info 'debug) = 'info
+Runs proc, outputting any logging of level level or higher to port. Returns
+whatever proc returns.
+
+Example:
+
+    > (let ([my-log (open-output-string)])
+        (with-logging-to-port my-log
+          (lambda ()
+            (log-warning "Warning World!")
+            (+ 2 2))
+          #:level 'warning)
+        (get-output-string my-log))
+    "Warning World!\n"
+
+
+
+(with-intercepted-logging    interceptor            
+                             proc                   
+                           [ #:level level])   →   any
+                     (-> (vector/c
+                           (or/c 'fatal 'error 'warning 'info 'debug)
+   interceptor   :         string?
+                           any/c)
+                          any)
+  proc : (-> any)
+  level : (or/c 'fatal 'error 'warning 'info 'debug) = 'info
+Runs proc, calling interceptor on any log message of level level or higher.
+interceptor receives the entire log vectors (see Receiving Logged Events) as
+arguments. Returns whatever proc returns.
+
+Example:
+
+    > (let ([warning-counter 0])
+        (with-intercepted-logging
+          (lambda (l)
+            (when (eq? (vector-ref l 0)
+                       'warning)
+              (set! warning-counter (add1 warning-counter))))
+          (lambda ()
+            (log-warning "Warning!")
+            (log-warning "Warning again!")
+            (+ 2 2))
+          #:level 'warning)
+        warning-counter)
+    2
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

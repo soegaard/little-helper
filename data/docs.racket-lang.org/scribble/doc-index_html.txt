@@ -1,0 +1,1027 @@
+▼  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+Index
+
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+ 
+
+++extra
+++style
+--prefix
+--style
+-~-
+._
+.__
+10pt
+?-
+@ Reader Internals
+@ Syntax
+@ Syntax Basics
+A First Example
+abstract
+abstract
+abstract
+Adding @-expressions to a Language
+affiliation
+affiliation-mark
+affiliation-sep
+alt-tag
+alt-tag-name
+alt-tag?
+Alternative Body Syntax
+as-index
+at-exp
+attributes
+attributes-assoc
+attributes?
+author
+author
+author+email
+author/short
+authorinfo
+authors
+aux-elem
+auxiliary-table?
+background-color-property
+background-color-property-color
+background-color-property?
+Base Document Format
+Base Renderer
+bib-entry
+bib-entry?
+Bibliography
+bibliography
+block
+block-color
+block-traverse-procedure/c
+block-width
+block?
+Blocks
+BNF
+BNF Grammars
+BNF-alt
+BNF-etc
+BNF-group
+BNF-seq
+body-id
+body-id-value
+body-id?
+bold
+BookRef
+category
+centered
+centerline
+ChapRef
+ChapRefUC
+chunk
+cite
+class-index-desc
+class-index-desc?
+clean-up-index-string
+close-eval
+
+ code:comment
+code:hilite
+code:line
+code:quote
+codeblock
+collect
+collect pass
+collect-element
+collect-element-collect
+collect-element?
+collect-info
+collect-info-ext-ht
+collect-info-gen-prefix
+collect-info-ht
+collect-info-parents
+collect-info-parts
+collect-info-relatives
+collect-info-tags
+collect-info?
+collect-put!
+Collected and Resolved Information
+collected-info
+collected-info-info
+collected-info-number
+collected-info-parent
+collected-info?
+color-property
+color-property-color
+color-property?
+commandline
+comment-color
+Comments
+Compatibility Basic Functions
+Compatibility Libraries
+Compatibility Structures And Processing
+compound paragraph
+compound-paragraph
+compound-paragraph-blocks
+compound-paragraph-style
+compound-paragraph?
+conferenceinfo
+Configuring Output
+Connecting to "racket"
+content
+content->string
+content-width
+content?
+copyrightdata
+copyrightyear
+Cross-Reference Utilities
+css-addition
+css-addition-path
+css-addition?
+declare-exporting
+decode
+decode
+decode-compound-paragraph
+decode-content
+decode-elements
+decode-flow
+decode-paragraph
+decode-part
+decode-string
+Decoding Sequences
+Decoding Text
+def+int
+defboolparam
+defclass
+defclass/title
+defconstructor
+defconstructor*/make
+defconstructor/auto-super
+defconstructor/make
+defexamples
+defform
+defform*
+defform*/subs
+defform/none
+defform/subs
+defidentifier
+defidform
+defidform/inline
+define-code
+Defining Functions and More
+Defining Racket Bindings
+definterface
+definterface/title
+defmethod
+defmethod*
+defmixin
+defmixin/title
+defmodule
+defmodule*
+defmodule*/no-declare
+defmodulelang
+defmodulelang*
+defmodulelang*/no-declare
+defmodulereader
+defmodulereader*
+defmodulereader*/no-declare
+defparam
+defproc
+defproc*
+defs+int
+defsignature
+defsignature/splice
+defstruct
+defstruct*
+deftech
+defterm
+defthing
+deftogether
+delayed block
+delayed element
+delayed-block
+delayed-block-resolve
+delayed-block?
+delayed-element
+delayed-element-plain
+delayed-element-resolve
+delayed-element-sizer
+delayed-element?
+deserialize-info
+DFlag
+Document Language
+Document Reader
+Document Structure
+Document Styles
+document-date
+document-date-text
+document-date?
+document-version
+document-version-text
+document-version?
+documentation transformer
+Documenting Classes and Interfaces
+Documenting Forms, Functions, Structure Types, and Values
+Documenting Modules
+Documenting Signatures
+DPFlag
+elem
+element
+element transformer
+element->string
+element-content
+element-content
+element-id-transformer?
+element-style
+element-style
+element-style?
+element-traverse-procedure/c
+element?
+element?
+elemref
+elemtag
+email
+emph
+entry
+entry-content
+entry-desc
+entry-tag
+entry-words
+entry?
+envvar
+error-color
+etc
+eval:alts
+eval:check
+Evaluation and Examples
+Examples
+examples
+exec
+exported-index-desc
+exported-index-desc-from-libs
+exported-index-desc-name
+exported-index-desc?
+Extending and Configuring Scribble Output
+Extra and Format-Specific Files
+Extracting Documentation from Source
+filebox
+filepath
+find-help
+find-help/lib
+Flag
+flow
+form-index-desc
+form-index-desc?
+generated-tag
+generated-tag?
+Getting Started
+Getting Started with Documentation
+go-to-main-page
+Handling Cross-References
+hash-lang
+help/help-utils
+High-Level Scribble API
+highlighted-color
+hover-property
+hover-property-text
+hover-property?
+hspace
+HTML Renderer
+HTML Style Properties
+html-defaults
+html-defaults-extra-files
+html-defaults-prefix
+html-defaults-style
+html-defaults?
+hyperlink
+idefterm
+image
+image-element
+image-element-path
+image-element-scale
+image-element-suffixes
+image-element?
+image-file
+image-file-path
+image-file-scale
+image-file?
+image/plain
+Images
+Implementing Styles
+In-Source Documentation
+include-abstract
+include-abstract
+include-abstract
+include-extracted
+include-previously-extracted
+include-section
+Indentation in Preprocessed output
+index
+index*
+index-element
+index-element-desc
+index-element-entry-seq
+index-element-plain-seq
+index-element-tag
+index-element?
+Index-Entry Descriptions
+index-section
+indexed-envvar
+indexed-file
+indexed-racket
+indexed-scheme
+Indexing
+Indexing
+Indexing
+info key
+info-key?
+input-background-color
+input-color
+institute
+institutes
+interaction
+interaction-eval
+interaction-eval-show
+interaction0
+Interface
+interface-index-desc
+interface-index-desc?
+italic
+item
+item?
+itemization
+itemization
+itemization-blockss
+itemization-style
+itemization?
+itemize
+itemlist
+JavaDoc
+JFP Paper Format
+just-context
+just-context-context
+just-context-val
+just-context?
+keyword-color
+keywords
+kleeneplus
+kleenerange
+kleenestar
+larger
+Latex Renderer
+Latex Style Properties
+latex-auto-extra-files
+latex-auto-extra-files-paths
+latex-auto-extra-files?
+latex-defaults
+latex-defaults-extra-files
+latex-defaults-prefix
+latex-defaults-style
+latex-defaults?
+Layer Roadmap
+linebreak
+link
+link-element
+link-element-tag
+link-element?
+Links
+Links
+litchar
+literal
+literal-syntax
+literal-syntax-stx
+literal-syntax?
+Literate Programming
+LNCS Paper Format
+load-xref
+local-table-of-contents
+Low-Level Scribble API
+lp-include
+make-alt-tag
+make-at-reader
+make-at-readtable
+make-attributes
+make-aux-element
+make-auxiliary-table
+make-background-color-property
+make-base-eval
+make-base-eval-factory
+make-blockquote
+make-body-id
+make-class-index-desc
+make-collect-element
+make-collect-info
+make-collected-info
+make-color-property
+make-compound-paragraph
+make-compound-paragraph
+make-css-addition
+make-delayed-block
+make-delayed-element
+make-document-date
+make-document-version
+make-element
+make-element
+make-element-id-transformer
+make-entry
+make-eval-factory
+make-exported-index-desc
+make-form-index-desc
+make-generated-tag
+make-hover-element
+make-hover-property
+make-html-defaults
+make-image-element
+make-image-file
+make-index-element
+make-index-element
+make-interface-index-desc
+make-itemization
+make-itemization
+make-just-context
+make-latex-auto-extra-files
+make-latex-defaults
+make-link-element
+make-link-element
+make-literal-syntax
+make-method-index-desc
+make-mixin-index-desc
+make-module-path-index-desc
+make-multiarg-element
+make-nested-flow
+make-omitable-paragraph
+make-page-target-element
+make-page-target-element
+make-paragraph
+make-paragraph
+make-part
+make-part
+make-part-collect-decl
+make-part-index-decl
+make-part-relative-element
+make-part-start
+make-part-tag-decl
+make-procedure-index-desc
+make-redirect-target-element
+make-redirect-target-element
+make-render-element
+make-resolve-info
+make-script-element
+make-script-property
+make-shaped-parens
+make-splice
+make-struct-index-desc
+make-style
+make-styled-itemization
+make-styled-paragraph
+make-table
+make-table
+make-table-cells
+make-table-columns
+make-target-element
+make-target-element
+make-target-url
+make-target-url
+make-tex-addition
+make-thing-index-desc
+make-title-decl
+make-toc-element
+make-toc-element
+make-toc-target-element
+make-toc-target-element
+make-traverse-block
+make-traverse-element
+make-unnumbered-part
+make-url-anchor
+make-var-id
+make-variable-id
+make-versioned-part
+make-with-attributes
+Manual Forms
+margin-note
+margin-note*
+math
+menuitem
+meta-color
+method
+method-index-desc
+method-index-desc-class-tag
+method-index-desc-method-name
+method-index-desc?
+Miscellaneous
+mixin-index-desc
+mixin-index-desc?
+module-color
+module-link-color
+module-path-index-desc
+module-path-index-desc?
+module-path-prefix->string
+More Functions
+Multi-Page Sections
+multiarg-element
+multiarg-element-content
+multiarg-element-style
+multiarg-element?
+Multiple Sections
+nested
+nested flow
+nested-flow
+nested-flow-blocks
+nested-flow-style
+nested-flow?
+Next Steps
+no-color
+nocopyright
+nonbreaking
+nonterm
+noqcourier
+notimes
+omitable-paragraph?
+onecolumn
+onscreen
+opt-color
+optional
+other-doc
+other-manual
+output-color
+page-target-element
+page-target-element?
+para
+paragraph
+paragraph
+paragraph-content
+paragraph-content
+paragraph-style
+paragraph?
+parameter-doc
+paren-color
+part
+part
+part-blocks
+part-collect-decl
+part-collect-decl-element
+part-collect-decl?
+part-collected-info
+part-flow
+part-index-decl
+part-index-decl-entry-seq
+part-index-decl-plain-seq
+part-index-decl?
+part-parts
+part-relative element
+part-relative-element
+part-relative-element-plain
+part-relative-element-resolve
+part-relative-element-sizer
+part-relative-element?
+part-start
+part-start-depth
+part-start-style
+part-start-tag-prefix
+part-start-tags
+part-start-title
+part-start?
+part-style
+part-tag-decl
+part-tag-decl-tag
+part-tag-decl?
+part-tag-prefix
+part-tags
+part-title-content
+part-title-content
+part-to-collect
+part?
+Parts
+PFlag
+pidefterm
+plain
+PLaneT
+postDoc
+pre-content
+pre-content?
+pre-flow
+pre-flow?
+pre-part
+pre-part?
+Predefined Latex Macros
+preDoc
+prefix file
+preprint
+Preprocessor
+proc-doc
+proc-doc/names
+procedure
+procedure-index-desc
+procedure-index-desc?
+Prose and Terminology
+provide-extracted
+provide/doc
+Racket
+racket
+RACKET
+Racket Expression Escapes
+Racket Manual Format
+Racket Typesetting and Hyperlinks
+RACKETBLOCK
+racketblock
+racketblock+eval
+racketblock0
+RACKETBLOCK0
+racketblock0+eval
+racketerror
+racketfont
+racketgrammar
+racketgrammar*
+racketid
+racketidfont
+RACKETINPUT
+racketinput
+racketinput0
+RACKETINPUT0
+racketkeywordfont
+racketlink
+racketmetafont
+racketmod
+racketmod+eval
+racketmod0
+racketmodfont
+racketmodlink
+racketmodname
+racketoutput
+racketparenfont
+racketresult
+RACKETRESULTBLOCK
+racketresultblock
+racketresultblock0
+RACKETRESULTBLOCK0
+racketresultfont
+racketvalfont
+racketvarfont
+read
+read-inside
+read-syntax
+read-syntax-inside
+reader-color
+redirect-target-element
+redirect-target-element-alt-anchor
+redirect-target-element-alt-path
+redirect-target-element?
+render
+render pass
+render%
+render-element
+render-element-render
+render-element?
+render-mixin
+render-mixin
+render-mixin
+render-multi-mixin
+Renderer
+require/doc
+resolve
+resolve pass
+resolve-get
+resolve-get-keys
+resolve-get/ext?
+resolve-get/tentative
+resolve-info
+resolve-info-ci
+resolve-info-delays
+resolve-info-undef
+resolve-info?
+resolve-search
+result-color
+Running scribble
+scheme
+SCHEME
+SCHEMEBLOCK
+schemeblock
+SCHEMEBLOCK0
+schemeblock0
+schemeerror
+schemefont
+schemegrammar
+schemegrammar*
+schemeid
+schemeidfont
+schemeinput
+schemekeywordfont
+schemelink
+schememetafont
+schememod
+schememodfont
+schememodlink
+schememodname
+schemeoutput
+schemeparenfont
+schemeresult
+schemeresultfont
+schemevalfont
+schemevarfont
+Scribble Layers
+scribble-eval-handler
+scribble/base
+scribble/base-render
+scribble/basic
+scribble/bnf
+scribble/comment-reader
+scribble/core
+scribble/decode
+scribble/doc
+scribble/doclang
+scribble/eval
+scribble/extract
+scribble/html-properties
+scribble/html-render
+scribble/jfp
+scribble/latex-properties
+scribble/latex-render
+scribble/lncs
+scribble/lp
+scribble/lp Language
+scribble/lp-include
+scribble/lp-include Module
+scribble/manual
+scribble/manual-struct
+scribble/racket
+scribble/reader
+scribble/scheme
+scribble/sigplan
+scribble/srcdoc
+scribble/struct
+scribble/text
+scribble/text-render
+scribble/xref
+Scribble: The Racket Documentation Tool
+'scribble:current-render-mode
+Scribbling Documentation
+script-property
+script-property-script
+script-property-type
+script-property?
+search-for
+seclink
+secref
+Secref
+SecRef
+SecRefUC
+SecRefUC
+section
+Section Hyperlinks
+Section Titles
+section-index
+sectionNewpage
+serialize-info
+set-external-tag-path
+Setting Up Library Documentation
+shaped-parens
+shaped-parens-shape
+shaped-parens-val
+shaped-parens?
+Showing Racket Examples
+sigelem
+signature-desc
+SIGPLAN Paper Format
+smaller
+Source Annotations for Documentation
+Spaces, Newlines, and Indentation
+Spacing
+span-class
+specform
+specspecsubform
+specspecsubform/subs
+specsubform
+specsubform/subs
+splice
+splice-run
+splice?
+Splitting the Document Source
+struct-index-desc
+struct-index-desc?
+struct:alt-tag
+struct:attributes
+struct:background-color-property
+struct:body-id
+struct:class-index-desc
+struct:collect-element
+struct:collect-info
+struct:collected-info
+struct:color-property
+struct:compound-paragraph
+struct:css-addition
+struct:delayed-block
+struct:delayed-element
+struct:document-date
+struct:document-version
+struct:element
+struct:entry
+struct:exported-index-desc
+struct:form-index-desc
+struct:generated-tag
+struct:hover-property
+struct:html-defaults
+struct:image-element
+struct:image-file
+struct:index-element
+struct:interface-index-desc
+struct:itemization
+struct:just-context
+struct:latex-auto-extra-files
+struct:latex-defaults
+struct:link-element
+struct:literal-syntax
+struct:method-index-desc
+struct:mixin-index-desc
+struct:module-path-index-desc
+struct:multiarg-element
+struct:nested-flow
+struct:page-target-element
+struct:paragraph
+struct:part
+struct:part-collect-decl
+struct:part-index-decl
+struct:part-relative-element
+struct:part-start
+struct:part-tag-decl
+struct:procedure-index-desc
+struct:redirect-target-element
+struct:render-element
+struct:resolve-info
+struct:script-property
+struct:shaped-parens
+struct:splice
+struct:struct-index-desc
+struct:style
+struct:table
+struct:table-cells
+struct:table-columns
+struct:target-element
+struct:target-url
+struct:target-url
+struct:tex-addition
+struct:thing-index-desc
+struct:title-decl
+struct:toc-element
+struct:toc-target-element
+struct:traverse-block
+struct:traverse-element
+struct:url-anchor
+struct:var-id
+struct:with-attributes
+Structure Reference
+Structures And Processing
+style
+style
+style file
+Style Guide
+style name
+style property
+style-name
+style-properties
+style?
+styled-itemization-style
+styled-itemization?
+styled-paragraph-style
+styled-paragraph?
+Styles
+subscript
+subsection
+subsubsection
+subsubsub*section
+superscript
+svar
+symbol-color
+Syntax Properties
+syntax-link-color
+t
+table
+table
+table-blockss
+table-cells
+table-cells-styless
+table-cells?
+table-columns
+table-columns-styles
+table-columns?
+table-flowss
+table-of-contents
+table-style
+table?
+Tables of Contents
+tabular
+tag
+tag prefix
+tag-key
+tag?
+Tags
+target-element
+target-element-tag
+target-element?
+target-url
+target-url
+target-url-addr
+target-url-addr
+target-url-style
+target-url?
+target-url?
+tech
+techlink
+terms
+tex-addition
+tex-addition-path
+tex-addition?
+Text Generation
+Text Mode vs. Racket Mode for Arguments
+Text Renderer
+Text Styles and Content
+The Body Part
+The Command Part
+The Datum Part
+The Scribble Syntax at a Glance
+thing-doc
+thing-index-desc
+thing-index-desc?
+this-obj
+title
+title-decl
+title-decl-content
+title-decl-style
+title-decl-tag-prefix
+title-decl-tags
+title-decl-version
+title-decl?
+to-element
+to-element/no-color
+to-paragraph
+to-paragraph/prefix
+toc-element
+toc-element-toc-content
+toc-element?
+toc-target-element
+toc-target-element?
+traverse
+traverse block
+traverse element
+traverse pass
+traverse-block
+traverse-block-block
+traverse-block-traverse
+traverse-block?
+traverse-element
+traverse-element-content
+traverse-element-traverse
+traverse-element?
+tt
+Typesetting Code
+Typesetting Code
+Typesetting Comments
+Typesetting Prose
+Typical Composition
+undefined-const
+unnumbered-part?
+url
+url-anchor
+url-anchor-name
+url-anchor?
+use-at-readtable
+Using External Files
+Using Printouts
+Using the @ Reader
+value-color
+value-link-color
+var
+var-id
+var-id-sym
+var-id?
+variable-color
+variable-id?
+Various String Forms
+verbatim
+versioned-part?
+void-const
+whitespace?
+with-attributes
+with-attributes-assoc
+with-attributes-style
+with-attributes?
+Writing Text Files
+xmethod
+xref-binding->definition-tag
+xref-index
+xref-render
+xref-tag->index-entry
+xref-tag->path+anchor
+xref-transfer-info
+xref?
+~
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

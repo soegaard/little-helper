@@ -1,0 +1,229 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 3  Making Slides
+3.1  Primary Slide Functions
+3.2  Slide Registration
+3.3  Viewer Control
+3.4  Constants and Layout Variables
+3.5  Configuration
+3.6  Pict-Staging Helper
+3.7  Slides to Picts
+On this page:
+slide
+t
+it
+bt
+bit
+tt
+rt
+titlet
+para
+item
+subitem
+clickback
+size-in-pixels
+make-outline
+comment
+comment?
+[...search manuals...]
+  top← prev  up  next → 
+
+3.1 Primary Slide Functions
+
+(slide  [ #:title title                 
+          #:name name                   
+          #:layout layout               
+          #:inset inset                 
+          #:timeout secs                
+          #:condense? condense?]        
+          element ...)             →   void?
+  title : (or/c #f string? pict?) = #f
+  name : (or/c #f string?) = title
+  layout : (or/c 'auto 'center 'top 'tall) = 'auto
+  inset : slide-inset? = (make-slide-inset 0 0 0 0)
+  secs : (or/c #f real?) = #f
+  condense? : any/c = (and timeout #t)
+                 (flat-rec-contract elem/c
+                   (or/c pict?
+   element   :          'next 'next! 'alts 'alts~ 'nothing
+                        comment?
+                        (listof (listof elem/c))))
+Creates and registers a slide. See Staging Slides for information about
+elements.
+
+When this function is first called in non-printing mode, then the viewer window
+is opened. Furthermore, each call to the function yields, so that the viewer
+window can be refreshed, and so the user can step through slides.
+
+If title is not #f, then a title is shown for the slide. The name is used in
+the slide-navigation dialog, and it defaults to title.
+
+If layout is 'top, then the content is top-aligned, with (* 2 gap-size) space
+between the title and the content. The 'tall layout is similar, but with only
+gap-size. The 'center mode centers the content (ignoring space consumed by the
+title). The 'auto mode is like 'center, except when title is non-#f and when
+the space between the title and content would be less than (* 2 gap-size), in
+which case it behaves like 'top.
+
+The inset argument supplies an inset that makes the slide-viewing window
+smaller when showing the slide. See make-slide-inset for more information.
+
+If secs argument for #:timeout is not #f, then the viewer automatically
+advances from this slide to the next after secs seconds, and manual advancing
+skips this slide.
+
+If condense? is ture, then in condense mode (as specified by the -c
+command-line flag), the slide is not created and registered.
+
+(t str) → pict?
+  str : string?
+The normal way to make plain text. Returns (text str (current-main-font) (
+current-font-size)).
+
+(it str) → pict?
+  str : string?
+The normal way to make italic text. Returns (text str (cons 'italic (
+current-main-font)) (current-font-size)).
+
+(bt str) → pict?
+  str : string?
+The normal way to make bold text. Returns (text str (cons 'bold (
+current-main-font)) (current-font-size)).
+
+(bit str) → pict?
+  str : string?
+Bold-italic text. Returns (text str (list* 'bold 'italic (current-main-font)) (
+current-font-size)).
+
+(tt str) → pict?
+  str : string?
+The normal way to make monospaced text. Returns (text str `(bold . modern)  (
+current-font-size)).
+
+(rt str) → pict?
+  str : string?
+The normal way to make serif text. Returns (text str 'roman (current-font-size
+)).
+
+(titlet str) → pict?
+  str : string?
+Creates title text. Returns ((current-titlet) str).
+
+(para  [ #:width width             
+         #:align align             
+         #:fill? fill?             
+         #:decode? decode?]        
+         element ...)         →   pict?
+  width : real? = (current-para-width)
+  align : (or/c 'left 'center 'right) = 'left
+  fill? : any/c = #t
+  decode? : any/c = #t
+   element   :   (flat-rec-contract elem/c
+                   (or/c string? pict? (listof elem/c)))
+Generates a paragraph pict that is no wider than width units, and that is
+exactly width units if fill? is true. If fill? is #f, then the result pict is
+as wide as the widest line.
+
+Each list within elements is spliced into the sequence of string and pict
+elements. If decode? is true, then strings among the elements are decoded by
+performing the following substitutions: --- → —, -- → –, `` → “, '' → ”, ' → ’.
+In addition, to better work with at-exp notation, if an element is "\n", then
+it is dropped along with any spaces at the start of the next element.
+
+Strings are split at spaces for word-wrapping to fit the page, and a space is
+added between elements. If a string element starts with one of the following
+punctuation marks (after decoding), however, no space is added before the
+string:
+
+   - ' , .   : ; ? ! ) ” ’
+
+The align argument specifies how to align lines within the paragraph.
+
+See the spacing between lines is determined by the current-line-sep parameter.
+
+(item  [ #:width width             
+         #:bullet blt              
+         #:align align             
+         #:fill? fill?             
+         #:decode? decode?]        
+         element ...)         →   pict?
+  width : real? = (current-para-width)
+  blt : pict? = bullet
+  align : (or/c 'left 'center 'right) = 'left
+  fill? : any/c = #t
+  decode? : any/c = #t
+   element   :   (flat-rec-contract elem/c
+                   (or/c string? pict? (listof elem/c)))
+Like para, but with blt followed by (/ gap-size 2) space appended horizontally
+to the resulting paragraph, aligned with the top line. The paragraph width of
+blt plus (/ gap-size 2) is subtracted from the maximum width of the paragraph.
+
+(subitem  [ #:width width             
+            #:bullet blt              
+            #:align align             
+            #:fill? fill?             
+            #:decode? decode?]        
+            element ...)         →   pict?
+  width : real? = (current-para-width)
+  blt : pict? = o-bullet
+  align : (or/c 'left 'center 'right) = 'left
+  fill? : any/c = #t
+  decode? : any/c = #t
+   element   :   (flat-rec-contract elem/c
+                   (or/c string? pict? (listof elem/c)))
+Like item, but an additional (* 2 gap-size) is subtracted from the paragraph
+width and added as space to the left of the pict. Also, o-bullet is the default
+bullet, instead of bullet.
+
+(clickback pict thunk) → pict?
+  pict : pict?
+  thunk : (-> any)
+Creates a pict that embeds the given one, and is the same size as the given
+pict, but that when clicked during a presentation calls thunk.
+
+(size-in-pixels pict) → pict?
+  pict : pict?
+Scales pict so that it is displayed on the screen as (pict-width pict) pixels
+wide and (pict-height pict) pixels tall. The result is pict when using a 1024
+by 768 display.
+
+(make-outline name title subitems ...) → (symbol? . -> . void?)
+  name : (or/c symbol? (listof symbol?))
+  title : (or/c string? pict?)
+   subitems   :   (or/c #f null?
+                        (symbol? . -> . pict?))
+Returns a function that takes a symbol and generates an outline slide.
+
+The ... above applies to all three arguments together. Each trio of arguments
+defines a section for the outline:
+
+  • The section name is either a symbol or a list of symbols. When the outline
+    function is called later to make an outline, the given symbol is compared
+    to the section’s symbol(s), and the section is marked as current if the
+    symbol matches.
+
+  • The title is used as the displayed name of the section.
+
+  • The subitems are displayed when the section is active. It can be #f or null
+    (for historical reasons) if no subitems are to be displayed. Otherwise, it
+    should be a function that takes a symbol (the same one passed to the
+    outline maker) and produces a pict.
+
+(comment text ...) → comment?
+  text : (or/c string? pict?)
+Combines strings and picts to be used as a slide element for (usually hidden)
+commentary. Use the result as an argument to slide.
+
+(comment? v) → boolean?
+  v : any/c
+Returns #t if v is a comment produced by comment.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

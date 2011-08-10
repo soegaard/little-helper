@@ -1,0 +1,88 @@
+►  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+▼ 6  Graphs
+6.1  graph-pasteboard<%>
+6.2  graph-pasteboard-mixin
+6.3  graph-snip<%>
+6.4  graph-snip-mixin
+6.5  Graph Functions
+On this page:
+add-child
+add-parent
+get-children
+get-parents
+remove-child
+remove-parent
+set-parent-link-label
+[...search manuals...]
+  top← prev  up  next → 
+
+graph-snip<%> : interface?
+
+(send a-graph-snip add-child child) → void?
+  child : (is-a?/c graph-snip<%>)
+Adds a child of this snip. Instead of calling this method, consider using the
+add-links function.
+
+(send a-graph-snip add-parent parent) → void?
+  parent : (is-a?/c graph-snip<%>)
+(send a-graph-snip add-parent   parent                  
+                                mouse-over-pen          
+                                mouse-off-pen           
+                                mouse-over-brush        
+                                mouse-off-brush)   →   void?
+  parent : (is-a?/c graph-snip<%>)
+  mouse-over-pen : (or/c false/c (is-a?/c pen%))
+  mouse-off-pen : (or/c false/c (is-a?/c pen%))
+  mouse-over-brush : (or/c false/c (is-a?/c brush%))
+  mouse-off-brush : (or/c false/c (is-a?/c brush%))
+Adds a parent of this snip. Instead of calling this method, consider using the
+add-links function.
+
+(send a-graph-snip get-children) → (listof snip%)
+returns a list of snips that implement graph-snip<%>. Each of these snips will
+have a line drawn from it, pointing at this snip.
+
+(send a-graph-snip get-parents) → (listof graph-snip<%>)
+Returns a list of snips that implement graph-snip<%>. Each of these snips will
+have a line drawn to it, starting from this snip.
+
+(send a-graph-snip remove-child child) → void?
+  child : (is-a?/c graph-snip<%>)
+Removes a child snip from this snip. Be sure to remove this snip as a parent
+from the argument, too. Instead of calling this method, consider using the
+remove-links function.
+
+(send a-graph-snip remove-parent parent) → void?
+  parent : (is-a?/c graph-snip<%>)
+Removes a parent snip from this snip. Be sure to remove this snip as a child
+from the argument, too. Instead of calling this method, consider using the
+remove-links function.
+
+(send a-graph-snip set-parent-link-label   parent        
+                                           label)   →   void?
+  parent : (is-a?/c graph-snip<%>)
+  label : (or/c false/c string/)
+Changes the label on the edge going to the parent to be label. Ignored if no
+such egde exists.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

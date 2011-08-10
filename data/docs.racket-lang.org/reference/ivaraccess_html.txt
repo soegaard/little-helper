@@ -1,0 +1,216 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+► 5.4  Field and Method Access
+5.4.1  Methods
+5.4.2  Fields
+5.4.3  Generics
+On this page:
+5.4.1 Methods
+send
+send/ apply
+send*
+with-method
+5.4.2 Fields
+get-field
+set-field!
+field-bound?
+class-field-accessor
+class-field-mutator
+5.4.3 Generics
+generic
+send-generic
+make-generic
+[...search manuals...]
+  top← prev  up  next → 
+
+5.4 Field and Method Access
+
+In expressions within a class definition, the initialization variables, fields,
+and methods of the class are all part of the environment. Within a method body,
+only the fields and other methods of the class can be referenced; a reference
+to any other class-introduced identifier is a syntax error. Elsewhere within
+the class, all class-introduced identifiers are available, and fields and
+initialization variables can be mutated with set!.
+
+5.4.1 Methods
+
+Method names within a class can only be used in the procedure position of an
+application expression; any other use is a syntax error.
+
+To allow methods to be applied to lists of arguments, a method application can
+have the following form:
+
+    (method-id arg ... . arg-list-expr)
+
+This form calls the method in a way analogous to (apply method-id arg ...
+arg-list-expr). The arg-list-expr must not be a parenthesized expression.
+
+Methods are called from outside a class with the send and send/apply forms.
+
+(send obj-expr method-id arg ...)
+(send obj-expr method-id arg ... . arg-list-expr)
+Evaluates obj-expr to obtain an object, and calls the method with (external)
+name method-id on the object, providing the arg results as arguments. Each arg
+is as for #%app: either arg-expr or keyword arg-expr. In the second form,
+arg-list-expr cannot be a parenthesized expression.
+
+If obj-expr does not produce an object, the exn:fail:contract exception is
+raised. If the object has no public method named method-id, the exn:fail:object
+exception is raised.
+
+(send/apply obj-expr method-id arg ... arg-list-expr)
+Like the dotted form of send, but arg-list-expr can be any expression.
+
+(send* obj-expr msg ...)
+ 
+msg   =   (method-id arg ...)
+      |   (method-id arg ... . arg-list-expr)
+Calls multiple methods (in order) of the same object. Each msg corresponds to a
+use of send.
+
+For example,
+
+    (send* edit (begin-edit-sequence)
+                (insert "Hello")
+                (insert #\newline)
+                (end-edit-sequence))
+
+is the same as
+
+    (let ([o edit])
+      (send o begin-edit-sequence)
+      (send o insert "Hello")
+      (send o insert #\newline)
+      (send o end-edit-sequence))
+
+(with-method ((id (obj-expr method-id)) ...)
+  body ...+)
+Extracts methods from an object and binds a local name that can be applied
+directly (in the same way as declared methods within a class) for each method.
+Each obj-expr must produce an object, which must have a public method named by
+the corresponding method-id. The corresponding id is bound so that it can be
+applied directly (see Methods).
+
+Example:
+
+    (let ([s (new stack%)])
+      (with-method ([push (s push!)]
+                    [pop (s pop!)])
+        (push 10)
+        (push 9)
+        (pop)))
+
+is the same as
+
+    (let ([s (new stack%)])
+      (send s push! 10)
+      (send s push! 9)
+      (send s pop!))
+
+5.4.2 Fields
+
+(get-field id obj-expr)
+Extracts the field with (external) name id from the value of obj-expr.
+
+If obj-expr does not produce an object, the exn:fail:contract exception is
+raised. If the object has no id method, the exn:fail:object exception is
+raised.
+
+(set-field! id obj-expr expr)
+Sets the field with (external) name id from the value of obj-expr to the value
+of expr.
+
+If obj-expr does not produce an object, the exn:fail:contract exception is
+raised. If the object has no id method, the exn:fail:object exception is
+raised.
+
+(field-bound? id obj-expr)
+Produces #t if the object result of obj-expr has a field with (external) name
+id, #f otherwise.
+
+If obj-expr does not produce an object, the exn:fail:contract exception is
+raised.
+
+(class-field-accessor class-expr field-id)
+Returns an accessor procedure that takes an instance of the class produced by
+class-expr and returns the value of the object’s field with (external) name
+field-id.
+
+If class-expr does not produce a class, the exn:fail:contract exception is
+raised. If the class has no field-id field, the exn:fail:object exception is
+raised.
+
+(class-field-mutator class-expr field-id)
+Returns a mutator procedure that takes an instance of the class produced by
+class-expr and a value, and sets the value of the object’s field with
+(external) name field-id to the given value. The result is #<void>.
+
+If class-expr does not produce a class, the exn:fail:contract exception is
+raised. If the class has no field-id field, the exn:fail:object exception is
+raised.
+
+5.4.3 Generics
+
+A generic can be used instead of a method name to avoid the cost of relocating
+a method by name within a class.
+
+(generic class-or-interface-expr id)
+Produces a generic that works on instances of the class or interface produced
+by class-or-interface-expr (or an instance of a class/interface derived from
+class-or-interface) to call the method with (external) name id.
+
+If class-or-interface-expr does not produce a class or interface, the
+exn:fail:contract exception is raised. If the resulting class or interface does
+not contain a method named id, the exn:fail:object exception is raised.
+
+(send-generic obj-expr generic-expr arg ...)
+(send-generic obj-expr generic-expr arg ... . arg-list-expr)
+Calls a method of the object produced by obj-expr as indicated by the generic
+produced by generic-expr. Each arg is as for #%app: either arg-expr or keyword
+arg-expr. The second form is analogous to calling a procedure with apply, where
+arg-list-expr is not a parenthesized expression.
+
+If obj-expr does not produce a object, or if generic-expr does not produce a
+generic, the exn:fail:contract exception is raised. If the result of obj-expr
+is not an instance of the class or interface encapsulated by the result of
+generic-expr, the exn:fail:object exception is raised.
+
+(make-generic type method-name) → generic?
+  type : (or/c class? interface?)
+  method-name : symbol?
+Like the generic form, but as a procedure that accepts a symbolic method name.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

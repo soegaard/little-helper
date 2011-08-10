@@ -1,0 +1,78 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+[...search manuals...]
+  top← prev  up  next → 
+
+15 Security Guards
+
+Before a primitive procedure accesses the filesystem or creates a network
+connection, it should first consult the current security guard to determine
+whether such access is allowed for the current thread.
+
+File access is normally preceded by a call to scheme_expand_filename, which
+accepts flags to indicate the kind of filesystem access needed, so that the
+security guard is consulted automatically.
+
+An explicit filesystem-access check can be made by calling
+scheme_security_check_file. Similarly, an explicit network-access check is
+performed by calling scheme_security_check_network.
+
+void   scheme_security_check_file ( const char* who,
+
+                                    char* filename,
+
+                                    int guards)
+
+Consults the current security manager to determine whether access is allowed to
+filename. The guards argument should be a bitwise combination of the following:
+
+  • SCHEME_GUARD_FILE_READ
+
+  • SCHEME_GUARD_FILE_WRITE
+
+  • SCHEME_GUARD_FILE_EXECUTE
+
+  • SCHEME_GUARD_FILE_DELETE
+
+  • SCHEME_GUARD_FILE_EXISTS (do not combine with other values)
+
+The filename argument can be NULL (in which case #f is sent to the security
+manager’s procedure), and guards should be SCHEME_GUARD_FILE_EXISTS in that
+case.
+
+If access is denied, an exception is raised.
+
+void   scheme_security_check_network ( const char* who,
+
+                                       char* host,
+
+                                       int portno)
+
+Consults the current security manager to determine whether access is allowed
+for creating a client connection to host on port number portno. If host is
+NULL, the security manager is consulted for creating a server at port number
+portno.
+
+If access is denied, an exception is raised.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

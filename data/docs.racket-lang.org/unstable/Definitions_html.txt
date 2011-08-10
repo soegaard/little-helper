@@ -1,0 +1,244 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+► 8  Definitions
+8.1  Deferred Evaluation in Modules
+8.2  Conditional Binding
+8.3  Renaming Definitions
+8.4  Forward Declarations
+8.5  Definition Shorthands
+8.6  Macro Definitions
+8.7  Effectful Transformation
+On this page:
+8.1 Deferred Evaluation in Modules
+at-end
+8.2 Conditional Binding
+define-if-unbound
+define-values-if-unbound
+define-syntax-if-unbound
+define-syntaxes-if-unbound
+8.3 Renaming Definitions
+define-renaming
+define-renamings
+8.4 Forward Declarations
+declare-names
+8.5 Definition Shorthands
+define-with-parameter
+define-single-definition
+8.6 Macro Definitions
+define-syntax-block
+8.7 Effectful Transformation
+in-phase1
+in-phase1/ pass2
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Definitions
+
+Carl Eastlund <cce@racket-lang.org>
+
+ (require unstable/define)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+Provides macros for creating and manipulating definitions.
+
+8.1 Deferred Evaluation in Modules
+
+(at-end expr)
+When used at the top level of a module, evaluates expr at the end of the
+module. This can be useful for calling functions before their definitions.
+
+Examples:
+
+    > (module Failure scheme
+        (f 5)
+        (define (f x) x))
+    > (require 'Failure)
+    reference to an identifier before its definition: f in
+
+    module: 'Failure
+
+    > (module Success scheme
+        (require unstable/define)
+        (at-end (f 5))
+        (define (f x) x))
+    > (require 'Success)
+
+
+8.2 Conditional Binding
+
+(define-if-unbound x e)
+(define-if-unbound (f . args) body ...)
+(define-values-if-unbound [x ...] e)
+(define-syntax-if-unbound x e)
+(define-syntax-if-unbound (f . args) body ...)
+(define-syntaxes-if-unbound [x ...] e)
+Define each x (or f) if no such binding exists, or do nothing if the name(s) is
+(are) already bound. The define-values-if-unbound and
+define-syntaxes-if-unbound forms raise a syntax error if some of the given
+names are bound and some are not.
+
+These are useful for writing programs that are portable across versions of
+Racket with different bindings, to provide an implementation of a binding for
+versions that do not have it but use the built-in one in versions that do.
+
+Examples:
+
+    > (define-if-unbound x 1)
+    > x
+    1
+
+    (define y 2)
+    > (define-if-unbound y 3)
+    > y
+    3
+
+
+
+8.3 Renaming Definitions
+
+(define-renaming new old)
+(define-renamings [new old] ...)
+Establishes a rename transformer for each new identifier, redirecting it to the
+corresponding old identifier.
+
+Examples:
+
+    > (define-renaming use #%app)
+    > (define-renamings [def define] [lam lambda])
+    > (def plus (lam (x y) (use + x y)))
+    > (use plus 1 2)
+    3
+
+
+
+8.4 Forward Declarations
+
+(declare-names x ...)
+Provides forward declarations of identifiers to be defined later. It is useful
+for macros which expand to mutually recursive definitions, including forward
+references, that may be used at the Racket top level.
+
+8.5 Definition Shorthands
+
+(define-with-parameter name parameter)
+Defines the form name as a shorthand for setting the parameter parameter.
+Specifically, (name value body ...) is equivalent to (parameterize ([parameter
+value]) body ...).
+
+Examples:
+
+    > (define-with-parameter with-input current-input-port)
+    > (with-input (open-input-string "Tom Dick Harry") (read))
+    'Tom
+
+
+
+(define-single-definition define-one-name define-many-name)
+Defines a marco define-one-name as a single identifier definition form with
+function shorthand like define and define-syntax, based on an existing macro
+define-many-name which works like define-values or define-syntaxes.
+
+Examples:
+
+    > (define-single-definition define-like define-values)
+    > (define-like x 0)
+    > x
+    0
+
+    > (define-like (f a b c) (printf "~s, ~s\n" a b) c)
+    > (f 1 2 3)
+    1, 2
+
+    3
+
+
+
+8.6 Macro Definitions
+
+(define-syntax-block (macro-decl ...) body ...)
+ 
+macro-decl   =   macro-id
+             |   [macro-id expander-id]
+Defines a syntax transformer for each macro-id based on the local definition of
+each expander-id (defaulting to macro-id/proc) in body .... Especially useful
+for mutually recursive expander functions and phase 1 macro definitions.
+Subsumes the behavior of define-syntax-set.
+
+Examples:
+
+    > (define-syntax-block
+          ([implies expand-implies]
+           nand)
+      
+        (define-syntax-rule (==> pattern template)
+          (syntax-rules () [pattern template]))
+      
+        (define expand-implies (==> (_ a b) (or (not a) b)))
+        (define nand/proc (==> (_ a ...) (not (and a ...)))))
+    > (implies #t (printf "True!\n"))
+    True!
+
+    > (implies #f (printf "False!\n"))
+    #t
+
+    > (nand #t #t (printf "All True!\n"))
+    All True!
+
+    #f
+
+    > (nand #t #f (printf "Some False!\n"))
+    #t
+
+    > (define-syntax-block (undefined-macro)
+        (define irrelevant "Whoops!"))
+    reference to undefined identifier: undefined-macro/proc
+
+
+
+8.7 Effectful Transformation
+
+(in-phase1 e)
+Executes e during phase 1 (the syntax transformation phase) relative to its
+context, during pass 1 if it occurs in a head expansion position.
+
+(in-phase1/pass2 e)
+Executes e during phase 1 (the syntax transformation phase) relative to its
+context, during pass 2 (after head expansion).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

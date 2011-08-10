@@ -1,0 +1,161 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-width
+min-height
+stretchable-height
+stretchable-width
+[...search manuals...]
+  top← prev  up  next → 
+
+area<%> : interface?
+An area<%> object is either a window or a windowless container for managing the
+position and size of other areas. An area<%> can be a container, a containee,
+or both. The only areas without a parent are top-level windows.
+
+All area<%> classes accept the following named instantiation arguments:
+
+  • min-width — default is the initial graphical minimum width; passed to
+    min-width
+
+  • min-height — default is the initial graphical minimum height; passed to
+    min-height
+
+  • stretchable-width — default is class-specific; passed to stretchable-width
+
+  • stretchable-height — default is class-specific; passed to
+    stretchable-height
+
+(send an-area get-graphical-min-size)
+  →   (integer-in 0 10000)   (integer-in 0 10000)
+Returns the area’s graphical minimum size as two values: the minimum width and
+the minimum height (in pixels).
+
+See Geometry Management for more information. Note that the return value does
+not depend on the area’s min-width and min-height settings.
+
+(send an-area get-parent)
+ → (or/c (is-a?/c area-container<%>) false/c)
+Returns the area’s parent. A top-level window may have no parent (in which case
+#f is returned), or it may have another top-level window as its parent.
+
+(send an-area get-top-level-window)
+ → (or/c (is-a?/c frame%) (is-a?/c dialog%))
+Returns the area’s closest frame or dialog ancestor. For a frame or dialog
+area, the frame or dialog itself is returned.
+
+(send an-area min-width) → (integer-in 0 10000)
+(send an-area min-width w) → void?
+  w : (integer-in 0 10000)
+Gets or sets the area’s minimum width (in pixels) for geometry management.
+
+The minimum width is ignored when it is smaller than the area’s graphical
+minimum width, or when it is smaller than the width reported by container-size
+if the area is a container. See Geometry Management for more information.
+
+An area’s initial minimum width is its graphical minimum width. See also
+get-graphical-min-size .
+
+When setting the minimum width, if w is smaller than the internal hard minimum,
+an exn:fail:contract exception is raised.
+
+(send an-area min-height) → (integer-in 0 10000)
+(send an-area min-height h) → void?
+  h : (integer-in 0 10000)
+Gets or sets the area’s minimum height for geometry management.
+
+The minimum height is ignored when it is smaller than the area’s graphical
+minimum height, or when it is smaller than the height reported by
+container-size if the area is a container. See Geometry Management for more
+information.
+
+An area’s initial minimum height is its graphical minimum height. See also
+get-graphical-min-size .
+
+When setting the minimum height (in pixels); if h is smaller than the internal
+hard minimum, an exn:fail:contract exception is raised.
+
+(send an-area stretchable-height) → boolean?
+(send an-area stretchable-height stretch?) → void?
+  stretch? : any/c
+Gets or sets the area’s vertical stretchability for geometry management. See
+Geometry Management for more information.
+
+(send an-area stretchable-width) → boolean?
+(send an-area stretchable-width stretch?) → void?
+  stretch? : any/c
+Gets or sets the area’s horizontal stretchability for geometry management. See
+Geometry Management for more information.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,120 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+jump-to
+ok?
+pretty-finish
+pretty-start
+put
+put-fixed
+put-unterminated
+tell
+[...search manuals...]
+  top← prev  up  next → 
+
+editor-stream-out% : class?
+  superclass: object%
+
+An editor-stream-out% object is used to write editor information to a file or
+other output stream (such as the clipboard).
+
+(make-object editor-stream-out% base)
+ → (is-a?/c editor-stream-out%)
+  base : (is-a?/c editor-stream-out-base%)
+An out-stream base—possibly an editor-stream-out-bytes-base% object—must be
+supplied in base.
+
+(send an-editor-stream-out jump-to pos) → void?
+  pos : exact-nonnegative-integer?
+Jumps to a given position in the stream.
+
+(send an-editor-stream-out ok?) → boolean?
+Returns #t if the stream is ready for writing, #f otherwise. Writing to a bad
+stream has no effect.
+
+(send an-editor-stream-out pretty-finish) → void?
+Ensures that the stream ends with a newline. This method is called by
+write-editor-global-footer.
+
+(send an-editor-stream-out pretty-start) → void?
+Writes a “comment” into the stream that identifies the file format. This method
+is called by write-editor-global-header.
+
+(send an-editor-stream-out put n v)
+ → (is-a?/c editor-stream-out%)
+  n : exact-nonnegative-integer?
+  v : bytes?
+(send an-editor-stream-out put v)
+ → (is-a?/c editor-stream-out%)
+  v : bytes?
+(send an-editor-stream-out put v)
+ → (is-a?/c editor-stream-out%)
+  v : exact-integer?
+(send an-editor-stream-out put v)
+ → (is-a?/c editor-stream-out%)
+  v : real?
+
+Writes v, or n bytes of v.
+
+When n is supplied with a byte-string v, use get-unterminated-bytes to read the
+bytes later. This is the recommended way to write out bytes to be easily read
+in later; use get-unterminated-bytes to read the bytes back in.
+
+If n is not supplied and v is a byte string, then for historical reasons, the
+actual number of bytes written includes a #\nul terminator, so use get-bytes
+instead of get-unterminated-bytes to read the bytes later.
+
+(send an-editor-stream-out put-fixed v)
+ → (is-a?/c editor-stream-out%)
+  v : exact-integer?
+Puts a fixed-sized integer into the stream. This method is needed because
+numbers are usually written in a way that takes varying numbers of bytes. In
+some cases it is useful to temporary write a 0 to a stream, write more data,
+and then go back and change the 0 to another number; such a process requires a
+fixed-size number.
+
+Numbers written to a stream with put-fixed must be read with get-fixed-exact or
+get-fixed.
+
+(send an-editor-stream-out put-unterminated v)
+ → (is-a?/c editor-stream-out%)
+  v : bytes?
+The same as calling put with (bytes-length v) and v.
+
+(send an-editor-stream-out tell) → exact-nonnegative-integer?
+Returns the current stream position.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

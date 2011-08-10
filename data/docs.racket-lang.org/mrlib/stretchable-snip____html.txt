@@ -1,0 +1,54 @@
+►  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+▼ 1  Aligned Pasteboard
+1.1  aligned-pasteboard<%>
+1.2  horizontal-pasteboard%
+1.3  vertical-pasteboard%
+1.4  aligned-editor-snip%
+1.5  aligned-editor-canvas%
+1.6  aligned-pasteboard-parent<%>
+1.7  stretchable-snip<%>
+On this page:
+get-aligned-min-height
+get-aligned-min-width
+stretchable-height
+stretchable-width
+[...search manuals...]
+  top← prev  up  next → 
+
+stretchable-snip<%> : interface?
+This interface must be implemented by any snip class who’s objects will be
+stretchable when inserted into an aligned-pasteboard<%>.
+
+(send a-stretchable-snip get-aligned-min-height) → real?
+The minimum height that the snip can be resized to
+
+(send a-stretchable-snip get-aligned-min-width) → real?
+The minimum width that the snip can be resized to.
+
+(send a-stretchable-snip stretchable-height) → boolean?
+Whether or not the snip can be stretched in the Y dimension
+
+(send a-stretchable-snip stretchable-width) → boolean?
+Whether or not the snip can be stretched in the X dimension
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

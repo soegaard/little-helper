@@ -1,0 +1,28 @@
+▼  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Trusting Standard Recertifying Transformers
+
+ (require syntax/trusted-xforms)
+
+The syntax/trusted-xforms library has no exports. It exists only to require
+other modules that perform syntax transformations, where the other
+transformations must use syntax-recertify. An application that wishes to
+provide a less powerful code inspector to a sub-program should generally attach
+syntax/trusted-xforms to the sub-program’s namespace so that things like the
+class system from scheme/class work properly.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

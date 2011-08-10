@@ -1,0 +1,223 @@
+▼  Errortrace: Debugging and Profiling
+1  Quick Instructions
+2  Installing Errortrace
+3  Using Errortrace
+4  Errortrace Library
+5  Re-using Errortrace Stack Tracing
+6  Errortrace Key
+► 3  Using Errortrace
+3.1  Instrumentation and Profiling
+3.2  Coverage
+3.3  Other Errortrace Bindings
+On this page:
+3.1 Instrumentation and Profiling
+instrumenting-enabled
+profiling-enabled
+profiling-record-enabled
+output-profile-results
+get-profile-results
+profile-paths-enabled
+clear-profile-results
+3.2 Coverage
+coverage-counts-enabled
+execute-counts-enabled
+get-coverage
+get-execute-counts
+annotate-covered-file
+annotate-executed-file
+test-coverage-info
+3.3 Other Errortrace Bindings
+print-error-trace
+error-context-display-depth
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Using Errortrace
+
+ (require errortrace)
+
+See Quick Instructions for information on starting with errortrace. This
+chapter provides information on the configuration of errortrace after it is
+loaded and installed.
+
+Don’t import errortrace into another module and expect it to work on that
+module. Instead, the errortrace module is meant to be invoked from the
+top-level (as described in Quick Instructions) so it can install handlers. The
+functions documented in this chapter then can be used at the top-level. The
+functions also can be accessed by importing errortrace/errortrace-lib, which
+does not install any handlers.
+
+As a language name, errortrace chains to another language that is specified
+immediately after errortrace, but instruments the module for debugging in the
+same way as if errortrace is required before loading the module from source.
+Using the errortrace meta-language is one way to ensure that debugging
+instrumentation is present when the module is compiled.}
+
+3.1 Instrumentation and Profiling
+
+By default, errortrace only instruments for stack-trace-on-exception. Profiling
+and coverage need to be enabled separately.
+
+(instrumenting-enabled) → boolean?
+(instrumenting-enabled on?) → void?
+  on? : any/c
+A parameter that determines whether tracing instrumentation is enabled, #t by
+default. Affects only the way that source code is compiled, not the way that
+exception information is reported. The instrumentation for storing exception
+information slows most programs by a factor of 2 or 3.
+
+(profiling-enabled) → boolean?
+(profiling-enabled on?) → void?
+  on? : any/c
+Errortrace’s profiling instrumentation is #f by default. To use it, you also
+need to ensure that instrumenting-enabled is on.
+
+Also, profiling only records information about the time taken on the thread
+that compiled the code (more precisely, the thread that instruments the code
+via the errortrace-compile-handler).
+
+(profiling-record-enabled) → boolean?
+(profiling-record-enabled on?) → void?
+  on? : any/c
+Enables/disables the recording of profiling info for the instrumented code. The
+default is #t.
+
+Profiling information is accumulated in a hash table. If a procedure is
+redefined, new profiling information is accumulated for the new version of the
+procedure, but the old information is also preserved.
+
+Depending of the source program, profiling usually induces a factor of 2 to 4
+slowdown, in addition to any slowdown from the exception-information
+instrumentation.
+
+(output-profile-results paths? sort-time?) → void?
+  paths? : any/c
+  sort-time? : any/c
+Gets the current profile results using get-profile-results and displays them.
+It optionally shows paths information (if it is recorded), and sorts by either
+time or call counts.
+
+(get-profile-results [thd]) → list?
+  thd : thread? = (current-thread)
+Returns a list of lists that contain all profiling information accumulated so
+far (for the thread thd):
+
+  • the number of times a procedure was called.
+
+  • the number of milliseconds consumed by the procedure’s body across all
+    calls (including the time consumed by any nested non-tail call within the
+    procedure, but not including time consumed by a tail-call from the
+    procedure).
+
+  • an inferred name (or #f) for the procedure.
+
+  • the procedure’s source in the form of a syntax object (which might, in
+    turn, provide a source location file and position).
+
+  • 
+    optionally, a list of unique call paths (i.e. stack traces) recorded if
+    profile-paths-enabled is set to #t. Each call path is a pair of
+      □ a count (the number of times the path occurred), and
+
+      □ 
+        a list containing two-element lists. Each two-element list contains
+          ☆ the calling procedure’s name or source expression, and
+
+          ☆ the calling procedure’s source file or #f.
+
+    Collecting this information is relatively expensive.
+
+(profile-paths-enabled) → boolean?
+(profile-paths-enabled on?) → void?
+  on? : any/c
+Enables/disables collecting path information for profiling. The default is #f,
+but setting the parameter to #t immediately affects all procedures instrumented
+for profiling information.
+
+(clear-profile-results) → void?
+Clears accumulated profile results for the current thread.
+
+3.2 Coverage
+
+Errortrace can produce coverage information in two flavors: both count the
+number of times each expression in the source was used during execution. The
+first flavor uses a simple approach, where each expression is counted when
+executed; the second one uses the same annotations that the profiler uses, so
+only function bodies are counted. To see the difference between the two
+approaches, try this program:
+
+    (define (foo x) (if x 1 2))
+    (equal? (foo #t) 1)
+
+The first approach will produce exact results, but it is more expensive; use it
+when you want to know how covered your code is (when the expected counts are
+small). The second approach produces coarser results (which, in the above case,
+will miss the 2 expression), but is less expensive; use it when you want to use
+the counts for profiling (when the expected counts are large).
+
+(coverage-counts-enabled) → boolean?
+(coverage-counts-enabled on?) → void?
+  on? : any/c
+(execute-counts-enabled) → boolean?
+(execute-counts-enabled on?) → void?
+  on? : any/c
+Parameters that determine if the first (exact coverage) or second
+(profiler-based coverage) are enabled. Remember that setting
+instrumenting-enabled to #f also disables both.
+
+(get-coverage) → (listof (cons/c syntax? boolean?))
+Returns a list of pairs, one for each instrumented expression. The first
+element of the pair is a syntax? object (usually containing source location
+information) for the original expression, and the second element of the pair
+indicates if the code has been executed. This list is snapshot of the current
+state of the computation.
+
+(get-execute-counts) → (list (cons/c syntax? number?))
+)]{ Returns a list of pairs, one for each instrumented expression. The first
+element of the pair is a syntax? object (usually containing source location
+information) for the original expression, and the second element of the pair is
+the number of times that the expression has been evaluated. This list is
+snapshot of the current state of the computation.}
+
+(annotate-covered-file    filename-path           
+                        [ display-string])   →   void?
+  filename-path : path-string?
+  display-string : (or/c string? #f) = #f
+(annotate-executed-file    filename-path           
+                         [ display-string])   →   void?
+  filename-path : path-string?
+  display-string : (or/c string? #t #f) = "^.,"
+Writes the named file to the current-output-port, inserting an additional line
+between each source line to reflect execution counts (as reported by
+get-coverage-counts or get-execute-counts). The optional display-string is used
+for the annotation: the first character is used for expressions that were
+visited 0 times, the second character for 1 time, ..., and the last character
+for expressions that were visited more times. It can also be #f for a minimal
+display, "#.", or, in the case of annotate-executed-file, #t for a maximal
+display, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".
+
+(test-coverage-info) → hasheq?
+(test-coverage-info ht) → void?
+  ht : hasheq?
+The hash-table in this parameter is used to store the profile results.
+
+3.3 Other Errortrace Bindings
+
+The errortrace module also exports:
+
+(print-error-trace output-port exn) → void?
+  output-port : output-port?
+  exn : exn?
+The print-error-trace procedure takes a port and exception and prints the
+Errortrace-collected debugging information contained in the exception. It is
+used by the exception handler installed by Errortrace.
+
+(error-context-display-depth) → integer?
+(error-context-display-depth d) → void?
+  d : integer?
+The error-context-display-depth parameter controls how much context
+Errortrace’s exception handler displays. The default value is 10,000.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

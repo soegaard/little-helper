@@ -1,0 +1,37 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 6  raco setup: Installation Management
+6.1  Running raco setup
+6.2  "info.rkt" File Format
+6.3  API for Installation
+6.4  API for Installing ".plt" Archives
+6.5  API for Finding Installation Directories
+6.6  API for Reading "info.rkt" Files
+6.7  API for Relative Paths
+6.8  API for Cross-References for Installed Manuals
+On this page:
+load-collections-xref
+[...search manuals...]
+  top← prev  up  next → 
+
+6.8 API for Cross-References for Installed Manuals
+
+ (require setup/xref)
+
+(load-collections-xref [on-load]) → xref?
+  on-load : (-> any/c) = (lambda () (void))
+Like load-xref, but automatically find all cross-reference files for manuals
+that have been installed with setup-plt.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

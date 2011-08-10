@@ -1,0 +1,1901 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+add-canvas
+add-undo
+adjust-cursor
+after-edit-sequence
+after-load-file
+after-save-file
+auto-wrap
+begin-edit-sequence
+begin-write-header-footer-to-file
+blink-caret
+can-do-edit-operation?
+can-load-file?
+can-save-file?
+clear
+clear-undos
+copy
+copy-self
+copy-self-to
+cut
+dc-location-to-editor-location
+default-style-name
+do-edit-operation
+editor-location-to-dc-location
+end-edit-sequence
+end-write-header-footer-to-file
+find-first-snip
+find-scroll-line
+get-active-canvas
+get-admin
+get-canvas
+get-canvases
+get-dc
+get-descent
+get-extent
+get-file
+get-filename
+get-flattened-text
+get-focus-snip
+get-inactive-caret-threshold
+get-keymap
+get-load-overwrites-styles
+get-max-height
+get-max-undo-history
+get-max-view-size
+get-max-width
+get-min-height
+get-min-width
+get-paste-text-only
+get-snip-data
+get-snip-location
+get-space
+get-style-list
+get-view-size
+global-to-local
+in-edit-sequence?
+insert
+insert-box
+insert-file
+insert-image
+insert-port
+invalidate-bitmap-cache
+is-locked?
+is-modified?
+is-printing?
+kill
+load-file
+local-to-global
+locations-computed?
+lock
+locked-for-flow?
+locked-for-read?
+locked-for-write?
+needs-update
+num-scroll-lines
+on-change
+on-char
+on-default-char
+on-default-event
+on-display-size
+on-display-size-when-ready
+on-edit-sequence
+on-event
+on-focus
+on-load-file
+on-local-char
+on-local-event
+on-new-box
+on-new-image-snip
+on-paint
+on-save-file
+on-snip-modified
+own-caret
+paste
+paste-x-selection
+print
+print-to-dc
+put-file
+read-footer-from-file
+read-from-file
+read-header-from-file
+redo
+refresh
+refresh-delayed?
+release-snip
+remove-canvas
+resized
+save-file
+save-port
+scroll-editor-to
+scroll-line-location
+scroll-to
+select-all
+set-active-canvas
+set-admin
+set-caret-owner
+set-cursor
+set-filename
+set-inactive-caret-threshold
+set-keymap
+set-load-overwrites-styles
+set-max-height
+set-max-undo-history
+set-max-width
+set-min-height
+set-min-width
+set-modified
+set-paste-text-only
+set-snip-data
+set-style-list
+size-cache-invalid
+style-has-changed
+undo
+use-file-text-mode
+write-footers-to-file
+write-headers-to-file
+write-to-file
+[...search manuals...]
+  top← prev  up  next → 
+
+editor<%> : interface?
+The editor<%> interface is implemented by text% and pasteboard%.
+
+(send an-editor add-canvas canvas) → void?
+  canvas : (is-a?/c editor-canvas%)
+Adds a canvas to this editor’s list of displaying canvases. (See get-canvases.)
+
+Normally, this method is called only by set-editor in editor-canvas%.
+
+(send an-editor add-undo undoer) → void?
+  undoer : (-> any)
+Adds an undoer procedure to the editor’s undo stack. If an undo is currently
+being performed, the undoer is added to the editor’s redo stack. The undoer is
+called by the system when it is undoing (or redoing) changes to an editor, and
+when this undoer is the first item on the undo (or redo) stack.
+
+The system automatically installs undo records to undo built-in editor
+operations, such as inserts, deletes, and font changes. Install an undoer only
+when it is necessary to maintain state or handle operations that are not
+built-in. For example, in a program where the user can assign labels to snips
+in a pasteboard, the program should install an undoer to revert a label change.
+Thus, when a user changes a snip’s label and then selects Undo (from a standard
+menu bar), the snip’s label will revert as expected. In contrast, there is no
+need to install an undoer when the user moves a snip by dragging it, because
+the system installs an appropriate undoer automatically.
+
+After an undoer returns, the undoer is popped off the editor’s undo (or redo)
+stack; if the return value is true, then the next undoer is also executed as
+part of the same undo (or redo) step. The undoer should return true if the
+action being undone was originally performed as part of a begin-edit-sequence
+and end-edit-sequence sequence. The return value should also be true if the
+undone action was implicitly part of a sequence. To extend the previous
+example, if a label change is paired with a move to realign the snip, then the
+label-change undoer should be added to the editor after the call to move, and
+it should return #t when it is called. As a result, the move will be undone
+immediately after the label change is undone. (If the opposite order is needed,
+use begin-edit-sequence and end-edit-sequence to create an explicit sequence.)
+
+The system adds undoers to an editor (in response to other method calls)
+without calling this method.
+
+(send an-editor adjust-cursor event)
+ → (or/c (is-a?/c cursor%) #f)
+  event : (is-a?/c mouse-event%)
+Specification: Gets a cursor to be used in the editor’s display. If the return
+value is #f, a default cursor is used.
+
+See also set-cursor.
+
+Default implementation: If an overriding cursor has been installed with
+set-cursor, then the installed cursor is returned.
+
+Otherwise, if the event is a dragging event, a snip in the editor has the
+focus, and the snip’s adjust-cursor method returns a cursor, that cursor is
+returned.
+
+Otherwise, if the cursor is over a snip and the snip’s adjust-cursor method
+returns a cursor, that cursor is returned.
+
+Otherwise, if a cursor has been installed with set-cursor, then the installed
+cursor is returned.
+
+Otherwise, if the cursor is over a clickback region in an editor, an arrow
+cursor is returned.
+
+Finally, if none of the above cases apply, a default cursor is returned. For a
+text editor, the default cursor is an I-beam. For a pasteboard editor, the
+default cursor is an arrow.
+
+(send an-editor after-edit-sequence) → void?
+Refine this method with augment.
+Specification: Called after a top-level edit sequence completes (involving
+unnested begin-edit-sequence and end-edit-sequence).
+
+See also on-edit-sequence.
+
+Default implementation: Does nothing.
+
+(send an-editor after-load-file success?) → void?
+  success? : any/c
+Refine this method with augment.
+Specification: Called just after the editor is loaded from a file.
+
+The argument to the method originally specified whether the save was
+successful, but failures now trigger exceptions such that the method is not
+even called. Consequently, the argument is always #t.
+
+See also can-load-file? and on-load-file.
+
+Default implementation: Does nothing.
+
+(send an-editor after-save-file success?) → void?
+  success? : any/c
+Refine this method with augment.
+Specification: Called just after the editor is saved to a file.
+
+The argument to the method originally specified whether the save was
+successful, but failures now trigger exceptions such that the method is not
+even called. Consequently, the argument is always #t.
+
+See also can-save-file? and on-save-file.
+
+Default implementation: Does nothing.
+
+(send an-editor auto-wrap) → boolean?
+(send an-editor auto-wrap auto-wrap?) → void?
+  auto-wrap? : any/c
+Enables or disables automatically calling set-max-width in response to
+on-display-size, or gets the state of auto-wrapping. For text editors, this has
+the effect of wrapping the editor’s contents to fit in a canvas displaying the
+editor (the widest one if multiple canvases display the editor). For pasteboard
+editors, “auto-wrapping” merely truncates the area of the pasteboard to match
+its canvas display.
+
+When the wrapping mode is changed, the on-display-size method is called
+immediately to update the editor’s maximum width.
+
+Auto-wrapping is initially disabled.
+
+(send an-editor begin-edit-sequence  [ undoable?                  
+                                       interrupt-streak?])   →   void?
+  undoable? : any/c = #t
+  interrupt-streak? : any/c = #t
+Specification: The begin-edit-sequence and end-edit-sequence methods are used
+to bracket a set of editor modifications so that the results are all displayed
+at once. The commands may be nested arbitrarily deep. Using these functions can
+greatly speed up displaying the changes.
+
+When an editor contains other editors, using begin-edit-sequence and
+end-edit-sequence on the main editor brackets some changes to the sub-editors
+as well, but it is not as effective when a sub-editor changes as calling
+begin-edit-sequence and end-edit-sequence for the sub-editor.
+
+See also refresh-delayed? and in-edit-sequence?, and see Editors and Threads
+for information about edit sequences and refresh requests.
+
+If the undoable? flag is #f, then the changes made in the sequence cannot be
+reversed through the undo method. This flag is only effective for the outermost
+begin-edit-sequence when nested sequences are used. Note that, for a text%
+object, the character-inserting version of insert interferes with
+sequence-based undo groupings.
+
+If the interrupt-streak? flag is #f and the sequence is outermost, then special
+actions before and after the sequence count as consecutive actions. For
+example, kills just before and after the sequence are appended in the copy
+buffer.
+
+Default implementation: Starts a sequence.
+
+(send an-editor begin-write-header-footer-to-file   f        
+                                                    name     
+                                                    buffer)  
+ → void?
+  f : (is-a?/c editor-stream-out%)
+  name : string?
+  buffer : (box/c exact-integer?)
+This method must be called before writing any special header data to a stream.
+See File Format and write-headers-to-file for more information.
+
+The name string must be a unique name that can be used by a header reader to
+recognize the data. This method will store a value in buffer that should be
+passed on to end-write-header-footer-to-file.
+
+(send an-editor blink-caret) → void?
+Specification: Tells the editor to blink the selection caret. This method is
+called periodically when the editor’s display has the keyboard focus.
+
+Default implementation: Propagates the request to any snip with the
+editor-local focus.
+
+(send an-editor can-do-edit-operation?    op                  
+                                        [ recursive?])   →   boolean?
+            (or/c 'undo 'redo 'clear 'cut 'copy 'paste
+   op   :         'kill 'select-all 'insert-text-box
+                  'insert-pasteboard-box 'insert-image)
+  recursive? : any/c = #t
+Specification: Checks whether a generic edit command would succeed for the
+editor. This check is especially useful for enabling and disabling menus on
+demand. See do-edit-operation for information about the op and recursive?
+arguments.
+
+Default implementation: Allows the operation depending on the selection,
+whether the editor is locked, etc.
+
+(send an-editor can-load-file?   filename        
+                                 format)    →   boolean?
+  filename : path?
+   format   :   (or/c 'guess 'same 'copy 'standard
+                      'text 'text-force-cr)
+Refine this method with augment.
+Specification: Called just before the editor is loaded from a file. If the
+return value is #f, the file is not loaded. See also on-load-file and
+after-load-file.
+
+The filename argument is the name the file will be loaded from. See load-file
+for information about format.
+
+Note that the filename argument cannot be a string; it must be a path value.
+
+Default implementation: Returns #t.
+
+(send an-editor can-save-file?   filename        
+                                 format)    →   boolean?
+  filename : path?
+   format   :   (or/c 'guess 'same 'copy 'standard
+                      'text 'text-force-cr)
+Refine this method with augment.
+Specification: Called just before the editor is saved to a file. If the return
+value is #f, the file is not saved. See also on-save-file and after-save-file.
+
+The filename argument is the name the file will be saved to. See load-file for
+information about format.
+
+Note that the filename argument cannot be a string; it must be a path value.
+
+Default implementation: Returns #t.
+
+(send an-editor clear) → void?
+Deletes the currently selected items.
+
+The content of an editor can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-delete in
+text% or on-delete in pasteboard% to monitor content deletions changes.
+
+(send an-editor clear-undos) → void?
+Destroys the undo history of the editor.
+
+(send an-editor copy [extend? time]) → void?
+  extend? : any/c = #f
+  time : exact-integer? = 0
+Copies items into the clipboard. If extend? is not #f, the old clipboard
+contents are appended.
+
+The system may execute a copy (in response to other method calls) without
+calling this method. To extend or re-implement copying, override the do-copy in
+text% or do-copy in pasteboard% method of an editor.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+(send an-editor copy-self)
+ → (or/c (is-a?/c text%) (is-a?/c pasteboard%))
+Creates a new editor with the same properties as this one. After an editor is
+created (either a text% or pasteboard% instance, as appropriate), the new
+editor is passed to copy-self-to.
+
+(send an-editor copy-self-to dest) → void?
+  dest : (or/c (is-a?/c text%) (is-a?/c pasteboard%))
+Copies the properties of an-editor to dest.
+
+Each snip in an-editor is copied and inserted into dest. In addition,
+an-editor’s filename, maximum undo history setting, keymap, interactive caret
+threshold, and overwrite-styles-on-load settings are installed into dest.
+Finally, an-editor’s style list is copied and the copy is installed as the
+style list for dest.
+
+(send an-editor cut [extend? time]) → void?
+  extend? : any/c = #f
+  time : exact-integer? = 0
+Copies and then deletes the currently selected items. If extend? is not #f, the
+old clipboard contents are appended.
+
+The system may execute a cut (in response to other method calls) without
+calling this method. To extend or re-implement the copying portion of the cut,
+override the do-copy in text% or do-copy in pasteboard% method of an editor. To
+monitor deletions in an editor, override on-delete in text% or on-delete in
+pasteboard%.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+(send an-editor dc-location-to-editor-location   x         
+                                                 y)   →   real?   real?
+  x : real?
+  y : real?
+Converts the given coordinates from top-level display coordinates (usually
+canvas coordinates) to editor location coordinates. The same calculation is
+performed by global-to-local.
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology).
+
+See also editor-location-to-dc-location.
+
+(send an-editor default-style-name) → string?
+Returns the name of a style to be used for newly inserted text, etc. The
+default is "Standard".
+
+(send an-editor do-edit-operation    op                
+                                   [ recursive?        
+                                     time])       →   void?
+            (or/c 'undo 'redo 'clear 'cut 'copy 'paste
+   op   :         'kill 'select-all 'insert-text-box
+                  'insert-pasteboard-box 'insert-image)
+  recursive? : any/c = #t
+  time : exact-integer? = 0
+Performs a generic edit command. The op argument must be a valid edit command,
+one of:
+
+  • 'undo — undoes the last operation
+
+  • 'redo — undoes the last undo
+
+  • 'clear — deletes the current selection
+
+  • 'cut — cuts
+
+  • 'copy — copies
+
+  • 'paste — pastes
+
+  • 'kill — cuts to the end of the current line, or cuts a newline if there is
+    only whitespace between the selection and end of line
+
+  • 'select-all — selects everything in the editor
+
+  • 'insert-text-box — inserts a text editor as an item in this editor; see
+    also on-new-box .
+
+  • 'insert-pasteboard-box — inserts a pasteboard editor as an item in this
+    editor; see also on-new-box .
+
+  • 'insert-image — gets a filename from the user and inserts the image as an
+    item in this editor; see also on-new-image-snip .
+
+If recursive? is not #f, then the command is passed on to any active snips of
+this editor (i.e., snips which own the caret).
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+(send an-editor editor-location-to-dc-location   x         
+                                                 y)   →   real?   real?
+  x : real?
+  y : real?
+Converts the given coordinates from editor location coordinates to top-level
+display coordinates (usually canvas coordinates). The same calculation is
+performed by local-to-global.
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology).
+
+See also dc-location-to-editor-location.
+
+(send an-editor end-edit-sequence) → void?
+See begin-edit-sequence.
+
+(send an-editor end-write-header-footer-to-file   f              
+                                                  buffer-value)  
+ → void?
+  f : (is-a?/c editor-stream-out%)
+  buffer-value : exact-integer?
+This method must be called after writing any special header data to a stream.
+The buffer-value argument must be the value put in the buffer argument box by
+begin-write-header-footer-to-file.
+
+See File Format and write-headers-to-file for more information.
+
+(send an-editor find-first-snip) → (or/c (is-a?/c snip%) #f)
+Returns the first snip in the editor, or #f if the editor is empty. To get all
+of the snips in the editor, use the next in snip% on the resulting snip.
+
+The first snip in a text editor is the one at position 0. The first snip in a
+pasteboard is the frontmost snip. (See Editor Structure and Terminology for
+information about snip order in pasteboards.)
+
+(send an-editor find-scroll-line location)
+ → exact-nonnegative-integer?
+  location : real?
+Maps a vertical location within the editor to a vertical scroll position.
+
+For text% objects: Calling this method may force the recalculation of location
+information, even if the editor currently has delayed refreshing (see
+refresh-delayed?). The result is only valid when the editor is displayed (see
+Editor Structure and Terminology).
+
+(send an-editor get-active-canvas)
+ → (or/c (is-a?/c editor-canvas%) #f)
+If the editor is displayed in a canvas, this method returns the canvas that
+most recently had the keyboard focus (while the editor was displayed). If no
+such canvas exists, #f is returned.
+
+(send an-editor get-admin) → (or/c (is-a?/c editor-admin%) #f)
+Returns the editor-admin% object currently managing this editor or #f if the
+editor is not displayed.
+
+(send an-editor get-canvas)
+ → (or/c (is-a?/c editor-canvas%) #f)
+If get-active-canvas returns a canvas, that canvas is also returned by this
+method. Otherwise, if get-canvases returns a non-empty list, the first canvas
+in the list is returned, otherwise #f is returned.
+
+(send an-editor get-canvases)
+ → (listof (is-a?/c editor-canvas%))
+Returns a list of canvases displaying the editor. An editor may be displayed in
+multiple canvases and no other kind of display, or one instance of another kind
+of display and no canvases. If the editor is not displayed or the editor’s
+current display is not a canvas, null is returned.
+
+(send an-editor get-dc) → (or/c (is-a?/c dc<%>) #f)
+Typically used (indirectly) by snip objects belonging to the editor. Returns a
+destination drawing context which is suitable for determining display sizing
+information, or #f if the editor is not displayed.
+
+(send an-editor get-descent) → (and/c real? (not/c negative?))
+Returns the font descent for the editor. This method is primarily used when an
+editor is an item within another editor. For a text editor, the reported
+descent includes the editor’s bottom padding (see set-padding).
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology). For text% objects, calling this method may force the
+recalculation of location information if a maximum width is set for the editor,
+even if the editor currently has delayed refreshing (see refresh-delayed?).
+
+(send an-editor get-extent w h) → void?
+  w : (or/c (box/c (and/c real? (not/c negative?))) #f)
+  h : (or/c (box/c (and/c real? (not/c negative?))) #f)
+Gets the current extent of the editor’s graphical representation. The w box is
+filled with the editor’s width, unless w is #f. The h box is filled with the
+editor’s height, unless h is #f. For a text editor, the reported extent
+includes the editor’s padding (see set-padding).
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology). For text% objects, calling this method may force the
+recalculation of location information if a maximum width is set for the editor,
+even if the editor currently has delayed refreshing (see refresh-delayed?).
+
+(send an-editor get-file directory) → (or/c path-string? #f)
+  directory : (or/c path? #f)
+Specification: Called when the user must be queried for a filename to load an
+editor. A starting-directory path is passed in, but is may be #f to indicate
+that any directory is fine.
+
+Note that the directory argument cannot be a string; it must be a path value or
+#f.
+
+Default implementation: Calls the global get-file procedure.
+
+If the editor is displayed in a single canvas, then the canvas’s top-level
+frame is used as the parent for the file dialog. Otherwise, the file dialog
+will have no parent.
+
+(send an-editor get-filename [temp]) → (or/c path-string? #f)
+  temp : (box/c (or/c any/c #f)) = (box #f)
+Returns the path name of the last file saved from or loaded into this editor, #
+f if the editor has no filename.
+
+The temp box is filled with #t if the filename is temporary or #f otherwise.
+
+(send an-editor get-flattened-text) → string?
+Returns the contents of the editor in text form. See Flattened Text for a
+discussion of flattened vs. non-flattened text.
+
+(send an-editor get-focus-snip) → (or/c (is-a?/c snip%) #f)
+Returns the snip within the editor that gets the keyboard focus when the editor
+has the focus, or #f if the editor does not delegate the focus.
+
+The returned snip might be an editor-snip% object. In that case, the embedded
+editor might delegate the focus to one of its own snips. However, the
+get-focus-snip method returns only the editor-snip% object, because it is the
+focus-owning snip within the immediate editor.
+
+See also set-caret-owner.
+
+(send an-editor get-inactive-caret-threshold)
+ → (or/c 'no-caret 'show-inactive-caret 'show-caret)
+Returns the threshold for painting an inactive selection. This threshold is
+compared with the draw-caret argument to refresh and if the argument is as
+least as large as the threshold (but larger than 'show-caret), the selection is
+drawn as inactive.
+
+See also set-inactive-caret-threshold and Caret Ownership.
+
+(send an-editor get-keymap) → (or/c (is-a?/c keymap%) #f)
+Returns the main keymap currently used by the editor.
+
+(send an-editor get-load-overwrites-styles) → boolean?
+Reports whether named styles in the current style list are replaced by
+load-file when the loaded file contains style specifications.
+
+See also set-load-overwrites-styles.
+
+(send an-editor get-max-height)
+ → (or/c (and/c real? (not/c negative?)) 'none)
+Gets the maximum display height for the contents of the editor; zero or 'none
+indicates that there is no maximum.
+
+(send an-editor get-max-undo-history)
+ → (or/c (integer-in 0 100000) 'forever)
+Returns the maximum number of undoables that will be remembered by the editor.
+Note that undoables are counted by insertion, deletion, etc. events, not by the
+number of times that undo can be called; a single undo call often reverses
+multiple events at a time (such as when the user types a stream of characters
+at once).
+
+(send an-editor get-max-view-size)   →   real?   real?
+Returns the maximum visible area into which the editor is currently being
+displayed, according to the editor’s administrators. If the editor has only one
+display, the result is the same as for get-view-size. Otherwise, the maximum
+width and height of all the editor’s displaying canvases is returned.
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology).
+
+If the display is an editor canvas, see also reflow-container.
+
+(send an-editor get-max-width)
+ → (or/c (and/c real? (not/c negative?)) 'none)
+Gets the maximum display width for the contents of the editor; zero or 'none
+indicates that there is no maximum. In a text editor, zero of 'none disables
+automatic line breaking.
+
+(send an-editor get-min-height)
+ → (or/c (and/c real? (not/c negative?)) 'none)
+Gets the minimum display height for the contents of the editor; zero or 'none
+indicates that there is no minimum.
+
+(send an-editor get-min-width)
+ → (or/c (and/c real? (not/c negative?)) 'none)
+Gets the minimum display width for the contents of the editor; zero or 'none
+indicates that there is no minimum.
+
+(send an-editor get-paste-text-only) → boolean?
+If the result is #t, then the editor accepts only plain-text data from the
+clipboard. If the result is #f, the editor accepts both text and snip data from
+the clipboard.
+
+(send an-editor get-snip-data thesnip)
+ → (or/c (is-a?/c editor-data%) #f)
+  thesnip : (is-a?/c snip%)
+Specification: Gets extra data associated with a snip (e.g., location
+information in a pasteboard) or returns #f is there is no information. See
+Editor Data for more information.
+
+Default implementation: Returns #f.
+
+(send an-editor get-snip-location    thesnip                
+                                   [ x                      
+                                     y                      
+                                     bottom-right?])   →   boolean?
+  thesnip : (is-a?/c snip%)
+  x : (or/c (box/c real?) #f) = #f
+  y : (or/c (box/c real?) #f) = #f
+  bottom-right? : any/c = #f
+Gets the location of the given snip. If the snip is found in the editor, #t is
+returned; otherwise, #f is returned.
+
+The x box is filled with the x-coordinate of the snip’s location, unless x is #
+f. The y box is filled with the y-coordinate of the snip’s location, unless y
+is #f.
+
+If bottom-right? is not #f, the values in the x and y boxes are for the snip’s
+bottom right corner instead of its top-left corner.
+
+Obtaining the location if the bottom-right corner may trigger delayed size
+calculations (including snips other than the one whose location was requested).
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology). As a special case, however, a pasteboard% object always reports
+valid answers when bottom-right? is #f. For text% objects, calling this method
+may force the recalculation of location information if a maximum width is set
+for the editor, even if the editor currently has delayed refreshing (see
+refresh-delayed?).
+
+(send an-editor get-space) → (and/c real? (not/c negative?))
+Returns the maximum font space for the editor. This method is primarily used
+when an editor is an item within another editor. For a text editor, the
+reported space includes the editor’s top padding (see set-padding).
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology). For text% objects, calling this method may force the
+recalculation of location information if a maximum width is set for the editor,
+even if the editor currently has delayed refreshing (see refresh-delayed?).
+
+(send an-editor get-style-list) → (is-a?/c style-list%)
+Returns the style list currently in use by the editor.
+
+(send an-editor get-view-size w h) → void?
+  w : (or/c (box/c (and/c real? (not/c negative?))) #f)
+  h : (or/c (box/c (and/c real? (not/c negative?))) #f)
+Returns the visible area into which the editor is currently being displayed
+(according to the editor’s administrator). See also get-view .
+
+The w box is filled with the visible area width, unless w is #f. The h box is
+filled with the visible area height, unless h is #f.
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology).
+
+If the display is an editor canvas, see also reflow-container.
+
+(send an-editor global-to-local x y) → void?
+  x : (or/c (box/c real?) #f)
+  y : (or/c (box/c real?) #f)
+Converts the given coordinates from top-level display coordinates (usually
+canvas coordinates) to editor location coordinates. The same calculation is
+performed by dc-location-to-editor-location.
+
+The x box is filled with the translated x-coordinate of the value initially in
+x, unless x is #f. The y box is filled with the translated x-coordinate of the
+value initially in y, unless y is #f.
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology).
+
+See also local-to-global.
+
+(send an-editor in-edit-sequence?) → boolean?
+Returns #t if updating on this editor is currently delayed because
+begin-edit-sequence has been called for this editor.
+
+See also refresh-delayed?.
+
+(send an-editor insert snip) → void?
+  snip : (is-a?/c snip%)
+Inserts data into the editor. A snip cannot be inserted into multiple editors
+or multiple times within a single editor.
+
+The content of an editor can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-insert in
+text% or on-insert in pasteboard% to monitor content additions changes.
+
+(send an-editor insert-box [type]) → void?
+  type : (or/c 'text 'pasteboard) = 'text
+Inserts a box (a sub-editor) into the editor by calling on-new-box, then
+passing along type and inserts the resulting snip into the editor.
+
+The content of an editor can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-insert in
+text% or on-insert in pasteboard% to monitor content additions changes.
+
+(send an-editor insert-file    filename              
+                             [ format                
+                               show-errors?])   →   boolean?
+  filename : path-string?
+   format   :   (or/c 'guess 'same 'copy 'standard   =   'guess
+                      'text 'text-force-cr)
+  show-errors? : any/c = #t
+Inserts the content of a file or port into the editor (at the current selection
+position in text% editors). The result is #t; if an error occurs, an exception
+is raised.
+
+For information on format, see load-file. The show-errors? argument is no
+longer used.
+
+The content of an editor can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-insert in
+text% or on-insert in pasteboard% to monitor content additions changes.
+
+(send an-editor insert-image  [ filename              
+                                type                  
+                                relative-path?        
+                                inline?])        →   void?
+  filename : (or/c path-string? #f) = #f
+              (or/c 'unknown 'unknown/mask 'unknown/alpha
+   type   :         'gif 'gif/mask 'gif/alpha
+                    'jpeg 'png 'png/mask 'png/alpha
+                    'xbm 'xpm 'bmp 'pict)
+          =   'unknown/alpha
+  relative-path? : any/c = #f
+  inline? : any/c = #t
+Inserts an image into the editor.
+
+If filename is #f, then the user is queried for a filename. The kind must one
+of the symbols that can be passed to load-file.
+
+After the filename has been determined, an image is created by calling
+on-new-image-snip. See also image-snip%.
+
+The content of an editor can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-insert in
+text% or on-insert in pasteboard% to monitor content additions changes.
+
+(send an-editor insert-port    port               
+                             [ format             
+                               replace-styles?])  
+ → (or/c 'standard 'text 'text-force-cr)
+  port : input-port?
+   format   :   (or/c 'guess 'same 'copy 'standard   =   'guess
+                      'text 'text-force-cr)
+  replace-styles? : any/c = #t
+Inserts the content of a port into the editor (at the current selection
+position in text% editors) without wrapping the insert operations as an edit
+sequence. The result is the actual format of the loaded content (which is
+different from the given format type if the given format is 'guess, 'same, or
+'copy).
+
+The port must support position setting with file-position.
+
+For information on format, see load-file.
+
+if replace-styles? is true, then styles in the current style list are replaced
+by style specifications in port’s stream.
+
+See also insert-file.
+
+(send an-editor invalidate-bitmap-cache  [ x               
+                                           y               
+                                           width           
+                                           height])   →   void?
+  x : real? = 0.0
+  y : real? = 0.0
+   width   :   (or/c (and/c real? (not/c negative?)) 'end 'display-end)
+           =   'end
+   height   :   (or/c (and/c real? (not/c negative?)) 'end 'display-end)
+            =   'end
+When on-paint is overridden, call this method when the state of on-paint’s
+drawing changes.
+
+The x, y, width, and height arguments specify the area that needs repainting in
+editor coordinates. If width/height is 'end, then the total height/width of the
+editor (as reported by get-extent) is used. Note that the editor’s size can be
+smaller than the visible region of its display. If width/height is
+'display-end, then the largest height/width of the editor’s views (as reported
+by get-max-view) is used. If width/height is not 'display-end, then the given
+width/height is constrained to the editor’s size.
+
+The default implementation triggers a redraw of the editor, either immediately
+or at the end of the current edit sequence (if any) started by
+begin-edit-sequence.
+
+See also size-cache-invalid.
+
+(send an-editor is-locked?) → boolean?
+Returns #t if the editor is currently locked, #f otherwise. See lock for more
+information.
+
+(send an-editor is-modified?) → boolean?
+Returns #t if the editor has been modified since the last save or load (or the
+last call to set-modified with #f), #f otherwise.
+
+(send an-editor is-printing?) → boolean?
+Returns #t if the editor is currently being printed through the print method, #
+f otherwise.
+
+(send an-editor kill [time]) → void?
+  time : exact-integer? = 0
+In a text editor, cuts to the end of the current line, or cuts a newline if
+there is only whitespace between the selection and end of line. Multiple
+consecutive kills are appended. In a pasteboard editor, cuts the current
+selection.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+See also cut.
+
+The content of an editor can be changed by the system in response to other
+method calls, and such changes do not go through this method; use on-delete in
+text% or on-delete in pasteboard% to monitor content deletions changes.
+
+(send an-editor load-file  [ filename              
+                             format                
+                             show-errors?])   →   boolean?
+  filename : (or/c path-string? #f) = #f
+   format   :   (or/c 'guess 'same 'copy 'standard   =   'guess
+                      'text 'text-force-cr)
+  show-errors? : any/c = #t
+
+Loads a file into the editor and returns #t. If an error occurs, an exception
+is raised.
+
+If filename is #f, then the internally stored filename will be used; if
+filename is "" or if the internal name is unset or temporary, then the user
+will be prompted for a name.
+
+The possible values for format are listed below. A single set of format values
+are used for loading and saving files:
+
+  • 'guess — guess the format based on extension and/or contents; when saving a
+    file, this is the same as 'standard
+
+  • 'same — read in whatever format was last loaded or saved
+
+  • 'standard — read/write a standard file (binary format)
+
+  • 'copy — write using whatever format was last loaded or saved, but do not
+    change the modification flag or remember filename (saving only)
+
+  • 'text — read/write a text file (text% only); file writing uses the
+    platform’s text-mode conventions (e.g., newlines as return–linefeed
+    combinations on Windows) when not specifically disabled via
+    use-file-text-mode
+
+  • 'text-force-cr — read/write a text file (text% only); when writing, change
+    automatic newlines (from word-wrapping) into real carriage returns
+
+In a text% instance, the format returned from get-file-format is always one of
+'standard, 'text, or 'text-force-cr.
+
+The show-errors? argument is no longer used.
+
+The filename used to load the file can be retrieved with get-filename. For a
+text% instance, the format can be retrieved with get-file-format. However, if
+an error occurs while loading the file, the filename is set to #f.
+
+See also on-load-file, after-load-file, can-load-file?, and
+set-load-overwrites-styles.
+
+(send an-editor local-to-global x y) → void?
+  x : (or/c (box/c real?) #f)
+  y : (or/c (box/c real?) #f)
+Converts the given coordinates from editor location coordinates to top-level
+display coordinates (usually canvas coordinates). The same calculation is
+performed by editor-location-to-dc-location.
+
+The x box is filled with the translated x-coordinate of the value initially in
+x, unless x is #f. The y box is filled with the translated x-coordinate of the
+value initially in y, unless y is #f.
+
+The result is only valid when the editor is displayed (see Editor Structure and
+Terminology).
+
+See also global-to-local.
+
+(send an-editor locations-computed?) → boolean?
+Returns #t if all location information has been computed after recent changes
+to the editor’s content or to its snips, #f otherwise.
+
+Location information is often computed on demand, and begin-edit-sequence tends
+to delay the computation.
+
+When the editor is locked for reflowing, location information cannot be
+recomputed. See also Internal Editor Locks.
+
+(send an-editor lock lock?) → void?
+  lock? : any/c
+Locks or unlocks the editor for modifications. If an editor is locked, all
+modifications are blocked, not just user modifications.
+
+See also is-locked?.
+
+This method does not affect internal locks, as discussed in Internal Editor
+Locks.
+
+(send an-editor locked-for-flow?) → boolean?
+Reports whether the editor is internally locked for flowing. See Internal
+Editor Locks for more information.
+
+(send an-editor locked-for-read?) → boolean?
+Reports whether the editor is internally locked for reading. See Internal
+Editor Locks for more information.
+
+(send an-editor locked-for-write?) → boolean?
+Reports whether the editor is internally locked for writing. See Internal
+Editor Locks for more information.
+
+(send an-editor needs-update   snip          
+                               localx        
+                               localy        
+                               w             
+                               h)       →   void?
+  snip : (is-a?/c snip%)
+  localx : real?
+  localy : real?
+  w : (and/c real? (not/c negative?))
+  h : (and/c real? (not/c negative?))
+Typically called (indirectly) by a snip within the editor to force the editor
+to be redrawn.
+
+The localx, localy, width, and height arguments specify the area that needs
+repainting in the coordinate system of snip.
+
+For text% objects, calling this method may force the recalculation of location
+information if a maximum width is set for the editor, even if the editor
+currently has delayed refreshing (see refresh-delayed?).
+
+(send an-editor num-scroll-lines) → exact-nonnegative-integer?
+Reports the number of scroll positions available within the editor.
+
+For text% objects: Calling this method may force the recalculation of location
+information, even if the editor currently has delayed refreshing (see
+refresh-delayed?). If the editor is not displayed and the editor has a maximum
+width, line breaks are calculated as for line-start-position (which handles
+specially the case of no display when the editor has a maximum width).
+
+(send an-editor on-change) → void?
+Refine this method with augment.
+Specification: Called whenever any change is made to the editor that affects
+the way the editor is drawn or the values reported for the location/size of
+some snip in the editor. The on-change method is called just before the editor
+calls its administrator’s needs-update method to refresh the editor’s display,
+and it is also called just before and after printing an editor.
+
+The editor is locked for writing and reflowing during the call to on-change.
+
+Default implementation: Does nothing.
+
+(send an-editor on-char event) → void?
+  event : (is-a?/c key-event%)
+Specification: Handles keyboard input to the editor.
+
+Consider overriding on-local-char or on-default-char instead of this method.
+
+Default implementation: Either passes this event on to a caret-owning snip or
+calls on-local-char. In the latter case, text% first calls
+hide-cursor-until-moved.
+
+(send an-editor on-default-char event) → void?
+  event : (is-a?/c key-event%)
+Specification: Called by on-local-char when the event is not handled by a
+caret-owning snip or by the keymap.
+
+Default implementation: Does nothing.
+
+(send an-editor on-default-event event) → void?
+  event : (is-a?/c mouse-event%)
+Specification: Called by on-local-event when the event is not handled by a
+caret-owning snip or by the keymap.
+
+Default implementation: Does nothing. See also on-default-event in text% and
+on-default-event in pasteboard%.
+
+(send an-editor on-display-size) → void?
+Refine this method with augment.
+Specification: This method is called by the editor’s display whenever the
+display’s size (as reported by get-view-size) changes, but it is called
+indirectly through on-display-size-when-ready.
+
+Default implementation: If automatic wrapping is enabled (see auto-wrap ) then
+set-max-width is called with the maximum width of all of the editor’s canvases
+(according to the administrators; call-as-primary-owner in editor-canvas% is
+used with each canvas to set the administrator and get the view size). If the
+editor is displayed but not in a canvas, the unique width is obtained from the
+editor’s administrator (there is only one). If the editor is not displayed, the
+editor’s maximum width is not changed.
+
+(send an-editor on-display-size-when-ready) → void?
+Calls on-display-size unless the editor is currently in an edit sequence or
+currently being refreshed. In the latter cases, the call to on-display-size is
+delegated to another thread; see Editors and Threads for more information.
+
+(send an-editor on-edit-sequence) → void?
+Refine this method with augment.
+Specification: Called just after a top-level (i.e., unnested) edit sequence
+starts.
+
+During an edit sequence, all callbacks methods are invoked normally, but it may
+be appropriate for these callbacks to delay computation during an edit
+sequence. The callbacks must manage this delay manually. Thus, when overriding
+other callback methods, such as on-insert in text%, on-insert in pasteboard%,
+after-insert in text%, or after-insert in pasteboard%, consider overriding
+on-edit-sequence and after-edit-sequence as well.
+
+“Top-level edit sequence” refers to an outermost pair of begin-edit-sequence
+and end-edit-sequence calls. The embedding of an editor within another editor
+does not affect the timing of calls to on-edit-sequence, even if the embedding
+editor is in an edit sequence.
+
+Pairings of on-edit-sequence and after-edit-sequence can be nested if an
+after-edit-sequence starts a new edit sequence, since after-edit-sequence is
+called after an edit sequence ends. However, on-edit-sequence can never start a
+new top-level edit sequence (except through an unpaired end-edit-sequence),
+because it is called after a top-level edit sequence starts.
+
+Default implementation: Does nothing.
+
+(send an-editor on-event event) → void?
+  event : (is-a?/c mouse-event%)
+Specification: Handles mouse input to the editor. The event’s x and y
+coordinates are in the display’s co-ordinate system; use the administrator’s
+get-dc method to obtain translation arguments (or use
+dc-location-to-editor-location).
+
+Consider overriding on-local-event or on-default-event instead of this method.
+
+Default implementation: Either passes this event on to a caret-owning snip,
+selects a new caret-owning snip (text% only) and passes the event on to the
+selected snip, or calls on-local-event. A new caret-owning snip is selected in
+a text% object when the click is on an event-handling snip, and not too close
+to the space between snips (see get-between-threshold ).
+
+(send an-editor on-focus on?) → void?
+  on? : any/c
+Called when the keyboard focus changes into or out of this editor (and not to/
+from a snip within the editor) with #t if the focus is being turned on, #f
+otherwise.
+
+(send an-editor on-load-file   filename        
+                               format)    →   void?
+  filename : path?
+   format   :   (or/c 'guess 'same 'copy 'standard
+                      'text 'text-force-cr)
+Refine this method with augment.
+Specification: Called just before the editor is loaded from a file, after
+calling can-load-file? to verify that the load is allowed. See also
+after-load-file.
+
+The filename argument is the name the file will be loaded from. See load-file
+for information about format.
+
+Note that the filename argument cannot be a string; it must be a path value.
+
+Default implementation: Does nothing.
+
+(send an-editor on-local-char event) → void?
+  event : (is-a?/c key-event%)
+Specification: Called by on-char when the event is not handled by a
+caret-owning snip.
+
+Consider overriding on-default-char instead of this method.
+
+Default implementation: Either lets the keymap handle the event or calls
+on-default-char.
+
+(send an-editor on-local-event event) → void?
+  event : (is-a?/c mouse-event%)
+Specification: Called by on-event when the event is not handled by a
+caret-owning snip.
+
+Consider overriding on-default-event instead of this method.
+
+Default implementation: Either lets the keymap handle the event or calls
+on-default-event.
+
+(send an-editor on-new-box type) → (is-a?/c snip%)
+  type : (or/c 'text 'pasteboard)
+Specification: Creates and returns a new snip for an embedded editor. This
+method is called by insert-box.
+
+Default implementation: Creates a editor-snip% with either a sub-editor from
+text% or sub-pasteboard from pasteboard%, depending on whether type is 'text or
+'pasteboard. The keymap (see keymap%) and style list (see style-list%) for of
+the new sub-editor are set to the keymap and style list of this editor.
+
+(send an-editor on-new-image-snip   filename        
+                                    kind            
+                                    relative-path?  
+                                    inline?)        
+ → (is-a?/c image-snip%)
+  filename : path?
+              (or/c 'unknown 'unknown/mask 'unknown/alpha
+   kind   :         'gif 'gif/mask 'gif/alpha
+                    'jpeg 'png 'png/mask 'png/alpha
+                    'xbm 'xpm 'bmp 'pict)
+  relative-path? : any/c
+  inline? : any/c
+Specification: Creates and returns a new instance of image-snip% for
+insert-image.
+
+Note that the filename argument cannot be a string; it must be a path value.
+
+Default implementation: Returns (make-object image-snip% filename kind
+relative-path? inline?).
+
+(send an-editor on-paint   before?            
+                           dc                 
+                           left               
+                           top                
+                           right              
+                           bottom             
+                           dx                 
+                           dy                 
+                           draw-caret)   →   void?
+  before? : any/c
+  dc : (is-a?/c dc<%>)
+  left : real?
+  top : real?
+  right : real?
+  bottom : real?
+  dx : real?
+  dy : real?
+                    (or/c 'no-caret 'show-inactive-caret 'show-caret
+   draw-caret   :         (cons/c exact-nonnegative-integer?
+                                  exact-nonnegative-integer?))
+Specification: Provides a way to add arbitrary graphics to an editor’s display.
+This method is called just before and just after every painting of the editor.
+
+The before? argument is #t when the method is called just before a painting the
+contents of the editor or #f when it is called after painting. The left, top,
+right, and bottom arguments specify which region of the editor is being
+repainted, in editor coordinates. To get the coordinates for dc, offset editor
+coordinates by adding (dx, dy). See Caret Ownership for information about
+draw-caret.
+
+The on-paint method, together with the snips’ draw methods, must be able to
+draw the entire state of an editor. Never paint directly into an editor’s
+display canvas except from within on-paint or draw. Instead, put all extra
+drawing code within on-paint and call invalidate-bitmap-cache when part of the
+display needs to be repainted.
+
+If an on-paint method uses cached location information, then the cached
+information should be recomputed in response to a call of
+invalidate-bitmap-cache.
+
+The on-paint method must not make any assumptions about the state of the
+drawing context (e.g., the current pen), except that the clipping region is
+already set to something appropriate. Before on-paint returns, it must restore
+any drawing context settings that it changes.
+
+The editor is internally locked for writing and reflowing during a call to this
+method (see also Internal Editor Locks).
+
+See also invalidate-bitmap-cache.
+
+Default implementation: Does nothing.
+
+(send an-editor on-save-file   filename        
+                               format)    →   void?
+  filename : path?
+   format   :   (or/c 'guess 'same 'copy 'standard
+                      'text 'text-force-cr)
+Refine this method with augment.
+Specification: Called just before the editor is saved to a file, after calling
+can-save-file? to verify that the save is allowed. See also after-save-file.
+
+The filename argument is the name the file will be saved to. See load-file for
+information about format.
+
+Note that the filename argument cannot be a string; it must be a path value.
+
+Default implementation: Does nothing.
+
+(send an-editor on-snip-modified   snip              
+                                   modified?)   →   void?
+  snip : (is-a?/c snip%)
+  modified? : any/c
+Refine this method with augment.
+Specification: This method is called whenever a snip within the editor reports
+that it has been modified (by calling its adminstrator’s modified method). The
+method arguments are the snip that reported a modification-state change, and
+the snip’s new modification state.
+
+See also set-modified.
+
+Default implementation: If modified? is true and the editor was not already
+modified (i.e., its is-modified? method reports #f), then the set-modified
+method is called with #t. If the editor was already modified, then the internal
+modify-counter is incremented.
+
+If modified? is #f, and if the modify-counter is 1, then the set-modified
+method is called with #f (on the assumption that the modify-counter was set to
+1 by an earlier call to this method for the same snip).
+
+(send an-editor own-caret own?) → void?
+  own? : any/c
+Specification: Tells the editor to display or not display the caret or
+selection.
+
+The focus state of an editor can be changed by by the system, and such changes
+do not go through this method; use on-focus to monitor focus changes.
+
+Default implementation: Propagates the flag to any snip with the editor-local
+focus. If no sub-editors are active, the editor assumes the caret ownership.
+
+(send an-editor paste [time]) → void?
+  time : exact-integer? = 0
+Pastes the current contents of the clipboard into the editor.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+The system may execute a paste (in response to other method calls) without
+calling this method. To extend or re-implement copying, override the do-paste
+in text% or do-paste in pasteboard% method.
+
+See also get-paste-text-only.
+
+(send an-editor paste-x-selection [time]) → void?
+  time : exact-integer? = 0
+Like paste, but on Unix, uses the X11 selection instead of the clipboard.
+
+See Cut and Paste Time Stamps for a discussion of the time argument. If time is
+outside the platform-specific range of times, an exn:fail:contract exception is
+raised.
+
+To extend or re-implement copying, override the do-paste-x-selection in text%
+or do-paste-x-selection in pasteboard% method.
+
+(send an-editor print  [ interactive?               
+                         fit-on-page?               
+                         output-mode                
+                         parent                     
+                         force-ps-page-bbox?        
+                         as-eps?])             →   void?
+  interactive? : any/c = #t
+  fit-on-page? : any/c = #t
+  output-mode : (or/c 'standard 'postscript 'pdf) = 'standard
+   parent   :   (or/c (or/c (is-a?/c frame%) (is-a?/c dialog%)) #f)
+            =   #f
+  force-ps-page-bbox? : any/c = #t
+  as-eps? : any/c = #f
+Prints the editor.
+
+If interactive? is true and a PostScript file is created, the is given a dialog
+for adjusting printing parameters; see also get-ps-setup-from-user. Otherwise,
+if a PostScript file is created, the settings returned by current-ps-setup are
+used. (The user may still get a dialog to select an output file name; see
+post-script-dc% for more details.)
+
+If fit-on-page? is a true value, then during printing for a text% editor, the
+editor’s maximum width is set to the width of the page (less margins) and the
+autowrapping bitmap is removed.
+
+The output-mode setting determines whether the output is generated directly as
+a PostScript file, generated directly as a PDF file, or generated using the
+platform-specific standard printing mechanism. The possible values are
+
+  • 'standard — print using the platform-standard mechanism (via a printer-dc%)
+
+  • 'postscript — print to a PostScript file (via a post-script-dc%)
+
+  • 'pdf — print to a PDF file (via a pdf-dc%)
+
+If parent is not #f, it is used as the parent window for configuration dialogs
+(for either PostScript or platform-standard printing). If parent is #f and if
+the editor is displayed in a single canvas, then the canvas’s top-level frame
+is used as the parent for configuration dialogs. Otherwise, configuration
+dialogs will have no parent.
+
+The force-ps-page-bbox? argument is used for PostScript and PDF printing, and
+is used as the third initialization argument when creating the post-script-dc%
+or pdf-dc% instance. Unless it is #f, the bounding-box of the resulting
+PostScript/PDF file is set to the current paper size.
+
+The as-eps? argument is used for PostScript and PDF printing, and is used as
+the fourth initialization argument when creating the post-script-dc% or pdf-dc%
+instance. Unless it is #f, a resulting PostScript file is identified as
+Encapsulated PostScript (EPS).
+
+The printing margins are determined by get-editor-margin in the current
+ps-setup% object (as determined by current-ps-setup), but they are ignored when
+as-eps? is true.
+
+(send an-editor print-to-dc dc [page-number]) → void?
+  dc : (is-a?/c dc<%>)
+  page-number : exact-integer? = -1
+Prints the editor into the given drawing context. See also print.
+
+If page-number is a positive integer, then just the indicated page is printed,
+where pages are numbered from 1. If page-number is 0, then the entire content
+of the editor is printed on a single page. When page-number is negative, then
+the editor content is split across pages as needed to fit, and the start-page
+and end-page methods of dc<%> are called for each page.
+
+(send an-editor put-file   directory            
+                           default-name)   →   (or/c path-string? #f)
+  directory : (or/c path? #f)
+  default-name : (or/c path? #f)
+Specification: Called when the user must be queried for a filename to save an
+editor. Starting-directory and default-name paths are passed in, but either may
+be #f to indicate that any directory is fine or there is no default name.
+
+Note that the directory and filename arguments cannot be strings; each must be
+a path value.
+
+Default implementation: Calls the global put-file procedure.
+
+If the editor is displayed in a single canvas, then the canvas’s top-level
+frame is used as the parent for the file dialog. Otherwise, the file dialog
+will have no parent.
+
+(send an-editor read-footer-from-file   stream        
+                                        name)    →   boolean?
+  stream : (is-a?/c editor-stream-in%)
+  name : string?
+See read-header-from-file.
+
+(send an-editor read-from-file    stream                     
+                                [ overwrite-styles?])   →   boolean?
+  stream : (is-a?/c editor-stream-in%)
+  overwrite-styles? : any/c = #f
+Reads new contents for the editor from a stream. The return value is #t if
+there are no errors, #f otherwise. See also File Format.
+
+The stream provides either new mappings for names in the editor’s style list,
+or it indicates that the editor should share a previously-read style list
+(depending on how style lists were shared when the editor was written to the
+stream; see also write-to-file).
+
+  • In the former case, if the overwrite-styles? argument is #f, then each
+    style name in the loaded file that is already in the current style list
+    keeps its current style. Otherwise, existing named styles are overwritten
+    with specifications from the loaded file.
+
+  • In the latter case, the editor’s style list will be changed to the
+    previously-read list.
+
+(send an-editor read-header-from-file   stream        
+                                        name)    →   boolean?
+  stream : (is-a?/c editor-stream-in%)
+  name : string?
+Called to handle a named header that is found when reading editor data from a
+stream. The return value is #t if there are no errors, #f otherwise.
+
+Override this method only to embellish the file format with new header
+information. Always call the inherited method if the derived reader does not
+recognize the header.
+
+See also File Format.
+
+(send an-editor redo) → void?
+Undoes the last undo, if no other changes have been made since. See undo for
+information about Emacs-style undo. If the editor is currently performing an
+undo or redo, the method call is ignored.
+
+The system may perform a redo without calling this method in response to other
+method calls. Use methods such as on-change to monitor editor content changes.
+
+See also add-undo.
+
+(send an-editor refresh   x                  
+                          y                  
+                          width              
+                          height             
+                          draw-caret         
+                          background)   →   void?
+  x : real?
+  y : real?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+                    (or/c 'no-caret 'show-inactive-caret 'show-caret
+   draw-caret   :         (cons/c exact-nonnegative-integer?
+                                  exact-nonnegative-integer?))
+  background : (or/c (is-a?/c color%) #f)
+Repaints a region of the editor, generally called by an editor administrator.
+The x, y, width, and height arguments specify the area that needs repainting in
+editor coordinates. The get-dc method of the editor’s administrator (as
+returned by get-admin) supplies the target dc<%> object and offset for drawing.
+
+See Caret Ownership for information about draw-caret.
+
+The background color corresponds to the background of the display; if it is #f,
+then the display is transparent. An editor should use the given background
+color as its own background (or not paint the background of background is #f).
+
+See Editors and Threads for information about edit sequences and refresh
+requests.
+
+(send an-editor refresh-delayed?) → boolean?
+Returns #t if updating on this editor is currently delayed. Updating may be
+delayed because begin-edit-sequence has been called for this editor, or because
+the editor has no administrator, or because the editor’s administrator returns
+#t from its refresh-delayed? method. (The administrator might return #t because
+an enclosing editor’s refresh is delayed.)
+
+See also in-edit-sequence?.
+
+(send an-editor release-snip snip) → boolean?
+  snip : (is-a?/c snip%)
+Requests that the specified snip be deleted and released from the editor. If
+this editor is not the snip’s owner or if the snip cannot be released, then #f
+is returned. Otherwise, #t is returned and the snip is no longer owned.
+
+See also release-snip in snip-admin% .
+
+(send an-editor remove-canvas canvas) → void?
+  canvas : (is-a?/c editor-canvas%)
+Removes a canvas from this editor’s list of displaying canvases. (See
+get-canvases.)
+
+Normally, this method is called only by set-editor in editor-canvas%.
+
+(send an-editor resized snip redraw-now?) → void?
+  snip : (is-a?/c snip%)
+  redraw-now? : any/c
+Called (indirectly) by snips within the editor: it forces a recalculation of
+the display information in which the specified snip has changed its size.
+
+If redraw-now? is #f, the editor will require another message to repaint
+itself. (See also needs-update.)
+
+(send an-editor save-file  [ filename              
+                             format                
+                             show-errors?])   →   boolean?
+  filename : (or/c path-string? #f) = #f
+   format   :   (or/c 'guess 'same 'copy 'standard   =   'same
+                      'text 'text-force-cr)
+  show-errors? : any/c = #t
+Saves the editor into a file and returns #t. If an error occurs, an exception
+is raised.
+
+If filename is #f, then the internally stored filename will be used; if
+filename is "" or if the internal name is unset or temporary, then the user
+will be prompted for a name. The possible values for format are described at
+load-file.
+
+The filename and format used to save the file can be retrieved with
+get-filename. In a text% instance, the format can be retrieved with
+get-file-format.
+
+See also on-save-file, after-save-file, and can-save-file?.
+
+On Mac OS X, the file’s type signature is set to "TEXT" for a text-format file
+or "WXME" for a standard-format (binary) file.
+
+The show-errors? argument is no longer used.
+
+(send an-editor save-port    port                  
+                           [ format                
+                             show-errors?])   →   boolean?
+  port : output-port?
+   format   :   (or/c 'guess 'same 'copy 'standard   =   'same
+                      'text 'text-force-cr)
+  show-errors? : any/c = #t
+Saves the editor into a port and returns #t. If an error occurs, an exception
+is raised.
+
+The possible values for format are described at load-file.
+
+The show-errors? argument is no longer used.
+
+(send an-editor scroll-editor-to   localx          
+                                   localy          
+                                   width           
+                                   height          
+                                   refresh?        
+                                   bias)      →   boolean?
+  localx : real?
+  localy : real?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+  refresh? : any/c
+  bias : (or/c 'start 'end 'none)
+Causes the editor to be scrolled so that a given location is visible. If the
+editor is scrolled, #t is returned, otherwise #f is returned.
+
+This method is normally called indirectly by scroll-to or scroll-to-position in
+text% to implement scrolling.
+
+The default implementation forwards the request to the scroll-to method of the
+current administrator, if any (see get-admin). If a text editor has padding
+(see set-padding), then the padding is added to the given location before
+forwarding to the administrator. If the editor has no administrator, #f is
+returned.
+
+(send an-editor scroll-line-location pos)
+ → (and/c real? (not/c negative?))
+  pos : exact-nonnegative-integer?
+Maps a vertical scroll position to a vertical location within the editor.
+
+For text% objects: Calling this method may force the recalculation of location
+information, even if the editor currently has delayed refreshing (see
+refresh-delayed?). If the editor is not displayed and the editor has a maximum
+width, line breaks are calculated as for line-start-position (which handles
+specially the case of no display when the editor has a maximum width).
+
+(send an-editor scroll-to    snip            
+                             localx          
+                             localy          
+                             width           
+                             height          
+                             refresh?        
+                           [ bias])     →   boolean?
+  snip : (is-a?/c snip%)
+  localx : real?
+  localy : real?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+  refresh? : any/c
+  bias : (or/c 'start 'end 'none) = 'none
+Called (indirectly) by snips within the editor: it causes the editor to be
+scrolled so that a given location range within a given snip is visible. If the
+editor is scrolled immediately, #t is returned, otherwise #f is returned.
+
+If refreshing is delayed (see refresh-delayed?), then the scroll request is
+saved until the delay has ended. The scroll is performed (immediately or later)
+by calling scroll-editor-to.
+
+The localx, localy, width, and height arguments specify the area that needs to
+be visible in snip’s coordinate system.
+
+When the specified region cannot fit in the visible area, bias indicates which
+end of the region to display. When bias is 'start, then the top-left of the
+region is displayed. When bias is 'end, then the bottom-right of the region is
+displayed. Otherwise, bias must be 'none.
+
+(send an-editor select-all) → void?
+Selects all data in the editor
+
+(send an-editor set-active-canvas canvas) → void?
+  canvas : (is-a?/c editor-canvas%)
+Sets the active canvas for this editor. (See get-active-canvas.)
+
+Normally, this method is called only by on-focus in editor-canvas% in an editor
+canvas that is displaying an editor.
+
+(send an-editor set-admin admin) → void?
+  admin : (or/c (is-a?/c editor-admin%) #f)
+Sets the editor’s administrator. This method is only called by an
+administrator.
+
+The administrator of an editor can be changed by by the system, and such
+changes do not go through this method. A program cannot detect when the
+administrator changes except by polling get-admin.
+
+(send an-editor set-caret-owner    snip            
+                                 [ domain])   →   void?
+  snip : (or/c (is-a?/c snip%) #f)
+  domain : (or/c 'immediate 'display 'global) = 'immediate
+Attempts to give the keyboard focus to snip. If snip is #f, then the caret is
+taken away from any snip in the editor that currently has the caret and
+restored to this editor.
+
+If the keyboard focus is moved to snip and the editor has the real keyboard
+focus, the own-caret method of the snip will be called.
+
+If #f is provided as the new owner, then the local focus is moved to the editor
+itself. Otherwise, the local focus is moved to the specified snip.
+
+The domain of focus-setting is one of:
+
+  • 'immediate — only set the focus owner within the editor
+
+  • 'display — make this editor or the new focus owner get the keyboard focus
+    among the editors in this editor’s display (if this is an embedded editor)
+
+  • 'global — make this editor or the new focus owner get the keyboard focus
+    among all elements in the editor’s frame
+
+The focus state of an editor can be changed by by the system, and such changes
+do not go through this method; use on-focus to monitor focus changes.
+
+See also get-focus-snip.
+
+(send an-editor set-cursor    cursor             
+                            [ override?])   →   void?
+  cursor : (or/c (is-a?/c cursor%) #f)
+  override? : any/c = #t
+Sets the custom cursor for the editor to cursor. If override? is a true value
+and cursor is not #f, then this cursor overrides cursor settings in embedded
+editors.
+
+If the custom cursor is #f, the current cursor is removed, and a cursor is
+selected automatically by the editor (depending on whether the cursor is
+pointing at a clickback). See adjust-cursor for more information about the
+default selection.
+
+An embedding editor’s custom cursor can override the cursor of an embedded
+editor—even if the embedded editor has the caret—if the cursor is specified as
+an overriding cursor.
+
+(send an-editor set-filename    filename            
+                              [ temporary?])   →   void?
+  filename : (or/c path-string? #f)
+  temporary? : any/c = #f
+Sets the filename to filename. If filename is #f or temporary? is a true value,
+then the user will still be prompted for a name on future calls to save-file
+and load-file.
+
+This method is also called when the filename changes through any method (such
+as load-file).
+
+(send an-editor set-inactive-caret-threshold threshold) → void?
+  threshold : (or/c 'no-caret 'show-inactive-caret 'show-caret)
+Sets the threshold for painting an inactive selection. See
+get-inactive-caret-threshold for more information.
+
+(send an-editor set-keymap [keymap]) → void?
+  keymap : (or/c (is-a?/c keymap%) #f) = #f
+Sets the current keymap for the editor. A #f argument removes all key mapping.
+
+(send an-editor set-load-overwrites-styles overwrite?) → void?
+  overwrite? : any/c
+Determines whether named styles in the current style list are replaced by
+load-file when the loaded file contains style specifications.
+
+See also get-load-overwrites-styles and read-from-file.
+
+(send an-editor set-max-height width) → void?
+  width : (or/c (and/c real? (not/c negative?)) 'none)
+Sets the maximum display height for the contents of the editor. A value less or
+equal to 0 indicates that there is no maximum.
+
+Setting the height is disallowed when the editor is internally locked for
+reflowing (see also Internal Editor Locks).
+
+(send an-editor set-max-undo-history count) → void?
+  count : (or/c exact-nonnegative-integer? 'forever)
+Sets the maximum number of undoables that will be remembered by the editor. The
+default is 0, which disables undo. The symbol 'forever is accepted as a synonym
+for a very large number.
+
+(send an-editor set-max-width width) → void?
+  width : (or/c (and/c real? (not/c negative?)) 'none)
+Sets the maximum display width for the contents of the editor; zero or 'none
+indicates that there is no maximum. In a text editor, having no maximum
+disables automatic line breaking, and the minimum (positive) maximum width
+depends on the width of the autowrap bitmap. The maximum width of a text editor
+includes its left and right padding (see set-padding) and its autowrap bitmap
+(see set-autowrap-bitmap).
+
+Setting the width is disallowed when the editor is internally locked for
+reflowing (see also Internal Editor Locks).
+
+(send an-editor set-min-height width) → void?
+  width : (or/c (and/c real? (not/c negative?)) 'none)
+Sets the minimum display height for the contents of the editor; zero or 'none
+indicates that there is no minimum.
+
+Setting the height is disallowed when the editor is internally locked for
+reflowing (see also Internal Editor Locks).
+
+(send an-editor set-min-width width) → void?
+  width : (or/c (and/c real? (not/c negative?)) 'none)
+Sets the minimum display width for the contents of the editor; zero or 'none
+indicates that there is no minimum.
+
+Setting the width is disallowed when the editor is internally locked for
+reflowing (see also Internal Editor Locks).
+
+(send an-editor set-modified modified?) → void?
+  modified? : any/c
+Sets the modified state of the editor. Usually, the state is changed
+automatically after an insertion, deletion, or style change by calling this
+method. (This method is also called when the modification state changes through
+any method.) This method is usually not called when the state of the flag is
+not changing.
+
+See also is-modified? and on-snip-modified.
+
+When modified? is true, then an internal modify-counter is set to 1.
+
+When modified? is #f and the editor’s undo or redo stack contains a
+system-created undoer that resets the modified state (because the preceding
+undo or redo action puts the editor back to a state where the modification
+state was #f), the undoer is disabled.
+
+Regardless of the value of modified?, the editor’s adminstrator’s modified
+method is called.
+
+Finally, if modified? is #f and the internal modify-counter is set to 0, then
+the set-unmodified method is called on every snip within the editor.
+
+(send an-editor set-paste-text-only text-only?) → void?
+  text-only? : any/c
+Sets whether the editor accepts only text from the clipboard, or both text and
+snips. By default, an editor accepts both text and snips.
+
+See also get-paste-text-only.
+
+(send an-editor set-snip-data thesnip data) → void?
+  thesnip : (is-a?/c snip%)
+  data : (is-a?/c editor-data%)
+Sets extra data associated with the snip (e.g., location information in a
+pasteboard). See Editor Data for more information.
+
+(send an-editor set-style-list style-list) → void?
+  style-list : (is-a?/c style-list%)
+Sets the editor’s style list. Styles currently in use with the old style list
+will be “moved” to the new style list. In this “move,” if a named style already
+exists in the new style list, then the new style with the same name will be
+used in place of the old style.
+
+Setting the style list is disallowed when the editor is internally locked for
+reflowing (see also Internal Editor Locks).
+
+(send an-editor size-cache-invalid) → void?
+This method is called when the drawing context given to the editor by its
+administrator changes in a way that makes cached size information (such as the
+width of a string) invalid.
+
+The default implementation eventually propagates the message to snips, and,
+more generally, causes location information to be recalculated on demand.
+
+See also invalidate-bitmap-cache.
+
+(send an-editor style-has-changed style) → void?
+  style : (or/c (is-a?/c style<%>) #f)
+Notifies the editor that a style in its style list has changed. This method is
+automatically registered with the editor’s style list using notify-on-change in
+style-list% and automatically deregistered when the style list is removed from
+the editor.
+
+See notify-on-change in style-list% for more information.
+
+(send an-editor undo) → void?
+Undoes the last editor change, if undos have been enabled by calling
+set-max-undo-history with a non-zero integer.
+
+If the editor is currently performing an undo or redo, the method call is
+ignored.
+
+The user may enable Emacs-style undo for editors; see Preferences. Normally,
+undo operations add to the redo stack (see redo), and any undoable (non-undo)
+operation clears the redo stack. With Emacs-style undo, the redo stack is added
+back to the undo stack, along with the original undos, so that a complete
+history is kept in the undo stack.
+
+The system may perform an undo without calling this method in response to other
+method calls. Use methods such as on-change to monitor editor content changes.
+
+See also add-undo .
+
+(send an-editor use-file-text-mode) → boolean?
+(send an-editor use-file-text-mode on?) → void?
+  on? : any/c
+Gets or sets whether the current platform’s text mode is used for writing files
+in 'text or 'text-force-cr mode, which affects the way that newlines are
+written. The setting is consulted by save-file after on-save-file is called.
+See also load-file for information on file modes.
+
+(send an-editor write-footers-to-file stream) → boolean?
+  stream : (is-a?/c editor-stream-out%)
+See write-headers-to-file.
+
+(send an-editor write-headers-to-file stream) → boolean?
+  stream : (is-a?/c editor-stream-out%)
+Specification: Called when the editor is being saved to a file. The return
+value is #t if there are no errors, #f otherwise. Override this method to add
+custom header data to a file, but always call the inherited method so that it
+can write its own extra headers.
+
+To write a header item, call begin-write-header-footer-to-file, passing a box
+for an integer. Then write the header data and end by calling
+end-write-header-footer-to-file, passing back the integer that was put into the
+box. Follow this procedure correctly or the file will be corrupted.
+
+Default implementation: Does nothing.
+
+(send an-editor write-to-file stream) → boolean?
+  stream : (is-a?/c editor-stream-out%)
+Writes the current editor contents to the given stream. The return value is #t
+if there are no errors, #f otherwise. See also File Format.
+
+If the editor’s style list has already been written to the stream, it is not
+re-written. Instead, the editor content indicates that the editor shares a
+previously-written style list. This sharing will be recreated when the stream
+is later read.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,46 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+tex-shortcut-table
+[...search manuals...]
+  top← prev  up  next → 
+
+16 TeX Table
+
+ (require mrlib/tex-table)
+
+                       (listof
+                         (list/c string?
+tex-shortcut-table  :            (lambda (x)
+                                   (and (string? x)
+                                        (= (string-length x)
+                                           1)))))
+This is an association list mapping the shortcut strings that DrRacket uses
+with its control-\ (or command-\) strings to their corresponding unicode
+characters. For example, it contains this mapping:
+
+
+    ("alpha" "α")
+
+as well as many more.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

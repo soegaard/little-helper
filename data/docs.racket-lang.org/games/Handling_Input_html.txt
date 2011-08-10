@@ -1,0 +1,367 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+On this page:
+<input>
+<input-tests>
+<change>
+<release>
+<clack>
+<player-moved?>
+<circle-at-point>
+<point-in-this-circle?-tests>
+<point-in-this-circle?-tests>2
+<point-in-this-circle?>
+<block-cell/world>
+<move-cat>
+<moved-cat-world>
+<find-best-positions>
+<lt/f>
+<update-world-posn>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18.8 Handling Input
+
+Input handling consists of handling two different kinds of events: key events,
+and mouse events, plus various helper functions.
+
+<input> ::=
+
+    <change>
+    <release>
+    <clack>
+    <update-world-posn>
+    <player-moved?>
+    <block-cell/world>
+    <move-cat>
+    <find-best-positions>
+    <lt/f>
+    <circle-at-point>
+    <point-in-this-circle?>
+
+<input-tests> ::=
+
+    <change-tests>
+    <release-tests>
+    <point-in-this-circle?-tests>
+    <circle-at-point-tests>
+    <lt/f-tests>
+    <find-best-positions-tests>
+    <move-cat-tests>
+    <update-world-posn-tests>
+    <clack-tests>
+
+The change function handles keyboard input. If the input is n and the game is
+over, then restart the game. If the input is h then turn on the help and
+otherwise do nothing.
+
+<change> ::=
+
+    (define (change w ke)
+      (cond
+        [(key=? ke "n")
+         (if (equal? (world-state w) 'playing)
+             w
+             (make-initial-world))]
+        [(key=? ke "h")
+         (make-world (world-board w)
+                     (world-cat w)
+                     (world-state w)
+                     (world-size w)
+                     (world-mouse-posn w)
+                     #t)]
+        [else w]))
+
+The release function adjusts the world for a key release event.
+
+<release> ::=
+
+    (define (release w ke)
+      (make-world (world-board w)
+                  (world-cat w)
+                  (world-state w)
+                  (world-size w)
+                  (world-mouse-posn w)
+                  (if (key=? ke "h")
+                      #f
+                      (world-h-down? w))))
+
+The clack function handles mouse input. It has three tasks and each corresponds
+to a helper function:
+
+  • block the clicked cell (block-cell/world),
+
+  • move the cat (move-cat), and
+
+  • update the black dot as the mouse moves around (update-world-posn).
+
+The helper functions are combined in the body of clack, first checking to see
+if the mouse event corresponds to a player’s move (via the player-moved?
+function.
+
+<clack> ::=
+
+    (define/contract (clack world x y evt)
+      (-> world? integer? integer? any/c
+          world?)
+      (let ([moved-world
+             (cond
+               [(player-moved? world x y evt)
+                =>
+                (λ (circle)
+                  (move-cat
+                   (block-cell/world circle world)))]
+               [else world])])
+        (update-world-posn
+         moved-world
+         (and (eq? (world-state moved-world) 'playing)
+              (not (equal? evt "leave"))
+              (make-posn x y)))))
+
+The player-moved? predicate returns a posn indicating where the player chose to
+move when the mouse event corresponds to a player move, and returns #f. It
+first checks to see if the mouse event is a button up event and that the game
+is not over, and then it just calls circle-at-point.
+
+<player-moved?> ::=
+
+    (define/contract (player-moved? world x y evt)
+      (-> world? integer? integer? any/c
+          (or/c posn? #f))
+      (and (equal? evt "button-up")
+           (equal? 'playing (world-state world))
+           (circle-at-point (world-board world) x y)))
+
+The circle-at-point function returns a posn when the coordinate (x,y) is inside
+an unblocked circle on the given board. Instead of computing the nearest circle
+to the coordinates, it simply iterates over the cells on the board and returns
+the posn of the matching cell.
+
+<circle-at-point> ::=
+
+    (define/contract (circle-at-point board x y)
+      (-> (listof cell?) real? real?
+          (or/c posn? #f))
+      (ormap (λ (cell)
+               (and (point-in-this-circle? (cell-p cell) x y)
+                    (not (cell-blocked? cell))
+                    (cell-p cell)))
+             board))
+
+The point-in-this-circle? function returns #t when the point (x,y) on the
+screen falls within the circle located at the posn p.
+
+This is precise about checking the circles. For example, a point that is
+(14,14) away from the center of a circle is still in the circle:
+
+<point-in-this-circle?-tests> ::=
+
+    (test (point-in-this-circle?
+           (make-posn 1 0)
+           (+ (cell-center-x (make-posn 1 0)) 14)
+           (+ (cell-center-y (make-posn 1 0)) 14))
+          #t)
+
+but one that is (15,15) away is no longer in the circle, since it crosses the
+boundary away from a circle of radius 20 at that point.
+
+<point-in-this-circle?-tests> ::=
+
+    (test (point-in-this-circle?
+           (make-posn 1 0)
+           (+ (cell-center-x (make-posn 1 0)) 15)
+           (+ (cell-center-y (make-posn 1 0)) 15))
+          #f)
+
+The implementation of point-in-this-circle? uses complex numbers to represent
+both points on the screen and directional vectors. In particular, the variable
+center is a complex number whose real part is the x coordinate of the center of
+the cell at p, and its imaginary part is y coordinate. Similarly, mp is bound
+to a complex number corresponding to the position of the mouse, at (x, y).
+Then, the function computes the vector between the two points by subtracting
+the complex numbers from each other and extracting the magnitude from that
+vector.
+
+<point-in-this-circle?> ::=
+
+    (define/contract (point-in-this-circle? p x y)
+      (-> posn? real? real? boolean?)
+      (let ([center (+ (cell-center-x p)
+                       (* (sqrt -1)
+                          (cell-center-y p)))]
+            [mp (+ x (* (sqrt -1) y))])
+        (<= (magnitude (- center mp))
+            circle-radius)))
+
+In the event that player-moved? returns a posn, the clack function blocks the
+clicked on cell using block-cell/world, which simply calls block-cell.
+
+<block-cell/world> ::=
+
+    (define/contract (block-cell/world to-block w)
+      (-> posn? world? world?)
+      (make-world (block-cell to-block (world-board w))
+                  (world-cat w)
+                  (world-state w)
+                  (world-size w)
+                  (world-mouse-posn w)
+                  (world-h-down? w)))
+
+The move-cat function uses calls build-bfs-table to find the shortest distance
+from all of the cells to the boundary, and then uses find-best-positions to
+compute the list of neighbors of the cat that have the shortest distance to the
+boundary. If that list is empty, then next-cat-position is #f, and otherwise,
+it is a random element from that list.
+
+<move-cat> ::=
+
+    (define/contract (move-cat world)
+      (-> world? world?)
+      (let* ([cat-position (world-cat world)]
+             [table (build-bfs-table world 'boundary)]
+             [neighbors (adjacent cat-position)]
+             [next-cat-positions
+              (find-best-positions neighbors
+                                   (map (lambda (p) (lookup-in-table table p))
+                                        neighbors))]
+             [next-cat-position
+              (cond
+                [(boolean? next-cat-positions) #f]
+                [else
+                 (list-ref next-cat-positions
+                           (random (length next-cat-positions)))])])
+     
+        <moved-cat-world>))
+
+Once next-cat-position has been computed, it is used to update the cat and
+state fields of the world, recording the cat’s new position and whether or not
+the cat won.
+
+<moved-cat-world> ::=
+
+    (make-world (world-board world)
+                (cond
+                  [(boolean? next-cat-position)
+                   cat-position]
+                  [else next-cat-position])
+                (cond
+                  [(boolean? next-cat-position)
+                   'cat-lost]
+                  [(on-boundary? next-cat-position (world-size world))
+                   'cat-won]
+                  [else 'playing])
+                (world-size world)
+                (world-mouse-posn world)
+                (world-h-down? world))
+
+The find-best-positions function accepts two parallel lists, one of posns, and
+one of scores for those posns, and it returns either a non-empty list of posns
+that have tied for the best score, or it returns #f, if the best score is '∞.
+
+<find-best-positions> ::=
+
+    (define/contract (find-best-positions posns scores)
+      (-> (cons/c posn? (listof posn?))
+          (cons/c (or/c number? '∞) (listof (or/c number? '∞)))
+          (or/c (cons/c posn? (listof posn?)) #f))
+      (let ([best-score
+             (foldl (lambda (x sofar)
+                      (if (<=/f x sofar)
+                          x
+                          sofar))
+                    (first scores)
+                    (rest scores))])
+        (cond
+          [(symbol? best-score) #f]
+          [else
+           (map
+            second
+            (filter (lambda (x) (equal? (first x) best-score))
+                    (map list scores posns)))])))
+
+This is a helper function that behaves like <=, but is extended to deal
+properly with '∞.
+
+<lt/f> ::=
+
+    (define/contract (<=/f a b)
+      (-> (or/c number? '∞)
+          (or/c number? '∞)
+          boolean?)
+      (cond
+        [(equal? b '∞) #t]
+        [(equal? a '∞) #f]
+        [else (<= a b)]))
+
+Finally, to complete the mouse event handling, the update-world-posn function
+is called from clack. It updates the mouse-down field of the world. If the p
+argument is a posn, it corresponds to the location of the mouse, in graphical
+coordinates. So, the function converts it to a cell position on the board and
+uses that. Otherwise, when p is #f, the mouse-down field is just updated to #f.
+
+<update-world-posn> ::=
+
+    (define/contract (update-world-posn w p)
+      (-> world? (or/c #f posn?)
+          world?)
+      (cond
+        [(posn? p)
+         (let ([mouse-spot
+                (circle-at-point (world-board w)
+                                 (posn-x p)
+                                 (posn-y p))])
+           (make-world (world-board w)
+                       (world-cat w)
+                       (world-state w)
+                       (world-size w)
+                       (cond
+                         [(equal? mouse-spot (world-cat w))
+                          #f]
+                         [else
+                          mouse-spot])
+                       (world-h-down? w)))]
+        [else
+         (make-world (world-board w)
+                     (world-cat w)
+                     (world-state w)
+                     (world-size w)
+                     #f
+                     (world-h-down? w))]))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

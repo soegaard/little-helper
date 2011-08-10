@@ -1,0 +1,145 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+get
+get-bytes
+get-exact
+get-fixed
+get-fixed-exact
+get-inexact
+get-unterminated-bytes
+jump-to
+ok?
+remove-boundary
+set-boundary
+skip
+tell
+[...search manuals...]
+  top← prev  up  next → 
+
+editor-stream-in% : class?
+  superclass: object%
+
+An editor-stream-in% object is used to read editor information from a file or
+other input stream (such as the clipboard).
+
+(make-object editor-stream-in% base)
+ → (is-a?/c editor-stream-in%)
+  base : (is-a?/c editor-stream-in-base%)
+An in-stream base—possibly an editor-stream-in-bytes-base% object—must be
+supplied in base.
+
+(send an-editor-stream-in get v) → (is-a?/c editor-stream-in%)
+  v : (box/c exact-integer?)
+(send an-editor-stream-in get v) → (is-a?/c editor-stream-in%)
+  v : (box/c real?)
+Reads data from the stream, returning itself. Reading from a bad stream always
+gives 0.
+
+The v box is filled with the next integer or floating-point value in the
+stream.
+
+(send an-editor-stream-in get-bytes [len])
+ → (or/c bytes? false/c)
+  len : (or/c (box/c exact-nonnegative-integer?) false/c) = #f
+Like get-unterminated-bytes, but the last read byte is assumed to be a nul
+terminator and discarded. Use this method when data is written by a call to put
+without an explicit byte count, and use get-unterminated-bytes when data is
+written with an explicit byte count.
+
+The len box is filled with the length of the byte string plus one (to indicate
+the terminator), unless len is #f.
+
+(send an-editor-stream-in get-exact) → exact-integer?
+Returns the next integer value in the stream.
+
+(send an-editor-stream-in get-fixed v)
+ → (is-a?/c editor-stream-in%)
+  v : (box/c exact-integer?)
+The v box is filled with a fixed-size integer from the stream obtained through
+get-fixed-exact.
+
+(send an-editor-stream-in get-fixed-exact) → exact-integer?
+Gets a fixed-sized integer from the stream. See put-fixed for more information.
+Reading from a bad stream always gives 0.
+
+(send an-editor-stream-in get-inexact) → real?
+Returns the next floating-point value in the stream.
+
+(send an-editor-stream-in get-unterminated-bytes [len])
+ → (or/c bytes? false/c)
+  len : (or/c (box/c exact-nonnegative-integer?) false/c) = #f
+Returns the next byte string from the stream. This is the recommended way to
+read bytes back in from a stream; use put with two arguments (passing along the
+length of the bytes) to write out the bytes to match this method.
+
+Reading from a bad stream returns #f or #"".
+
+Note that when put is not given a byte length, it includes an extra byte for a
+nul terminator; use get-bytes to read such byte strings.
+
+The len box is filled with the length of the byte string, unless len is #f.
+
+(send an-editor-stream-in jump-to pos) → void?
+  pos : exact-nonnegative-integer?
+Jumps to a given position in the stream.
+
+(send an-editor-stream-in ok?) → boolean?
+Returns #t if the stream is ready for reading, #f otherwise. Reading from a bad
+stream always returns 0 or "".
+
+(send an-editor-stream-in remove-boundary) → void?
+See set-boundary.
+
+(send an-editor-stream-in set-boundary n) → void?
+  n : exact-nonnegative-integer?
+Sets a file-reading boundary at n bytes past the current stream location. If
+there is an attempt to read past this boundary, an error is signaled. The
+boundary is removed with a call to remove-boundary. Every call to set-boundary
+must be balanced by a call to remove-boundary.
+
+Boundaries help keep a subroutine from reading too much data leading to
+confusing errors. However, a malicious subroutine can call remove-boundary on
+its own.
+
+(send an-editor-stream-in skip n) → void?
+  n : exact-nonnegative-integer?
+Skips past the next n bytes in the stream.
+
+(send an-editor-stream-in tell) → exact-nonnegative-integer?
+Returns the current stream position.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

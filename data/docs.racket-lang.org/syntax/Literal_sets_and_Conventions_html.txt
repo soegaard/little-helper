@@ -1,0 +1,203 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+▼ 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+On this page:
+define-literal-set
+literal-set->predicate
+define-conventions
+[...search manuals...]
+  top← prev  up  next → 
+
+8.7 Literal sets and Conventions
+
+Sometimes the same literals are recognized in a number of different places. The
+most common example is the literals for fully expanded programs, which are used
+in many analysis and transformation tools. Specifying literals individually is
+burdensome and error-prone. As a remedy, syntax/parse offers literal sets. A
+literal set is defined via define-literal-set and used via the #:literal-set
+option of syntax-parse.
+
+(define-literal-set id maybe-phase maybe-imports (literal ...))
+ 
+      literal   =   literal-id
+                |   (pattern-id literal-id)
+                     
+  maybe-phase   =  
+                |   #:for-template
+                |   #:for-syntax
+                |   #:for-label
+                |   #:phase phase-level
+                     
+maybe-imports   =  
+                |   #:literal-sets (imported-litset-id ...)
+Defines id as a literal set. Each literal can have a separate pattern-id and
+literal-id. The pattern-id determines what identifiers in the pattern are
+treated as literals. The literal-id determines what identifiers the literal
+matches. If the #:literal-sets option is present, the contents of the given
+imported-litset-ids are included.
+
+Examples:
+
+    > (define-literal-set def-litset
+        (define-values define-syntaxes))
+    > (syntax-parse #'(define-syntaxes (x) 12)
+        #:literal-sets (def-litset)
+        [(define-values (x:id ...) e:expr) 'v]
+        [(define-syntaxes (x:id ...) e:expr) 's])
+    's
+
+
+
+The literals in a literal set always refer to the bindings at phase phase-level
+relative to the enclosing module. If the #:for-template option is given,
+phase-level is -1; #:for-syntax means 1, and #:for-label means #f. If no phase
+keyword option is given, then phase-level is 0.
+
+For example:
+
+Examples:
+
+    > (module common racket/base
+        (define x 'something)
+        (provide x))
+    > (module lits racket/base
+        (require syntax/parse 'common)
+        (define-literal-set common-lits (x))
+        (provide common-lits))
+
+
+In the literal set common-lits, the literal x always recognizes identifiers
+bound to the variable x defined in module 'common.
+
+The following module defines an equivalent literal set, but imports the 'common
+module for-template instead:
+
+Example:
+
+    > (module lits racket/base
+        (require syntax/parse (for-template 'common))
+        (define-literal-set common-lits #:for-template (x))
+        (provide common-lits))
+
+
+When a literal set is used with the #:phase phase-expr option, the literals’
+fixed bindings are compared against the binding of the input literal at the
+specified phase. Continuing the example:
+
+Examples:
+
+    > (require syntax/parse 'lits (for-syntax 'common))
+    > (syntax-parse #'x #:literal-sets ([common-lits #:phase 1])
+        [x 'yes]
+        [_ 'no])
+    'yes
+
+
+
+The occurrence of x in the pattern matches any identifier whose binding at
+phase 1 is the x from module 'common.
+
+(literal-set->predicate litset-id)
+Given the name of a literal set, produces a predicate that recognizes
+identifiers in the literal set. The predicate takes one required argument, an
+identifier id, and one optional argument, the phase phase at which to examine
+the binding of id; the phase argument defaults to (syntax-local-phase-level).
+
+Examples:
+
+    > (define kernel? (literal-set->predicate kernel-literals))
+    > (kernel? #'lambda)
+    #f
+
+    > (kernel? #'#%plain-lambda)
+    #t
+
+    > (kernel? #'define-values)
+    #t
+
+    > (kernel? #'define-values 4)
+    #f
+
+
+
+(define-conventions name-id convention-rule ...)
+ 
+convention-rule   =   (name-pattern syntax-class)
+                       
+   name-pattern   =   exact-id
+                  |   name-rx
+                       
+   syntax-class   =   syntax-class-id
+                  |   (syntax-class-id expr ...)
+Defines conventions that supply default syntax classes for pattern variables. A
+pattern variable that has no explicit syntax class is checked against each
+id-pattern, and the first one that matches determines the syntax class for the
+pattern. If no id-pattern matches, then the pattern variable has no syntax
+class.
+
+Examples:
+
+    > (define-conventions xyz-as-ids
+        [x id] [y id] [z id])
+    > (syntax-parse #'(a b c 1 2 3)
+        #:conventions (xyz-as-ids)
+        [(x ... n ...) (syntax->datum #'(x ...))])
+    '(a b c)
+
+    > (define-conventions xn-prefixes
+        [#rx"^x" id]
+        [#rx"^n" nat])
+    > (syntax-parse #'(a b c 1 2 3)
+        #:conventions (xn-prefixes)
+        [(x0 x ... n0 n ...)
+         (syntax->datum #'(x0 (x ...) n0 (n ...)))])
+    '(a (b c) 1 (2 3))
+
+
+
+Local conventions, introduced with the #:local-conventions keyword argument of
+syntax-parse and syntax class definitions, may refer to local bindings:
+
+Examples:
+
+    > (define-syntax-class (nat> bound)
+        (pattern n:nat
+                 #:fail-unless (> (syntax-e #'n) bound)
+                               (format "expected number > ~s" bound)))
+    > (define-syntax-class (natlist> bound)
+        #:local-conventions ([N (nat> bound)])
+        (pattern (N ...)))
+    > (define (parse-natlist> bound x)
+        (syntax-parse x
+          #:local-conventions ([NS (natlist> bound)])
+          [NS 'ok]))
+    > (parse-natlist> 0 #'(1 2 3))
+    'ok
+
+    > (parse-natlist> 5 #'(8 6 4 2))
+    ?: expected number > 5 at: 4
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

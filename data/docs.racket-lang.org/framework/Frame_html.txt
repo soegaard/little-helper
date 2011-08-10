@@ -1,0 +1,2770 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+frame: basic<%>
+get-area-container%
+get-area-container
+get-menu-bar%
+make-root-area-container
+close
+editing-this-file?
+get-filename
+make-visible
+frame: basic-mixin
+show
+can-exit?
+on-exit
+on-superwindow-show
+on-drop-file
+after-new-child
+frame: size-pref<%>
+frame: size-pref-mixin
+on-size
+frame: register-group<%>
+frame: register-group-mixin
+can-close?
+on-close
+on-activate
+frame: status-line<%>
+open-status-line
+close-status-line
+update-status-line
+frame: status-line-mixin
+make-root-area-container
+frame: info<%>
+determine-width
+lock-status-changed
+update-info
+set-info-canvas
+get-info-canvas
+get-info-editor
+get-info-panel
+show-info
+hide-info
+is-info-hidden?
+frame: info-mixin
+make-root-area-container
+on-close
+frame: text-info<%>
+set-macro-recording
+overwrite-status-changed
+anchor-status-changed
+editor-position-changed
+add-line-number-menu-items
+frame: text-info-mixin
+on-close
+update-info
+frame: pasteboard-info<%>
+frame: pasteboard-info-mixin
+frame: standard-menus<%>
+on-close
+get-menu%
+get-menu-item%
+get-checkable-menu-item%
+get-file-menu
+get-edit-menu
+get-help-menu
+file-menu: get-new-item
+file-menu: create-new?
+file-menu: new-callback
+file-menu: new-on-demand
+file-menu: new-string
+file-menu: new-help-string
+file-menu: between-new-and-open
+file-menu: get-open-item
+file-menu: create-open?
+file-menu: open-callback
+file-menu: open-on-demand
+file-menu: open-string
+file-menu: open-help-string
+file-menu: get-open-recent-item
+file-menu: create-open-recent?
+file-menu: open-recent-callback
+file-menu: open-recent-on-demand
+file-menu: open-recent-string
+file-menu: open-recent-help-string
+file-menu: between-open-and-revert
+file-menu: get-revert-item
+file-menu: create-revert?
+file-menu: revert-callback
+file-menu: revert-on-demand
+file-menu: revert-string
+file-menu: revert-help-string
+file-menu: between-revert-and-save
+file-menu: get-save-item
+file-menu: create-save?
+file-menu: save-callback
+file-menu: save-on-demand
+file-menu: save-string
+file-menu: save-help-string
+file-menu: get-save-as-item
+file-menu: create-save-as?
+file-menu: save-as-callback
+file-menu: save-as-on-demand
+file-menu: save-as-string
+file-menu: save-as-help-string
+file-menu: between-save-as-and-print
+file-menu: get-print-item
+file-menu: create-print?
+file-menu: print-callback
+file-menu: print-on-demand
+file-menu: print-string
+file-menu: print-help-string
+file-menu: between-print-and-close
+file-menu: get-close-item
+file-menu: create-close?
+file-menu: close-callback
+file-menu: close-on-demand
+file-menu: close-string
+file-menu: close-help-string
+file-menu: between-close-and-quit
+file-menu: get-quit-item
+file-menu: create-quit?
+file-menu: quit-callback
+file-menu: quit-on-demand
+file-menu: quit-string
+file-menu: quit-help-string
+file-menu: after-quit
+edit-menu: get-undo-item
+edit-menu: create-undo?
+edit-menu: undo-callback
+edit-menu: undo-on-demand
+edit-menu: undo-string
+edit-menu: undo-help-string
+edit-menu: get-redo-item
+edit-menu: create-redo?
+edit-menu: redo-callback
+edit-menu: redo-on-demand
+edit-menu: redo-string
+edit-menu: redo-help-string
+edit-menu: between-redo-and-cut
+edit-menu: get-cut-item
+edit-menu: create-cut?
+edit-menu: cut-callback
+edit-menu: cut-on-demand
+edit-menu: cut-string
+edit-menu: cut-help-string
+edit-menu: between-cut-and-copy
+edit-menu: get-copy-item
+edit-menu: create-copy?
+edit-menu: copy-callback
+edit-menu: copy-on-demand
+edit-menu: copy-string
+edit-menu: copy-help-string
+edit-menu: between-copy-and-paste
+edit-menu: get-paste-item
+edit-menu: create-paste?
+edit-menu: paste-callback
+edit-menu: paste-on-demand
+edit-menu: paste-string
+edit-menu: paste-help-string
+edit-menu: between-paste-and-clear
+edit-menu: get-clear-item
+edit-menu: create-clear?
+edit-menu: clear-callback
+edit-menu: clear-on-demand
+edit-menu: clear-string
+edit-menu: clear-help-string
+edit-menu: between-clear-and-select-all
+edit-menu: get-select-all-item
+edit-menu: create-select-all?
+edit-menu: select-all-callback
+edit-menu: select-all-on-demand
+edit-menu: select-all-string
+edit-menu: select-all-help-string
+edit-menu: between-select-all-and-find
+edit-menu: get-find-item
+edit-menu: create-find?
+edit-menu: find-callback
+edit-menu: find-on-demand
+edit-menu: find-string
+edit-menu: find-help-string
+edit-menu: get-find-next-item
+edit-menu: create-find-next?
+edit-menu: find-next-callback
+edit-menu: find-next-on-demand
+edit-menu: find-next-string
+edit-menu: find-next-help-string
+edit-menu: get-find-previous-item
+edit-menu: create-find-previous?
+edit-menu: find-previous-callback
+edit-menu: find-previous-on-demand
+edit-menu: find-previous-string
+edit-menu: find-previous-help-string
+edit-menu: get-show/ hide-replace-item
+edit-menu: create-show/ hide-replace?
+edit-menu: show/ hide-replace-callback
+edit-menu: show/ hide-replace-on-demand
+edit-menu: show/ hide-replace-string
+edit-menu: show/ hide-replace-help-string
+edit-menu: get-replace-item
+edit-menu: create-replace?
+edit-menu: replace-callback
+edit-menu: replace-on-demand
+edit-menu: replace-string
+edit-menu: replace-help-string
+edit-menu: get-replace-all-item
+edit-menu: create-replace-all?
+edit-menu: replace-all-callback
+edit-menu: replace-all-on-demand
+edit-menu: replace-all-string
+edit-menu: replace-all-help-string
+edit-menu: get-find-case-sensitive-item
+edit-menu: create-find-case-sensitive?
+edit-menu: find-case-sensitive-callback
+edit-menu: find-case-sensitive-on-demand
+edit-menu: find-case-sensitive-string
+edit-menu: find-case-sensitive-help-string
+edit-menu: between-find-and-preferences
+edit-menu: get-preferences-item
+edit-menu: create-preferences?
+edit-menu: preferences-callback
+edit-menu: preferences-on-demand
+edit-menu: preferences-string
+edit-menu: preferences-help-string
+edit-menu: after-preferences
+help-menu: before-about
+help-menu: get-about-item
+help-menu: create-about?
+help-menu: about-callback
+help-menu: about-on-demand
+help-menu: about-string
+help-menu: about-help-string
+help-menu: after-about
+frame: standard-menus-mixin
+on-close
+frame: editor<%>
+get-entire-label
+get-label-prefix
+set-label-prefix
+get-canvas%
+get-canvas<%>
+get-editor%
+get-editor<%>
+make-editor
+revert
+save
+save-as
+get-canvas
+get-editor
+frame: editor-mixin
+get-filename
+editing-this-file?
+on-close
+can-close?
+get-label
+set-label
+file-menu: open-callback
+file-menu: revert-on-demand
+file-menu: revert-callback
+file-menu: create-revert?
+file-menu: save-callback
+file-menu: create-save?
+file-menu: save-as-callback
+file-menu: create-save-as?
+file-menu: print-callback
+file-menu: create-print?
+file-menu: between-save-as-and-print
+edit-menu: between-select-all-and-find
+help-menu: about-callback
+help-menu: about-string
+help-menu: create-about?
+frame: open-here<%>
+get-open-here-editor
+open-here
+frame: open-here-mixin
+file-menu: new-on-demand
+file-menu: new-callback
+file-menu: open-on-demand
+on-close
+on-activate
+frame: text<%>
+frame: text-mixin
+get-editor<%>
+frame: pasteboard<%>
+frame: pasteboard-mixin
+get-editor<%>
+frame: delegate<%>
+get-delegated-text
+delegated-text-shown?
+hide-delegated-text
+show-delegated-text
+delegate-moved
+frame: delegate-mixin
+make-root-area-container
+get-editor<%>
+get-editor%
+frame: searchable<%>
+search
+search-replace
+replace-all
+get-text-to-search
+set-text-to-search
+search-hidden?
+hide-search
+unhide-search
+get-case-sensitive-search?
+search-hits-changed
+frame: searchable-mixin
+edit-menu: find-callback
+edit-menu: create-find?
+edit-menu: find-again-callback
+edit-menu: create-find-again?
+edit-menu: find-again-backwards-callback
+edit-menu: create-find-again-backwards?
+edit-menu: replace-all-callback
+edit-menu: replace-all-on-demand
+edit-menu: create-replace-all?
+edit-menu: find-case-sensitive-callback
+edit-menu: find-case-sensitive-on-demand
+edit-menu: create-find-case-sensitive?
+make-root-area-container
+on-close
+frame: searchable-text<%>
+frame: searchable-text-mixin
+get-text-to-search
+get-editor<%>
+get-editor%
+frame: basic%
+frame: size-pref%
+frame: info%
+frame: text-info%
+frame: pasteboard-info%
+frame: status-line%
+frame: standard-menus%
+frame: editor%
+frame: open-here%
+frame: text%
+frame: searchable%
+frame: delegate%
+frame: pasteboard%
+frame: setup-size-pref
+frame: add-snip-menu-items
+frame: reorder-menus
+frame: remove-empty-menus
+frame: current-icon
+[...search manuals...]
+  top← prev  up  next → 
+
+14 Frame
+
+frame:basic<%> : interface?
+  implements:  frame%
+Classes matching this interface support the basic frame% functionality required
+by the framework.
+
+
+    (send a-frame:basic get-area-container%)
+     → (implementation?/c area-container<%>)
+    The class that this method returns is used to create the area-container<%>
+    in this frame.
+
+    (send a-frame:basic get-area-container)
+     → (is-a?/c area-container<%>)
+    This returns the main area-container<%> in the frame
+
+    (send a-frame:basic get-menu-bar%) → (subclass?/c menu-bar%)
+    The result of this method is used to create the initial menu bar for this
+    frame.
+
+    Return menu-bar%.
+    (send a-frame:basic make-root-area-container   class    
+                                                   parent)  
+     → (is-a?/c area-container<%>)
+      class : (implementation?/c area-container<%>)
+      parent : (is-a?/c area-container<%>)
+    Override this method to insert a panel in between the panel used by the
+    clients of this frame and the frame itself. For example, to insert a status
+    line panel override this method with something like this:
+
+        (class ...
+          ...
+         (define status-panel #f)
+         (define/override (make-root-area-container cls parent)
+           (set! status-panel
+                 (super make-root-area-container vertical-panel% parent))
+           (let ([root (make-object cls status-panel)])
+         
+              ; ... add other children to status-panel ...
+         
+              root))
+          ...)
+
+    In this example, status-panel will contain a root panel for the other
+    classes, and whatever panels are needed to display status information.
+
+    The searching frame is implemented using this method.
+
+    Calls make-object with class and parent.
+    (send a-frame:basic close) → void?
+    This method closes the frame by calling the can-close?, on-close, and show
+    methods.
+
+    It’s implementation is:
+
+        (inherit can-close? on-close)
+        (public
+          [show
+            (lambda ()
+              (when (can-close?)
+                (on-close)
+                (show #f)))])
+
+    (send a-frame:basic editing-this-file? filename) → boolean?
+      filename : path?
+    Indicates if this frame contains this buffer (and can edit that file).
+
+    Returns #f.
+    (send a-frame:basic get-filename [temp]) → (or/c #f path?)
+      temp : (or/c #f (box boolean?)) = #f
+    This returns the filename that the frame is currently being saved as, or #f
+    if there is no appropriate filename.
+
+    Returns #f by default.
+
+    If temp is a box, it is filled with #t or #f, depending if the filename is
+    a temporary filename.
+    (send a-frame:basic make-visible filename) → void?
+      filename : string?
+    Makes the file named by filename visible (intended for use with tabbed
+    editing).
+
+frame:basic-mixin : (class? . -> . class?)
+  argument extends/implements:  frame%
+  result implements:  frame:basic<%>
+This mixin provides the basic functionality that the framework expects. It
+helps manage the list of frames in the group:% object returned by
+group:get-the-frame-group.
+Do not give panel% or control<%> objects this frame as parent. Instead, use the
+result of the get-area-container method.
+This mixin also creates a menu bar for the frame, as the frame is initialized.
+It uses the class returned by get-menu-bar%. It only passes the frame as an
+initialization argument. In addition, it creates the windows menu in the menu
+bar.
+This mixin calls its accept-drop-files with #t.
+It also calls its set-icon method according to the current value of
+frame:current-icon.
+See also frame:reorder-menus.
+
+
+    (send a-frame:basic show on?) → void?
+      on? : boolean?
+    Overrides show in top-level-window<%>.
+    Calls the super method.
+
+    When on? is #t, inserts the frame into the frame group and when it is #f,
+    removes the frame from the group.
+    (send a-frame:basic can-exit?) → boolean?
+    Overrides can-exit? in top-level-window<%>.
+    This, together with on-exit mimics exit:exit.
+
+    First, it calls exit:set-exiting with #t. Then, it calls exit:can-exit?. If
+    it returns #t, so does this method. If it returns #f, this method calls
+    exit:set-exiting with #f.
+    (send a-frame:basic on-exit) → void?
+    Overrides on-exit in top-level-window<%>.
+    Together with can-exit? this mimics the behavior of exit:exit.
+
+    Calls exit:on-exit and then queues a callback to call Racket’s exit
+    function. If that returns, it calls exit:set-exiting to reset that flag to
+    #f.
+    (send a-frame:basic on-superwindow-show shown?) → void?
+      shown? : any/c
+    Overrides on-superwindow-show in window<%>.
+    Notifies the result of (group:get-the-frame-group) that a frame has been
+    shown, by calling the frame-shown/hidden method.
+
+    (send a-frame:basic on-drop-file pathname) → void?
+      pathname : string?
+    Overrides on-drop-file in window<%>.
+    Calls handler:edit-file with pathname as an argument.
+    (send a-frame:basic after-new-child) → void?
+    Overrides after-new-child in area-container<%>.
+    Raises an exception if attempting to add a child to this frame (except if
+    using the make-root-area-container method).
+
+frame:size-pref<%> : interface?
+  implements:  frame:basic<%>
+
+frame:size-pref-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:basic<%>
+  result implements:  frame:size-pref<%>
+
+
+    (new frame:size-pref-mixin                        
+         [size-preferences-key size-preferences-key]  
+         [label label]                                
+       [ [parent parent]                              
+         [x x]                                        
+         [y y]                                        
+         [style style]                                
+         [enabled enabled]                            
+         [border border]                              
+         [spacing spacing]                            
+         [alignment alignment]                        
+         [min-width min-width]                        
+         [min-height min-height]                      
+         [stretchable-width stretchable-width]        
+         [stretchable-height stretchable-height]])    
+     → (is-a?/c frame:size-pref-mixin)
+      size-preferences-key : symbol?
+      label : label-string?
+      parent : (or/c (is-a?/c frame%) false/c) = #f
+      x : (or/c (integer-in -10000 10000) false/c) = #f
+      y : (or/c (integer-in -10000 10000) false/c) = #f
+                   (listof (or/c
+       style   :    'no-resize-border 'no-caption 'no-system-menu 'hide-menu-bar 'mdi-parent 'mdi-child
+                    'toolbar-button 'float 'metal))
+               =   null
+      enabled : any/c = #t
+      border : (integer-in 0 1000) = 0
+      spacing : (integer-in 0 1000) = 0
+       alignment   :   (list/c (or/c 'left 'center 'right) (or/c
+                        'top 'center 'bottom))
+                   =   '(center top)
+      min-width : (integer-in 0 10000) = graphical-minimum-width
+      min-height : (integer-in 0 10000) = graphical-minimum-height
+      stretchable-width : any/c = #t
+      stretchable-height : any/c = #t
+    The size size-preferences-key symbol is used with preferences:get and
+    preferences:set to track the current size.
+
+    Passes the width and height initialization arguments to the superclass
+    based on the current value of the preference.
+
+    See also frame:setup-size-pref.
+
+    (send a-frame:size-pref on-size   width          
+                                      height)   →   void?
+      width : number?
+      height : number?
+    Overrides on-size in window<%>.
+    Updates the preferences, according to the width and height. The preferences
+    key is the one passed to the initialization argument of the class.
+
+frame:register-group<%> : interface?
+Frames that implement this interface are registered with the group. See
+group:get-the-frame-group and frame:register-group-mixin.
+
+frame:register-group-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:basic<%>
+  result implements:  frame:register-group<%>
+During initialization, calls insert-framewith this.
+
+
+    (send a-frame:register-group can-close?) → boolean?
+    Augments can-close? in top-level-window<%>.
+    Calls the inner method, with a default of #t. If that returns #t, it checks
+    for one of the these three conditions:
+
+      □ exit:exiting? returns #t
+
+      □ there is more than one frame in the group returned by
+        group:get-the-frame-group, or
+
+      □ the procedure exit:user-oks-exit returns #t.
+
+    If any of those conditions hold, the method returns #t.
+    (send a-frame:register-group on-close) → void?
+    Augments on-close in top-level-window<%>.
+    First calls the inner method. Next, calls the remove-frame method of the
+    result of group:get-the-frame-group with this as an argument. Finally,
+    unless exit:exiting? returns #t, and if there are no more frames open, it
+    calls exit:exit.
+    (send a-frame:register-group on-activate on?) → void?
+      on? : boolean?
+    Overrides on-activate in top-level-window<%>.
+    Calls set-active-frame with this when on? is true.
+
+frame:status-line<%> : interface?
+  implements:  frame:basic<%>
+The mixin that implements this interface provides an interface to a set of
+status lines at the bottom of this frame.
+Each status line must be opened with open-status-line before any messages are
+shown in the status line and once close-status-line is called, no more messages
+may be displayed, unless the status line is re-opened.
+The screen space for status lines is not created until update-status-line is
+called with a string. Additionally, the screen space for one status line is
+re-used when by another status line when the first passes #f to
+update-status-line. In this manner, the status line frame avoids opening too
+many status lines and avoids flashing the status lines open and closed too
+often.
+
+
+    (send a-frame:status-line open-status-line id) → void?
+      id : symbol?
+    Creates a new status line identified by the symbol argument. The line will
+    not appear in the frame until a message is put into it, via
+    update-status-line.
+
+    (send a-frame:status-line close-status-line id) → void?
+      id : symbol?
+    Closes the status line id.
+    (send a-frame:status-line update-status-line   id             
+                                                   status)   →   void?
+      id : symbol?
+      status : (or/c #f string)
+    Updates the status line named by id with status. If status is #f, the
+    status line is becomes blank (and may be used by other ids).
+
+frame:status-line-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:basic<%>
+  result implements:  frame:status-line<%>
+
+
+    (send a-frame:status-line make-root-area-container   class    
+                                                         parent)  
+     → (is-a?/c panel%)
+      class : (subclass?/c panel%)
+      parent : (is-a?/c panel%)
+    Overrides make-root-area-container in frame:basic<%>.
+    Adds a panel at the bottom of the frame to hold the status lines.
+
+frame:info<%> : interface?
+  implements:  frame:basic<%>
+Frames matching this interface support a status line.
+The preference 'framework:show-status-line controls the visibility of the
+status line. If it is #t, the status line is visible and if it is #f, the
+status line is not visible (see preferences:get for more info about
+preferences)
+
+
+    (send a-frame:info determine-width   str           
+                                         canvas        
+                                         text)    →   integer
+      str : string
+      canvas : (is-a?/c editor-canvas%)
+      text : (is-a?/c text%)
+    This method is used to calculate the size of an editor-canvas% with a
+    particular set of characters in it. It is used to calculate the sizes of
+    the edits in the status line.
+
+    (send a-frame:info lock-status-changed) → void?
+    This method is called when the lock status of the editor<%> changes.
+
+    Updates the lock icon in the status line panel.
+    (send a-frame:info update-info) → void?
+    This method updates all of the information in the panel.
+    (send a-frame:info set-info-canvas canvas) → void?
+      canvas : (or/c (is-a?/c canvas:basic%) #f)
+    Sets this canvas to be the canvas that the info frame shows info about. The
+    on-focus and set-editor methods call this method to ensure that the info
+    canvas is set correctly.
+
+    (send a-frame:info get-info-canvas)
+     → (or/c (is-a?/c canvas:basic%) #f)
+    Returns the canvas that the frame:info<%> currently shows info about. See
+    also set-info-canvas
+
+    (send a-frame:info get-info-editor)
+     → (or/c #f (is-a?/c editor<%>))
+    Override this method to specify the editor that the status line contains
+    information about.
+
+    Returns the result of get-editor.
+    (send a-frame:info get-info-panel)
+     → (is-a?/c horizontal-panel%)
+    This method returns the panel where the information about this editor is
+    displayed.
+
+    (send a-frame:info show-info) → void?
+    Shows the info panel.
+
+    See also is-info-hidden?.
+
+    (send a-frame:info hide-info) → void?
+    Hides the info panel.
+
+    See also is-info-hidden?.
+    (send a-frame:info is-info-hidden?) → boolean?
+    Result indicates if the show info panel has been explicitly hidden with
+    hide-info.
+
+    If this method returns #t and (preferences:get 'framework:show-status-line)
+    is #f, then the info panel will not be visible. Otherwise, it is visible.
+
+frame:info-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:basic<%>
+  result implements:  frame:info<%>
+This mixin provides support for displaying various info in the status line of
+the frame.
+The result of this mixin uses the same initialization arguments as the mixin’s
+argument.
+
+
+    (send a-frame:info make-root-area-container   class    
+                                                  parent)  
+     → (is-a?/c area-container<%>)
+      class : (subclass?/c area-container<%>)
+      parent : (is-a?/c area-container<%>)
+    Overrides make-root-area-container in frame:basic<%>.
+    Builds an extra panel for displaying various information.
+    (send a-frame:info on-close) → void?
+    Augments on-close in top-level-window<%>.
+    Removes the GC icon with unregister-collecting-blit and cleans up other
+    callbacks.
+
+frame:text-info<%> : interface?
+  implements:  frame:info<%>
+Objects matching this interface receive information from editors constructed
+with editor:info-mixin and display it.
+
+
+    (send a-frame:text-info set-macro-recording on?) → void?
+      on? : boolean?
+    Shows/hides the icon in the info bar that indicates if a macro recording is
+    in progress.
+
+    (send a-frame:text-info overwrite-status-changed) → void?
+    This method is called when the overwrite mode is turned either on or off in
+    the editor<%> in this frame.
+
+    (send a-frame:text-info anchor-status-changed) → void?
+    This method is called when the anchor is turned either on or off in the
+    editor<%> in this frame.
+
+    (send a-frame:text-info editor-position-changed) → void?
+    This method is called when the position in the editor<%> changes.
+
+    (send a-frame:text-info add-line-number-menu-items menu)
+     → void?
+      menu : (is-a?/c menu-item-container<%>)
+    This method is called when the line/column display in the info bar is
+    clicked. It is passed a menu-item-container<%> that can be filled in with
+    menu items; those menu items will appear in the menu that appears when line
+    /colun display is clicked.
+
+frame:text-info-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:info<%>
+  result implements:  frame:text-info<%>
+This mixin adds status information to the info panel relating to an edit.
+
+
+    (send a-frame:text-info on-close) → void?
+    Augments on-close in top-level-window<%>.
+    removes a preferences callback for 'framework:line-offsets. See
+    preferences:add-callback for more information.
+    (send a-frame:text-info update-info) → void?
+    Overrides update-info in frame:info<%>.
+    Calls overwrite-status-changed, anchor-status-changed, and
+    editor-position-changed.
+
+frame:pasteboard-info<%> : interface?
+  implements:  frame:info<%>
+
+frame:pasteboard-info-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:basic<%>
+  result implements:  frame:pasteboard-info<%>
+
+frame:standard-menus<%> : interface?
+  implements:  frame:basic<%>
+
+
+    (send a-frame:standard-menus on-close) → void?
+    Removes the preferences callbacks for the menu items
+
+    (send a-frame:standard-menus get-menu%)
+     → (is-a?/c menu:can-restore-underscore-menu%)
+    The result of this method is used as the class for creating the result of
+    these methods: get-file-menu, get-edit-menu, and get-help-menu.
+
+    (send a-frame:standard-menus get-menu-item%)
+     → (is-a?/c menu:can-restore-menu-item%)
+    The result of this method is used as the class for creating the menu items
+    in this frame.
+
+    Returns menu:can-restore-menu-item by default.
+
+    (send a-frame:standard-menus get-checkable-menu-item%)
+     → (is-a?/c menu:can-restore-checkable-menu-item%)
+    The result of this method is used as the class for creating checkable menu
+    items in this class.
+
+    Returns menu:can-restore-checkable-menu-item by default.
+
+    (send a-frame:standard-menus get-file-menu) → (is-a?/c menu%)
+    Returns the file menu. See also get-menu%.
+
+    (send a-frame:standard-menus get-edit-menu) → (is-a?/c menu%)
+    Returns the edit menu. See also get-menu%.
+
+    (send a-frame:standard-menus get-help-menu) → (is-a?/c menu%)
+    Returns the help menu. See also get-menu%.
+
+    (send a-frame:standard-menus file-menu:get-new-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by file-menu:create-new?).
+
+    (send a-frame:standard-menus file-menu:create-new?) → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus file-menu:new-callback   item      
+                                                          control)  
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (handler:edit-file #f) #t)
+
+    (send a-frame:standard-menus file-menu:new-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:new-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant new-menu-item).
+
+    (send a-frame:standard-menus file-menu:new-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant new-info).
+
+    (send a-frame:standard-menus file-menu:between-new-and-open menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the new and the open
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus file-menu:get-open-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by file-menu:create-open?).
+
+    (send a-frame:standard-menus file-menu:create-open?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus file-menu:open-callback   item      
+                                                           control)  
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (handler:open-file) #t)
+
+    (send a-frame:standard-menus file-menu:open-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:open-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant open-menu-item).
+
+    (send a-frame:standard-menus file-menu:open-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant open-info).
+
+    (send a-frame:standard-menus file-menu:get-open-recent-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by
+    file-menu:create-open-recent?).
+
+    (send a-frame:standard-menus file-menu:create-open-recent?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus file-menu:open-recent-callback   x   
+                                                                  y)  
+     → void?
+      x : (is-a?/c menu-item<%>)
+      y : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:open-recent-on-demand menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (handler:install-recent-items menu)
+
+    (send a-frame:standard-menus file-menu:open-recent-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant open-recent-menu-item).
+
+    (send a-frame:standard-menus file-menu:open-recent-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant open-recent-info).
+
+    (send a-frame:standard-menus file-menu:between-open-and-revert menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the open and the revert
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus file-menu:get-revert-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by file-menu:create-revert?).
+
+    (send a-frame:standard-menus file-menu:create-revert?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus file-menu:revert-callback  
+                item                                        
+                control)                                    
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:revert-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:revert-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant revert-menu-item).
+
+    (send a-frame:standard-menus file-menu:revert-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant revert-info).
+
+    (send a-frame:standard-menus file-menu:between-revert-and-save menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the revert and the save
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus file-menu:get-save-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by file-menu:create-save?).
+
+    (send a-frame:standard-menus file-menu:create-save?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus file-menu:save-callback   item      
+                                                           control)  
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:save-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:save-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant save-menu-item).
+
+    (send a-frame:standard-menus file-menu:save-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant save-info).
+
+    (send a-frame:standard-menus file-menu:get-save-as-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by file-menu:create-save-as?).
+
+    (send a-frame:standard-menus file-menu:create-save-as?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus file-menu:save-as-callback  
+                item                                         
+                control)                                     
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:save-as-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:save-as-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant save-as-menu-item).
+
+    (send a-frame:standard-menus file-menu:save-as-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant save-as-info).
+
+    (send a-frame:standard-menus file-menu:between-save-as-and-print menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the save-as and the print
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus file-menu:get-print-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by file-menu:create-print?).
+
+    (send a-frame:standard-menus file-menu:create-print?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus file-menu:print-callback   item      
+                                                            control)  
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:print-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:print-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant print-menu-item).
+
+    (send a-frame:standard-menus file-menu:print-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant print-info).
+
+    (send a-frame:standard-menus file-menu:between-print-and-close menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the print and the close
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus file-menu:get-close-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by file-menu:create-close?).
+
+    (send a-frame:standard-menus file-menu:create-close?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus file-menu:close-callback   item      
+                                                            control)  
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (when (can-close?) (on-close) (show #f)) #t)
+
+    (send a-frame:standard-menus file-menu:close-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:close-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant close-menu-item).
+
+    (send a-frame:standard-menus file-menu:close-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant close-info).
+
+    (send a-frame:standard-menus file-menu:between-close-and-quit menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the close and the quit
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus file-menu:get-quit-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by file-menu:create-quit?).
+
+    (send a-frame:standard-menus file-menu:create-quit?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to (not (eq? (system-type) 'macosx)).
+
+    (send a-frame:standard-menus file-menu:quit-callback   item      
+                                                           control)  
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (when (exit:user-oks-exit) (exit:exit))
+
+    (send a-frame:standard-menus file-menu:quit-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus file-menu:quit-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (if (eq? (system-type) 'windows) (string-constant
+    quit-menu-item-windows) (string-constant quit-menu-item-others)).
+
+    (send a-frame:standard-menus file-menu:quit-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant quit-info).
+
+    (send a-frame:standard-menus file-menu:after-quit menu) → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called after the addition of the quit menu-item. Override it
+    to add additional menu items at that point.
+
+    (send a-frame:standard-menus edit-menu:get-undo-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-undo?).
+
+    (send a-frame:standard-menus edit-menu:create-undo?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus edit-menu:undo-callback   menu  
+                                                           evt)  
+     → void?
+      menu : (is-a?/c menu-item<%>)
+      evt : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (let ((edit (get-edit-target-object))) (when (and edit (is-a?
+         edit editor<%>)) (send edit do-edit-operation 'undo)))  #t)
+
+    (send a-frame:standard-menus edit-menu:undo-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (let* ((editor (get-edit-target-object)) (enable? (and editor (is-a?
+         editor editor<%>) (send editor can-do-edit-operation? 'undo))))  (send
+         item enable enable?))
+
+    (send a-frame:standard-menus edit-menu:undo-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant undo-menu-item).
+
+    (send a-frame:standard-menus edit-menu:undo-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant undo-info).
+
+    (send a-frame:standard-menus edit-menu:get-redo-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-redo?).
+
+    (send a-frame:standard-menus edit-menu:create-redo?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus edit-menu:redo-callback   menu  
+                                                           evt)  
+     → void?
+      menu : (is-a?/c menu-item<%>)
+      evt : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (let ((edit (get-edit-target-object))) (when (and edit (is-a?
+         edit editor<%>)) (send edit do-edit-operation 'redo)))  #t)
+
+    (send a-frame:standard-menus edit-menu:redo-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (let* ((editor (get-edit-target-object)) (enable? (and editor (is-a?
+         editor editor<%>) (send editor can-do-edit-operation? 'redo))))  (send
+         item enable enable?))
+
+    (send a-frame:standard-menus edit-menu:redo-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant redo-menu-item).
+
+    (send a-frame:standard-menus edit-menu:redo-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant redo-info).
+
+    (send a-frame:standard-menus edit-menu:between-redo-and-cut menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the redo and the cut
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus edit-menu:get-cut-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-cut?).
+
+    (send a-frame:standard-menus edit-menu:create-cut?) → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus edit-menu:cut-callback   menu  
+                                                          evt)  
+     → void?
+      menu : (is-a?/c menu-item<%>)
+      evt : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (let ((edit (get-edit-target-object))) (when (and edit (is-a?
+         edit editor<%>)) (send edit do-edit-operation 'cut)))  #t)
+
+    (send a-frame:standard-menus edit-menu:cut-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (let* ((editor (get-edit-target-object)) (enable? (and editor (is-a?
+         editor editor<%>) (send editor can-do-edit-operation? 'cut))))  (send
+         item enable enable?))
+
+    (send a-frame:standard-menus edit-menu:cut-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant cut-menu-item).
+
+    (send a-frame:standard-menus edit-menu:cut-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant cut-info).
+
+    (send a-frame:standard-menus edit-menu:between-cut-and-copy menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the cut and the copy
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus edit-menu:get-copy-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-copy?).
+
+    (send a-frame:standard-menus edit-menu:create-copy?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus edit-menu:copy-callback   menu  
+                                                           evt)  
+     → void?
+      menu : (is-a?/c menu-item<%>)
+      evt : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (let ((edit (get-edit-target-object))) (when (and edit (is-a?
+         edit editor<%>)) (send edit do-edit-operation 'copy)))  #t)
+
+    (send a-frame:standard-menus edit-menu:copy-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (let* ((editor (get-edit-target-object)) (enable? (and editor (is-a?
+         editor editor<%>) (send editor can-do-edit-operation? 'copy))))  (send
+         item enable enable?))
+
+    (send a-frame:standard-menus edit-menu:copy-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant copy-menu-item).
+
+    (send a-frame:standard-menus edit-menu:copy-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant copy-info).
+
+    (send a-frame:standard-menus edit-menu:between-copy-and-paste menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the copy and the paste
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus edit-menu:get-paste-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-paste?).
+
+    (send a-frame:standard-menus edit-menu:create-paste?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus edit-menu:paste-callback   menu  
+                                                            evt)  
+     → void?
+      menu : (is-a?/c menu-item<%>)
+      evt : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (let ((edit (get-edit-target-object))) (when (and edit (is-a?
+         edit editor<%>)) (send edit do-edit-operation 'paste)))  #t)
+
+    (send a-frame:standard-menus edit-menu:paste-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (let* ((editor (get-edit-target-object)) (enable? (and editor (is-a?
+         editor editor<%>) (send editor can-do-edit-operation? 'paste))))  (
+        send item enable enable?))
+
+    (send a-frame:standard-menus edit-menu:paste-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant paste-menu-item).
+
+    (send a-frame:standard-menus edit-menu:paste-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant paste-info).
+
+    (send a-frame:standard-menus edit-menu:between-paste-and-clear menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the paste and the clear
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus edit-menu:get-clear-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-clear?).
+
+    (send a-frame:standard-menus edit-menu:create-clear?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus edit-menu:clear-callback   menu  
+                                                            evt)  
+     → void?
+      menu : (is-a?/c menu-item<%>)
+      evt : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (let ((edit (get-edit-target-object))) (when (and edit (is-a?
+         edit editor<%>)) (send edit do-edit-operation 'clear)))  #t)
+
+    (send a-frame:standard-menus edit-menu:clear-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (let* ((editor (get-edit-target-object)) (enable? (and editor (is-a?
+         editor editor<%>) (send editor can-do-edit-operation? 'clear))))  (
+        send item enable enable?))
+
+    (send a-frame:standard-menus edit-menu:clear-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (if (eq? (system-type) 'windows) (string-constant
+    clear-menu-item-windows) (string-constant clear-menu-item-windows)).
+
+    (send a-frame:standard-menus edit-menu:clear-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant clear-info).
+
+    (send a-frame:standard-menus edit-menu:between-clear-and-select-all menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the clear and the select-all
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus edit-menu:get-select-all-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-select-all?
+    ).
+
+    (send a-frame:standard-menus edit-menu:create-select-all?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #t.
+
+    (send a-frame:standard-menus edit-menu:select-all-callback  
+                        menu                                    
+                        evt)                                    
+     → void?
+      menu : (is-a?/c menu-item<%>)
+      evt : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (let ((edit (get-edit-target-object))) (when (and edit (is-a?
+         edit editor<%>)) (send edit do-edit-operation 'select-all)))  #t)
+
+    (send a-frame:standard-menus edit-menu:select-all-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (let* ((editor (get-edit-target-object)) (enable? (and editor (is-a?
+         editor editor<%>) (send editor can-do-edit-operation? 'select-all))))
+          (send item enable enable?))
+
+    (send a-frame:standard-menus edit-menu:select-all-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant select-all-menu-item).
+
+    (send a-frame:standard-menus edit-menu:select-all-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant select-all-info).
+
+    (send a-frame:standard-menus edit-menu:between-select-all-and-find menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the select-all and the find
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus edit-menu:get-find-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-find?).
+
+    (send a-frame:standard-menus edit-menu:create-find?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus edit-menu:find-callback   item      
+                                                           control)  
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:find-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (send item enable (let ((target (get-edit-target-object))) (and target 
+        (is-a? target editor<%>))))
+
+    (send a-frame:standard-menus edit-menu:find-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant find-menu-item).
+
+    (send a-frame:standard-menus edit-menu:find-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant find-info).
+
+    (send a-frame:standard-menus edit-menu:get-find-next-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-find-next?
+    ).
+
+    (send a-frame:standard-menus edit-menu:create-find-next?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus edit-menu:find-next-callback  
+                item                                           
+                control)                                       
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:find-next-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (send item enable (let ((target (get-edit-target-object))) (and target 
+        (is-a? target editor<%>))))
+
+    (send a-frame:standard-menus edit-menu:find-next-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant find-next-menu-item).
+
+    (send a-frame:standard-menus edit-menu:find-next-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant find-next-info).
+
+    (send a-frame:standard-menus edit-menu:get-find-previous-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by
+    edit-menu:create-find-previous?).
+
+    (send a-frame:standard-menus edit-menu:create-find-previous?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus edit-menu:find-previous-callback  
+                  item                                             
+                  control)                                         
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:find-previous-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (send item enable (let ((target (get-edit-target-object))) (and target 
+        (is-a? target editor<%>))))
+
+    (send a-frame:standard-menus edit-menu:find-previous-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant find-previous-menu-item).
+
+    (send a-frame:standard-menus edit-menu:find-previous-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant find-previous-info).
+
+    (send a-frame:standard-menus edit-menu:get-show/hide-replace-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-show/
+    hide-replace?).
+
+    (send a-frame:standard-menus edit-menu:create-show/hide-replace?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus edit-menu:show/hide-replace-callback  
+                  item                                                 
+                  control)                                             
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:show/hide-replace-on-demand
+     menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:show/hide-replace-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant show-replace-menu-item).
+
+    (send a-frame:standard-menus edit-menu:show/hide-replace-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant show/hide-replace-info).
+
+    (send a-frame:standard-menus edit-menu:get-replace-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by edit-menu:create-replace?).
+
+    (send a-frame:standard-menus edit-menu:create-replace?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus edit-menu:replace-callback  
+                item                                         
+                control)                                     
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:replace-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:replace-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant replace-menu-item).
+
+    (send a-frame:standard-menus edit-menu:replace-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant replace-info).
+
+    (send a-frame:standard-menus edit-menu:get-replace-all-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by
+    edit-menu:create-replace-all?).
+
+    (send a-frame:standard-menus edit-menu:create-replace-all?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus edit-menu:replace-all-callback  
+                  item                                           
+                  control)                                       
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:replace-all-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:replace-all-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant replace-all-menu-item).
+
+    (send a-frame:standard-menus edit-menu:replace-all-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant replace-all-info).
+
+    (send a-frame:standard-menus edit-menu:get-find-case-sensitive-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by
+    edit-menu:create-find-case-sensitive?).
+
+    (send a-frame:standard-menus edit-menu:create-find-case-sensitive?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus edit-menu:find-case-sensitive-callback  
+                  item                                                   
+                  control)                                               
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:find-case-sensitive-on-demand item)
+     → void?
+      item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (send item enable (let ((target (get-edit-target-object))) (and target 
+        (is-a? target editor<%>))))
+
+    (send a-frame:standard-menus edit-menu:find-case-sensitive-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant find-case-sensitive-menu-item).
+
+    (send a-frame:standard-menus edit-menu:find-case-sensitive-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant find-case-sensitive-info).
+
+    (send a-frame:standard-menus edit-menu:between-find-and-preferences menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called between the addition of the find and the preferences
+    menu-item. Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus edit-menu:get-preferences-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by
+    edit-menu:create-preferences?).
+
+    (send a-frame:standard-menus edit-menu:create-preferences?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to (not (current-eventspace-has-standard-menus?)).
+
+    (send a-frame:standard-menus edit-menu:preferences-callback  
+                  item                                           
+                  control)                                       
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (begin (preferences:show-dialog) #t)
+
+    (send a-frame:standard-menus edit-menu:preferences-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus edit-menu:preferences-string)
+     → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant preferences-menu-item).
+
+    (send a-frame:standard-menus edit-menu:preferences-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant preferences-info).
+
+    (send a-frame:standard-menus edit-menu:after-preferences menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called after the addition of the preferences menu-item.
+    Override it to add additional menu items at that point.
+
+    (send a-frame:standard-menus help-menu:before-about menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called before the addition of the about menu-item. Override
+    it to add additional menu items at that point.
+
+    (send a-frame:standard-menus help-menu:get-about-item)
+     → (or/c false/c (is-a?/c menu-item<%>))
+    This method returns the menu-item<%> object corresponding to this menu
+    item, if it has been created (as controlled by help-menu:create-about?).
+
+    (send a-frame:standard-menus help-menu:create-about?)
+     → boolean?
+    The result of this method determines if the corresponding menu item is
+    created. Override it to control the creation of the menu item.
+
+    Defaults to #f.
+
+    (send a-frame:standard-menus help-menu:about-callback   item      
+                                                            control)  
+     → void?
+      item : (is-a?/c menu-item<%>)
+      control : (is-a?/c control-event%)
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus help-menu:about-on-demand menu-item)
+     → void?
+      menu-item : (is-a?/c menu-item<%>)
+    The menu item’s on-demand proc calls this method.
+
+    Defaults to
+
+
+        (void)
+
+    (send a-frame:standard-menus help-menu:about-string) → string?
+    The result of this method is used as the name of the menu-item<%>.
+
+    Defaults to (string-constant about-menu-item).
+
+    (send a-frame:standard-menus help-menu:about-help-string)
+     → string?
+    The result of this method is used as the help string when the menu-item<%>
+    object is created.
+
+    Defaults to (string-constant about-info).
+
+    (send a-frame:standard-menus help-menu:after-about menu)
+     → void?
+      menu : (is-a?/c menu-item<%>)
+    This method is called after the addition of the about menu-item. Override
+    it to add additional menu items at that point.
+
+frame:standard-menus-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:basic<%>
+  result implements:  frame:standard-menus<%>
+The result of this mixin implements frame:standard-menus<%>.
+
+
+    (send a-frame:standard-menus on-close) → void?
+    Augments on-close in top-level-window<%>.
+    Removes the preferences callbacks for the menu items
+
+frame:editor<%> : interface?
+  implements:  frame:standard-menus<%>
+Frame classes matching this interface support embedded editors.
+
+
+    (send a-frame:editor get-entire-label) → string
+    This method returns the entire label for the frame. See also set-label and
+    set-label-prefix.
+
+    (send a-frame:editor get-label-prefix) → string?
+    This returns the prefix for the frame’s label.
+
+    (send a-frame:editor set-label-prefix prefix) → void?
+      prefix : string?
+    Sets the prefix for the label of the frame.
+
+    (send a-frame:editor get-canvas%)
+     → (subclass?/c editor-canvas%)
+    The result of this method is used to create the canvas for the editor<%> in
+    this frame.
+
+    Returns editor-canvas%.
+
+    (send a-frame:editor get-canvas<%>) → (is-a?/c canvas:basic%)
+    The result of this method is used to guard the result of the get-canvas%
+    method.
+
+    (send a-frame:editor get-editor%)
+     → (implementation?/c editor<%>)
+    The result of this class is used to create the editor<%> in this frame.
+
+    Override this method to specify a different editor class.
+
+    Returns the value of the init-field editor%.
+
+    (send a-frame:editor get-editor<%>) → interface?
+    The result of this method is used by make-editor to check that get-editor%
+    is returning a reasonable editor.
+
+    Returns editor<%>.
+
+    (send a-frame:editor make-editor) → (is-a?/c editor<%>)
+    This method is called to create the editor in this frame. It calls
+    get-editor<%> and uses that interface to make sure the result of
+    get-editor% is reasonable.
+
+    Calls (make-object get-editor%).
+
+    (send a-frame:editor revert) → void?
+    Loads the most recently saved version of the file to the disk. If the
+    editor<%> is a text%, the start and end positions are restored.
+
+    (send a-frame:editor save [format]) → boolean?
+       format   :   (or/c 'guess 'standard 'text 'text-force-cr 'same 'copy)
+                =   'same
+    Saves the file being edited, possibly calling save-as if the editor has no
+    filename yet.
+
+    Returns #f if the user cancels this operation (only possible when the file
+    has not been saved before and the user is prompted for a new filename) and
+    returns #t if not.
+
+    (send a-frame:editor save-as [format]) → boolean?
+       format   :   (or/c 'guess 'standard 'text 'text-force-cr 'same 'copy)
+                =   'same
+    Queries the use for a file name and saves the file with that name.
+
+    Returns #f if the user cancells the file-choosing dialog and returns #t
+    otherwise.
+    (send a-frame:editor get-canvas) → (is-a?/c canvas%)
+    Returns the canvas used to display the editor<%> in this frame.
+
+    (send a-frame:editor get-editor) → (is-a?/c editor<%>)
+    Returns the editor in this frame.
+
+frame:editor-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:standard-menus<%>
+  result implements:  frame:editor<%>
+This mixin adds functionality to support an editor<%> in the frame. This
+includes management of the title, implementations of some of the menu items, a
+reasonable initial size, and access to the editor<%> itself.
+The size of this frame with be either 600 by 650 or 65 less than the width and
+height of the screen, whichever is smaller.
+
+    (new frame:editor-mixin                         
+         [filename filename]                        
+         [editor% editor%]                          
+       [ [parent parent]                            
+         [width width]                              
+         [height height]                            
+         [x x]                                      
+         [y y]                                      
+         [style style]                              
+         [enabled enabled]                          
+         [border border]                            
+         [spacing spacing]                          
+         [alignment alignment]                      
+         [min-width min-width]                      
+         [min-height min-height]                    
+         [stretchable-width stretchable-width]      
+         [stretchable-height stretchable-height]])  
+     → (is-a?/c frame:editor-mixin)
+      filename : string?
+      editor% : (is-a?/c editor<%>)
+      parent : (or/c (is-a?/c frame%) false/c) = #f
+      width : (or/c (integer-in 0 10000) false/c) = #f
+      height : (or/c (integer-in 0 10000) false/c) = #f
+      x : (or/c (integer-in -10000 10000) false/c) = #f
+      y : (or/c (integer-in -10000 10000) false/c) = #f
+                   (listof (or/c
+       style   :    'no-resize-border 'no-caption 'no-system-menu 'hide-menu-bar 'mdi-parent 'mdi-child
+                    'toolbar-button 'float 'metal))
+               =   null
+      enabled : any/c = #t
+      border : (integer-in 0 1000) = 0
+      spacing : (integer-in 0 1000) = 0
+       alignment   :   (list/c (or/c 'left 'center 'right) (or/c
+                        'top 'center 'bottom))
+                   =   '(center top)
+      min-width : (integer-in 0 10000) = graphical-minimum-width
+      min-height : (integer-in 0 10000) = graphical-minimum-height
+      stretchable-width : any/c = #t
+      stretchable-height : any/c = #t
+
+    (send a-frame:editor get-filename) → (or/c #f path?)
+    Overrides get-filename in frame:basic<%>.
+    Returns the filename in the editor returned by get-editor.
+
+    (send a-frame:editor editing-this-file? filename) → boolean?
+      filename : path?
+    Overrides editing-this-file? in frame:basic<%>.
+    Returns #t if the filename is the file that this frame is editing.
+
+    (send a-frame:editor on-close) → void?
+    Augments on-close in frame:standard-menus<%>.
+    Calls the editor:basic<%>’s method on-close.
+
+    (send a-frame:editor can-close?) → void?
+    Augments can-close? in top-level-window<%>.
+    Calls the editor:basic<%>’s method can-close?.
+
+    (send a-frame:editor get-label) → string?
+    Overrides get-label in window<%>.
+    Returns the portion of the label after the hyphen. See also
+    get-entire-label.
+
+    (send a-frame:editor set-label label) → void?
+      label : string?
+    Overrides set-label in window<%>.
+    Sets the label, but preserves the label’s prefix. See also set-label-prefix
+    .
+
+    (send a-frame:editor file-menu:open-callback   item        
+                                                   evt)   →   void?
+      item : (is-a?/c menu-item<%>)
+      evt : (is-a?/c mouse-event%)
+    Overrides file-menu:open-callback in frame:standard-menus<%>.
+    Calls handler:open-file with the directory of the saved file associated
+    with this editor (if any).
+
+    (send a-frame:editor file-menu:revert-on-demand) → void?
+    Overrides file-menu:revert-on-demand in frame:standard-menus<%>.
+    Disables the menu item when the editor is locked.
+
+    (send a-frame:editor file-menu:revert-callback   item        
+                                                     evt)   →   void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides file-menu:revert-callback in frame:standard-menus<%>.
+    Informs the user that this action is not undoable and, if they still want
+    to continue, calls revert.
+    (send a-frame:editor file-menu:create-revert?) → boolean?
+    Overrides file-menu:create-revert? in frame:standard-menus<%>.
+    returns #t.
+    (send a-frame:editor file-menu:save-callback   item        
+                                                   evt)   →   void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides file-menu:save-callback in frame:standard-menus<%>.
+    Saves the file in the editor.
+
+    (send a-frame:editor file-menu:create-save?) → boolean?
+    Overrides file-menu:create-save? in frame:standard-menus<%>.
+    returns #t.
+
+    (send a-frame:editor file-menu:save-as-callback   item        
+                                                      evt)   →   void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides file-menu:save-as-callback in frame:standard-menus<%>.
+    Prompts the user for a file name and uses that filename to save the buffer.
+    Calls save-as with no arguments.
+
+    (send a-frame:editor file-menu:create-save-as?) → boolean?
+    Overrides file-menu:create-save-as? in frame:standard-menus<%>.
+    returns #t.
+
+    (send a-frame:editor file-menu:print-callback   item        
+                                                    evt)   →   void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides file-menu:print-callback in frame:standard-menus<%>.
+    Calls the print method of editor<%> with the default arguments, except that
+    the output-mode argument is the result of calling preferences:get with
+    'framework:print-output-mode.
+
+    (send a-frame:editor file-menu:create-print?) → boolean?
+    Overrides file-menu:create-print? in frame:standard-menus<%>.
+    returns #t.
+
+    (send a-frame:editor file-menu:between-save-as-and-print file-menu)
+     → void?
+      file-menu : (is-a?/c menu%)
+    Overrides file-menu:between-save-as-and-print in frame:standard-menus<%>.
+    Creates a Print Setup menu item.
+
+    (send a-frame:editor edit-menu:between-select-all-and-find edit-menu)
+     → void?
+      edit-menu : (is-a?/c menu%)
+    Overrides edit-menu:between-select-all-and-find in frame:standard-menus<%>.
+    Adds a menu item for toggling auto-wrap in the focused text.
+
+    (send a-frame:editor help-menu:about-callback   item        
+                                                    evt)   →   void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides help-menu:about-callback in frame:standard-menus<%>.
+    Calls message-box with a message welcoming the user to the application
+    named by application:current-app-name
+
+    (send a-frame:editor help-menu:about-string) → string
+    Overrides help-menu:about-string in frame:standard-menus<%>.
+    Returns the result of (application:current-app-name)
+
+    (send a-frame:editor help-menu:create-about?) → boolean?
+    Overrides help-menu:create-about? in frame:standard-menus<%>.
+    returns #t.
+
+frame:open-here<%> : interface?
+  implements:  frame:editor<%>
+Frames implementing this mixin can change the file they are displaying.
+The frame is only re-used when the 'framework:open-here? preference is set (see
+preferences:get and preferences:set for details on preferences).
+The frame:open-here-mixin implements this interface.
+
+
+    (send a-frame:open-here get-open-here-editor)
+     → (is-a?/c editor<%>)
+    When the user switches the visible file in this frame, the of this method
+    is the editor that gets switched.
+
+    By Default, returns the result of get-editor.
+
+    (send a-frame:open-here open-here filename) → void?
+      filename : string
+    Opens filename in the current frame, possibly prompting the user about
+    saving a file (in which case the frame might not get switched).
+
+frame:open-here-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:editor<%>
+  result implements:  frame:open-here<%>
+Provides an implementation of frame:open-here<%>
+
+
+    (send a-frame:open-here file-menu:new-on-demand item) → void?
+      item : (is-a?/c menu-item%)
+    Overrides file-menu:new-on-demand in frame:standard-menus<%>.
+    Sets the label of item to "New..." if the preference 'framework:open-here?
+    is set.
+
+    (send a-frame:open-here file-menu:new-callback   item        
+                                                     evt)   →   void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides file-menu:new-callback in frame:standard-menus<%>.
+    When the preference 'framework:open-here? preference is set, this method
+    prompts the user, asking if they would like to create a new frame, or just
+    clear out this one. If they clear it out and the file hasn’t been saved,
+    they are asked about saving.
+
+    (send a-frame:open-here file-menu:open-on-demand item) → void?
+      item : (is-a?/c menu-item%)
+    Overrides file-menu:open-on-demand in frame:standard-menus<%>.
+    Sets the label of item to "Open Here..." if the preference
+    'framework:open-here? is set.
+
+    (send a-frame:open-here on-close) → void?
+    Augments on-close in frame:standard-menus<%>.
+    Calls set-open-here-frame with #f if the result of get-open-here-frame is
+    eq? to this.
+
+    (send a-frame:open-here on-activate on?) → void?
+      on? : boolean?
+    Overrides on-activate in top-level-window<%>.
+    When on? is #t, calls set-open-here-frame with this.
+
+frame:text<%> : interface?
+  implements:  frame:editor<%>
+Frames matching this interface provide support for text%s.
+
+frame:text-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:editor<%>
+  result implements:  frame:text<%>
+This mixins adds support for text%s in the frame.
+
+
+    (new frame:text-mixin [editor% editor%])
+     → (is-a?/c frame:text-mixin)
+      editor% : (extends text%)
+    Calls the super initialization with either the value of the editor% init
+    or, if none was supplied, it passes text%.
+
+    (send a-frame:text get-editor<%>) → interface
+    Overrides get-editor<%> in frame:editor<%>.
+    Returns (class->interface text%).
+
+frame:pasteboard<%> : interface?
+  implements:  frame:editor<%>
+Frames matching this interface provide support for pasteboard%s.
+
+frame:pasteboard-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:editor<%>
+  result implements:  frame:pasteboard<%>
+This mixin provides support for pasteboards in a frame.
+
+
+    (new frame:pasteboard-mixin [editor% editor%])
+     → (is-a?/c frame:pasteboard-mixin)
+      editor% : (extends pasteboard%)
+    Calls the super initialization with either the value of the editor% init
+    or, if none was supplied, it passes pasteboard%.
+
+    (send a-frame:pasteboard get-editor<%>) → interface
+    Overrides get-editor<%> in frame:editor<%>.
+    Returns (class->interface pasteboard%).
+
+frame:delegate<%> : interface?
+  implements:  frame:status-line<%>
+               frame:text<%>
+Frames that implement this interface provide a 20,000 feet overview of the text
+in the main editor. The term delegate in these method descriptions refers to
+the original editor and the term delegatee refers to the editor showing the
+20,000 feet overview.
+
+
+    (send a-frame:delegate get-delegated-text)
+     → (is-a?/c text:delegate<%>)
+    Returns the delegate text.
+
+    (send a-frame:delegate delegated-text-shown?) → boolean?
+    Returns #t if the delegate is visible, and #f if it isn’t.
+
+    (send a-frame:delegate hide-delegated-text) → void?
+    Hides the delegated text.
+
+    When the delegated text is hidden, it is not being updated. This is
+    accomplished by calling the set-delegate method of get-editorwith #f.
+
+    See also show-delegated-text
+    (send a-frame:delegate show-delegated-text) → void?
+    Makes the delegated text visible.
+
+    When the delegated text is shown, the set-delegate method of
+    get-delegated-textis called with the text to delegate messages to.
+
+    See also hide-delegated-text.
+
+    (send a-frame:delegate delegate-moved) → void?
+    This method is called when the visible region of the delegate editor
+    changes, so that the blue region in the delegatee is updated.
+
+frame:delegate-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:status-line<%>
+                                frame:text<%>
+  result implements:  frame:delegate<%>
+Adds support for a 20,000-feet view via text:delegate<%> and
+text:delegate-mixin.
+
+
+    (send a-frame:delegate make-root-area-container   class    
+                                                      parent)  
+     → (is-a?/c panel%)
+      class : (subclass?/c panel%)
+      parent : (is-a?/c panel%)
+    Overrides make-root-area-container in frame:basic<%>.
+    Adds a panel outside to hold the delegate editor-canvas% and text%.
+
+    (send a-frame:delegate get-editor<%>) → interface
+    Overrides get-editor<%> in frame:editor<%>.
+    Returns text:delegate.
+
+    (send a-frame:delegate get-editor%)
+     → (is-a?/c text:delegate<%>)
+    Overrides get-editor% in frame:editor<%>.
+    returns the super result, with the text:delegate-mixin mixed in.
+
+frame:searchable<%> : interface?
+  implements:  frame:basic<%>
+Frames that implement this interface support searching.
+
+
+    (send a-frame:searchable search direction) → void?
+      direction : (symbols 'forward 'backward)
+    Searches for the text in the search edit in the result of
+    get-text-to-search.
+
+    If the text is found and it sets the selection to the found text.
+
+    (send a-frame:searchable search-replace) → boolean?
+    If there is a dark purple bubble (ie, if the replace portion of the search
+    bar is visible and there is a search hit after the insertion point), then
+    this will replace it with the contents of the replace editor and move the
+    insertion point to just after that, or to the end of the editor (if there
+    are no more search hits after the insertion point, but there are search
+    hits before it).
+
+    (send a-frame:searchable replace-all) → void?
+    Loops through the text from the beginning to the end, replacing all
+    occurrences of the search string with the contents of the replace edit.
+
+    (send a-frame:searchable get-text-to-search) → (is-a?/c text%)
+    Returns the last value passed to set-text-to-search.
+
+    (send a-frame:searchable set-text-to-search txt) → void?
+      txt : (or/c false/c (is-a?/c (subclass?/c text%)))
+    Sets the current text to be searched.
+
+    (send a-frame:searchable search-hidden?) → boolean?
+    Returns #t if the search subwindow is visiable and #f otherwise.
+
+    (send a-frame:searchable hide-search) → void?
+    This method hides the searching information on the bottom of the frame.
+
+    (send a-frame:searchable unhide-search move-focus?) → void?
+      move-focus? : boolean?
+    When the searching sub window is hidden, makes it visible. If move-focus?
+    is #f, the focus is not moved, but if it is any other value, the focus is
+    moved to the find window.
+
+    (send a-frame:searchable get-case-sensitive-search?)
+     → boolean?
+    Returns #t if the search is currently case-sensitive. (This method’s value
+    depends on the preference 'framework:case-sensitive-search?, but the
+    preference is only consulted when the frame is created.)
+
+    (send a-frame:searchable search-hits-changed) → void?
+    This method is called when the number of search matches changes and it
+    updates the GUI.
+
+frame:searchable-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:standard-menus<%>
+  result implements:  frame:searchable<%>
+This mixin adds support for searching in the editor<%> in this frame.
+
+
+    (send a-frame:searchable edit-menu:find-callback) → boolean?
+    Overrides edit-menu:find-callback in frame:standard-menus<%>.
+    Toggles the focus between the find window and the window being searched.
+    When moving to the window with the search string, selects the entire range
+    in the buffer.
+
+    (send a-frame:searchable edit-menu:create-find?) → boolean?
+    Overrides edit-menu:create-find? in frame:standard-menus<%>.
+    returns #t.
+
+    (send a-frame:searchable edit-menu:find-again-callback   item  
+                                                             evt)  
+     → void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides <method not found>.
+    Calls unhide-search and then search.
+
+    (send a-frame:searchable edit-menu:create-find-again?)
+     → boolean?
+    Overrides <method not found>.
+    returns #t.
+
+    (send a-frame:searchable edit-menu:find-again-backwards-callback  
+                          item                                        
+                          evt)                                        
+     → void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides <method not found>.
+    Calls unhide-search and then search.
+
+    (send a-frame:searchable edit-menu:create-find-again-backwards?)
+     → boolean?
+    Overrides <method not found>.
+    returns #t.
+
+    (send a-frame:searchable edit-menu:replace-all-callback)
+     → boolean?
+    Overrides edit-menu:replace-all-callback in frame:standard-menus<%>.
+    Calls replace-all.
+
+    (send a-frame:searchable edit-menu:replace-all-on-demand item)
+     → void?
+      item : menu-item%
+    Overrides edit-menu:replace-all-on-demand in frame:standard-menus<%>.
+    Disables item when search-hidden? returns #t and enables it when that
+    method returns #f.
+
+    (send a-frame:searchable edit-menu:create-replace-all?)
+     → boolean?
+    Overrides edit-menu:create-replace-all? in frame:standard-menus<%>.
+    returns #t.
+
+    (send a-frame:searchable edit-menu:find-case-sensitive-callback)
+     → boolean?
+    Overrides edit-menu:find-case-sensitive-callback in frame:standard-menus<%>
+    .
+    Updates the state of the case-sensitive searching for this frame, and sets
+    the 'framework:case-sensitive-search? preference for later frames.
+
+    (send a-frame:searchable edit-menu:find-case-sensitive-on-demand item)
+     → void?
+      item : menu-item%
+    Overrides edit-menu:find-case-sensitive-on-demand in frame:standard-menus
+    <%>.
+    Checks item when searching is case-sensitive and unchecks it otherwise.
+
+    (send a-frame:searchable edit-menu:create-find-case-sensitive?)
+     → boolean?
+    Overrides edit-menu:create-find-case-sensitive? in frame:standard-menus<%>.
+    returns #t.
+
+    (send a-frame:searchable make-root-area-container)
+     → (is-a?/c area-container<%>)
+    Overrides make-root-area-container in frame:basic<%>.
+    Builds a panel for the searching information.
+
+    (send a-frame:searchable on-close) → void?
+    Augments on-close in frame:standard-menus<%>.
+    Cleans up after the searching frame.
+
+frame:searchable-text<%> : interface?
+  implements:  frame:searchable<%>
+               frame:text<%>
+
+frame:searchable-text-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:text<%>
+                                frame:searchable<%>
+  result implements:  frame:searchable-text<%>
+
+
+    (send a-frame:searchable-text get-text-to-search)
+     → (is-a?/c text%)
+    Overrides get-text-to-search in frame:searchable<%>. This method is final,
+    so it cannot be overiddden.
+    Returns the result of get-editor.
+
+    (send a-frame:searchable-text get-editor<%>)
+     → (is-a?/c editor<%>)
+    Overrides get-editor<%> in frame:editor<%>.
+    Returns text:searching<%>.
+    (send a-frame:searchable-text get-editor%)
+     → (is-a?/c editor<%>)
+    Overrides get-editor% in frame:editor<%>.
+    Returns (text:searching-mixin (super get-editor%)).
+
+frame:basic% : class?
+  superclass: (frame:register-group-mixin (frame:basic-mixin frame%))
+
+
+frame:size-pref% : class?
+  superclass: (frame:size-pref-mixin frame:basic%)
+
+
+frame:info% : class?
+  superclass: (frame:info-mixin frame:basic%)
+
+
+frame:text-info% : class?
+  superclass: (frame:text-info-mixin frame:info%)
+
+
+frame:pasteboard-info% : class?
+  superclass: (frame:pasteboard-info-mixin frame:text-info%)
+
+
+frame:status-line% : class?
+  superclass: (frame:status-line-mixin frame:text-info%)
+
+
+frame:standard-menus% : class?
+  superclass: (frame:standard-menus-mixin frame:status-line%)
+
+
+frame:editor% : class?
+  superclass: (frame:editor-mixin frame:standard-menus%)
+
+
+frame:open-here% : class?
+  superclass: (frame:open-here-mixin frame:editor%)
+
+
+frame:text% : class?
+  superclass: (frame:text-mixin frame:open-here%)
+
+
+frame:searchable% : class?
+  superclass: (frame:searchable-text-mixin (frame:searchable-mixin frame:text%
+))
+
+
+frame:delegate% : class?
+  superclass: (frame:delegate-mixin frame:searchable%)
+
+
+frame:pasteboard% : class?
+  superclass: (frame:pasteboard-mixin frame:open-here%)
+
+
+(frame:setup-size-pref   size-pref-sym        
+                         width                
+                         height)         →   void
+  size-pref-sym : symbol?
+  width : number?
+  height : number?
+Initializes a preference for the frame:size-pref mixin.
+
+The first argument should be the preferences symbol, and the second and third
+should be the default width and height, respectively.
+(frame:add-snip-menu-items    menu              
+                              menu-item%        
+                            [ func])       →   void?
+  menu : (is-a?/c menu%)
+  menu-item% : (subclass?/c menu-item%)
+  func : (-> (is-a?/c menu-item%) void?) = void
+Inserts three menu items into menu, one that inserts a text box, one that
+inserts a pasteboard box, and one that inserts an image into the currently
+focused editor (if there is one). Uses menu-item% as the class for the menu
+items.
+
+Calls func right after inserting each menu item.
+(frame:reorder-menus frame) → void?
+  frame : (is-a?/c frame%)
+Re-orders the menus in a frame. It moves the “File” and “Edit” menus to the
+front of the menubar and moves the “Windows” and “Help” menus to the end of the
+menubar.
+
+This is useful in conjunction with the frame classes. After instantiating the
+class and adding ones own menus, the menus will be mis-ordered. This function
+fixes them up.
+(frame:remove-empty-menus frame) → void?
+  frame : (is-a?/c frame%)
+Removes empty menus in a frame.
+                           (or/c #f
+(frame:current-icon)   →         (is-a?/c bitmap%)
+                                 (cons/c (is-a?/c bitmap%)
+                                         (is-a?/c bitmap%)))
+(frame:current-icon icon-spec) → void?
+                   (or/c #f
+   icon-spec   :         (is-a?/c bitmap%)
+                         (cons/c (is-a?/c bitmap%)
+                                 (is-a?/c bitmap%)))
+The value of this parameter is used by the initialization code of
+frame:basic-mixin.
+
+  • If it is #f, then its value is ignored.
+
+  • If it is a bitmap%, then the set-icon is called with the bitmap, the result
+    of invoking the bitmap% get-loaded-mask method, and 'both.
+
+  • If it is a pair of bitmaps, then the set-icon method is invoked twice, once
+    with each bitmap in the pair. The first bitmap is passed (along with the
+    result of its bitmap% get-loaded-mask) and 'small, and then the second
+    bitmap is passed (also along with the result of its bitmap%
+    get-loaded-mask) and 'large.
+
+Defaults to #f.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

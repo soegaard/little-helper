@@ -1,0 +1,236 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+copy-from
+get-command
+get-editor-margin
+get-file
+get-level-2
+get-margin
+get-mode
+get-orientation
+get-paper-name
+get-preview-command
+get-scaling
+get-translation
+set-command
+set-editor-margin
+set-file
+set-level-2
+set-margin
+set-mode
+set-orientation
+set-paper-name
+set-preview-command
+set-scaling
+set-translation
+[...search manuals...]
+  top← prev  up  next → 
+
+ps-setup% : class?
+  superclass: object%
+
+A ps-setup% object contains configuration information for producing PostScript
+files using a post-script-dc% object. To a lesser extent, it contains
+information for printing with a printer-dc% object.
+
+When a post-script-dc% object is created, its configuration is determined by
+the current-ps-setup parameter’s ps-setup% value. After a post-script-dc%
+object is created, it is unaffected by changes to the current-ps-setup
+parameter or mutations to the ps-setup% object.
+
+(new ps-setup%) → (is-a?/c ps-setup%)
+Creates a new ps-setup% object with the (platform-specific) default
+configuration.
+
+(send a-ps-setup copy-from    source                  
+                            [ copy-filename?])   →   void?
+  source : (is-a?/c ps-setup%)
+  copy-filename? : any/c = #f
+Copies the settings copy-from to a-ps-setup, excluding the filename unless
+copy-filename? is true.
+
+(send a-ps-setup get-command) → string?
+Historically, gets the printer command used to print a file on Unix. The
+default is "lpr". This value is not currently used by any platforms.
+
+(send a-ps-setup get-editor-margin   h-margin         
+                                     v-margin)   →   void?
+  h-margin : (box/c (and/c real? (not/c negative?)))
+  v-margin : (box/c (and/c real? (not/c negative?)))
+Returns the current settings for horizontal and vertical margins when printing
+an editor<%>. See also set-editor-margin.
+
+(send a-ps-setup get-file) → (or/c path-string? false/c)
+Gets the PostScript output filename. A #f value (the default) indicates that
+the user should be prompted for a filename when a post-script-dc% object is
+created.
+
+(send a-ps-setup get-level-2) → boolean?
+Reports whether Level 2 commands are output in PostScript files.
+
+Currently, Level 2 commands are only needed to include color bitmap images in
+PostScript output (drawn with draw-bitmap), or bitmap pen and brush stipples.
+When Level 2 commands are disabled, bitmaps are converted to grayscale images
+and stipples are not supported.
+
+(send a-ps-setup get-margin   h-margin         
+                              v-margin)   →   void?
+  h-margin : (box/c (and/c real? (not/c negative?)))
+  v-margin : (box/c (and/c real? (not/c negative?)))
+Returns the current settings for horizontal and vertical PostScript margins.
+See also set-margin.
+
+(send a-ps-setup get-mode)
+ → (one-of/c 'preview 'file 'printer)
+Gets the printing mode that determines where output is sent: 'preview, 'file,
+or 'printer. The default for X is 'preview. The value in Windows and Mac OS X
+is always 'file.
+
+(send a-ps-setup get-orientation)
+ → (one-of/c 'portrait 'landscape)
+Gets the orientation: 'portrait or 'landscape. The default is 'portrait. Unlike
+most other settings, this one affects native printing (via printer-dc%) as well
+as PostScript output.
+
+Landscaped orientation affects the size of the drawing area as reported by
+get-size: the horizontal and vertical sizes determined by the selected paper
+type are transposed and then scaled.
+
+(send a-ps-setup get-paper-name) → string?
+Returns the name of the current paper type: "A4 210 x 297 mm", "A3 297 x 420
+mm", "Letter 8 1/2 x 11 in", or "Legal 8 1/2 x 14 in". The default is "Letter 8
+1/2 x 11 in".
+
+The paper name determines the size of the drawing area as reported by get-size
+(along with landscape transformations from get-orientation and/or the scaling
+factors of get-scaling). It also determines the bounding box of PostScript
+output when a post-script-dc% context is created with a true value for the
+use-paper-bbox? initialization argument.
+
+(send a-ps-setup get-preview-command) → string?
+Gets the command used to view a PostScript file for X. The default is "gv".
+This value is not used by other platforms.
+
+(send a-ps-setup get-scaling x y) → void?
+  x : (box/c (and/c real? (not/c negative?)))
+  y : (box/c (and/c real? (not/c negative?)))
+Gets the scaling factor for PostScript output. The x box is filled with the
+horizontal scaling factor. The y box is filled with the vertical scaling
+factor. The default is 0.8 by 0.8.
+
+This scale is in addition to a scale that can be set by set-scale in a
+post-script-dc% context. The size reported by get-size is the size of the
+selected paper type (transposed for landscaped mode) divided by this scale.
+
+(send a-ps-setup get-translation x y) → void?
+  x : (box/c (and/c real? (not/c negative?)))
+  y : (box/c (and/c real? (not/c negative?)))
+Gets the translation (from the bottom left corner) for PostScript output. The x
+box is filled with the horizontal offset. The y box is filled with the vertical
+offset. The default is 0.0 and 0.0.
+
+The translation is not scaled by the numbers returned from get-scaling and the
+translation does not affect the size of the drawing area.
+
+(send a-ps-setup set-command command) → void?
+  command : string?
+Historically, sets the printer command that was used to print a file on Unix.
+See get-command.
+
+(send a-ps-setup set-editor-margin h v) → void?
+  h : exact-nonnegative-integer?
+  v : exact-nonnegative-integer?
+Sets the horizontal and vertical margins used when printing an editor with the
+print method. These margins are always used for printing, whether the drawing
+destination is a post-script-dc% or printer-dc%. The margins are in the units
+of the destination printer-dc% or post-script-dc%. In the case of
+post-script-dc% printing, the editor margin is in addition to the PostScript
+margin that is determined by set-margin.
+
+(send a-ps-setup set-file filename) → void?
+  filename : (or/c path-string? false/c)
+Sets the PostScript output filename. See get-file.
+
+(send a-ps-setup set-level-2 on?) → void?
+  on? : any/c
+Sets whether Level 2 commands are output in PostScript files. See get-level-2.
+
+(send a-ps-setup set-margin h v) → void?
+  h : (and/c real? (not/c negative?))
+  v : (and/c real? (not/c negative?))
+Sets the horizontal and vertical PostScript margins. When drawing to a
+post-script-dc%, the page size reported by get-size subtracts these margins
+from the normal page area (before taking into account scaling affects). In
+addition, drawing into the post-script-dc% produces PostScript output that is
+offset by the margins.
+
+When using the output of a post-script-dc% as Encapsulated PostScript, the
+margin values are effectively irrelevant. Changing the margins moves the
+PostScript image in absolute coordinates, but it also moves the bounding box.
+
+The margins are in unscaled post-script-dc% units, which are points. The
+default margins are 16 points.
+
+(send a-ps-setup set-mode mode) → void?
+  mode : (one-of/c 'preview 'file 'printer)
+Sets the printing mode controlling where output is sent. See get-mode.
+
+On Windows and Mac OS X, if 'preview or 'printer is provided, an
+exn:fail:contract exception is raised.
+
+(send a-ps-setup set-orientation orientation) → void?
+  orientation : (one-of/c 'portrait 'landscape)
+Sets the orientation. See get-orientation.
+
+(send a-ps-setup set-paper-name type) → void?
+  type : string?
+Sets the name of the current paper type. See get-paper-name.
+
+(send a-ps-setup set-preview-command command) → void?
+  command : string?
+Sets the command used to view a PostScript file on Unix. See
+get-preview-command.
+
+(send a-ps-setup set-scaling x y) → void?
+  x : (and/c real? (not/c negative?))
+  y : (and/c real? (not/c negative?))
+Sets the scaling factor for PostScript output. See get-scaling.
+
+(send a-ps-setup set-translation x y) → void?
+  x : real?
+  y : real?
+Sets the translation (from the bottom left corner) for PostScript output. See
+get-translation.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

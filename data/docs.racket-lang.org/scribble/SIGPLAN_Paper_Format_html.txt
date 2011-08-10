@@ -1,0 +1,130 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 3  High-Level Scribble API
+3.1  Base Document Format
+3.2  Racket Manual Format
+3.3  SIGPLAN Paper Format
+3.4  JFP Paper Format
+3.5  LNCS Paper Format
+On this page:
+preprint
+10pt
+nocopyright
+onecolumn
+notimes
+noqcourier
+abstract
+include-abstract
+authorinfo
+conferenceinfo
+copyrightyear
+copyrightdata
+category
+terms
+keywords
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+3.3 SIGPLAN Paper Format
+
+ #lang scribble/sigplan
+The scribble/sigplan language is like scribble/manual, but configured with
+Latex style defaults to use the "sigplanconf.cls" class file that is included
+with Scribble.
+
+preprint
+Enables the preprint option. Use preprint only on the same line as #lang, with
+only whitespace (or other options) between scribble/sigplan and preprint:
+
+  #lang scribble/sigplan @preprint
+
+
+10pt
+Enables the 10pt option. Use 10pt only on the same line as #lang, with only
+whitespace (or other options) between scribble/sigplan and 10pt:
+
+  #lang scribble/sigplan @10pt
+
+
+nocopyright
+Enables the nocopyright option. Use nocopyright only on the same line as #lang,
+with only whitespace (or other options) between scribble/sigplan and
+nocopyright:
+
+  #lang scribble/sigplan @nocopyright
+
+
+onecolumn
+Enables the onecolumn option. Use onecolumn only on the same line as #lang,
+with only whitespace (or other options) between scribble/sigplan and onecolumn:
+
+    #lang scribble/sigplan @onecolumn
+
+notimes
+Disables the use of \usepackage{times} in the generated LaTeX output. Use
+onecolumn only on the same line as #lang, with only whitespace (or other
+options) between scribble/sigplan and notimes:
+
+    #lang scribble/sigplan @notimes
+
+noqcourier
+Disables the use of \usepackage{qcourier} in the generated LaTeX output. Use
+onecolumn only on the same line as #lang, with only whitespace (or other
+options) between scribble/sigplan and noqcourier:
+
+    #lang scribble/sigplan @noqcourier
+
+The 10pt, preprint, nocopyright, onecolumn, notimes, and noqcourier options can
+be used together and may appear in any order.
+
+(abstract pre-content ...) → block?
+  pre-content : pre-content?
+Generates a nested flow for a paper abstract.
+
+(include-abstract module-path)
+Similar to include-section, but incorporates the document in the specified
+module as an abstract. The document must have no title or sub-parts.
+
+(authorinfo name affiliation email) → block?
+  name : pre-content?
+  affiliation : pre-content?
+  email : pre-content?
+A replacement for author that associates an affiliation and e-mail address with
+the author name.
+
+(conferenceinfo conference location) → block?
+  conference : pre-content?
+  location : pre-content?
+(copyrightyear content ...) → block?
+  content : pre-content?
+(copyrightdata content ...) → block?
+  content : pre-content?
+Declares information that is collected into the copyright region of the paper.
+
+(category    CR-number             
+             subcategory           
+             third-level           
+           [ fourth-level])   →   content?
+  CR-number : pre-content?
+  subcategory : pre-content?
+  third-level : pre-content?
+  fourth-level : (or/c #f pre-content?) = #f
+(terms content ...) → content?
+  content : pre-content?
+(keywords content ...) → content?
+  content : pre-content?
+Typesets category, term, and keyword information for the paper, which is
+normally placed immediately after an abstract form.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

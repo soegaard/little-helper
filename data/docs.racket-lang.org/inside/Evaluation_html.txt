@@ -1,0 +1,324 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+► 6  Evaluation
+6.1  Top-level Evaluation Functions
+6.2  Tail Evaluation
+6.3  Multiple Values
+6.4  Evaluation Functions
+On this page:
+6.1 Top-level Evaluation Functions
+6.2 Tail Evaluation
+6.3 Multiple Values
+6.4 Evaluation Functions
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Evaluation
+
+A Racket S-expression is evaluated by calling scheme_eval. This function takes
+an S-expression (as a Scheme_Object*) and a namespace and returns the value of
+the expression in that namespace.
+
+The function scheme_apply takes a Scheme_Object* that is a procedure, the
+number of arguments to pass to the procedure, and an array of Scheme_Object *
+arguments. The return value is the result of the application. There is also a
+function scheme_apply_to_list, which takes a procedure and a list (constructed
+with scheme_make_pair) and performs the Racket apply operation.
+
+The scheme_eval function actually calls scheme_compile followed by
+scheme_eval_compiled.
+
+6.1 Top-level Evaluation Functions
+
+The functions scheme_eval, scheme_apply, etc., are top-level evaluation
+functions. Continuation invocations are confined to jumps within a top-level
+evaluation.
+
+The functions _scheme_eval_compiled, _scheme_apply, etc. (with a leading
+underscore) provide the same functionality without starting a new top-level
+evaluation; these functions should only be used within new primitive
+procedures. Since these functions allow full continuation hops, calls to
+non-top-level evaluation functions can return zero or multiple times.
+
+Currently, escape continuations and primitive error escapes can jump out of all
+evaluation and application functions. For more information, see Exceptions and
+Escape Continuations.
+
+6.2 Tail Evaluation
+
+All of Racket’s built-in functions and syntax support proper tail-recursion.
+When a new primitive procedure or syntax is added to Racket, special care must
+be taken to ensure that tail recursion is handled properly. Specifically, when
+the final return value of a function is the result of an application, then
+scheme_tail_apply should be used instead of scheme_apply. When
+scheme_tail_apply is called, it postpones the procedure application until
+control returns to the Racket evaluation loop.
+
+For example, consider the following implementation of a thunk-or primitive,
+which takes any number of thunks and performs or on the results of the thunks,
+evaluating only as many thunks as necessary.
+
+static Scheme_Object *
+
+thunk_or (int argc, Scheme_Object **argv)
+
+{
+
+  int i;
+
+  Scheme_Object *v;
+
+ 
+
+  if (!argc)
+
+    return scheme_false;
+
+ 
+
+  for (i = 0; i < argc - 1; i++)
+
+    if (SCHEME_FALSEP((v = _scheme_apply(argv[i], 0, NULL))))
+
+      return v;
+
+ 
+
+  return scheme_tail_apply(argv[argc - 1], 0, NULL);
+
+}
+
+
+This thunk-or properly implements tail-recursion: if the final thunk is
+applied, then the result of thunk-or is the result of that application, so
+scheme_tail_apply is used for the final application.
+
+6.3 Multiple Values
+
+A primitive procedure can return multiple values by returning the result of
+calling scheme_values. The functions scheme_eval_compiled_multi,
+scheme_apply_multi, _scheme_eval_compiled_multi, and _scheme_apply_multi
+potentially return multiple values; all other evaluation and applications
+procedures return a single value or raise an exception.
+
+Multiple return values are represented by the scheme_multiple_values “value.”
+This quasi-value has the type Scheme_Object*, but it is not a pointer or a
+fixnum. When the result of an evaluation or application is
+scheme_multiple_values, the number of actual values can be obtained as
+scheme_multiple_count, and the array of Scheme_Object* values as
+scheme_multiple_array. (Both of those identifiers are actually macros.)
+
+A garbage collection must not occur between the return of a
+scheme_multiple_values “value” and the receipt of the values through
+scheme_multiple_count scheme_multiple_array. Furthermore, if
+scheme_multiple_array is to be used across a potential garbage collection, then
+it must be specifically received by calling scheme_detach_multiple_array;
+otherwise, a garbage collection or further evaluation may change the content of
+the array. Otherwise, if any application or evaluation procedure is called, the
+scheme_multiple_count and scheme_multiple_array variables may be modified (but
+the array previously referenced by scheme_multiple_array is never re-used if
+scheme_detach_multiple_array is called).
+
+The scheme_multiple_count and scheme_multiple_array variables only contain
+meaningful values when scheme_multiple_values is returned.
+
+6.4 Evaluation Functions
+
+Scheme_Object*   scheme_eval ( Scheme_Object* expr,
+
+                               Scheme_Env* env)
+
+Evaluates the (uncompiled) S-expression expr in the namespace env.
+
+Scheme_Object*   scheme_eval_compiled ( Scheme_Object* obj,
+
+                                        Scheme_Env* env)
+
+Evaluates the compiled expression obj, which was previously returned from
+scheme_compile, first linking to the namespace env.
+
+Scheme_Object*   scheme_eval_compiled_multi ( Scheme_Object* obj,
+
+                                              Scheme_Env* env)
+
+Evaluates the compiled expression obj, possibly returning multiple values (see
+Multiple Values).
+
+Scheme_Object*   _scheme_eval_compiled ( Scheme_Object* obj,
+
+                                         Scheme_Env* env)
+
+Non-top-level version of scheme_eval_compiled. (See Top-level Evaluation
+Functions.)
+
+Scheme_Object*   _scheme_eval_compiled_multi ( Scheme_Object* obj,
+
+                                               Scheme_Env* env)
+
+Non-top-level version of scheme_eval_compiled_multi. (See Top-level Evaluation
+Functions.)
+
+Scheme_Env*   scheme_basic_env ( )
+
+Creates the main namespace for an embedded Racket. This procedure must be
+called before other Racket library function (except scheme_make_param).
+Extensions to Racket cannot call this function.
+
+If it is called more than once, this function resets all threads (replacing the
+main thread), parameters, ports, namespaces, and finalizations.
+
+Scheme_Object*   scheme_make_namespace ( int argc,
+
+                                         Scheme_Object** argv)
+
+Creates and returns a new namespace. This values can be cast to Scheme_Env *.
+It can also be installed in a parameterization using scheme_set_param with
+MZCONFIG_ENV.
+
+When Racket is embedded in an application, create the initial namespace with
+scheme_basic_env before calling this procedure to create new namespaces.
+
+Scheme_Object*   scheme_apply ( Scheme_Object* f,
+
+                                int c,
+
+                                Scheme_Object** args)
+
+Applies the procedure f to the given arguments.
+
+Beware that the procedure can mutate args if it is the same as the result of
+scheme_current_argument_stack.
+
+Scheme_Object*   scheme_apply_multi ( Scheme_Object* f,
+
+                                      int c,
+
+                                      Scheme_Object** args)
+
+Applies the procedure f to the given arguments, possibly returning multiple
+values (see Multiple Values).
+
+Scheme_Object*   _scheme_apply ( Scheme_Object* f,
+
+                                 int c,
+
+                                 Scheme_Object** args)
+
+Non-top-level version of scheme_apply. (See Top-level Evaluation Functions.)
+
+Scheme_Object*   _scheme_apply_multi ( Scheme_Object* f,
+
+                                       int c,
+
+                                       Scheme_Object** args)
+
+Non-top-level version of scheme_apply_multi. (See Top-level Evaluation
+Functions.)
+
+Scheme_Object*   scheme_apply_to_list ( Scheme_Object* f,
+
+                                        Scheme_Object* args)
+
+Applies the procedure f to the list of arguments in args.
+
+Scheme_Object*   scheme_eval_string ( char* str,
+
+                                      Scheme_Env* env)
+
+Reads a single S-expression from str and evaluates it in the given namespace;
+the expression must return a single value, otherwise an exception is raised.
+The str argument is parsed as a UTF-8-encoded string of Unicode characters (so
+plain ASCII is fine).
+
+Scheme_Object*   scheme_eval_string_multi ( char* str,
+
+                                            Scheme_Env* env)
+
+Like scheme_eval_string, but returns scheme_multiple_values when the expression
+returns multiple values.
+
+Scheme_Object*   scheme_eval_string_all ( char* str,
+
+                                          Scheme_Env* env,
+
+                                          int all)
+
+Like scheme_eval_string, but if all is not 0, then expressions are read and
+evaluated from str until the end of the string is reached.
+
+Scheme_Object*   scheme_tail_apply ( Scheme_Object* f,
+
+                                     int n,
+
+                                     Scheme_Object** args)
+
+Applies the procedure as a tail-call. Actually, this function just registers
+the given application to be invoked when control returns to the evaluation
+loop. (Hence, this function is only useful within a primitive procedure that is
+returning to its caller.)
+
+Scheme_Object*   scheme_tail_apply_no_copy ( Scheme_Object* f,
+
+                                             int n,
+
+                                             Scheme_Object** args)
+
+Like scheme_tail_apply, but the array args is not copied. Use this only when
+args has infinite extent and will not be used again, or when args will
+certainly not be used again until the called procedure has returned.
+
+Scheme_Object*   scheme_tail_apply_to_list ( Scheme_Object* f,
+
+                                             Scheme_Object* l)
+
+Applies the procedure as a tail-call.
+
+Scheme_Object*   scheme_compile ( Scheme_Object* form,
+
+                                  Scheme_Env* env,
+
+                                  int writable)
+
+Compiles the S-expression form in the given namespace. The returned value can
+be used with scheme_eval_compiled et al. Provide a non-zero value for writable
+if the resulting compiled object will be marshalled via write instead of
+evaluated.
+
+Scheme_Object*   scheme_expand ( Scheme_Object* form,
+
+                                 Scheme_Env* env)
+
+Expands all macros in the S-expression form using the given namespace.
+
+Scheme_Object*   scheme_values ( int n,
+
+                                 Scheme_Object** args)
+
+Returns the given values together as multiple return values. Unless n is 1, the
+result will always be scheme_multiple_values.
+
+void   scheme_detach_multiple_array ( Scheme_Object** args)
+
+Called to receive multiple-value results; see Multiple Values.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

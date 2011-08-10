@@ -1,0 +1,243 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 11  Macros
+ 11.1  Pattern-Based Syntax Matching
+ 11.2  Syntax Object Content
+ 11.3  Syntax Object Bindings
+ 11.4  Syntax Transformers
+ 11.5  Syntax Parameters
+ 11.6  Local Binding with Splicing Body
+ 11.7  Syntax Object Properties
+ 11.8  Syntax Taints
+ 11.9  Expanding Top-Level Forms
+11.10  File Inclusion
+11.11  Syntax Utilities
+On this page:
+bound-identifier=?
+free-identifier=?
+free-transformer-identifier=?
+free-template-identifier=?
+free-label-identifier=?
+check-duplicate-identifier
+identifier-binding
+identifier-transformer-binding
+identifier-template-binding
+identifier-label-binding
+[...search manuals...]
+  top← prev  up  next → 
+
+11.3 Syntax Object Bindings
+
+(bound-identifier=? a-id b-id [phase-level]) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+   phase-level   :   (or/c exact-integer? #f)
+                 =   (syntax-local-phase-level)
+Returns #t if the identifier a-id would bind b-id (or vice versa) if the
+identifiers were substituted in a suitable expression context at the phase
+level indicated by phase-level, #f otherwise. A #f value for phase-level
+corresponds to the label phase level.
+
+Examples:
+
+    > (define-syntax (check stx)
+        (syntax-case stx ()
+          [(_ x y)
+           (if (bound-identifier=? #'x #'y)
+               #'(let ([y 'wrong]) (let ([x 'binds]) y))
+               #'(let ([y 'no-binds]) (let ([x 'wrong]) y)))]))
+    > (check a a)
+    'binds
+
+    > (check a b)
+    'no-binds
+
+    > (define-syntax-rule (check-a x) (check a x))
+    > (check-a a)
+    'no-binds
+
+
+
+(free-identifier=? a-id b-id [phase-level]) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+   phase-level   :   (or/c exact-integer? #f)
+                 =   (syntax-local-phase-level)
+Returns #t if a-id and b-id access the same local binding, module binding, or
+top-level binding—perhaps via rename transformers—at the phase level indicated
+by phase-level. A #f value for phase-level corresponds to the label phase level
+.
+
+“Same module binding” means that the identifiers refer to the same original
+definition site, and not necessarily to the same require or provide site. Due
+to renaming in require and provide, or due to a transformer binding to a rename
+transformer, the identifiers may return distinct results with syntax-e.
+
+Examples:
+
+    > (define-syntax (check stx)
+        (syntax-case stx ()
+          [(_ x)
+           (if (free-identifier=? #'car #'x)
+               #'(list 'same: x)
+               #'(list 'different: x))]))
+    > (check car)
+    '(same: #<procedure:car>)
+
+    > (check mcar)
+    '(different: #<procedure:mcar>)
+
+    > (let ([car list])
+        (check car))
+    '(different: #<procedure:list>)
+
+    > (require (rename-in racket/base [car kar]))
+    > (check kar)
+    '(same: #<procedure:car>)
+
+
+
+(free-transformer-identifier=? a-id b-id) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+Same as (free-identifier=? a-id b-id (add1 (syntax-local-phase-level))).
+
+(free-template-identifier=? a-id b-id) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+Same as (free-identifier=? a-id b-id (sub1 (syntax-local-phase-level))).
+
+(free-label-identifier=? a-id b-id) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+Same as (free-identifier=? a-id b-id #f).
+
+(check-duplicate-identifier ids) → (or/c identifier? #f)
+  ids : (listof identifier?)
+Compares each identifier in ids with every other identifier in the list with
+bound-identifier=?. If any comparison returns #t, one of the duplicate
+identifiers is returned (the first one in ids that is a duplicate), otherwise
+the result is #f.
+
+(identifier-binding id-stx [phase-level])
+      (or/c 'lexical
+            #f
+            (listof module-path-index?
+                    symbol?
+  →                 module-path-index?
+                    symbol?
+                    (or/c 0 1)
+                    (or/c exact-integer? #f)
+                    (or/c exact-integer? #f)))
+  id-stx : syntax?
+   phase-level   :   (or/c exact-integer? #f)
+                 =   (syntax-local-phase-level)
+Returns one of three kinds of values, depending on the binding of id-stx at the
+phase level indicated by phase-level (where a #f value for phase-level
+corresponds to the label phase level):
+
+  • The result is 'lexical if id-stx has a local binding. If 'lexical is
+    produced for any phase-level value, then it is produced for all phase-level
+    values.
+
+  • The result is a list of seven items when id-stx has a module binding: (list
+    source-mod source-id nominal-source-mod nominal-source-id source-phase
+    import-phase nominal-export-phase).
+
+      □ source-mod is a module path index (see Compiled Modules and References)
+        that indicates the defining module.
+
+      □ source-id is a symbol for the identifier’s name at its definition site
+        in the source module. This can be different from the local name
+        returned by syntax->datum for several reasons: the identifier is
+        renamed on import, it is renamed on export, or it is implicitly renamed
+        because the identifier (or its import) was generated by a macro
+        invocation.
+
+      □ nominal-source-mod is a module path index (see Compiled Modules and
+        References) that indicates the module required into the context of
+        id-stx to provide its binding. It can be different from source-mod due
+        to a re-export in nominal-source-mod of some imported identifier. If
+        the same binding is imported in multiple ways, an arbitrary
+        representative is chosen.
+
+      □ nominal-source-id is a symbol for the identifier’s name as exported by
+        nominal-source-mod. It can be different from source-id due to a
+        renaming provide, even if source-mod and nominal-source-mod are the
+        same.
+
+      □ source-phase is 1 if the source definition is for-syntax, 0 otherwise.
+
+      □ import-phase is 0 if the binding import of nominal-source-mode is a
+        plain require, 1 if it is from a for-syntax import, etc.
+
+      □ nominal-export-phase is the phase level of the export from
+        nominal-source-mod.
+
+  • The result is #f if id-stx has a top-level binding (or, equivalently, if it
+    is unbound).
+
+If id-stx is bound to a rename-transformer, the result from identifier-binding
+is for the identifier in the transformer, so that identifier-binding is
+consistent with free-identifier=?.
+
+(identifier-transformer-binding id-stx)
+      (or/c 'lexical
+            #f
+            (listof module-path-index?
+                    symbol?
+  →                 module-path-index?
+                    symbol?
+                    (or/c 0 1)
+                    (or/c exact-integer? #f)
+                    (or/c exact-integer? #f)))
+  id-stx : syntax?
+Same as (identifier-binding id-stx (add1 (syntax-local-phase-level))).
+
+(identifier-template-binding id-stx)
+      (or/c 'lexical
+            #f
+            (listof module-path-index?
+                    symbol?
+  →                 module-path-index?
+                    symbol?
+                    (or/c 0 1)
+                    (or/c exact-integer? #f)
+                    (or/c exact-integer? #f)))
+  id-stx : syntax?
+Same as (identifier-binding id-stx (sub1 (syntax-local-phase-level))).
+
+(identifier-label-binding id-stx)
+      (or/c 'lexical
+            #f
+            (listof module-path-index?
+                    symbol?
+  →                 module-path-index?
+                    symbol?
+                    (or/c 0 1)
+                    (or/c exact-integer? #f)
+                    (or/c exact-integer? #f)))
+  id-stx : syntax?
+Same as (identifier-binding id-stx #f).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,44 @@
+►  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+▼ 2  Controls
+2.1  embedded-text-button%
+2.2  embedded-button%
+2.3  embedded-toggle-button%
+2.4  embedded-message%
+2.5  vline%
+2.6  hline%
+Inherited methods:
+from alignment<%>
+align
+get-min-height
+get-min-width
+get-parent
+set-min-sizes
+show
+show/ hide
+stretchable-height
+stretchable-width
+from dllist<%>
+for-each
+map-to-list
+next
+prev
+[...search manuals...]
+  top← prev  up  next → 
+
+hline% : class?
+  superclass: snip-wrapper%
+
+  extends:  alignment<%>
+Displays a horizontal line across the region that is inserted into.
+
+(new hline% [parent parent]) → (is-a?/c hline%)
+  parent : (is-a?/c alignment-parent<%>)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

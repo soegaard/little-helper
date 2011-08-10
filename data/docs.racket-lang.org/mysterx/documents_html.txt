@@ -1,0 +1,140 @@
+►  Myster X: Using Windows COM Objects in Racket
+1  Overview
+2  COM
+3  Active X and DHTML
+4  Version
+   Index
+▼ 3  Active X and DHTML
+3.1  Browsers
+3.2  Documents
+3.3  HTML Events
+3.4  HTML and Dynamic HTML
+On this page:
+mx-document<%>
+insert-html
+append-html
+replace-html
+objects
+insert-object-from-coclass
+insert-object-from-progid
+append-object-from-coclass
+append-object-from-progid
+title
+find-element
+find-element-by-id-or-name
+elements-with-tag
+[...search manuals...]
+  top← prev  up  next → 
+
+3.2 Documents
+
+A browser contains one document at a time. If hyperlinks are clicked, or the
+navigation methods (navigate, go-forward, go-back) are used, the document
+changes.
+
+mx-document<%> : interface?
+
+
+    (send a-mx-document insert-html html) → void?
+      html : string?
+    Inserts the specified HTML string at the beginning of the document.
+
+    (send a-mx-document append-html html) → void?
+      html : string?
+    Appends the specified HTML string at the end of the document.
+
+    (send a-mx-document replace-html html) → void?
+      html : string?
+    Replace the current HTML in the document with the specified HTML string.
+
+    (send a-mx-document objects) → (listof com-object?)
+    Returns a list of COM objects, including ActiveX controls, that occur in
+    the document. The order of the objects is the same as in the document.
+
+    (send a-mx-document insert-object-from-coclass    coclass  
+                                                      width    
+                                                      height   
+                                                    [ size])   
+     → com-object?
+      coclass : string?
+      width : exact-integer?
+      height : exact-integer?
+      size : (one-of/c 'pixels 'percent) = 'pixels
+    Inserts a COM object with class coclass at the beginning of the document.
+    The optional size argument gives an interpretation for the width and
+    height, where 'percent indicates that the width and height are a fixed
+    percentage of the document window size.
+
+    (send a-mx-document insert-object-from-progid    progid  
+                                                     width   
+                                                     height  
+                                                   [ size])  
+     → com-object?
+      progid : string?
+      width : exact-integer?
+      height : exact-integer?
+      size : (one-of/c 'pixels 'percent) = 'pixels
+    Like insert-object-from-coclass, but with a ProgID instead of a COM class.
+
+    (send a-mx-document append-object-from-coclass    coclass  
+                                                      width    
+                                                      height   
+                                                    [ size])   
+     → com-object?
+      coclass : string?
+      width : exact-integer?
+      height : exact-integer?
+      size : (one-of/c 'pixels 'percent) = 'pixels
+    Like insert-object-from-coclass, but adds to the end of the document.
+
+    (send a-mx-document append-object-from-progid    progid  
+                                                     width   
+                                                     height  
+                                                   [ size])  
+     → com-object?
+      progid : string?
+      width : exact-integer?
+      height : exact-integer?
+      size : (one-of/c 'pixels 'percent) = 'pixels
+    Like insert-object-from-progid, but adds to the end of the document.
+
+    (send a-mx-document title) → string?
+    Returns a string indicating the document’s title, that is, the text that
+    appears within HTML TITLE tags. If the document has no title, the empty
+    string is returned.
+
+    (send a-mx-document find-element    tag            
+                                        id             
+                                      [ index])   →   (is-a?/c mx-element%)
+      tag : string?
+      id : string?
+      index : exact-nonnegative-integer? = 0
+    Returns an object that encapsulates an HTML element, where tag names an
+    HTML tag, and id names the "id" attribute of the HTML element. The index is
+    a nonnegative integer indicating the zero-based index of the element among
+    all elements with the same tag and id. The ordering of elements is defined
+    by Internet Explorer. The requested element must be within the document’s
+    "body" tags or the "body" element itself.
+
+    (send a-mx-document find-element-by-id-or-name    id       
+                                                    [ index])  
+     → (is-a?/c mx-element%)
+      id : string?
+      index : exact-nonnegative-integer? = 0
+    Returns an object that encapsulates an HTML element, where id names either
+    the "id" or "name" attribute of the HTML element. The index is a
+    nonnegative integer indicating the zero-based index of the element among
+    all elements with the same "id" or "name". The ordering of elements is
+    defined by Internet Explorer. The requested element must be within the
+    document’s "body" tags or the "body" element itself.
+
+    (send a-mx-document elements-with-tag tag)
+     → (listof (is-a?/c mx-element%))
+      tag : string?
+    Returns a list of elements with the HTML tag given by tag. The requested
+    elements must be within the document’s "body" tags or the "body" element
+    itself.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

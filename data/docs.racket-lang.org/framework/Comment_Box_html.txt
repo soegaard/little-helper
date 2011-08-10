@@ -1,0 +1,97 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+comment-box: snip%
+make-editor
+make-snip
+get-corner-bitmap
+get-position
+get-text
+get-menu
+comment-box: snipclass
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Comment Box
+
+comment-box:snip% : class?
+  superclass: editor-snip:decorated%
+
+  extends:  readable-snip<%>
+This snip implements the comment boxes that you see in DrRacket.
+
+
+    (send a-comment-box:snip make-editor) → (is-a?/c text%)
+    Overrides make-editor in editor-snip:decorated%.
+    Makes an instance of
+
+
+        (scheme:text-mixin text:keymap%)
+
+    (send a-comment-box:snip make-snip) → (is-a?/c comment-snip%)
+    Overrides make-snip in editor-snip:decorated%.
+    Returns an instance of the comment-snip% class.
+
+    (send a-comment-box:snip get-corner-bitmap)
+     → (is-a?/c bitmap%)
+    Overrides get-corner-bitmap in editor-snip:decorated-mixin.
+    Returns the semicolon bitmap from the file
+
+
+        (build-path (collection-path "icons") "semicolon.gif")
+
+    (send a-comment-box:snip get-position)
+     → (symbols 'left-top  'top-right)
+    Overrides get-position in editor-snip:decorated-mixin.
+    Returns 'left-top
+
+    (send a-comment-box:snip get-text) → string
+    Overrides get-text in snip%.
+    Returns the same string as the super method, but with newlines replaced by
+    newline-semicolon-space.
+
+    (send a-comment-box:snip get-menu) → (is-a?/c popup-menu%)
+    Overrides get-menu in editor-snip:decorated-mixin.
+    Returns a menu with a single item to change the box into semicolon
+    comments.
+
+comment-box:snipclass : (is-a?/c snip-class%)
+The snip-class% object used by comment-box:snip%.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

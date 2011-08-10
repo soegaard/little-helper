@@ -1,0 +1,593 @@
+▼  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+► 8  WXME Decoding
+8.1  Snip Class Mapping
+8.2  Dr Racket Comment Boxes
+8.3  Dr Racket XML Boxes
+8.4  Dr Racket Racket Boxes
+8.5  Dr Racket Text Boxes
+8.6  Dr Racket Fractions
+8.7  Dr Racket Teachpack Images
+8.8  Dr Racket Test-Case Boxes
+On this page:
+is-wxme-stream?
+wxme-port->text-port
+wxme-port->port
+extract-used-classes
+register-lib-mapping!
+string->lib-path
+unknown-extensions-skip-enabled
+broken-wxme-big-endian?
+wxme-read
+wxme-read-syntax
+snip-reader<%>
+read-header
+read-snip
+readable<%>
+read-special
+stream<%>
+read-integer
+read-fixed-integer
+read-inexact
+read-raw-bytes
+read-bytes
+read-editor
+8.1 Snip Class Mapping
+8.1.1 Nested Editors
+editor%
+get-content-port
+8.1.2 Images
+image%
+get-data
+get-w
+get-h
+get-dx
+get-dy
+8.2 Dr Racket Comment Boxes
+reader
+comment-editor%
+get-data
+read-special
+8.3 Dr Racket XML Boxes
+reader
+xml-editor%
+get-data
+read-special
+8.4 Dr Racket Racket Boxes
+reader
+racket-editor%
+get-data
+read-special
+8.5 Dr Racket Text Boxes
+reader
+text-editor%
+get-data
+read-special
+8.6 Dr Racket Fractions
+reader
+8.7 Dr Racket Teachpack Images
+reader
+cache-image%
+get-argb
+get-width
+get-height
+get-pin-x
+get-pin-y
+8.8 Dr Racket Test-Case Boxes
+reader
+test-case%
+get-comment
+get-test
+get-expected
+get-should-raise
+get-error-message
+get-enabled?
+get-collapsed?
+get-error-box?
+[...search manuals...]
+  top← prev  up  next → 
+
+8 WXME Decoding
+
+ (require wxme)
+The wxme library provides tools for reading WXME editor<%>-format files (see
+File Format) without the racket/gui library.
+
+(is-wxme-stream? in) → boolean?
+  in : input-port?
+Peeks from in and returns #t if it starts with the magic bytes indicating a
+WXME-format stream (see File Format), #f otherwise.
+
+(wxme-port->text-port in [close?]) → input-port?
+  in : input-port?
+  close? : any/c = #t
+Takes an input port whose stream starts with WXME-format data and returns an
+input port that produces a text form of the WXME content, like the result of
+opening a WXME file in DrRacket and saving it as text.
+
+If close? is true, then closing the result port close the original port.
+
+See Snip Class Mapping for information about the kinds of non-text content that
+can be read.
+
+(wxme-port->port in [close? snip-filter]) → input-port?
+  in : input-port?
+  close? : any/c = #t
+  snip-filter : (any/c . -> . any/c) = (lambda (x) x)
+Takes an input port whose stream starts with WXME-format data and returns an
+input port that produces text content converted to bytes, and non-text content
+as “special” values (see read-char-or-special).
+
+These special values produced by the new input port are different than the ones
+produced by reading a file into an editor<%> object. Instead of instances of
+the snip%, the special values are typically simple extensions of object%. See
+Snip Class Mapping for information about the kinds of non-text content that can
+be read.
+
+If close? is true, then closing the result port close the original port.
+
+The snip-filter procedure is applied to any special value generated for the
+stream, and its result is used as an alternate special value.
+
+If a special value (possibly produced by the filter procedure) is an object
+implementing the readable<%> interface, then the object’s read-special method
+is called to produce the special value.
+
+(extract-used-classes in)   →   (listof string?)   (listof string?)
+  in : input-port?
+Returns two values: a list of snip-class names used by the given stream, and a
+list of data-class names used by the stream. If the stream is not a WXME
+stream, the result is two empty lists. The given stream is not closed, and only
+data for a WXME stream (if any) is consumed.
+
+(register-lib-mapping! str mod-path) → void?
+  str : string?
+  mod-path : (cons/c (one-of/c 'lib) (listof string?))
+Maps a snip-class name to a quoted module path that provides a reader%
+implementation. The module path must have the form '(lib string ...), where
+each string contains only alpha-numeric ASCII characters, ., _, -, and spaces.
+
+(string->lib-path str gui?)
+ → (cons/c (one-of/c 'lib) (listof string?))
+  str : string?
+  gui? : any/c
+Returns a quoted module path for str for either editor<%> mode when gui? is
+true, or wxme mode when gui? is #f. For the latter, built-in mappings and
+mapping registered via register-lib-mapping! are used. If str cannot be parsed
+as a library path, and if no mapping is available (either because the class is
+built-in or not known), the result is #f.
+
+(unknown-extensions-skip-enabled) → boolean?
+(unknown-extensions-skip-enabled skip?) → void?
+  skip? : any/c
+A parameter. When set to #f (the default), an exception is raised when an
+unrecognized snip class is encountered in a WXME stream. When set to a true
+value, instances of unrecognized snip classes are simply omitted from the
+transformed stream.
+
+(broken-wxme-big-endian?) → boolean?
+(broken-wxme-big-endian? big?) → void?
+  big? : any/c
+A parameter. Some old and short-lived WXME formats depended on the endian order
+of the machine where the file was saved. Set this parameter to pick the endian
+order to use when reading the file; the default is the current platform’s
+endian order.
+
+(wxme-read in) → any/c
+  in : input-port?
+Like read, but for a stream that starts with WXME-format data. If multiple
+S-expressions are in the WXME data, they are all read and combined with 'begin.
+
+If racket/gui/base is available (as determined by gui-available?), then
+open-input-text-editor is used. Otherwise, wxme-port->port is used.
+
+(wxme-read-syntax source-v in) → (or/c syntax? eof-object?)
+  source-v : any/c
+  in : input-port?
+Like read-syntax, but for a WXME-format input stream. If multiple S-expressions
+are in the WXME data, they are all read and combined with 'begin.
+
+If racket/gui/base is available (as determined by gui-available?), then
+open-input-text-editor is used. Otherwise, wxme-port->port is used.
+
+snip-reader<%> : interface?
+An interface to be implemented by a reader for a specific kind of data in a
+WXME stream. The interface has two methods: read-header and read-snip.
+
+
+    (send a-snip-reader read-header   version        
+                                      stream)   →   any
+      version : exact-nonnegative-integer?
+      stream : (is-a?/c stream<%>)
+    Called at most once per WXME stream to initialize the data type’s
+    stream-specific information. This method usually does nothing.
+
+    (send a-snip-reader read-snip   text-only?        
+                                    version           
+                                                     (if text-only?
+                                    stream)      →       bytes?
+                                                         any/c)
+      text-only? : boolean?
+      version : exact-nonnegative-integer?
+      stream : (is-a?/c stream<%>)
+    Called when an instance of the data type is encountered in the stream. This
+    method reads the data and returns either bytes to be returned as part of
+    the decoded stream or any other kind of value to be returned as a “special”
+    value from the decoded stream. The result value can optionally be an object
+    that implements readable<%>.
+
+readable<%> : interface?
+An interface to be implemented by values returned from a snip reader. The only
+method is read-special.
+
+
+    (send a-readable read-special   source           
+                                    line             
+                                    column           
+                                    position)   →   any/c
+      source : any/c
+      line : (or/c exact-nonnegative-integer? false/c)
+      column : (or/c exact-nonnegative-integer? false/c)
+      position : (or/c exact-nonnegative-integer? false/c)
+    Like read-special, but for non-graphical mode. When a value implements this
+    interface, its read-special method is called with source-location
+    information to obtain the “special” result from the WXME-decoding port.
+
+stream<%> : interface?
+Represents a WXME input stream for use by snip-reader<%> instances.
+
+
+    (send a-stream read-integer what) → exact-integer?
+      what : any/c
+    Reads an exact integer, analogous to get-exact.
+
+    The what field describes what is being read, for error-message purposes, in
+    case the stream does not continue with an integer.
+
+    (send a-stream read-fixed-integer what) → exact-integer?
+      what : any/c
+    Reads an exact integer that has a fixed size in the stream, analogous to
+    get-fixed.
+
+    The what argument is as for read-integer.
+
+    (send a-stream read-inexact what) → (and/c real? inexact?)
+      what : any/c
+    Reads an inexact real number, analogous to get-inexact.
+
+    The what argument is as for read-integer.
+
+    (send a-stream read-raw-bytes what) → bytes?
+      what : any/c
+    Reads raw bytes, analogous to get-unterminated-bytes.
+
+    The what argument is as for read-integer.
+
+    (send a-stream read-bytes what) → bytes?
+      what : any/c
+    Reads raw bytes, analogous to get-bytes.
+
+    The what argument is as for read-integer.
+
+    (send a-stream read-editor what) → input-port?
+      what : any/c
+    Reads a nested editor, producing a new input port to extract the editor’s
+    content.
+
+    The what argument is as for read-integer.
+
+8.1 Snip Class Mapping
+
+When graphical data is marshaled to the WXME format, it is associated with a
+snip-class name to be matched with an implementation at load time. See also
+Snip Classes.
+
+Ideally, the snip-class name is generated as
+
+    (format "~s" (list '(lib string ...)
+                       '(lib string ...)))
+
+where each element of the formated list is a quoted module path (see
+module-path?). The strings must contain only alpha-numeric ASCII characters,
+plus ., _, -, and spaces, and they must not be "." or "..".
+
+In that case, the first quoted module path is used for loading WXME files in
+graphical mode; the corresponding module must provide snip-class object that
+implements the snip-class% class. The second quoted module path is used by the
+wxme library for converting WXME streams without graphical support; the
+corresponding module must provide a reader object that implements the
+snip-reader<%> interface. Naturally, the snip-class% instance and snip-reader
+<%> instance are expected to parse the same format, but generate different
+results suitable for the different contexts (i.e., graphical or not).
+
+If a snip-class name is generated as
+
+    (format "~s" '(lib string ...))
+
+then graphical mode uses the sole module path, and wxme needs a compatibility
+mapping. Install one with register-lib-mapping!.
+
+If a snip-class name has neither of the above formats, then graphical mode can
+use the data only if a snip class is registered for the name, or if it the name
+of one of the built-in classes: "wxtext", "wxtab", "wximage", or "wxmedia" (for
+nested editors). The wxme library needs a compatibility mapping installed with
+register-lib-mapping! if it is not one of the built-in classes.
+
+Several compatibility mappings are installed automatically for the wxme
+library. They correspond to popular graphical elements supported by various
+versions of DrRacket, including comment boxes, fractions, XML boxes, Racket
+boxes, text boxes, and images generated by the htdp/image teachpack (or, more
+generally, from mrlib/cache-image-snip), and test-case boxes.
+
+For a port created by wxme-port->port, nested editors are represented by
+instances of the editor% class provided by the wxme/editor library. This class
+provides a single method, get-content-port, which returns a port for the
+editor’s content. Images are represented as instances of the image% class
+provided by the wxme/image library.
+
+Comment boxes are represented as instances of a class that extends editor% to
+implement readable<%>; see wxme/comment. The read form produces a special
+comment (created by make-special-comment), so that the comment box disappears
+when read is used to read the stream; the special-comment content is the
+readable instance. XML, Racket, and text boxes similarly produce instances of
+editor% and readable<%> that expand in the usual way; see wxme/xml, wxme/scheme
+, and wxme/text. Images from the htdp/image teachpack are packaged as instances
+of cache-image% from the wxme/cache-image library. Test-case boxes are packaged
+as instances of test-case% from the wxme/test-case library.
+
+8.1.1 Nested Editors
+
+ (require wxme/editor)
+
+editor% : class?
+  superclass: object%
+
+Instantiated for plain nested editors in a WXME stream in text mode.
+
+
+    (send an-editor get-content-port) → input-port?
+    Returns a port (like the one from wxme-port->port) for the editor’s
+    content.
+
+8.1.2 Images
+
+ (require wxme/image)
+
+image% : class?
+  superclass: image-snip%
+
+Instantiated for images in a WXME stream in text mode. This class can just be
+treated like image-snip% and should behave just like it, except it has the
+methods below in addition in case old code still needs them. In other words,
+the methods below are provided for backwards compatibility with earlier
+verisons of Racket.
+
+
+    (send an-image get-data) → (or/c bytes? false/c)
+    Returns bytes for a PNG, XBM,or XPM file for the image.
+
+    (send an-image get-w)
+     → (or/c exact-nonnegative-integer? (one-of/c -1))
+    Returns the display width of the image, which may differ from the width of
+    the actual image specified as data or by a filename; -1 means that the
+    image data’s width should be used.
+
+    (send an-image get-h)
+     → (or/c exact-nonnegative-integer? (one-of/c -1))
+    Returns the display height of the image, which may differ from the height
+    of the actual image specified as data or by a filename; -1 means that the
+    image data’s height should be used.
+
+    (send an-image get-dx) → exact-integer?
+    Returns an offset into the actual image to be used as the left of the
+    display image.
+
+    (send an-image get-dy) → exact-integer?
+    Returns an offset into the actual image to be used as the top of the
+    display image.
+
+8.2 DrRacket Comment Boxes
+
+ (require wxme/comment)
+
+reader : (is-a?/c snip-reader<%>)
+A text-mode reader for comment boxes.
+
+comment-editor% : class?
+  superclass: editor%
+
+  extends:  readable<%>
+Instantiated for DrRacket comment boxes in a WXME stream for text mode.
+
+
+    (send a-comment-editor get-data) → false/c
+    No data is available.
+
+    (send a-comment-editor read-special   source           
+                                          line             
+                                          column           
+                                          position)   →   any/c
+      source : any/c
+      line : (or/c exact-nonnegative-integer? false/c)
+      column : (or/c exact-nonnegative-integer? false/c)
+      position : (or/c exact-nonnegative-integer? false/c)
+    Generates a special comment using make-special-comment. The special comment
+    contains the comment text.
+
+8.3 DrRacket XML Boxes
+
+ (require wxme/xml)
+
+reader : (is-a?/c snip-reader<%>)
+A text-mode reader for XML boxes.
+
+xml-editor% : class?
+  superclass: editor%
+
+  extends:  readable<%>
+Instantiated for DrRacket XML boxes in a WXME stream for text mode.
+
+
+    (send a-xml-editor get-data) → any/c
+    Returns #t if whitespace is elimited from the contained XML literal, #f
+    otherwise.
+
+    (send a-xml-editor read-special   source           
+                                      line             
+                                      column           
+                                      position)   →   any/c
+      source : any/c
+      line : (or/c exact-nonnegative-integer? false/c)
+      column : (or/c exact-nonnegative-integer? false/c)
+      position : (or/c exact-nonnegative-integer? false/c)
+    Generates a quasiquote S-expression that enclosed the XML, with unquote and
+    unquote-splicing escapes for nested Racket boxes.
+
+8.4 DrRacket Racket Boxes
+
+ (require wxme/scheme)
+
+reader : (is-a?/c snip-reader<%>)
+A text-mode reader for Racket boxes.
+
+racket-editor% : class?
+  superclass: editor%
+
+  extends:  readable<%>
+Instantiated for DrRacket Racket boxes in a WXME stream for text mode.
+
+
+    (send a-racket-editor get-data) → any/c
+    Returns #t if the box corresponds to a splicing unquote, #f for a
+    non-splicing unquote.
+
+    (send a-racket-editor read-special   source           
+                                         line             
+                                         column           
+                                         position)   →   any/c
+      source : any/c
+      line : (or/c exact-nonnegative-integer? false/c)
+      column : (or/c exact-nonnegative-integer? false/c)
+      position : (or/c exact-nonnegative-integer? false/c)
+    Generates an S-expression for the code in the box.
+
+8.5 DrRacket Text Boxes
+
+ (require wxme/text)
+
+reader : (is-a?/c snip-reader<%>)
+A text-mode reader for text boxes.
+
+text-editor% : class?
+  superclass: editor%
+
+  extends:  readable<%>
+Instantiated for DrRacket text boxes in a WXME stream for text mode.
+
+
+    (send a-text-editor get-data) → false/c
+    No data is available.
+
+    (send a-text-editor read-special   source           
+                                       line             
+                                       column           
+                                       position)   →   any/c
+      source : any/c
+      line : (or/c exact-nonnegative-integer? false/c)
+      column : (or/c exact-nonnegative-integer? false/c)
+      position : (or/c exact-nonnegative-integer? false/c)
+    Generates a string containing the text.
+
+8.6 DrRacket Fractions
+
+ (require wxme/number)
+
+reader : (is-a?/c snip-reader<%>)
+A text-mode reader for DrRacket fractions that generates exact, rational
+numbers.
+
+8.7 DrRacket Teachpack Images
+
+ (require wxme/cache-image)
+
+reader : (is-a?/c snip-reader<%>)
+A text-mode reader for images in a WXME stream generated by the htdp/image
+teachpack—or, more generally, by mrlib/cache-image-snip.
+
+cache-image% : class?
+  superclass: object%
+
+Instantiated for DrRacket teachpack boxes in a WXME stream for text mode.
+
+
+    (send a-cache-image get-argb) → (vectorof byte?)
+    Returns a vector of bytes representing the content of the image.
+
+    (send a-cache-image get-width) → exact-nonnegative-integer?
+    Returns the width of the image.
+
+    (send a-cache-image get-height) → exact-nonnegative-integer?
+    Returns the height of the image.
+
+    (send a-cache-image get-pin-x) → exact-integer?
+    Returns an offset across into the image for the pinhole.
+
+    (send a-cache-image get-pin-y) → exact-integer?
+    Returns an offset down into the image for the pinhole.
+
+8.8 DrRacket Test-Case Boxes
+
+ (require wxme/test-case)
+
+reader : (is-a?/c snip-reader<%>)
+A text-mode reader for DrRacket test-case boxes in a WXME stream. It generates
+instances of test-case%.
+
+test-case% : class?
+  superclass: object%
+
+Instantiated for old-style DrRacket test-case boxes in a WXME stream for text
+mode.
+
+
+    (send a-test-case get-comment) → (or/c false/c input-port?)
+    Returns a port for the comment field, if any.
+
+    (send a-test-case get-test) → input-port?
+    Returns a port for the “test” field.
+
+    (send a-test-case get-expected) → input-port?
+    Returns a port for the “expected” field.
+
+    (send a-test-case get-should-raise)
+     → (or/c false/c input-port?)
+    Returns a port for the “should raise” field, if any.
+
+    (send a-test-case get-error-message)
+     → (or/c false/c input-port?)
+    Returns a port for the “error msg” field, if any.
+
+    (send a-test-case get-enabled?) → boolean?
+    Returns #t if the test is enabled.
+
+    (send a-test-case get-collapsed?) → boolean?
+    Returns #t if the test is collapsed.
+
+    (send a-test-case get-error-box?) → boolean?
+    Returns #t if the test is for an exception.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

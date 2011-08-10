@@ -1,0 +1,185 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 2  Making Pictures
+2.1  Pict Datatype
+2.2  Basic Pict Constructors
+2.3  Pict Combiners
+2.4  Pict Drawing Adjusters
+2.5  Bounding-Box Adjusters
+2.6  Pict Finders
+2.7  More Pict Constructors
+2.8  Miscellaneous
+2.9  Rendering
+On this page:
+vl-append
+vc-append
+vr-append
+ht-append
+htl-append
+hc-append
+hbl-append
+hb-append
+lt-superimpose
+ltl-superimpose
+lc-superimpose
+lbl-superimpose
+lb-superimpose
+ct-superimpose
+ctl-superimpose
+cc-superimpose
+cbl-superimpose
+cb-superimpose
+rt-superimpose
+rtl-superimpose
+rc-superimpose
+rbl-superimpose
+rb-superimpose
+pin-over
+pin-under
+table
+[...search manuals...]
+  top← prev  up  next → 
+
+2.3 Pict Combiners
+
+(vl-append [d] pict ...) → pict?
+  d : real? = 0.0
+  pict : pict?
+(vc-append [d] pict ...) → pict?
+  d : real? = 0.0
+  pict : pict?
+(vr-append [d] pict ...) → pict?
+  d : real? = 0.0
+  pict : pict?
+(ht-append [d] pict ...) → pict?
+  d : real? = 0.0
+  pict : pict?
+(htl-append [d] pict ...) → pict?
+  d : real? = 0.0
+  pict : pict?
+(hc-append [d] pict ...) → pict?
+  d : real? = 0.0
+  pict : pict?
+(hbl-append [d] pict ...) → pict?
+  d : real? = 0.0
+  pict : pict?
+(hb-append [d] pict ...) → pict?
+  d : real? = 0.0
+  pict : pict?
+Creates a new pict as a column (for v...-append) or row (for h...-append) of
+other picts. The optional d argument specifies amount of space to insert
+between each pair of pictures in making the column or row.
+
+Different procedures align pictures in the orthogonal direction in different
+ways. For example, vl-append left-aligns all of the pictures.
+
+The descent of the result corresponds to baseline that is lowest in the result
+among all of the picts’ descent-specified baselines; similarly, the ascent of
+the result corresponds to the highest ascent-specified baseline. If at least
+one pict is supplied, then the last element (as reported by pict-last) for the
+result is (or (pict-last pict) pict) for the using last supplied pict.
+
+(lt-superimpose pict ...) → pict?
+  pict : pict?
+(ltl-superimpose pict ...) → pict?
+  pict : pict?
+(lc-superimpose pict ...) → pict?
+  pict : pict?
+(lbl-superimpose pict ...) → pict?
+  pict : pict?
+(lb-superimpose pict ...) → pict?
+  pict : pict?
+(ct-superimpose pict ...) → pict?
+  pict : pict?
+(ctl-superimpose pict ...) → pict?
+  pict : pict?
+(cc-superimpose pict ...) → pict?
+  pict : pict?
+(cbl-superimpose pict ...) → pict?
+  pict : pict?
+(cb-superimpose pict ...) → pict?
+  pict : pict?
+(rt-superimpose pict ...) → pict?
+  pict : pict?
+(rtl-superimpose pict ...) → pict?
+  pict : pict?
+(rc-superimpose pict ...) → pict?
+  pict : pict?
+(rbl-superimpose pict ...) → pict?
+  pict : pict?
+(rb-superimpose pict ...) → pict?
+  pict : pict?
+Creates a new picture by superimposing a set of pictures. The name prefixes are
+alignment indicators: horizontal alignment then vertical alignment.
+
+The descent of the result corresponds to baseline that is lowest in the result
+among all of the picts’ descent-specified baselines; similarly, the ascent of
+the result corresponds to the highest ascent-specified baseline. The last
+element (as reported by pict-last) for the result is the lowest, right-most
+among the last-element picts of the pict arguments, as determined by comparing
+the last-element bottom-right corners.
+
+(pin-over base dx dy pict) → pict?
+  base : pict?
+  dx : real?
+  dy : real?
+  pict : pict?
+(pin-over base find-pict find pict) → pict?
+  base : pict?
+  find-pict : pict-path?
+  find : (pict? pict-path? . -> . (values real? real?))
+  pict : pict?
+Creates a pict with the same bounding box, ascent, and descent as base, but
+with pict placed on top. The dx and dy arguments specify how far right and down
+the second pict’s corner is from the first pict’s corner. Alternately, the
+find-pict and find arguments find a point in base for find-pict; the find
+procedure should be something like lt-find.
+
+(pin-under base dx dy pict) → pict?
+  base : pict?
+  dx : real?
+  dy : real?
+  pict : pict?
+(pin-under base find-pict find pict) → pict?
+  base : pict?
+  find-pict : pict?
+  find : (pict? pict? . -> . (values real? real?))
+  pict : pict?
+Like pin-over, but pict is drawn before base in the resulting combination.
+
+(table   ncols             
+         picts             
+         col-aligns        
+         row-aligns        
+         col-seps          
+         row-seps)    →   pict?
+  ncols : exact-positive-integer?
+  picts : (listof pict?)
+  col-aligns : (table-list-of (pict? pict? -> pict?))
+  row-aligns : (table-list-of (pict? pict? -> pict?))
+  col-seps : (table-list-of real?)
+  row-seps : (table-list-of real?)
+Creates a table given a list of picts. The picts list is a concatenation of the
+table’s rows (which means that a Racket list call can be formatted to reflect
+the shape of the output table).
+
+The col-aligns, row-aligns, col-seps, and row-seps arguments are “lists”
+specifying the row and columns alignments separation between rows and columns.
+For c columns and r rows, the first two should have c and r superimpose
+procedures, and the last two should have c-1 and r-1 numbers, respectively. The
+lists can be “improper” (i.e., ending in a number instead of an empty list), in
+which case the non-pair cdr is used as the value for all remaining list items
+that were expected. The col-aligns and row-aligns procedures are used to
+superimpose all of the cells in a column or row; this superimposition
+determines the total width or height of the column or row, and also determines
+the horizontal or vertical placement of each cell in the column or row.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

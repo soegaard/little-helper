@@ -1,0 +1,90 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+get-map
+set-map
+[...search manuals...]
+  top← prev  up  next → 
+
+editor-wordbreak-map% : class?
+  superclass: object%
+
+An editor-wordbreak-map% objects is used with a text% objects to specify
+word-breaking criteria for the default wordbreaking function. See also
+set-wordbreak-map, get-wordbreak-map, find-wordbreak, and set-wordbreak-func.
+
+A global object the-editor-wordbreak-map is created automatically and used as
+the default map for all text% objects.
+
+A wordbreak objects implements a mapping from each character to a list of
+symbols. The following symbols are legal elements of the list:
+
+  • 'caret
+
+  • 'line
+
+  • 'selection
+
+  • 'user1
+
+  • 'user2
+
+The presence of a flag in a character’s value indicates that the character does
+not break a word when searching for breaks using the corresponding reason. For
+example, if 'caret is present, then the character is a non-breaking character
+for caret-movement words. (Each stream of non-breaking characters is a single
+word.)
+
+(new editor-wordbreak-map%) → (is-a?/c editor-wordbreak-map%)
+All ASCII alpha-numeric characters are initialized with '(caret line
+selection). All other ASCII non-whitespace characters except - are initialized
+with '(line). All ASCII whitespace characters and - are initialized with null.
+
+(send an-editor-wordbreak-map get-map char)
+ → (listof (one-of/c 'caret 'line 'selection 'user1 'user2))
+  char : char?
+Gets the mapping value for char. See editor-wordbreak-map% for more
+information.
+
+(send an-editor-wordbreak-map set-map   char          
+                                        value)   →   void?
+  char : char?
+  value : (listof (one-of/c 'caret 'line 'selection 'user1 'user2))
+
+Sets the mapping value for char to value. See editor-wordbreak-map% for more
+information.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

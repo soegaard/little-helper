@@ -1,0 +1,91 @@
+<html>
+<head>
+    <title>Search the Racket Documentation</title>
+    <link type="text/css" href="css/ui-lightness/jquery-ui-1.8.14.custom.css" rel="stylesheet" />
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
+    
+    <style type="text/css">
+    #body { padding: 20px;}
+    #search_area  { display: inline; float: left; margin-left: 40px;}
+    #search_input { margin-top: 40px; margin-left: 40px;}
+                            
+    #explanation { display: block; margin-bottom: 40px;}                      
+    #options { border-color: grey; border-style: solid; border-size: 1; float: right; margin-right: 40px; padding: 20px; }   
+    #results { clear: both; margin-left: 40px; }                         
+    .hit {margin-bottom: 40px; margin-left: 40px; }                  
+    .progressbar { width: 100px; height: 15px; display: inline-block;}
+    .ui-button-text-only .ui-button-text { padding: .1em; }
+    </style>
+    <script> 
+        $(function(){
+            $("#check_s").button();
+            $("#check_ca").button();
+            $("#check_n").button();
+            $(".progressbar").each( function(i, e) { $(e).progressbar({"value": parseInt($(e).attr('pct'))}); });
+            $("[type=submit]").bind("click", function(e) { $(this).attr("submitter_p", "yes"); });
+            $("#search_form").bind("submit", function(e) { var submitter = $("[submitter_p=yes]").get(0);
+                                                           if ($(submitter).attr("id")=="normal_submit") {
+                                                               $("#n").attr("value", "on");
+                                                           } else {
+                                                               $("#n").attr("value", "");
+                                                           }; });     
+           var updateLabels = function(){ 
+                                if ( $("#check_s").prop("checked") )
+                                { $("#s_label").html("sensitive"); } 
+                                else { $("#s_label").html("insensitive"); };
+                                if ( $("#check_ca").prop("checked") )
+                                { $("#ca_label").html("all keywords"); } 
+                                else { $("#ca_label").html("at least one keyword"); }; };
+
+           $("#check_s").click( function(e){ $("#check_s").checked = !$("#check_s").checked;
+                                             updateLabels(); } ) ;
+           $("#check_ca").click( function(e){ $("#check_s").checked = !$("#check_s").checked;
+                                              updateLabels(); } );
+           $(document).ready(function(){ $("#s").focus(); 
+                                         updateLabels(); }); 
+
+        }); 
+    </script>
+</head>
+<body>
+    <h1>Search the Racket Documentation</h1>
+    <form id="search_form" action="" method="get">
+        <div id="search_area">
+            <div id="explanation">This page allows you to make full text searches in the Racket documentation.
+               <br/>The index of docs.racket-lang.org was created at August 9th 2011 (Racket version 5.1.2).
+            </div>
+            <div> <em>or</em>
+                  <div style="display: inline-block;">
+                      <span> 1. Enter the keywords (space separated) you want to find. </span> <br/>
+                      <span> 2. Find documents containing keywords matching the regular expression.</span>
+                  </div>
+            </div>
+            <div id="search_input">
+                <input size="50" name="q" id="s" type="text" title="Search" display="inline" value='@|q|' /> 
+                <div style="display: inline-block;">
+                    <input id="n" type="hidden" name="n" value="@|checked-n|"/>
+                    <input id="normal_submit" type="submit" value="Search"    />
+                    <input id="regexp_submit" type="submit" value="Regexp Search"/>
+                </div>
+            </div>
+        </div>    
+        <div id="options">
+            <h2>Options</h2>
+            <div>Matching is case 
+                 <input id="check_s" name="s" type="checkbox" @|checked-s| /> 
+                 <label id="s_label" for="check_s">insensitive</label>. 
+            </div>
+            <h3>Options for keyword search</h2>
+            <div style="padding-left: 40px;">
+                <div>Found documents must contain 
+                     <input id="check_ca" name="ca" type="checkbox" id="check_ca" @|checked-ca| />  
+                     <label id="ca_label" for="check_ca">at least one keyword</label> searched for. 
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div id="results"> @result </div>
+</body>
+</html>

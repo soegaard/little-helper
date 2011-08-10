@@ -1,0 +1,420 @@
+▼  Web Applications in Racket
+1  Running Web Servlets
+2  Stateful Servlets
+3  Stateless Servlets
+4  HTTP: Hypertext Transfer Protocol
+5  URL-Based Dispatch
+6  Formlets: Functional Form Abstraction
+7  Templates: Separation of View
+8  Page: Short-hand for Common Patterns
+9  Troubleshooting and Tips
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+Index
+
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+ 
+
+"unsafe context"
+#%#
+=>*
+adjust-timeout!
+After refreshing my stateful servlet, old captured continuations don’t change
+or old global effects are gone. Why?
+any->response
+API Details
+API Reference
+Base64 Encoding
+base64-stuffer
+Basic Authentication
+Basic Combinators
+Basic Formlet Usage
+bi-directional match expander
+bidi-match-going-in?
+binding
+binding-format/c
+binding-id
+binding-id/c
+binding:file
+binding:file-content
+binding:file-filename
+binding:file-headers
+binding:file?
+binding:form
+binding:form-value
+binding:form?
+binding?
+Bindings
+bindings-assq
+Built-in URL patterns
+button
+call-with-serializable-current-continuation
+can-be-response?
+checkbox
+clear-continuation-table!
+client-cookie
+client-cookie-domain
+client-cookie-name
+client-cookie-path
+client-cookie-value
+client-cookie?
+Command-line Tools
+container?
+Containers
+Continuation Managers
+continuation-url?
+Conversion Example
+cookie->header
+create-LRU-manager
+create-none-manager
+create-timeout-manager
+cross
+cross*
+current-request
+current-servlet-continuation-expiration-handler
+default
+default-stuffer
+define-bidi-match-expander
+define-coercion-match-expander
+define-container
+define-native
+define/page
+Digest Authentication
+dir-store
+dispatch-case
+dispatch-rules
+dispatch-rules!
+dispatch-rules+applies
+dispatch-url
+Dynamic
+Dynamic Syntactic Shorthand
+embed-formlet
+embed/url
+Examples
+exists-binding?
+exn:fail:servlet-manager:no-continuation
+exn:fail:servlet-manager:no-continuation-expiration-handler
+exn:fail:servlet-manager:no-continuation?
+exn:fail:servlet-manager:no-instance
+exn:fail:servlet-manager:no-instance-expiration-handler
+exn:fail:servlet-manager:no-instance?
+Extending web-server/dispatch
+extract-binding/single
+extract-bindings
+Extracting Cookies
+File Boxes
+file-box
+file-box-set!
+file-box-set?
+file-box?
+file-unbox
+file-upload
+formlet
+formlet
+formlet*
+formlet*/c
+formlet-display
+formlet-process
+formlet/c
+Formlets: Functional Form Abstraction
+Full API
+Functional Usage
+General
+get-binding
+get-bindings
+Gotchas
+GZip Compression
+gzip-stuffer
+Hash-addressed Storage
+hash-fun/c
+hash-stuffer
+header
+header-field
+header-value
+header?
+headers-assq
+headers-assq*
+Helpers
+hidden
+HMAC-SHA1
+HMAC-SHA1 Signing
+HMAC-SHA1-stuffer
+How are stateless servlets different from stateful servlets vis a vis
+refreshing?
+How do I use templates “dynamically"?
+HTTP Responses
+HTTP: Hypertext Transfer Protocol
+id-stuffer
+img
+Imperative Dispatch Containers
+in
+include-template
+input-int
+input-string
+input-symbol
+Instant Servlets
+integer-arg
+interface-version
+interface-version
+is-url-too-big?
+Key/Value Storage
+lambda/page
+LRU
+make-basic-auth-header
+make-binding
+make-binding:file
+make-binding:form
+make-check-digest-credentials
+make-client-cookie
+make-coerce-safe?
+make-cookie
+make-default-stuffer
+make-digest-auth-header
+make-exn:fail:servlet-manager:no-continuation
+make-exn:fail:servlet-manager:no-instance
+make-header
+make-input
+make-input*
+make-manager
+make-request
+make-soft-state
+make-store
+make-stuffer
+make-threshold-LRU-manager
+make-web-cell
+make-web-cell
+make-web-parameter
+manager
+manager
+manager
+manager-adjust-timeout!
+manager-clear-continuations!
+manager-continuation-lookup
+manager-continuation-peek
+manager-continuation-store!
+manager-create-instance
+manager?
+md5-stuffer
+multiselect-input
+My browser displays my page strangely: my CSS is ignored, sections are missing,
+etc.
+Native Interfaces
+native->serial
+No Continuations
+no-web-browser
+number-arg
+page
+Page: Short-hand for Common Patterns
+password->digest-HA1
+password-input
+permanently
+Placing Cookies
+plt-web-server
+Predefined Formlets
+pure
+radio
+real-arg
+Redirect
+redirect-to
+redirect/get
+redirect/get
+redirect/get/forget
+redirection-status?
+request
+request->basic-credentials
+request->digest-credentials
+request-bindings
+request-bindings/raw
+request-bindings/raw-promise
+request-client-ip
+request-cookies
+request-headers
+request-headers/raw
+request-host-ip
+request-host-port
+request-method
+request-post-data/raw
+request-uri
+request?
+Requests
+required
+reset
+response
+response-code
+response-headers
+response-message
+response-mime
+response-output
+response-seconds
+response/full
+response/xexpr
+response?
+Responses
+Responses
+Running Web Servlets
+see-other
+select-input
+send/back
+send/finish
+send/formlet
+send/forward
+send/suspend
+send/suspend
+send/suspend/dispatch
+send/suspend/dispatch
+send/suspend/hidden
+send/suspend/url
+send/suspend/url
+send/suspend/url/dispatch
+send/suspend/url/dispatch
+serial->native
+Serializable Continuations
+Serialization
+serialize-stuffer
+serve/dispatch
+serve/servlet
+servlet-prompt
+set-any->response!
+Simple Single Servlet Servers
+Soft State
+soft-state
+soft-state-ref
+soft-state?
+start
+start
+Stateful Servlets
+Stateless Servlets
+Stateless Servlets
+Stateless Web Cells
+Stateless Web Interaction
+Stateless Web Parameters
+Static
+Static Syntactic Shorthand
+static-files-path
+store
+store-read
+store-write
+store?
+string-arg
+struct:binding
+struct:binding:file
+struct:binding:form
+struct:client-cookie
+struct:exn:fail:servlet-manager:no-continuation
+struct:exn:fail:servlet-manager:no-instance
+struct:header
+struct:manager
+struct:request
+struct:response
+struct:store
+struct:stuffer
+stuffer
+stuffer
+stuffer-chain
+stuffer-compose
+stuffer-if
+stuffer-in
+stuffer-out
+stuffer-sequence
+stuffer/c
+stuffer?
+Stuffers
+stuffers
+submit
+symbol-arg
+tag-xexpr
+Templates: Separation of View
+temporarily
+text
+text-input
+TEXT/HTML-MIME-TYPE
+textarea-input
+Timeouts
+to-boolean
+to-number
+to-string
+to-symbol
+Troubleshooting and Tips
+URL-Based Dispatch
+Usage Considerations
+username*realm->digest-HA1/c
+username*realm->password/c
+Using web-server/dispatch
+Utilities
+Web Applications in Racket
+Web Cells
+Web Interaction
+web-cell-ref
+web-cell-ref
+web-cell-shadow
+web-cell-shadow
+web-cell?
+web-cell?
+web-parameter?
+web-parameterize
+web-server
+web-server/dispatch
+web-server/dispatch/extend
+web-server/formlets
+web-server/formlets/dyn-syntax
+web-server/formlets/input
+web-server/formlets/lib
+web-server/formlets/servlet
+web-server/formlets/syntax
+web-server/http
+web-server/http/basic-auth
+web-server/http/bindings
+web-server/http/cookie
+web-server/http/cookie-parse
+web-server/http/digest-auth
+web-server/http/redirect
+web-server/http/request-structs
+web-server/http/response-structs
+web-server/http/xexpr
+web-server/insta
+web-server/lang/abort-resume
+web-server/lang/file-box
+web-server/lang/native
+web-server/lang/soft
+web-server/lang/stuff-url
+web-server/lang/web
+web-server/lang/web-cells
+web-server/lang/web-param
+web-server/managers/lru
+web-server/managers/manager
+web-server/managers/none
+web-server/managers/timeouts
+web-server/page
+web-server/servlet
+web-server/servlet-env
+web-server/servlet/servlet-structs
+web-server/servlet/web
+web-server/servlet/web-cells
+web-server/stuffers
+web-server/stuffers/base64
+web-server/stuffers/gzip
+web-server/stuffers/hash
+web-server/stuffers/hmac-sha1
+web-server/stuffers/serialize
+web-server/stuffers/store
+web-server/stuffers/stuffer
+web-server/templates
+What special considerations are there for security with the Web Server?
+Why are my stateful servlets not updating on the server when I change the file
+on disk?
+Why are my templates not updating on the server when I change the file on disk?
+Why are templates compiled into programs?
+Why is my servlet failing with a can-be-response? contract violation after
+updating Racket?
+with-errors-to-browser
+X-expression Support
+xexpr-forest/c
+xml
+xml-forest
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

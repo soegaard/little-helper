@@ -1,0 +1,498 @@
+▼  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 1  Getting Started
+1.1  A First Example
+1.2  Multiple Sections
+1.3  Splitting the Document Source
+1.4  Document Styles
+1.5  More Functions
+1.6  Text Mode vs. Racket Mode for Arguments
+1.7  @ Syntax Basics
+1.8  Decoding Sequences
+1.9  Next Steps
+On this page:
+1.1 A First Example
+1.2 Multiple Sections
+1.3 Splitting the Document Source
+1.4 Document Styles
+1.5 More Functions
+1.6 Text Mode vs. Racket Mode for Arguments
+1.7 @ Syntax Basics
+1.8 Decoding Sequences
+1.9 Next Steps
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Getting Started
+
+No matter what you want to do with Scribble, it’s best to start by generating a
+few simple HTML and/or PDF documents. This chapter steps you through the
+basics, and it ends in Next Steps with goal-specific advice on how to continue.
+
+1.1 A First Example
+
+Create a file "mouse.scrbl" with this content:
+
+    #lang scribble/base
+     
+    @title{On the Cookie-Eating Habits of Mice}
+     
+    If you give a mouse a cookie, he's going to ask for a
+    glass of milk.
+
+The first line’s #lang scribble/base indicates that the file implements a
+Scribble document. The document starts in “text mode,” and the @ character
+escapes to operators like title, where the curly braces return to text mode for
+the arguments to the operator. The rest is document content.
+
+Now run the scribble command-line program, specifying a mode for the kind of
+document that you want as output:
+
+  • 
+    Run
+      scribble mouse.scrbl
+    to generate HTML as "mouse.html". You may notice that the apostrophe in
+    “he’s” turned into a curly apostrophe.
+
+  • 
+    Run
+      scribble --htmls mouse.scrbl
+    to generate HTML as "mouse/index.html". Sub-sections (which we add next)
+    will appear as separate HTML files in the "mouse" directory.
+
+  • 
+    Run
+      scribble --pdf mouse.scrbl
+    to generate PDF as "mouse.pdf". This will work only if you have pdflatex
+    installed. If you’d like to see the intermediate Latex, try
+      scribble --latex mouse.scrbl
+    to generate "mouse.tex".
+
+See Running scribble for more information on the scribble command-line tool.
+
+1.2 Multiple Sections
+
+Add more text to "mouse.scrbl" so that it looks like this:
+
+    #lang scribble/base
+     
+    @title{On the Cookie-Eating Habits of Mice}
+     
+    If you give a mouse a cookie, he's going to ask for a
+    glass of milk.
+     
+    @section{The Consequences of Milk}
+     
+    That ``squeak'' was the mouse asking for milk. Let's
+    suppose that you give him some in a big glass.
+     
+    He's a small mouse. The glass is too big---way too
+    big. So, he'll probably ask you for a straw. You might as
+    well give it to him.
+     
+    @section{Not the Last Straw}
+     
+    For now, to handle the milk moustache, it's enough to give
+    him a napkin. But it doesn't end there... oh, no.
+
+Now, after the first paragraph of the paper, we have two sub-sections, each
+created by calling section to generate a sub-section declaration. The first
+sub-section has two paragraphs. The second section, as initiated by the result
+of the second section call, has a single paragraph.
+
+Run the scribble command(s) from A First Example again. You may notice the
+curly double-quotes in the output, and the --- turned into an em dash.
+
+1.3 Splitting the Document Source
+
+As a document grows larger, it’s better to split sections into separate source
+files. The include-section operation incorporates a document defined by a
+".scrbl" file into a larger document.
+
+To split the example document into multiple files, change "mouse.scrbl" to just
+
+    #lang scribble/base
+     
+    @title{On the Cookie-Eating Habits of Mice}
+     
+    If you give a mouse a cookie, he's going to ask for a
+    glass of milk.
+     
+    @include-section["milk.scrbl"]
+    @include-section["straw.scrbl"]
+
+Create "milk.scrbl" and "straw.scrbl" in the same directory as "mouse.scrbl".
+In "milk.scrbl", put
+
+    #lang scribble/base
+     
+    @title{The Consequences of Milk}
+     
+    That ``squeak'' was the mouse asking for milk...
+
+and in "straw.scbl", put
+
+    #lang scribble/base
+     
+    @title{Not the Last Straw}
+     
+    For now, to handle the milk moustache, ...
+
+Notice that the new files both start with #lang, like the original document,
+and the sections from the original document become titles in the new documents.
+Both "milk.scrbl" and "straw.scrbl" are documents in their own right with their
+own titles, and they can be individually rendered using scribble. Running
+scribble on "mouse.scrbl", meanwhile, incorporates the smaller documents into
+one document that is the same as before.
+
+1.4 Document Styles
+
+Scribble currently supports only one form of HTML output. You can replace the
+"scribble.css" file for the generated pages, and that’s about it. (We expect to
+add more styles in the future.)
+
+For Latex-based PDF output, Scribble includes support for multiple page-layout
+configurations. The "mouse.scrbl" example so far uses the default Latex style.
+If you plan on submitting the paper to a workshop on programming languages,
+then—well, you probably need a different topic. But you can start making the
+current content look right by changing the first line to
+
+    #lang scribble/sigplan
+
+If you’re instead working toward Racket library documentation, try changing the
+first line to
+
+    #lang scribble/manual
+
+which produces output with a separate title page, initial content on that page
+(intended as a brief orientation to the document), and top-level sections
+turned into chapters that each start on a new page. If you have split the
+document into multiple files, the first line of the main document file
+determines the output format.
+
+Using scribble/sigplan or scribble/manual does not change the rendered HTML for
+a document—aside from scribble/manual adding a version number—but it changes
+the set of bindings available in the document body. For example, with scribble/
+sigplan, the introductory text can be marked as an abstract:
+
+    #lang scribble/sigplan
+     
+    @title{On the Cookie-Eating Habits of Mice}
+     
+    @abstract{If you give a mouse a cookie, he's going to
+              ask for a glass of milk.}
+     
+    @section{The Consequences of Milk}
+     
+    ....
+
+When rendered as HTML, the abstract shows up as an inset paragraph. If you try
+to use abstract with the scribble/base or scribble/manual language, then you
+get an error, because abstract is not defined.
+
+When a document is implemented across multiple files, changing the language of
+the main document can set the style for all of the parts, but it does not
+introduce bindings into the other part files. For example, if you change the
+language of "mouse.scrbl" to scribble/sigplan, then abstract becomes available
+in "mouse.scrbl" but not in "milk.scrbl" or "straw.scrbl". In other words,
+operator names are lexically scoped.
+
+1.5 More Functions
+
+The scribble/sigplan and scribble/manual languages are supersets of the
+scribble/base language, which provides a collection of basic operations. Many
+of the operations are style variations that you can apply to text:
+
+    He's a @smaller{small mouse}. The glass is too
+    @larger{big}---@bold{way @larger{too @larger{big}}}. So, he'll
+    @italic{probably} ask you for a straw.
+
+which renders as
+
+    He’s a small mouse. The glass is too big—way too big. So, he’ll probably
+    ask you for a straw.
+
+As you would expect, calls to functions like smaller, larger, and bold can be
+nested in other calls. They can also be nested within calls to title or section
+:
+
+    @section{@italic{Not} the Last Straw}
+
+The centered operation centers a flow of text:
+
+    If a mouse eats all your cookies, put up a sign that says
+    @centered{
+      @bold{Cookies Wanted}
+     
+      @italic{Chocolate chip preferred!}
+    }
+    and see if anyone brings you more.
+
+which renders as
+
+    If a mouse eats all your cookies, put up a sign that says
+
+
+        Cookies Wanted
+
+        Chocolate chip preferred!
+
+    and see if anyone brings you more.
+
+The margin-note operation is used in a similar way, but the rendered text is
+moved to the margins.
+
+            If you use margin-note, then the content shows up over here.
+
+The itemlist operation creates a sequence of bulleted text, where the item
+operation groups text to appear in a single bullet. The itemlist operation is
+different from the others that we have seen before, because it only accepts
+values produced by item instead of arbitrary text. This difference is reflected
+in the use of [...] for the arguments to itemlist instead of {...}:
+
+    @centered{@bold{Notice to Mice}}
+     
+    @itemlist[@item{We have cookies for you.}
+              @item{If you want to eat a cookie,
+                    you must bring your own straw.}]
+
+which renders as
+
+        Notice to Mice
+
+      □ We have cookies for you.
+
+      □ If you want to eat a cookie, you must bring your own straw.
+
+1.6 Text Mode vs. Racket Mode for Arguments
+
+When [...] surrounds the arguments of an operation, the argument expressions
+are in Racket mode rather than text mode. Even in Racket mode, @ can be used to
+apply operations; once the @ syntax is enabled through a language like scribble
+/base (as opposed to racket), it behaves the same in both Racket mode and text
+mode.
+
+One advantage of using Racket mode for the arguments to itemlist is that we can
+pass a keyword-tagged optional argument to itemlist. In particular, if you want
+a list with numbers instead of bullets, supply the 'ordered style to itemlist
+using the #:style keyword:
+
+    @itemlist[#:style 'ordered
+              @item{Eat cookie.}
+              @item{Drink milk.}
+              @item{Wipe mouth.}
+              @item{...}]
+
+An operation doesn’t care whether it’s used with [...] or {...}. Roughly, {...}
+forms an argument that is a string. (Only roughly, though. Newlines or uses of
+@ within {...} complicate the picture, and we’ll get back to that soon.) So,
+
+    @italic{Yummy!}
+
+is equivalent to
+
+    @italic["Yummy!"]
+
+which is equivalent to the Racket expression
+
+    (italic "Yummy!")
+
+These equivalences explain why Scribble functions are documented in Racket
+notation. If you’re reading this in HTML format, you can click italic above to
+access its documentation. The documentation won’t completely make sense, yet,
+but it will by the end of this chapter.
+
+What if you want to provide arguments in text mode, but you also want to supply
+other optional arguments? You can use both [...] and {...} for an operation, as
+long as the [...] is first, and as long as no character separate the closing ]
+from the opening {. For example, calling italic is the same as using elem with
+the 'italic style:
+
+    @elem[#:style 'italic]{Yummy!}
+
+You can also omit both [...] and {...}. In that case, the Racket expression
+after @ is used directly instead of applied as an operation. For example,
+
+    1 plus 2 is @(number->string (+ 1 2)).
+
+renders as
+
+    1 plus 2 is 3.
+
+The call to number->string is needed because a naked number is not valid as
+document content.
+
+1.7 @ Syntax Basics
+
+The @ notation provided by Scribble is just another way of writing Racket
+expressions. Scribble documents could be constructed using normal Racket
+notation, without using @ at all, but that would be inconvenient for most
+purposes. The @ notation makes dealing with textual content much easier.
+
+Whether in text mode or Racket mode, @ in a document provides an escape to
+Racket mode. The basic syntax of @ is
+
+    @ ‹cmd› [ ‹datum›* ] { ‹text-body› }
+
+where all three parts after @ are optional, but at least one must be present.
+No spaces are allowed between
+
+  • @ and ‹cmd›, [, or {
+
+  • ‹cmd› and [ or {; or
+
+  • ] and {.
+
+A ‹cmd› or ‹datum› is normal Racket notation, while a ‹text-body› is itself in
+text mode. A ‹cmd› obviously must not start with [ or {, even though Racket
+forms could otherwise start with those characters.
+
+The expansion of just @‹cmd› into Racket code is
+
+    ‹cmd›
+
+When either [ ] or { } are used, the expansion is
+
+    (‹cmd› ‹datum›* ‹parsed-body›*)
+
+where ‹parsed-body›* is the parse result of the ‹text-body›. The ‹parsed-body›*
+part often turns out to be a sequence of Racket strings.
+
+In practice, the ‹cmd› is normally a Racket identifier that is bound to a
+procedure or syntactic form. If the procedure or form expects further text to
+typeset, then {...} supplies the text. If the form expects other data,
+typically [...] is used to surround Racket arguments, instead. Even if an
+operation’s argument is a string, if the string is not used as content text
+(but instead used as, say, a hyperlink label), then the string is typically
+provided through [...] instead of {...}. Sometimes, both [...] and {...} are
+used, where the former surround Racket arguments that precede text to typeset.
+Finally, if a form is a purely Racket-level form with not typeset result, such
+as a require to import more operations, then typically just @ is used.
+
+For example the text-mode stream
+
+    @(require scriblib/figure)
+     
+    @section[#:tag "poetry"]{Of Mice and Cookies}
+    See @secref["milk"].
+     
+    @section[#:tag "milk"]{@italic{Important} Milk Supplies}
+    @figure["straw" @elem{A straw}]{@image["straw.png"]}
+
+is equivalent to the Racket-mode sequence
+
+    (require scriblib/figure) "\n"
+    "\n"
+    (section #:tag "poetry" "Of Mice and Cookies") "\n"
+    "See " (secref "milk") "." "\n"
+    "\n"
+    (section #:tag "milk" (italic "Important") " Milk Supplies") "\n"
+    (figure "straw" (elem "A straw") (image "straw.png")) "\n"
+
+Besides showing how different argument conventions are used for different
+operations, the above example illustrates how whitespace is preserved in the
+Racket form of a text-mode stream—including newlines preserved as their own
+strings. Notice how the second section gets two arguments for its content,
+since the argument content for section in the source stream includes both the
+use of an operator and additional text. When an operation like section or
+italic accepts content to typeset, it normally accepts an arbitrary number of
+arguments that together form the content.
+
+For more information on the syntax of @, see @ Syntax. The full syntax includes
+a few more details, such as brackets like |{...}| for text-mode arguments while
+disabling @ between the brackets.
+
+1.8 Decoding Sequences
+
+In a document that starts #lang scribble/base, the top level is a text-mode
+stream, just like the ‹text-body› in a @ form. As illustrated in the previous
+section, such a top-level sequence corresponds to a mixture of Racket-mode
+strings and operation applications. There’s an implicit operation, decode, that
+wraps the whole document to consume this mixture of strings and other values
+and turn them into a document description.
+
+The decode operation implements flow decoding, which takes a document stream
+and breaks it up into sections and paragraphs. Blank lines delimit paragraphs,
+and the results of operations like title and section generate “here’s the
+title” or “a new section starts here” declarations that are recognized by
+decode.
+
+A different but related content decoding takes place within a paragraph or
+section title. Content decoding is responsible for converting --- to an em dash
+or for converting " and ' to suitable curly quotes.
+
+The decoding process for document’s stream is ultimately determined by the #
+lang line that starts the document. The scribble/base, scribble/manual, and
+scribble/sigplan languages all use the same decode operation. The scribble/text
+language, however, acts more like a plain-text genrator and preprocessor, and
+it does not perform any such decoding rules. (For more on scribble/text, see
+Text Generation.)
+
+            More precisely, languages like scribble/base apply decode only
+            after lifting out all definitions and imports from the document
+            stream.
+
+When the flow decoder is used, after it breaks the input stream into
+paragraphs, it applies content decoding to strings within the paragraph. When
+content is wrapped with an operation, however, content decoding does not apply
+automatically. An operation is responsible for calling a content or flow
+decoder as it sees fit. Most operations call the decoder; for example, italic,
+bold, smaller, etc., all decode their arguments. Similarly, title and section
+decode the given content for the title or section name. The literal and
+verbatim operators, however, do not decode the given strings. For example,
+
+    @verbatim{---}
+
+renders as
+
+    ---
+
+
+Don’t confuse decoding with the expansion of @ notation. The source form
+
+    @verbatim{@(number->string (+ 1 2))}
+
+renders as
+
+    3
+
+
+because the source is equivalent to
+
+    (verbatim (number->string (+ 1 2)))
+
+where (number->string (+ 1 2)) is evaluated to produce the argument to verbatim
+. The |{...}| style of brackets is often used with verbatim, because |{...}|
+disables @ notation for arguments. For example,
+
+    @verbatim|{@(number->string (+ 1 2))}|
+
+renders as
+
+    @(number->string (+ 1 2))
+
+
+1.9 Next Steps
+
+If your immediate goal is to document a Racket library or write literate
+programs, skip to Getting Started with Documentation, and then go back to @
+Syntax and other chapters.
+
+If you are more interested in producing documents unrelated to Racket, continue
+with @ Syntax and then High-Level Scribble API. Move on to Low-Level Scribble
+API when you need more power.
+
+If you are interested in text generation and preprocessing, continue with @
+Syntax, but then skip to Text Generation.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

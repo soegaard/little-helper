@@ -1,0 +1,34 @@
+▼  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Implementing New Games
+
+The game-starting console inspects the sub-collections of the "games"
+collection. If a sub-collection has an "info.rkt" module (see setup/infotab),
+the following fields of the collection’s "info.rkt" file are used:
+
+  • game [required] : used as a module name in the sub-collection to load for
+    the game; the module must provide a game@ unit (see scheme/unit) with no
+    particular exports; the unit is invoked with no imports to start the game.
+
+  • name [defaults to the collection name] : used to label the game-starting
+    button in the game console.
+
+  • game-icon [defaults to collection name with ".png"] : used as a path to a
+    bitmap file that is used for the game button’s label; this image should be
+    32 by 32 pixels and have a mask.
+
+  • game-set [defaults to "Other Games"] : a label used to group games that
+    declare themselves to be in the same set.
+
+To implement card games, see games/cards. Card games typically belong in the
+"Cards" game set.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

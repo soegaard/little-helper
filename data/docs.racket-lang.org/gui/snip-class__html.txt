@@ -1,0 +1,126 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 5  Snip and Style Classes
+ 5.1  add-color<%>
+ 5.2  image-snip%
+ 5.3  mult-color<%>
+ 5.4  readable-snip<%>
+ 5.5  snip%
+ 5.6  snip-admin%
+ 5.7  snip-class%
+ 5.8  snip-class-list<%>
+ 5.9  string-snip%
+5.10  style<%>
+5.11  style-delta%
+5.12  style-list%
+5.13  tab-snip%
+On this page:
+get-classname
+get-version
+read
+read-header
+reading-version
+set-classname
+set-version
+write-header
+[...search manuals...]
+  top← prev  up  next → 
+
+snip-class% : class?
+  superclass: object%
+
+Useful snip classes are defined by instantiating derived subclasses of
+snip-class%. A class derived from snip-class% serves as a kind of “meta-class”
+for snips; each snip is associated with an instance of snip-class% as its snip
+class.
+
+In deriving a new snip-class% class, override the read method. Then, for each
+instance of the derived class (where each instance corresponds to a single snip
+class):
+
+  • Set the classname using set-classname.
+
+  • Set the version using set-version.
+
+  • Install the class into the list returned by get-the-snip-class-list using
+    the add method. Note that if the same name is inserted into the same class
+    list multiple times, all but the first insertion is ignored.
+
+See also Snip Classes.
+
+(new snip-class%) → (is-a?/c snip-class%)
+Creates a (useless) snip class.
+
+(send a-snip-class get-classname) → string?
+Returns the class’s name, a string uniquely designating this snip class. For
+example, the standard text snip classname is "wxtext". Names beginning with wx
+are reserved.
+
+A snip class name should usually have the form "((lib ...)\n(lib ...))" to
+enable on-demand loading of the class. See Snip Classes for details.
+
+(send a-snip-class get-version) → exact-integer?
+Returns the version of this snip class. When attempting to load a file
+containing a snip with the same class name but a different version, the user is
+warned.
+
+(send a-snip-class read f) → (or/c (is-a?/c snip%) false/c)
+  f : (is-a?/c editor-stream-in%)
+Specification: Reads a snip from a given stream, returning a newly created snip
+as the result or #f if there is an error.
+
+Default implementation: Returns #f.
+
+(send a-snip-class read-header f) → boolean?
+  f : (is-a?/c editor-stream-in%)
+Specification: Called to read header information that may be useful for every
+snip read in this class. This method is only called once per editor read
+session, and only if the stream contains header information for this class.
+
+The return value is #f if a read error occurs or anything else otherwise.
+
+See also write-header.
+
+Default implementation: Returns #t.
+
+(send a-snip-class reading-version stream) → exact-integer?
+  stream : (is-a?/c editor-stream-in%)
+Returns the version number specified for this snip class for snips currently
+being read from the given stream.
+
+(send a-snip-class set-classname name) → void?
+  name : string?
+Sets the class’s name. See also get-classname.
+
+(send a-snip-class set-version v) → void?
+  v : exact-integer?
+Sets the version of this class. See get-version.
+
+(send a-snip-class write-header stream) → boolean?
+  stream : (is-a?/c editor-stream-out%)
+Specification: Called to write header information that may be useful for every
+snip written for this class. This method is only called once per editor write
+session, and only if the editor contains snips in this class.
+
+When reading the snips back in, read-header will only be called if write-header
+writes some data to the stream.
+
+The return value is #f if a write error occurs or anything else otherwise.
+
+Default implementation: Returns #t.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

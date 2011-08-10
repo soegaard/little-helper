@@ -1,0 +1,229 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+► 31  Temporal Contracts: Explicit Contract Monitors
+31.1  Warning! Experimental!
+31.2  Monitors
+31.3  Domain Specific Language
+On this page:
+31.1 Warning! Experimental!
+31.2 Monitors
+monitor
+monitor: proj
+monitor: call
+monitor: return
+monitor/ c
+31.3 Domain Specific Language
+call
+ret
+with-monitor
+label
+[...search manuals...]
+  top← prev  up  next → 
+
+31 Temporal Contracts: Explicit Contract Monitors
+
+Jay McCarthy <jay@racket-lang.org>
+
+ (require unstable/temp-c)
+
+The contract system implies the presence of a "monitoring system" that ensures
+that contracts are not violated. The racket/contract system compiles this
+monitoring system into checks on values that cross a contracted boundary. This
+module provides a facility to pass contract boundary crossing information to an
+explicit monitor for approval. This monitor may, for example, use state to
+enforce temporal constraints, such as a resource is locked before it is
+accessed.
+
+31.1 Warning! Experimental!
+
+This library is truly experimental and the interface is likely to drastically
+change as we get more experience making use of temporal contracts. In
+particular, the library comes with no advice about designing temporal
+contracts, which are much more subtle than standard contracts. This subtlety is
+compounded because, while temporal contract violations have accurate blame
+information, we cannot yet connect violations to sub-pieces of the temporal
+formula.
+
+For example, applying f to "three" when it is contracted to only accept numbers
+will error by blaming the caller and providing the explanation "expected a
+<number?>, received: "three"". In contrast, applying g to "even" and then to
+"odd" when g is contracted to accept strings on every odd invocation, but
+numbers on every even invocation, will error by blaming the second (odd) call,
+but will not provide any explanation except "the monitor disallowed the call
+with arguments: "odd"". Translating non-acceptance of an event trace by an
+automata into a palatable user explanation is an open problem.
+
+31.2 Monitors
+
+ (require unstable/temp-c/monitor)
+
+(struct   monitor (label)
+          #:transparent)
+  label : symbol?
+(struct   monitor:proj monitor (label proj-label v)
+          #:transparent)
+  label : symbol?
+  proj-label : symbol?
+  v : any/c
+(struct   monitor:call monitor  ( label
+                                  proj-label
+                                  f
+                                  app-label
+                                  kws
+                                  kw-args
+                                  args)
+          #:transparent)
+  label : symbol?
+  proj-label : symbol?
+  f : procedure?
+  app-label : symbol?
+  kws : (listof keyword?)
+  kw-args : list?
+  args : list?
+(struct   monitor:return monitor  ( label
+                                    proj-label
+                                    f
+                                    app-label
+                                    kws
+                                    kw-args
+                                    args
+                                    rets)
+          #:transparent)
+  label : symbol?
+  proj-label : symbol?
+  f : procedure?
+  app-label : symbol?
+  kws : (listof keyword?)
+  kw-args : list?
+  args : list?
+  rets : list?
+(monitor/c monitor-allows? label c) → contract?
+  monitor-allows? : (-> monitor? boolean?)
+  label : symbol?
+  c : contract?
+monitor/c creates a new contract around c that uses monitor-allows? to approve
+contract boundary crossings. (c approves positive crossings first.)
+
+Whenever a value v is projected by the result of monitor/c, monitor-allows?
+must approve a (monitor:proj label proj-label v) structure, where proj-label is
+a unique symbol for this projection.
+
+If monitor-allows? approves and the value is not a function, then the value is
+returned.
+
+If the value is a function, then a projection is returned, whenever it is
+called, monitor-allows? must approve a (monitor:call label proj-label v
+app-label kws kw-args args) structure, where app-label is a unique symbol for
+this application and kws, kw-args, args are the arguments passed to the
+function.
+
+Whenever it returns, monitor-allows? must approve a (monitor:return label
+proj-label v app-label kws kw-args args rets) structure, where ret are the
+return values of the application.
+
+The unique projection label allows explicitly monitored contracts to be useful
+when used in a first-class way at different boundaries.
+
+The unique application label allows explicitly monitored contracts to pair
+calls and returns when functions return multiple times or never through the use
+of continuations.
+
+Here is a short example that uses an explicit monitor to ensure that malloc and
+free are used correctly.
+
+    (define allocated (make-weak-hasheq))
+    (define memmon
+      (match-lambda
+        [(monitor:return 'malloc _ _ _ _ _ _ (list addr))
+         (hash-set! allocated addr #t)
+         #t]
+        [(monitor:call 'free _ _  _ _ _ (list addr))
+         (hash-has-key? allocated addr)]
+        [(monitor:return 'free _ _ _ _ _ (list addr) _)
+         (hash-remove! allocated addr)
+         #t]
+        [_
+         #t]))
+    (provide/contract
+     [malloc (monitor/c memmon 'malloc (-> number?))]
+     [free (monitor/c memmon 'free (-> number? void))])
+
+31.3 Domain Specific Language
+
+ (require unstable/temp-c/dsl)
+
+Constructing explicit monitors using only monitor/c can be a bit onerous. This
+module provides some helpful tools for making the definition easier. It
+provides everything from unstable/temp-c/monitor, as well as all bindings from
+unstable/automata/re and unstable/automata/re-ext. The latter provide a DSL for
+writing "dependent" regular expression machines over arbitrary racket/match
+patterns.
+
+First, a few match patterns are available to avoid specify all the details of
+monitored events (since most of the time the detailed options are unnecessary.)
+
+(call n a ...)
+A match expander for call events to the labeled function n with arguments a.
+(ret n a ...)
+A match expander for return events to the labeled function n with return values
+a.
+
+(with-monitor contract-expr re-pat)
+Defines a monitored contract where the structural portion of the contract is
+the contract-expr (which may included embedded label expressions) and where the
+temporal portion of the contract is the regular expression given by re-pat.
+(Note: re-pat is not a Racket expression that evaluates to a regular
+expression. It is a literal regular expession.) An optional #:concurrent may be
+added between the contract and the regular expression to ensure that the
+machine is safe against race-conditions.
+
+(label id contract-expr)
+Labels a portion of a structural contract inside of with-monitor with the label
+id.
+
+Here is a short example for malloc and free:
+
+    (with-monitor
+        (cons/c (label 'malloc (-> addr?))
+                (label 'free (-> addr? void?)))
+      (complement
+       (seq (star _)
+            (dseq (call 'free addr)
+                  (seq
+                   (star (not (ret 'malloc (== addr))))
+                   (call 'free (== addr)))))))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

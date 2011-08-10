@@ -1,0 +1,152 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+Inside: Racket C API
+
+Matthew Flatt
+
+This manual describes Racket’s C interface, which allows the interpreter to be
+extended by a dynamically-loaded library, or embedded within an arbitrary C/C++
+program. The manual assumes familiarity with Racket as described in The Racket
+Reference.
+
+For an alternative way of dealing with foreign code, see The Racket Foreign
+Interface, which describes the ffi/unsafe module for manipulating low-level
+libraries and structures purely through Racket code.
+
+    1 Overview
+
+      1.1 “Scheme” versus “Racket”
+
+      1.2 CGC versus 3m
+
+      1.3 Writing Racket Extensions
+
+        1.3.1 CGC Extensions
+
+        1.3.2 3m Extensions
+
+        1.3.3 Declaring a Module in an Extension
+
+      1.4 Embedding Racket into a Program
+
+        1.4.1 CGC Embedding
+
+        1.4.2 3m Embedding
+
+      1.5 Racket and Places
+
+      1.6 Racket and Threads
+
+      1.7 Racket, Unicode, Characters, and Strings
+
+      1.8 Integers
+
+    2 Values and Types
+
+      2.1 Standard Types
+
+      2.2 Global Constants
+
+      2.3 Strings
+
+      2.4 Value Functions
+
+    3 Memory Allocation
+
+      3.1 Cooperating with 3m
+
+        3.1.1 Tagged Objects
+
+        3.1.2 Local Pointers
+
+        3.1.3 Local Pointers and raco ctool --xform
+
+        3.1.4 Guiding raco ctool --xform
+
+      3.2 Memory Functions
+
+    4 Namespaces and Modules
+
+    5 Procedures
+
+    6 Evaluation
+
+      6.1 Top-level Evaluation Functions
+
+      6.2 Tail Evaluation
+
+      6.3 Multiple Values
+
+      6.4 Evaluation Functions
+
+    7 Exceptions and Escape Continuations
+
+      7.1 Temporarily Catching Error Escapes
+
+      7.2 Enabling and Disabling Breaks
+
+      7.3 Exception Functions
+
+    8 Threads
+
+      8.1 Integration with Threads
+
+      8.2 Allowing Thread Switches
+
+      8.3 Blocking the Current Thread
+
+      8.4 Threads in Embedded Racket with Event Loops
+
+        8.4.1 Callbacks for Blocked Threads
+
+      8.5 Sleeping by Embedded Racket
+
+      8.6 Thread Functions
+
+    9 Parameterizations
+
+    10 Continuation Marks
+
+    11 String Encodings
+
+    12 Bignums, Rationals, and Complex Numbers
+
+    13 Ports and the Filesystem
+
+    14 Structures
+
+    15 Security Guards
+
+    16 Custodians
+
+    17 Miscellaneous Utilities
+
+    18 Flags and Hooks
+
+    Index
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

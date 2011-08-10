@@ -1,0 +1,228 @@
+►  Dr Racket: The Racket Programming Environment
+1  Interface Essentials
+2  Languages
+3  Interface Reference
+4  Extending Dr Racket
+   Index
+▼ 3  Interface Reference
+3.1  Menus
+3.2  Preferences
+3.3  Keyboard Shortcuts
+3.4  Dr Racket Files
+► 3.2  Preferences
+3.2.1  Font
+3.2.2  Colors
+3.2.3  Editing
+3.2.4  Warnings
+3.2.5  General
+3.2.6  Profiling
+3.2.7  Browser
+3.2.8  Tools
+On this page:
+3.2.1 Font
+3.2.2 Colors
+3.2.3 Editing
+3.2.4 Warnings
+3.2.5 General
+3.2.6 Profiling
+3.2.7 Browser
+3.2.8 Tools
+[...search manuals...]
+  top← prev  up  next → 
+
+3.2 Preferences
+
+The preferences dialog consists of several panels.
+
+3.2.1 Font
+
+This panel controls the main font used by DrRacket.
+
+3.2.2 Colors
+
+The Colors panel has several sub-panels that let you configure the colors that
+DrRacket uses for the editor background, for highlighting matching parentheses,
+for the online coloring for Racket and Java modes, for Check Syntax, and for
+the colors of the text in the interactions window.
+
+It also has two buttons, White on Black and Black on White, which set a number
+of defaults for the color preferences and change a few other aspects of
+DrRacket’s behavior to make DrRacket’s colors look nicer for those two modes.
+
+3.2.3 Editing
+
+The Editing panel consists of several sub-panels:
+
+  • Indenting
+
+    This panel controls which keywords DrRacket recognizes for indenting, and
+    how each keyword is treated.
+
+  • Square bracket
+
+    This panel controls which keywords DrRacket uses to determine when to
+    rewrite [ to (. For cond-like keywords, the number in parenthesis indicates
+    how many sub-expressions are skipped before square brackets are started.
+
+    See Editing with Parentheses for details on how the entries in the columns
+    behave.
+
+  • General
+
+      □ Map delete to backspace — If checked, the editor treats the Delete key
+        like the Backspace key.
+
+      □ Wrap words in editor buffers — If checked, DrRacket editors auto-wrap
+        text lines by default. Changing this preference affects new windows
+        only.
+
+      □ Reuse existing frames when opening new files — If checked, new files
+        are opened in the same DrRacket window, rather than creating a new
+        DrRacket window for each new file.
+
+      □ Enable keybindings in menus — If checked, some DrRacket menu items have
+        keybindings. Otherwise, no menu items have key bindings. This
+        preference is designed for people who are comfortable editing in Emacs
+        and find the standard menu keybindings interfere with the Emacs
+        keybindings.
+
+      □ Treat command key as meta — If checked, DrRacket will use the command
+        key for some Emacs-like keybindings, instead of using it for menu
+        shortcuts. This option is only available on Mac OS X.
+
+      □ Color syntax interactively — If checked, DrRacket colors your syntax as
+        you type.
+
+      □ Search using anchors — If checked, DrRacket’s searching mode will jump
+        directly to the first search hit, using an “anchor” to determine where
+        to search if the search string changes.
+
+      □ Normalize pasted strings — If checked, DrRacket adjusts strings that
+        are pasted into the editor to avoid confusion. For example,
+        non-breaking spaces look just like spaces but are not considered
+        separators like ordinary spaces are. If this is checked DrRacket will
+        automatically turn those non-breaking spaces into regular spaces.
+        Similarly with other (less common) characters.
+
+      □ Enable overwrite mode keybindings — If checked, DrRacket enables the
+        insert keybinding to swap into overwrite mode
+
+      □ Show line numbers — If checked, DrRacket shows line numbers for the
+        file being edited in the left-hand column
+
+  • Racket
+
+      □ Highlight between matching parens — If checked, the editor marks the
+        region between matching parenthesis with a gray background (in color)
+        or a stipple pattern (in monochrome) when the blinking caret is next to
+        a parenthesis.
+
+      □ Automatically adjust closing parens — If checked, the editor
+        automatically converts a typed ) to ] to match [, or it converts a
+        typed ] to ) to match (.
+
+      □ Automatically adjust opening square brackets If checked, the editor
+        changes typed [ to match the context (as explained in Editing with
+        Parentheses).
+
+      □ Flash paren match — If checked, typing a closing parenthesis, square
+        bracket, or quotation mark flashes the matching open parenthesis/
+        bracket/quote.
+
+3.2.4 Warnings
+
+  • Ask before changing save format — If checked, DrRacket consults the user
+    before saving a file in non-text format (see Program Files).
+
+  • Verify exit — If checked, DrRacket consults the user before exiting.
+
+  • Ask about normalizing strings — If checked, DrRacket consults the user
+    before normalizing a string pasted into the editor.
+
+  • Only warn once when executions and interactions are not synchronized — If
+    checked, DrRacket warns the user on the first interaction after the
+    definitions window, language, or teachpack is changed without a
+    corresponding click on Run. Otherwise, the warning appears on every
+    interaction.
+
+  • Ask about clearing test coverage — If checked, when test coverage
+    annotations are displayed DrRacket prompts about removing them. This
+    setting only applies to the PLT languages. DrRacket never asks in the
+    teaching languages.
+
+  • Check for newer Racket versions — If checked, DrRacket periodically polls a
+    server to determine whether a newer version of DrRacket is available.
+
+3.2.5 General
+
+  • Number of recent items — controls the length of the Open Recent menu (in
+    the File menu).
+
+  • Auto-save files — If checked, the editor generates autosave files (see
+    Backup and Autosave Files) for files that have not been saved after five
+    minutes.
+
+  • Backup files — If checked, when saving a file for the first time in each
+    editing session, the original copy of the file is copied to a backup file
+    in the same directory. The backup files have the same name as the original,
+    except that they end in either ".bak" or "~".
+
+  • Show status-line — If checked, DrRacket shows a status line at the bottom
+    of each window.
+
+  • Count column numbers from one — If checked, the status line’s column
+    counter counts from one. Otherwise, it counts from zero.
+
+  • Display line numbers in buffer; not character offsets — If checked, the
+    status line shows a ‹line›:‹column› display for the current selection
+    rather than the character offset into the text.
+
+  • Automatically print to PostScript file — If checked, printing will
+    automatically save PostScript files. If not, printing will use the standard
+    printing mechanisms for your computer.
+
+  • Open files in separate tabs (not separate windows) — If checked, DrRacket
+    will use tabs in the front-most window to open new files, rather than
+    creating new windows for new files.
+
+  • Automatically open interactions window when running a program — If checked,
+    DrRacket shows the interactions window (if it is hidden) when a program is
+    run.
+
+  • Automatically switch to the module language when opening a module — If
+    checked, DrRacket will recognize files that have a #lang line and adjust
+    the language setting automatically.
+
+  • Put the interactions window beside the definitions window — If checked,
+    DrRacket puts the interactions window to the right of the definitions
+    window. By default, the interactions window is below the definitions
+    window.
+
+  • Always show the #lang line in the Module language — If checked, the module
+    language always shows the #lang line (even when it would ordinarily be
+    scrolled off of the page), assuming that the #lang line is the first line
+    in the file.
+
+3.2.6 Profiling
+
+This preference panel configures the profiling report. The band of color shows
+the range of colors that profiled functions take on. Colors near the right are
+used for code that is not invoked often and colors on the right are used for
+code that is invoked often.
+
+If you are interested in more detail at the low end, choose the Square root
+check box. If you are interested in more detail at the upper end, choose the
+Square check box.
+
+3.2.7 Browser
+
+This preferences panel allows you to configure your HTTP proxy. Contact your
+system administrator for details.
+
+3.2.8 Tools
+
+This preference panel allows you to configure the currently active plugins.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

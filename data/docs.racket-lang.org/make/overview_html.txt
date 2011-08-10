@@ -1,0 +1,115 @@
+▼  Make: Dependency Manager
+1  Overview
+2  Make from Dependencies
+3  Building Native-Code Extensions
+4  Making Collections
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Overview
+
+            If you want to build Racket modules with automatic dependency
+            tracking, just use raco make as described in raco: Racket
+            Command-Line Tools.
+
+If you are already familiar with make, skip to the precise details of the make
+library in Make from Dependencies. This section contains a brief overview of
+make for everyone else.
+
+When you use make, the idea is that you explain how to generate files in a
+project from a collection of source files that go through several stages of
+processing.
+
+For example, say that you are writing a project that has three input files
+(which you create and maintain) called "a.input", "b.input", and "c.input".
+Further, there are two stages of processing: first you run a particular tool
+make-output that takes an input file and produces an output file, and then you
+combine the input files into a single file using combine-files. Using make, you
+might describe this as:
+
+  a.output: a.input
+
+          make-output a.input a.output
+
+  b.output: b.input
+
+          make-output b.input b.output
+
+  c.output: c.input
+
+          make-output c.input c.output
+
+  total: a.output b.output c.output
+
+          combine-files a.output b.output c.output
+
+
+Once you’ve put this description in a file called "Makefile" you can issue the
+command:
+
+  make total
+
+to build your entire project. The "Makefile" consists of several rules that
+tell make how to create each piece of your project. For example, the rule that
+is specified in the first two lines say that "a.output" depends on "a.input"
+and the command for making "a.output" from "a.input" is
+
+  make-output a.input a.output
+
+The main feature of make is that it uses the time stamps of files to determine
+when a certain step is necessary. The make utility uses existing programs to
+build your project — each rule has a shell command line.
+
+The make library provides similar functionality, except that the description is
+in Racket, and the steps that are needed to build target files are implemented
+as Racket functions.
+
+Here’s a Racket program that is equivalent to the above:
+
+    (require make)
+     
+    (define (make-output in out)
+      ....)
+     
+    (define (combine-files . args)
+      ....)
+     
+    (make
+      (("a.output" ("a.input") (make-output "a.input" "a.output"))
+       ("b.output" ("b.input") (make-output "b.input" "b.output"))
+       ("c.output" ("c.input") (make-output "c.input" "c.output"))
+       ("total" ("a.output" "b.output" "c.output")
+                (combine-files "a.output" "b.output" "c.output"))))
+
+If you were to fill in the ellipses above with calls to system, you’d have the
+exact same functionality as the original "Makefile". In addition, you can use
+make/proc to abstract over the various lines. For example, the "a.output",
+"b.output", and "c.output" lines are very similar so you can write the code
+that generates those lines:
+
+    (require make)
+     
+    (define (make-output in out)
+      ....)
+     
+    (define (combine-files . args)
+      ....)
+     
+    (define files '("a" "b" "c"))
+    (define inputs  (map (lambda (f) (string-append f ".input"))))
+    (define outputs (map (lambda (f) (string-append f ".output"))))
+     
+    (define (line file)
+      (let ([i (string-append file ".input")]
+            [o (string-append file ".output")])
+        `(,o (,i))
+        (list o (list i) (lambda () (make-output o i)))))
+     
+    (make/proc
+      `(,@(map (lambda (i o) `(o (,i) ,(lambda () (make-output i o))))
+               inputs outputs)
+        ("total" ,outputs ,(lambda () (apply combine-files outputs)))))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

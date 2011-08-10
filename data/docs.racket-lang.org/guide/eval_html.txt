@@ -1,0 +1,216 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 15  Reflection and Dynamic Evaluation
+15.1  eval
+15.2  Manipulating Namespaces
+15.3  Scripting Evaluation and Using load
+► 15.1   eval
+15.1.1  Local Scopes
+15.1.2  Namespaces
+15.1.3  Namespaces and Modules
+On this page:
+15.1.1 Local Scopes
+15.1.2 Namespaces
+15.1.3 Namespaces and Modules
+[...search manuals...]
+  top← prev  up  next → 
+
+15.1 eval
+
+            This example will not run properly in DrRacket’s definitions window
+            but it will in the interactions window; read on for why
+            (specifically see the end of Namespaces).
+
+The eval function takes a “quoted” expression or definition and evaluates it:
+
+    > (eval '(+ 1 2))
+    3
+
+
+The power of eval is that an expression can be constructed dynamically:
+
+    > (define (eval-formula formula)
+        (eval `(let ([x 2]
+                     [y 3])
+                 ,formula)))
+    > (eval-formula '(+ x y))
+    5
+
+    > (eval-formula '(+ (* x y) y))
+    9
+
+
+Of course, if we just wanted to evaluate expressions with given values for x
+and y, we do not need eval. A more direct approach is to use first-class
+functions:
+
+    > (define (apply-formula formula-proc)
+        (formula-proc 2 3))
+    > (apply-formula (lambda (x y) (+ x y)))
+    5
+
+    > (apply-formula (lambda (x y) (+ (* x y) y)))
+    9
+
+
+However, if expressions like (+ x y) and (+ (* x y) y) are read from a file
+supplied by a user, for example, then eval might be appropriate. Similarly, the
+REPL reads expressions that are typed by a user and uses eval to evaluate them.
+
+Also, eval is often used directly or indirectly on whole modules. For example,
+a program might load a module on demand using dynamic-require, which is
+essentially a wrapper around eval to dynamically load the module code.
+
+15.1.1 Local Scopes
+
+The eval function cannot see local bindings in the context where it is called.
+For example, calling eval inside an unquoted let form to evaluate a formula
+does not make values visible for x and y:
+
+    > (define (broken-eval-formula formula)
+        (let ([x 2]
+              [y 3])
+          (eval formula)))
+    > (broken-eval-formula '(+ x y))
+    reference to undefined identifier: x
+
+
+The eval function cannot see the x and y bindings precisely because it is a
+function, and Racket is a lexically scoped language. Imagine if eval were
+implemented as
+
+    (define (eval x)
+      (eval-expanded (macro-expand x)))
+
+then at the point when eval-expanded is called, the most recent binding of x is
+to the expression to evaluate, not the let binding in broken-eval-formula.
+Lexical scope prevents such confusing and fragile behavior, and consequently
+prevents eval from seeing local bindings in the context where it is called.
+
+You might imagine that even though eval cannot see the local bindings in
+broken-eval-formula, there must actually be a data structure mapping x to 2 and
+y to 3, and you would like a way to get that data structure. In fact, no such
+data structure exists; the compiler is free to replace every use of x with 2 at
+compile time, so that the local binding of x does not exist in any concrete
+sense at run-time. Even when variables cannot be eliminated by
+constant-folding, normally the names of the variables can be eliminated, and
+the data structures that hold local values do not resemble a mapping from names
+to values.
+
+15.1.2 Namespaces
+
+Since eval cannot see the bindings from the context where it is called, another
+mechanism is needed to determine dynamically available bindings. A namespace is
+a first-class value that encapsulates the bindings available for dynamic
+evaluation.
+
+            Informally, the term namespace is sometimes used interchangeably
+            with environment or scope. In Racket, the term namespace has the
+            more specific, dynamic meaning given above, and it should not be
+            confused with static lexical concepts.
+
+Some functions, such as eval, accept an optional namespace argument. More
+often, the namespace used by a dynamic operation is the current namespace as
+determined by the current-namespace parameter.
+
+When eval is used in a REPL, the current namespace is the one that the REPL
+uses for evaluating expressions. That’s why the following interaction
+successfully accesses x via eval:
+
+    > (define x 3)
+    > (eval 'x)
+    3
+
+
+In contrast, try the following a simple module and running in directly in
+DrRacket or supplying the file as a command-line argument to racket:
+
+    #lang racket
+     
+    (eval '(cons 1 2))
+
+This fails because the initial current namespace is empty. When you run racket
+in interactive mode (see Interactive Mode), the initial namespace is
+initialized with the exports of the racket module, but when you run a module
+directly, the initial namespace starts empty.
+
+In general, it’s a bad idea to use eval with whatever namespace happens to be
+installed. Instead, create a namespace explicitly and install it for the call
+to eval:
+
+    #lang racket
+     
+    (define ns (make-base-namespace))
+    (eval '(cons 1 2) ns) ; works
+
+The make-base-namespace function creates a namespace that is initialized with
+the exports of racket/base. The later section Manipulating Namespaces provides
+more information on creating and configuring namespaces.
+
+15.1.3 Namespaces and Modules
+
+As with let bindings, lexical scope means that eval cannot automatically see
+the definitions of a module in which it is called. Unlike let bindings,
+however, Racket provides a way to reflect a module into a namespace.
+
+The module->namespace function takes a quoted module path and produces a
+namespace for evaluating expressions and definitions as if they appeared in the
+module body:
+
+    > (module m racket/base
+        (define x 11))
+    > (require 'm)
+    > (define ns (module->namespace ''m))
+    > (eval 'x ns)
+    11
+
+
+            The double quoting in ''m is because 'm is a module path that
+            refers to an interactively declared module, and so ''m is the
+            quoted form of the path.
+
+The module->namespace function is mostly useful from outside a module, where
+the module’s full name is known. Inside a module form, however, the full name
+of a module may not be known, because it may depend on where the module source
+is location when it is eventually loaded.
+
+From within a module, use define-namespace-anchor to declare a reflection hook
+on the module, and use namespace-anchor->namespace to reel in the module’s
+namespace:
+
+    #lang racket
+     
+    (define-namespace-anchor a)
+    (define ns (namespace-anchor->namespace a))
+     
+    (define x 1)
+    (define y 2)
+     
+    (eval '(cons x y) ns) ; produces (1 . 2)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

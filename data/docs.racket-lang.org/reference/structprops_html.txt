@@ -1,0 +1,148 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 4  Structures
+4.1  Defining Structure Types: struct
+4.2  Creating Structure Types
+4.3  Structure Type Properties
+4.4  Copying and Updating Structures
+4.5  Structure Utilities
+4.6  Structure Type Transformer Binding
+On this page:
+make-struct-type-property
+struct-type-property?
+struct-type-property-accessor-procedure?
+[...search manuals...]
+  top← prev  up  next → 
+
+4.3 Structure Type Properties
+
+A structure type property allows per-type information to be associated with a
+structure type (as opposed to per-instance information associated with a
+structure value). A property value is associated with a structure type through
+the make-struct-type procedure (see Creating Structure Types) or through the
+#:property option of struct. Subtypes inherit the property values of their
+parent types, and subtypes can override an inherited property value with a new
+value.
+
+(make-struct-type-property    name            
+                            [ guard           
+                                             struct-type-property?
+                              supers])   →   procedure?
+                                             procedure?
+  name : symbol?
+  guard : (or/c procedure? #f 'can-impersonate) = #f
+   supers   :   (listof (cons/c struct-type-property?    =   null
+                                (any/c . -> . any/c)))
+Creates a new structure type property and returns three values:
+
+  • a structure type property descriptor, for use with make-struct-type and
+    struct;
+
+  • a property predicate procedure, which takes an arbitrary value and returns
+    #t if the value is a descriptor or instance of a structure type that has a
+    value for the property, #f otherwise;
+
+  • a property accessor procedure, which returns the value associated with the
+    structure type given its descriptor or one of its instances; if the
+    structure type does not have a value for the property, or if any other kind
+    of value is provided, the exn:fail:contract exception is raised unless a
+    second argument, failure-result, is supplied to the procedure. In that
+    case, if failure-result is a procedure, it is called (through a tail call)
+    with no arguments to produce the result of the property accessor procedure;
+    otherwise, failure-result is itself returned as the result.
+
+If the optional guard is supplied as a procedure, it is called by
+make-struct-type before attaching the property to a new structure type. The
+guard must accept two arguments: a value for the property supplied to
+make-struct-type, and a list containing information about the new structure
+type. The list contains the values that struct-type-info would return for the
+new structure type if it skipped the immediate current-inspector control check
+(but not the check for exposing an ancestor structure type, if any; see
+Structure Inspectors).
+
+The result of calling guard is associated with the property in the target
+structure type, instead of the value supplied to make-struct-type. To reject a
+property association (e.g., because the value supplied to make-struct-type is
+inappropriate for the property), the guard can raise an exception. Such an
+exception prevents make-struct-type from returning a structure type descriptor.
+
+If guard is 'can-impersonate, then the property’s accessor can be redirected
+through impersonate-struct. Otherwise, redirection of the property value
+through an impersonator is disallowed, since redirection is tantamount to
+mutation.
+
+The optional supers argument is a list of properties that are automatically
+associated with some structure type when the newly created property is
+associated to the structure type. Each property in supers is paired with a
+procedure that receives the value supplied for the new property (after it is
+processed by guard) and returns a value for the associated property (which is
+then sent to that property’s guard, of any).
+
+Examples:
+
+    > (define-values (prop:p p? p-ref) (make-struct-type-property 'p))
+    > (define-values (struct:a make-a a? a-ref a-set!)
+        (make-struct-type 'a #f 2 1 'uninitialized
+                          (list (cons prop:p 8))))
+    > (p? struct:a)
+    #t
+
+    > (p? 13)
+    #f
+
+    > (define an-a (make-a 'x 'y))
+    > (p? an-a)
+    #t
+
+    > (p-ref an-a)
+    8
+
+    > (define-values (struct:b make-b b? b-ref b-set!)
+        (make-struct-type 'b #f 0 0 #f))
+    > (p? struct:b)
+    #f
+
+    > (define-values (prop:q q? q-ref) (make-struct-type-property
+                                        'q (lambda (v si) (add1 v))
+                                        (list (cons prop:p sqrt))))
+    > (define-values (struct:c make-c c? c-ref c-set!)
+        (make-struct-type 'c #f 0 0 'uninit
+                          (list (cons prop:q 8))))
+    > (q-ref struct:c)
+    9
+
+    > (p-ref struct:c)
+    3
+
+
+
+(struct-type-property? v) → boolean?
+  v : any/c
+Returns #t if v is a structure type property descriptor value, #f otherwise.
+
+(struct-type-property-accessor-procedure? v) → boolean?
+  v : any/c
+Returns #t if v is an accessor procedure produced by make-struct-type-property,
+#f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

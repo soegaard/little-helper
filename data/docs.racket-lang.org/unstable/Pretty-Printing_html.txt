@@ -1,0 +1,101 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+pretty-format/ write
+pretty-format/ display
+pretty-format/ print
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+25 Pretty-Printing
+
+Carl Eastlund <cce@racket-lang.org>
+
+ (require unstable/pretty)
+
+This module provides tools for pretty-printing.
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(pretty-format/write x [columns]) → string?
+  x : any/c
+   columns   :   (or/c exact-nonnegative-integer? 'infinity)
+             =   (pretty-print-columns)
+This procedure behaves like pretty-format, but it formats values consistently
+with write instead of print.
+
+Examples:
+
+    > (struct both [a b] #:transparent)
+    > (pretty-format/write (list (both (list 'a 'b) (list "a" "b"))))
+    "(#(struct:both (a b) (\"a\" \"b\")))\n"
+
+
+
+(pretty-format/display x [columns]) → string?
+  x : any/c
+   columns   :   (or/c exact-nonnegative-integer? 'infinity)
+             =   (pretty-print-columns)
+This procedure behaves like pretty-format, but it formats values consistently
+with display instead of print.
+
+Examples:
+
+    > (struct both [a b] #:transparent)
+    > (pretty-format/display (list (both (list 'a 'b) (list "a" "b"))))
+    "(#(struct:both (a b) (a b)))\n"
+
+
+
+(pretty-format/print x [columns]) → string?
+  x : any/c
+   columns   :   (or/c exact-nonnegative-integer? 'infinity)
+             =   (pretty-print-columns)
+This procedure behaves the same as pretty-format, but is named more explicitly
+to describe how it formats values. It is included for symmetry with
+pretty-format/write and pretty-format/display.
+
+Examples:
+
+    > (struct both [a b] #:transparent)
+    > (pretty-format/print (list (both (list 'a 'b) (list "a" "b"))))
+    "(list (both '(a b) '(\"a\" \"b\")))\n"
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

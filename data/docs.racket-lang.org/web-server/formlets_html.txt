@@ -1,0 +1,517 @@
+▼  Web Applications in Racket
+1  Running Web Servlets
+2  Stateful Servlets
+3  Stateless Servlets
+4  HTTP: Hypertext Transfer Protocol
+5  URL-Based Dispatch
+6  Formlets: Functional Form Abstraction
+7  Templates: Separation of View
+8  Page: Short-hand for Common Patterns
+9  Troubleshooting and Tips
+   Index
+► 6  Formlets: Functional Form Abstraction
+6.1  Basic Formlet Usage
+6.2  Static Syntactic Shorthand
+6.3  Dynamic Syntactic Shorthand
+6.4  Functional Usage
+6.5  Predefined Formlets
+6.6  Utilities
+On this page:
+6.1 Basic Formlet Usage
+6.2 Static Syntactic Shorthand
+formlet
+#%#
+6.3 Dynamic Syntactic Shorthand
+formlet*
+=>*
+6.4 Functional Usage
+xexpr-forest/ c
+formlet/ c
+formlet*/ c
+pure
+cross
+cross*
+xml-forest
+xml
+text
+tag-xexpr
+formlet-display
+formlet-process
+6.5 Predefined Formlets
+make-input
+make-input*
+text-input
+password-input
+textarea-input
+checkbox
+radio
+submit
+reset
+file-upload
+hidden
+img
+button
+multiselect-input
+select-input
+required
+default
+to-string
+to-number
+to-symbol
+to-boolean
+input-string
+input-int
+input-symbol
+6.6 Utilities
+send/ formlet
+embed-formlet
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Formlets: Functional Form Abstraction
+
+ (require web-server/formlets)
+
+The Web Server provides a kind of Web form abstraction called a formlet.
+
+            Formlets originate in the work of the Links research group in their
+            paper The Essence of Form Abstraction.
+
+6.1 Basic Formlet Usage
+
+Suppose we want to create an abstraction of entering a date in an HTML form.
+The following formlet captures this idea:
+
+    (define date-formlet
+      (formlet
+       (div
+        "Month:" ,{input-int . => . month}
+        "Day:" ,{input-int . => . day})
+       (list month day)))
+
+The first part of the formlet syntax is the template of an X-expression that is
+the rendering of the formlet. It can contain elements like ,(=> formlet name)
+where formlet is a formlet expression and name is an identifier bound in the
+second part of the formlet syntax.
+
+This formlet is displayed (with formlet-display) as the following X-expression
+forest (list):
+
+    (list
+     '(div "Month:" (input ([name "input_0"]))
+           "Day:" (input ([name "input_1"]))))
+
+date-formlet not only captures the rendering of the form, but also the request
+processing logic. If we send it an HTTP request with bindings for "input_0" to
+"10" and "input_1" to "3", with formlet-process, then it returns:
+
+    (list 10 3)
+
+which is the second part of the formlet syntax, where month has been replaced
+with the integer represented by the "input_0" and day has been replaced with
+the integer represented by the "input_1".
+
+The real power of formlet is that they can be embedded within one another. For
+instance, suppose we want to combine two date forms to capture a travel
+itinerary. The following formlet does the job:
+
+    (define travel-formlet
+      (formlet
+       (div
+        "Name:" ,{input-string . => . name}
+        (div
+         "Arrive:" ,{date-formlet . => . arrive}
+         "Depart:" ,{date-formlet . => . depart})
+       (list name arrive depart))))
+
+(Notice that date-formlet is embedded twice.) This is rendered as:
+
+    (list
+     '(div
+       "Name:"
+       (input ([name "input_0"]))
+       (div
+        "Arrive:"
+        (div "Month:" (input ([name "input_1"]))
+             "Day:" (input ([name "input_2"])))
+        "Depart:"
+        (div "Month:" (input ([name "input_3"]))
+             "Day:" (input ([name "input_4"]))))))
+
+Observe that formlet-display has automatically generated unique names for each
+input element. When we pass bindings for these names to formlet-process, the
+following list is returned:
+
+    (list "Jay"
+          (list 10 3)
+          (list 10 6))
+
+The rest of the manual gives the details of formlet usage and extension.
+
+6.2 Static Syntactic Shorthand
+
+ (require web-server/formlets/syntax)
+Most users will want to use the syntactic shorthand for creating formlets.
+
+(formlet rendering-xexpr yields-expr)
+Constructs a formlet with the specified rendering-xexpr and the processing
+result is the evaluation of the yields-expr expression. The rendering-xexpr
+form is a quasiquoted syntactic X-expression, with three special caveats:
+
+,{=> formlet-expr name} embeds the formlet given by formlet-expr; the result of
+processing this formlet is available in the yields-expr as name.
+,{=> formlet-expr (values name ...)} embeds the formlet given by formlet-expr;
+the results of processing this formlet is available in the yields-expr as name
+....
+(#%# xexpr ...) renders an X-expression forest.
+
+These forms may not appear nested inside unquote or unquote-splicing. For
+example, this is illegal:
+
+    (formlet (div ,@(for/list ([i (in-range 10)])
+                      `(p ,((text-input) . => . name))))
+             name)
+
+#%#
+Only allowed inside formlet and formlet*.
+
+6.3 Dynamic Syntactic Shorthand
+
+ (require web-server/formlets/dyn-syntax)
+The formlet syntax is too restrictive for some applications because it forces
+the rendering to be syntactically an X-expression. You may discover you want to
+use a more "dynamic" shorthand.
+
+(formlet* rendering-expr yields-expr)
+Constructs a formlet where rendering-expr is evaluated (with caveats) to
+construct the rendering and the processing result is the evaluation of the
+yields-expr expression. The rendering-expr should evaluate to an "X-expression"
+that may embed the results of the following forms that only have meaning within
+formlet*:
+
+{=>* formlet-expr name} embeds the formlet given by formlet-expr; the result of
+processing this formlet is available in the yields-expr as name.
+{=>* formlet-expr (values name ...)} embeds the formlet given by formlet-expr;
+the results of processing this formlet is available in the yields-expr as name
+....
+(#%# xexpr-expr ...) renders an X-expression forest.
+Each of these forms evaluates to an opaque value that rendering-expr may not
+manipulate in any way, but if it is returned to formlet* as part of an "
+X-expression" it will be rendered and the formlets processing stages will be
+executed, etc.
+
+Because these forms may appear anywhere in rendering-expr, they may be
+duplicated. Therefore, the formlet may render (and be processed) multiple
+times. Thus, in yields-expr the formlet result names are bound to lists of
+results rather than single results as in formlet. The result list is ordered
+according to the order of the formlets in the result of rendering-expr. For
+example, in
+
+    (formlet* `(div ,@(for/list ([i (in-range 1 10)])
+                        `(p ,(number->string i)
+                            ,((text-input) . =>* . name))))
+              name)
+
+name is bound to a list of strings, not a single string, where the first
+element is the string that was inputted next to the string 1 on the Web page.
+
+In this example, it is clear that this is the desired behavior. However,
+sometimes the value of a formlet’s result may be surprising. For example, in
+
+    (formlet* `(div (p ,((text-input) . =>* . name)))
+              name)
+
+name is bound to a list of strings, because formlet* cannot syntactically
+determine if the formlet whose result is bound to name is used many times.
+
+=>*
+Only allowed inside formlet*.
+
+6.4 Functional Usage
+
+ (require web-server/formlets/lib)
+The syntactic shorthand abbreviates the construction of formlets with the
+following library. These combinators may be used directly to construct
+low-level formlets, such as those for new INPUT element types. Refer to
+Predefined Formlets for example low-level formlets using these combinators.
+
+xexpr-forest/c : contract?
+Equivalent to (listof xexpr/c)
+
+(formlet/c content ...) → contract?
+  content : any/c
+Equivalent to (-> integer? (values xexpr-forest/c (-> (listof binding?) (values
+(coerce-contract 'formlet/c content) ...)) integer?)).
+
+A formlet’s internal representation is a function from an initial input number
+to an X-expression forest rendering, a processing function, and the next
+allowable input number.
+
+formlet*/c : contract?
+Equivalent to (formlet/c any/c ...).
+
+(pure value) → (formlet/c any/c)
+  value : any/c
+Constructs a formlet that has no rendering and always returns value in the
+processing stage.
+
+(cross f g) → (formlet/c any/c ...)
+  f : (formlet/c procedure?)
+  g : (formlet/c any/c ...)
+Constructs a formlet with a rendering equal to the concatenation of the
+renderings of formlets f and g; a processing stage that applies g’s processing
+results to f’s processing result.
+
+(cross* f g ...) → (formlet/c any/c)
+  f : (formlet/c (() () #:rest (listof any/c) . ->* . any/c))
+  g : (formlet/c any/c)
+Equivalent to cross lifted to many arguments.
+
+(xml-forest r) → (formlet/c procedure?)
+  r : xexpr-forest/c
+Constructs a formlet with the rendering r and the identity procedure as the
+processing step.
+
+(xml r) → (formlet/c procedure?)
+  r : xexpr/c
+Equivalent to (xml-forest (list r)).
+
+(text r) → (formlet/c procedure?)
+  r : string?
+Equivalent to (xml r).
+
+(tag-xexpr tag attrs inner) → (formlet/c any/c)
+  tag : symbol?
+  attrs : (listof (list/c symbol? string?))
+  inner : (formlet/c any/c)
+Constructs a formlet with the rendering (list (list* tag attrs
+inner-rendering)) where inner-rendering is the rendering of inner and the
+processing stage identical to inner.
+
+(formlet-display f) → xexpr-forest/c
+  f : (formlet/c any/c)
+Renders f.
+
+(formlet-process f r)   →   any/c   ...
+  f : (formlet/c any/c ...)
+  r : request?
+Runs the processing stage of f on the bindings in r.
+
+6.5 Predefined Formlets
+
+ (require web-server/formlets/input)
+These formlets are the main combinators for form input.
+
+(make-input render) → (formlet/c (or/c false/c binding?))
+  render : (string? . -> . xexpr/c)
+This formlet is rendered with render, which is passed the input name, and
+results in the extracted binding.
+
+(make-input* render) → (formlet/c (listof binding?))
+  render : (string? . -> . xexpr/c)
+This formlet is rendered with render, which is passed the input name, and
+results in all the bindings that use the name.
+
+(text-input  [ #:value value            
+               #:size size              
+               #:max-length max-length  
+               #:read-only? read-only?  
+               #:attributes attrs])     
+ → (formlet/c (or/c false/c binding?))
+  value : (or/c false/c bytes?) = #f
+  size : (or/c false/c exact-nonnegative-integer?) = #f
+  max-length : (or/c false/c exact-nonnegative-integer?) = #f
+  read-only? : boolean? = #f
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an INPUT element with the TEXT type and the
+attributes given in the arguments.
+
+(password-input  [ #:value value            
+                   #:size size              
+                   #:max-length max-length  
+                   #:read-only? read-only?  
+                   #:attributes attrs])     
+ → (formlet/c (or/c false/c binding?))
+  value : (or/c false/c bytes?) = #f
+  size : (or/c false/c exact-nonnegative-integer?) = #f
+  max-length : (or/c false/c exact-nonnegative-integer?) = #f
+  read-only? : boolean? = #f
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an INPUT element with the PASSWORD type and the
+attributes given in the arguments.
+
+(textarea-input  [ #:value value         
+                   #:rows rows           
+                   #:cols cols           
+                   #:attributes attrs])  
+ → (formlet/c (or/c false/c binding?))
+  value : (or/c false/c bytes?) = #f
+  rows : (or/c false/c number?) = #f
+  cols : (or/c false/c number?) = #f
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an TEXTAREA element with attributes given in the
+arguments.
+
+(checkbox value checked? [#:attributes attrs])
+ → (formlet/c (or/c false/c binding?))
+  value : bytes?
+  checked? : boolean?
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an INPUT element with the CHECKBOX type and the
+attributes given in the arguments.
+
+(radio value checked? [#:attributes attrs])
+ → (formlet/c (or/c false/c binding?))
+  value : bytes?
+  checked? : boolean?
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an INPUT element with the RADIO type and the
+attributes given in the arguments.
+
+(submit value [#:attributes attrs])
+ → (formlet/c (or/c false/c binding?))
+  value : bytes?
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an INPUT element with the SUBMIT type and the
+attributes given in the arguments.
+
+(reset value [#:attributes attrs])
+ → (formlet/c (or/c false/c binding?))
+  value : bytes?
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an INPUT element with the RESET type and the
+attributes given in the arguments.
+
+(file-upload [#:attributes attrs])
+ → (formlet/c (or/c false/c binding?))
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an INPUT element with the FILE type and the
+attributes given in the arguments.
+
+(hidden value [#:attributes attrs])
+ → (formlet/c (or/c false/c binding?))
+  value : bytes?
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an INPUT element with HIDDEN type and the attributes
+given in the arguments.
+
+(img    alt                         
+        src                         
+      [ #:height height             
+        #:longdesc ldesc            
+        #:usemap map                
+        #:width width               
+        #:attributes attrs])   →   (formlet/c (or/c false/c binding?))
+  alt : bytes?
+  src : bytes?
+  height : (or/c false/c exact-nonnegative-integer?) = #f
+  ldesc : (or/c false/c bytes?) = #f
+  map : (or/c false/c bytes?) = #f
+  width : (or/c false/c exact-nonnegative-integer?) = #f
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using an IMG element with the attributes given in the
+arguments.
+
+(button    type                  
+           button-text           
+         [ #:disabled disabled   
+           #:value value         
+           #:attributes attrs])  
+ → (formlet/c (or/c false/c binding?))
+  type : bytes?
+  button-text : bytes?
+  disabled : boolean? = #f
+  value : (or/c false/c bytes?) = #f
+  attrs : (listof (list/c symbol? string?)) = empty
+This formlet renders using a BUTTON element with the attributes given in the
+arguments. button-text is the text that will appear on the button when
+rendered.
+
+(multiselect-input    l                            
+                    [ #:attributes attrs           
+                      #:multiple? multiple?        
+                      #:selected? selected?        
+                      #:display display])     →   (formlet/c list?)
+  l : sequence?
+  attrs : (listof (list/c symbol? string?)) = empty
+  multiple? : boolean? = #t
+  selected? : (any/c . -> . boolean?) = (λ (x) #f)
+  display : (any/c . -> . xexpr/c) = (λ (x) x)
+This formlet renders using an SELECT element with the attributes given with an
+OPTION for each element of the sequence. If multiple? is #t, then multiple
+options may be selected. An element is selected if selected? returns #t.
+Elements are displayed with display.
+
+(select-input    l                            
+               [ #:attributes attrs           
+                 #:selected? selected?        
+                 #:display display])     →   (formlet/c any/c)
+  l : sequence?
+  attrs : (listof (list/c symbol? string?)) = empty
+  selected? : (any/c . -> . boolean?) = (λ (x) #f)
+  display : (any/c . -> . xexpr/c) = (λ (x) x)
+This formlet renders using an SELECT element with the attributes given with an
+OPTION for each element of the sequence. An element is selected if selected?
+returns #t. Elements are displayed with display.
+
+(required f) → (formlet/c bytes?)
+  f : (formlet/c (or/c false/c binding?))
+Constructs a formlet that extracts the binding:form-value from the binding
+produced by f, or errors.
+
+(default def f) → (formlet/c bytes?)
+  def : bytes?
+  f : (formlet/c (or/c false/c binding?))
+Constructs a formlet that extracts the binding:form-value from the binding
+produced by f, or returns def.
+
+(to-string f) → (formlet/c string?)
+  f : (formlet/c bytes?)
+Converts f’s output to a string. Equivalent to (cross (pure bytes->string/utf-8
+) f).
+
+(to-number f) → (formlet/c number?)
+  f : (formlet/c string?)
+Converts f’s output to a number. Equivalent to (cross (pure string->number) f).
+
+(to-symbol f) → (formlet/c symbol?)
+  f : (formlet/c string?)
+Converts f’s output to a symbol. Equivalent to (cross (pure string->symbol) f).
+
+(to-boolean f) → (formlet/c boolean?)
+  f : (formlet/c bytes?)
+Converts f’s output to a boolean, if it is equal to #"on".
+
+input-string : (formlet/c string?)
+Equivalent to (to-string (required (text-input))).
+
+input-int : (formlet/c integer?)
+Equivalent to (to-number input-string).
+
+input-symbol : (formlet/c symbol?)
+Equivalent to (to-symbol input-string).
+
+6.6 Utilities
+
+ (require web-server/formlets/servlet)
+A few utilities are provided for using formlets in Web applications.
+
+(send/formlet f [#:wrap wrapper])   →   any/c   ...
+  f : (formlet/c any/c ...)
+   wrapper   :   (xexpr/c . -> . xexpr/c)
+                 (lambda (form-xexpr)
+             =     `(html (head (title "Form Entry"))
+                          (body ,form-xexpr)))
+Uses send/suspend and response/xexpr to send f’s rendering (wrapped in a FORM
+tag whose action is the continuation URL (wrapped again by wrapper)) to the
+client. When the form is submitted, the request is passed to the processing
+stage of f.
+
+(embed-formlet embed/url f) → xexpr/c
+  embed/url : ((request? . -> . any) . -> . string?)
+  f : (formlet/c any/c ...)
+Like send/formlet, but for use with send/suspend/dispatch.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

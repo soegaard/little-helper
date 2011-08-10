@@ -1,0 +1,159 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Syntactic Forms
+
+This section describes the core syntax forms that appear in a fully expanded
+expression, plus many closely related non-core forms. See Fully Expanded
+Programs for the core grammar.
+
+    2.1 Modules: module, ...
+
+    2.2 Importing and Exporting: require and provide
+
+      2.2.1 Additional require Forms
+
+      2.2.2 Additional provide Forms
+
+    2.3 Literals: quote and #%datum
+
+    2.4 Expression Wrapper: #%expression
+
+    2.5 Variable References and #%top
+
+    2.6 Locations: #%variable-reference
+
+    2.7 Procedure Applications and #%app
+
+    2.8 Procedure Expressions: lambda and case-lambda
+
+    2.9 Local Binding: let, let*, letrec, ...
+
+    2.10 Local Definitions: local
+
+    2.11 Constructing Graphs: shared
+
+    2.12 Conditionals: if, cond, and, and or
+
+    2.13 Dispatch: case
+
+    2.14 Definitions: define, define-syntax, ...
+
+      2.14.1 require Macros
+
+      2.14.2 provide Macros
+
+    2.15 Sequencing: begin, begin0, and begin-for-syntax
+
+    2.16 Guarded Evaluation: when and unless
+
+    2.17 Assignment: set! and set!-values
+
+    2.18 Iterations and Comprehensions: for, for/list, ...
+
+      2.18.1 Iteration and Comprehension Forms
+
+      2.18.2 Deriving New Iteration Forms
+
+      2.18.3 Do Loops
+
+    2.19 Continuation Marks: with-continuation-mark
+
+    2.20 Quasiquoting: quasiquote, unquote, and unquote-splicing
+
+    2.21 Syntax Quoting: quote-syntax
+
+    2.22 Interaction Wrapper: #%top-interaction
+
+    2.23 Limiting Scope: define-package, open-package, ...
+
+    2.24 Blocks: block
+
+    2.25 Internal-Definition Limiting: #%stratified-body
+
+
+Notation
+
+Each syntactic form is described by a BNF-like notation that describes a
+combination of (syntax-wrapped) pairs, symbols, and other data (not a sequence
+of characters). These grammatical specifications are shown as in the following
+specification of a something form:
+
+    (something id thing-expr ...)
+     
+       thing-expr   :   number?
+
+Within such specifications,
+
+  • ... indicates zero or more repetitions of the preceding datum; more
+    generally, N consecutive ...s a row indicate a consecutive repetition of
+    the preceding N datums.
+
+  • ...+ indicates one or more repetitions of the preceding datum.
+
+  • Italic meta-identifiers play the role of non-terminals. Some
+    meta-identifier names imply syntactic constraints:
+
+      □ A meta-identifier that ends in id stands for an identifier.
+
+      □ A meta-identifier that ends in keyword stands for a keyword.
+
+      □ A meta-identifier that ends with expr (such as thing-expr) stands for a
+        sub-form that is expanded as an expression.
+
+      □ A meta-identifier that ends with body stands for a sub-form that is
+        expanded in an internal-definition context (see Internal Definitions).
+
+  • Contracts indicate constraints on sub-expression results. For example,
+    thing-expr : number? indicates that the expression thing-expr must produce
+    a number.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

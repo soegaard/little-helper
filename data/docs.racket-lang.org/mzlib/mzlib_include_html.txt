@@ -1,0 +1,117 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+include
+include-at/ relative-to
+include-at/ relative-to/ reader
+include/ reader
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/include)
+
+Similar to scheme/include, but with a different syntax for paths.
+
+(include path-spec)
+ 
+path-spec   =   string
+            |   (build-path elem ...+)
+            |   (lib file-string collection-string ...)
+                 
+     elem   =   string
+            |   up
+            |   same
+Inlines the syntax in the designated file in place of the include expression.
+The path-spec can be any of the following:
+
+  • A literal string that specifies a path to include, parsed according to the
+    platform’s conventions (which means that it is not portable).
+
+  • A path construction of the form (build-path elem ...+), where build-path is
+    module-identifier=? either to the build-path export from mzscheme or to the
+    top-level build-path, and where each elem is a path string, up (unquoted),
+    or same (unquoted). The elems are combined in the same way as for the
+    build-path function to obtain the path to include.
+
+  • A path construction of the form (lib file-string collection-string ...),
+    where lib is free or refers to a top-level lib variable. The
+    collection-strings are passed to collection-path to obtain a directory; if
+    no collection-stringss are supplied, "mzlib" is used. The file-string is
+    then appended to the directory using build-path to obtain the path to
+    include.
+
+If path-spec specifies a relative path to include, the path is resolved
+relative to the source for the include expression, if that source is a complete
+path string. If the source is not a complete path string, then path-spec is
+resolved relative to the current load relative directory if one is available,
+or to the current directory otherwise.
+
+The included syntax is given the lexical context of the include expression.
+
+(include-at/relative-to context source path-spec)
+(include-at/relative-to/reader context source path-spec reader-expr)
+(include/reader path-spec reader-expr)
+Variants of include analogous to the variants of scheme/include.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

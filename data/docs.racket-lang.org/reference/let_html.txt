@@ -1,0 +1,237 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+let
+let*
+letrec
+let-values
+let*-values
+letrec-values
+let-syntax
+letrec-syntax
+let-syntaxes
+letrec-syntaxes
+letrec-syntaxes+ values
+[...search manuals...]
+  top← prev  up  next → 
+
+2.9 Local Binding: let, let*, letrec, ...
+
+            +Local Binding in The Racket Guide introduces local binding.
+
+(let ([id val-expr] ...) body ...+)
+(let proc-id ([id init-expr] ...) body ...+)
+The first form evaluates the val-exprs left-to-right, creates a new location
+for each id, and places the values into the locations. It then evaluates the
+bodys, in which the ids are bound. The last body expression is in tail position
+with respect to the let form. The ids must be distinct according to
+bound-identifier=?.
+
+Examples:
+
+    > (let ([x 5]) x)
+    5
+
+    > (let ([x 5])
+        (let ([x 2]
+              [y x])
+          (list y x)))
+    '(5 2)
+
+
+
+The second form evaluates the init-exprs; the resulting values become arguments
+in an application of a procedure (lambda (id ...) body ...+), where proc-id is
+bound within the bodys to the procedure itself.
+
+Example:
+
+    > (let fac ([n 10])
+        (if (zero? n)
+            1
+            (* n (fac (sub1 n)))))
+    3628800
+
+
+
+(let* ([id val-expr] ...) body ...+)
+Similar to let, but evaluates the val-exprs one by one, creating a location for
+each id as soon as the value is available. The ids are bound in the remaining
+val-exprs as well as the bodys, and the ids need not be distinct; later
+bindings shadow earlier bindings.
+
+Example:
+
+    > (let* ([x 1]
+             [y (+ x 1)])
+        (list y x))
+    '(2 1)
+
+
+
+(letrec ([id val-expr] ...) body ...+)
+Similar to let, but the locations for all ids are created first and filled with
+#<undefined>, and all ids are bound in all val-exprs as well as the bodys. The
+ids must be distinct according to bound-identifier=?.
+
+Example:
+
+    > (letrec ([is-even? (lambda (n)
+                           (or (zero? n)
+                               (is-odd? (sub1 n))))]
+               [is-odd? (lambda (n)
+                          (and (not (zero? n))
+                               (is-even? (sub1 n))))])
+        (is-odd? 11))
+    #t
+
+
+
+(let-values ([(id ...) val-expr] ...) body ...+)
+Like let, except that each val-expr must produce as many values as
+corresponding ids, otherwise the exn:fail:contract exception is raised. A
+separate location is created for each id, all of which are bound in the bodys.
+
+Example:
+
+    > (let-values ([(x y) (quotient/remainder 10 3)])
+        (list y x))
+    '(1 3)
+
+
+
+(let*-values ([(id ...) val-expr] ...) body ...+)
+Like let*, except that each val-expr must produce as many values as
+corresponding ids. A separate location is created for each id, all of which are
+bound in the later val-exprs and in the bodys.
+
+Example:
+
+    > (let*-values ([(x y) (quotient/remainder 10 3)]
+                    [(z) (list y x)])
+        z)
+    '(1 3)
+
+
+
+(letrec-values ([(id ...) val-expr] ...) body ...+)
+Like letrec, except that each val-expr must produce as many values as
+corresponding ids. A separate location is created for each id, all of which are
+initialized to #<undefined> and bound in all val-exprs and in the bodys.
+
+Example:
+
+    > (letrec-values ([(is-even? is-odd?)
+                       (values
+                         (lambda (n)
+                           (or (zero? n)
+                               (is-odd? (sub1 n))))
+                         (lambda (n)
+                           (or (= n 1)
+                               (is-even? (sub1 n)))))])
+        (is-odd? 11))
+    #t
+
+
+
+(let-syntax ([id trans-expr] ...) body ...+)
+
+
+            +See also splicing-let-syntax.
+
+Creates a transformer binding (see Transformer Bindings) of each id with the
+value of trans-expr, which is an expression at phase level 1 relative to the
+surrounding context. (See Identifiers and Binding for information on phase
+levels.)
+
+The evaluation of each trans-expr is parameterized to set current-namespace to
+a namespace that shares bindings and variables with the namespace being used to
+expand the let-syntax form, except that its base phase is one greater.
+
+Each id is bound in the bodys, and not in other trans-exprs.
+
+(letrec-syntax ([id trans-expr] ...) body ...+)
+
+
+            +See also splicing-letrec-syntax.
+
+Like let-syntax, except that each id is also bound within all trans-exprs.
+
+(let-syntaxes ([(id ...) trans-expr] ...) body ...+)
+
+
+            +See also splicing-let-syntaxes.
+
+Like let-syntax, but each trans-expr must produce as many values as
+corresponding ids, each of which is bound to the corresponding value.
+
+(letrec-syntaxes ([(id ...) trans-expr] ...) body ...+)
+
+
+            +See also splicing-letrec-syntaxes.
+
+Like let-syntax, except that each id is also bound within all trans-exprs.
+
+(letrec-syntaxes+values ([(trans-id ...) trans-expr] ...)
+                        ([(val-id ...) val-expr] ...)
+   body ...+)
+Combines letrec-syntaxes with letrec-values: each trans-id and val-id is bound
+in all trans-exprs and val-exprs.
+
+The letrec-syntaxes+values form is the core form for local compile-time
+bindings, since forms like letrec-syntax and internal define-syntax expand to
+it. In a fully expanded expression (see Fully Expanded Programs), the trans-id
+bindings are discarded and the form reduces to letrec, but
+letrec-syntaxes+values can appear in the result of local-expand with an empty
+stop list.
+
+See also local, which supports local bindings with define, define-syntax, and
+more.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

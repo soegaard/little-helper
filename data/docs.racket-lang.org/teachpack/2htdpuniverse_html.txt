@@ -1,0 +1,1527 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 2  Ht DP/ 2e Teachpacks
+2.1  Batch Input/ Output: "batch-io.ss"
+2.2  Images: "image.ss"
+2.3  Worlds and the Universe: "universe.ss"
+2.4  Porting World Programs to Universe
+► 2.3  Worlds and the Universe: "universe.ss"
+2.3.1  Background
+2.3.2  Simple Simulations
+2.3.3  Interactions
+2.3.4  A First Sample World
+2.3.5  The World is not Enough
+2.3.6  The Universe Server
+2.3.7  A First Sample Universe
+On this page:
+2.3.1 Background
+2.3.2 Simple Simulations
+animate
+run-simulation
+run-movie
+2.3.3 Interactions
+big-bang
+to-draw
+on-draw
+on-tick
+key-event?
+key=?
+on-key
+on-release
+mouse-event?
+mouse=?
+on-mouse
+stop-when
+stop-with
+check-with
+record?
+state
+name
+2.3.4 A First Sample World
+2.3.4.1 Understanding a Door
+2.3.4.2 Hints on Designing Worlds
+2.3.5 The World is not Enough
+2.3.5.1 Messages
+sexp?
+2.3.5.2 Sending Messages
+package?
+make-package
+2.3.5.3 Connecting with the Universe
+LOCALHOST
+register
+2.3.5.4 Receiving Messages
+on-receive
+2.3.6 The Universe Server
+2.3.6.1 Worlds and Messages
+iworld?
+iworld=?
+iworld-name
+iworld1
+iworld2
+iworld3
+bundle?
+make-bundle
+mail?
+make-mail
+2.3.6.2 Universe Descriptions
+universe
+on-new
+on-msg
+on-disconnect
+to-string
+2.3.6.3 Exploring a Universe
+launch-many-worlds
+2.3.7 A First Sample Universe
+2.3.7.1 Two Ball Tossing Worlds
+2.3.7.2 Hints on Designing Universes
+2.3.7.3 Designing the Ball Universe
+2.3.7.4 Designing the Ball Server
+2.3.7.5 Designing the Ball World
+[...search manuals...]
+  top← prev  up  next → 
+
+2.3 Worlds and the Universe: "universe.ss"
+
+Matthias Felleisen
+
+ (require 2htdp/universe)
+
+This universe.rkt teachpack implements and provides the functionality for
+creating interactive, graphical programs that consist of plain mathematical
+functions. We refer to such programs as world programs. In addition, world
+programs can also become a part of a universe, a collection of worlds that can
+exchange messages.
+
+The purpose of this documentation is to give experienced Schemers and HtDP
+teachers a concise overview for using the library. The first part of the
+documentation focuses on world programs. Section A First Sample World presents
+an illustration of how to design such programs for a simple domain; it is
+suited for a novice who knows how to design conditional functions for
+enumerations, intervals, and unions. The second half of the documentation
+focuses on "universe" programs: how it is managed via a server, how world
+programs register with the server, etc. The last two sections show how to
+design a simple universe of two communicating worlds.
+
+Note: For a quick and educational introduction to just worlds, see How to
+Design Programs, Second Edition: Prologue. As of August 2008, we also have a
+series of projects available as a small booklet on How to Design Worlds.
+
+2.3.1 Background
+
+The universe teachpack assumes working knowledge of the basic image
+manipulation primitives, either htdp/image or 2htdp/image. Its operations
+sometimes require scenes which for htdp/image images means an image whose
+pinhole is at (0,0). For 2htdp/image, every image is a scene.
+
+The example programs in this document are all written using 2htdp/image
+primitives.
+
+2.3.2 Simple Simulations
+
+The simplest kind of animated world program is a time-based simulation, which
+is a series of scenes. The programmer’s task is to supply a function that
+creates a scene for each natural number. Handing this function to the teachpack
+displays the simulation.
+
+(animate create-image) → natural-number/c
+  create-image : (-> natural-number/c scene?)
+opens a canvas and starts a clock that ticks 28 times per second. Every time
+the clock ticks, DrRacket applies create-image to the number of ticks passed
+since this function call. The results of these function calls are displayed in
+the canvas. The simulation runs until you click the Stop button in DrRacket or
+close the window. At that point, animate returns the number of ticks that have
+passed.
+
+Example:
+
+    (define (create-UFO-scene height)
+      (underlay/xy (rectangle 100 100 "solid" "white") 50 height UFO))
+     
+    (define UFO
+      (underlay/align "center"
+                      "center"
+                      (circle 10 "solid" "green")
+                      (rectangle 40 4 "solid" "green")))
+     
+    (animate create-UFO-scene)
+
+(run-simulation create-image) → true
+  create-image : (-> natural-number/c scene?)
+animate was originally called run-simulation, and this binding is retained for
+backwards compatibility
+
+(run-movie r m) → true
+  r : (and/c real? positive?)
+  m : [Listof image?]
+run-movie displays the list of images m at the rate of r images per second.
+
+2.3.3 Interactions
+
+The step from simulations to interactive programs is relatively small. Roughly
+speaking, a simulation designates one function, create-image, as a handler for
+one kind of event: clock ticks. In addition to clock ticks, world programs can
+also deal with two other kinds of events: keyboard events and mouse events. A
+keyboard event is triggered when a computer user presses a key on the keyboard.
+Similarly, a mouse event is the movement of the mouse, a click on a mouse
+button, the crossing of a boundary by a mouse movement, etc.
+
+Your program may deal with such events via the designation of handler
+functions. Specifically, the teachpack provides for the installation of three
+event handlers: on-tick, on-key, and on-mouse. In addition, a world program may
+specify a draw function, which is called every time your program should
+visualize the current world, and a done predicate, which is used to determine
+when the world program should shut down.
+
+Each handler function consumes the current state of the world and optionally a
+data representation of the event. It produces a new state of the world.
+
+The following picture provides an intuitive overview of the workings of a world
+program in the form of a state transition diagram.
+
+[nuworld]
+
+The big-bang form installs World_0 as the initial WorldState. The handlers
+tock, react, and click transform one world into another one; each time an event
+is handled, done is used to check whether the world is final, in which case the
+program is shut down; and finally, draw renders each world as a scene, which is
+then displayed on an external canvas.
+
+WorldState : any/c
+
+The design of a world program demands that you come up with a data definition
+of all possible states. We use WorldState to refer to this collection of data,
+using a capital W to distinguish it from the program. In principle, there are
+no constraints on this data definition though it mustn’t be an instance of the
+Package structure (see below). You can even keep it implicit, even if this
+violates the Design Recipe.
+
+(big-bang state-expr clause ...)
+ 
+clause   =   (on-tick tick-expr)
+         |   (on-tick tick-expr rate-expr)
+         |   (on-key key-expr)
+         |   (on-release release-expr)
+         |   (on-mouse mouse-expr)
+         |   (to-draw draw-expr)
+         |   (to-draw draw-expr width-expr height-expr)
+         |   (stop-when stop-expr)
+         |   (stop-when stop-expr last-scene-expr)
+         |   (check-with world?-expr)
+         |   (record? r-expr)
+         |   (state boolean-expr)
+         |   (on-receive rec-expr)
+         |   (register IP-expr)
+         |   (name name-expr)
+starts a world program in the initial state specified with state-expr, which
+must of course evaluate to an element of WorldState. Its behavior is specified
+via the handler functions designated in the optional spec clauses, especially
+how the world program deals with clock ticks, with key events, with mouse
+events, and eventually with messages from the universe; how it renders itself
+as a scene; when the program must shut down; where to register the world with a
+universe; and whether to record the stream of events. A world specification may
+not contain more than one on-tick, to-draw, or register clause. A big-bang
+expression returns the last world when the stop condition is satisfied (see
+below) or when the programmer clicks on the Stop button or closes the canvas.
+
+The only mandatory clause of a big-bang description is to-draw (or on-draw for
+backwards compatibility):
+
+  • 
+    (to-draw render-expr)
+     
+       render-expr   :   (-> WorldState scene?)
+    tells DrRacket to call the function render-expr whenever the canvas must be
+    drawn. The external canvas is usually re-drawn after DrRacket has dealt
+    with an event. Its size is determined by the size of the first generated
+    scene.
+
+    (to-draw render-expr width-expr height-expr)
+     
+           render-expr   :   (-> WorldState scene?)
+           width-expr   :   natural-number/c
+           height-expr   :   natural-number/c
+
+    tells DrRacket to use a width-expr by height-expr canvas instead of one
+    determine by the first generated scene.
+
+    For compatibility reasons, the teachpack also supports the keyword on-draw
+    in lieu of to-draw but the latter is preferred now.
+
+All remaining clauses are optional:
+
+  • 
+    (on-tick tick-expr)
+     
+       tick-expr   :   (-> WorldState WorldState)
+    tells DrRacket to call the tick-expr function on the current world every
+    time the clock ticks. The result of the call becomes the current world. The
+    clock ticks at the rate of 28 times per second.
+
+  • 
+    (on-tick tick-expr rate-expr)
+     
+           tick-expr   :   (-> WorldState WorldState)
+           rate-expr   :   (and/c real? positive?)
+
+    tells DrRacket to call the tick-expr function on the current world every
+    time the clock ticks. The result of the call becomes the current world. The
+    clock ticks every rate-expr seconds.
+
+  • A KeyEvent represents key board events.
+
+    KeyEvent : string?
+
+    For simplicity, we represent key events with strings, but not all strings
+    are key events. The representation of key events comes in distinct classes.
+    First, a single-character string is used to signal that the user has hit a
+    "regular" key. Some of these one-character strings may look unusual:
+      □ " " stands for the space bar (#\space);
+
+      □ "\r" stands for the return key (#\return);
+
+      □ "\t" stands for the tab key (#\tab); and
+
+      □ "\b" stands for the backspace key (#\backspace).
+
+    On rare occasions you may also encounter "\u007F", which is the string
+    representing the delete key (aka rubout).
+
+    Second, some keys have multiple-character string representations. Strings
+    with more than one character denote arrow keys or other special events,
+    starting with the most important:
+      □ "left" is the left arrow;
+
+      □ "right" is the right arrow;
+
+      □ "up" is the up arrow;
+
+      □ "down" is the down arrow;
+
+      □ "start"
+
+      □ "cancel"
+
+      □ "clear"
+
+      □ "shift"
+
+      □ "control"
+
+      □ "menu"
+
+      □ "pause"
+
+      □ "capital"
+
+      □ "prior"
+
+      □ "next"
+
+      □ "end"
+
+      □ "home"
+
+      □ "escape"
+
+      □ "select"
+
+      □ "print"
+
+      □ "execute"
+
+      □ "snapshot"
+
+      □ "insert"
+
+      □ "help"
+
+      □ "numpad0", "numpad1", "numpad2", "numpad3", "numpad4", "numpad5",
+        "numpad6", "numpad7", "numpad8", "numpad9", "numpad-enter", "multiply",
+        "add", "separator", "subtract", "decimal", "divide"
+
+      □ "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11",
+        "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21",
+        "f22", "f23", "f24"
+
+      □ "numlock"
+
+      □ "scroll"
+
+      □ "wheel-up"
+
+      □ "wheel-down"
+
+    (key-event? x) → boolean?
+      x : any
+    determines whether x is a KeyEvent
+
+    (key=? x y) → boolean?
+      x : key-event?
+      y : key-event?
+    compares two KeyEvent for equality
+
+    (on-key key-expr)
+     
+       key-expr   :   (-> WorldState key-event? WorldState)
+    tells DrRacket to call the key-expr function on the current world and a
+    KeyEvent for every keystroke the user of the computer makes. The result of
+    the call becomes the current world.
+
+    Here is a typical key-event handler:
+
+        (define (change w a-key)
+          (cond
+            [(key=? a-key "left")  (world-go w -DELTA)]
+            [(key=? a-key "right") (world-go w +DELTA)]
+            [(= (string-length a-key) 1) w] ; order-free checking
+            [(key=? a-key "up")    (world-go w -DELTA)]
+            [(key=? a-key "down")  (world-go w +DELTA)]
+            [else w]))
+
+    The omitted, auxiliary function world-go is supposed to consume a world and
+    a number and produces a world.
+
+    (on-release release-expr)
+     
+       release-expr   :   (-> WorldState key-event? WorldState)
+    tells DrRacket to call the release-expr function on the current world and a
+    KeyEvent for every release event on the keyboard. A release event occurs
+    when a user presses the key and then releases it. The second argument
+    indicates which key has been released. The result of the function call
+    becomes the current world.
+
+  • A MouseEvent represents mouse events, e.g., mouse movements or mouse
+    clicks, by the computer’s user.
+
+    MouseEvent : (one-of/c "button-down" "button-up" "drag" "move" "enter"
+    "leave")
+
+    All MouseEvents are represented via strings:
+      □ "button-down" signals that the computer user has pushed a mouse button
+        down;
+
+      □ "button-up" signals that the computer user has let go of a mouse
+        button;
+
+      □ "drag" signals that the computer user is dragging the mouse. A dragging
+        event occurs when the mouse moves while a mouse button is pressed.
+
+      □ "move" signals that the computer user has moved the mouse;
+
+      □ "enter" signals that the computer user has moved the mouse into the
+        canvas area; and
+
+      □ "leave" signals that the computer user has moved the mouse out of the
+        canvas area.
+
+    (mouse-event? x) → boolean?
+      x : any
+    determines whether x is a MouseEvent
+
+    (mouse=? x y) → boolean?
+      x : mouse-event?
+      y : mouse-event?
+    compares two MouseEvents for equality
+
+    (on-mouse mouse-expr)
+     
+                        (-> WorldState
+       mouse-expr   :       integer? integer? MouseEvent
+                            WorldState)
+    tells DrRacket to call mouse-expr on the current world, the current x and y
+    coordinates of the mouse, and a MouseEvent for every (noticeable) action of
+    the mouse by the computer user. The result of the call becomes the current
+    world.
+
+    For "leave" and "enter" events, the coordinates of the mouse click may be
+    outside of the (implicit) rectangle. That is, the coordinates may be
+    negative or larger than the (implicitly) specified width and height.
+
+    Note: the computer’s software doesn’t really notice every single movement
+    of the mouse (across the mouse pad). Instead it samples the movements and
+    signals most of them.
+
+  • 
+    (stop-when last-world?)
+     
+       last-world?   :   (-> WorldState boolean?)
+    tells DrRacket to call the last-world? function whenever the canvas is
+    drawn. If this call produces true, the world program is shut down.
+    Specifically, the clock is stopped; no more tick events, KeyEvents, or
+    MouseEvents are forwarded to the respective handlers. The big-bang
+    expression returns this last world.
+
+    (stop-when last-world? last-picture)
+     
+           last-world?   :   (-> WorldState boolean?)
+           last-picture   :   (-> WorldState scene?)
+
+    tells DrRacket to call the last-world? function whenever the canvas is
+    drawn. If this call produces true, the world program is shut down after
+    displaying the world one last time, this time using the scene rendered with
+    last-picture. Specifically, the clock is stopped; no more tick events,
+    KeyEvents, or MouseEvents are forwarded to the respective handlers. The
+    big-bang expression returns this last world.
+
+  • 
+    (struct stop-with (w))
+      w : WorldState
+    signals to DrRacket that the world program should shut down. That is, any
+    handler may return (stop-with w) provided w is a WorldState. If it does,
+    the state of the world becomes w and big-bang will close down all event
+    handling.
+
+  • 
+    (check-with world-expr?)
+     
+       world-expr?   :   (-> Any boolean?)
+    tells DrRacket to call the world-expr? function on the result of every
+    world handler call. If this call produces true, the result is considered a
+    world; otherwise the world program signals an error.
+
+  • 
+    (record? r-expr)
+     
+       r-expr   :   any/c
+    tells DrRacket to enable a visual replay of the interaction, unless #f. The
+    replay action generates one png image per scene and an animated gif for the
+    entire sequence in the directory of the user’s choice. If r-expr evaluates
+    to the name of an existing directory/folder (in the local directory/
+    folder), the directory is used to deposit the images.
+
+  • 
+    (state boolean-expr)
+     
+       boolean-expr   :   boolean?
+    tells DrRacket to display a separate window in which the current state is
+    rendered each time it is updated. This is useful for beginners who wish to
+    see how their world evolves—without having to design a rendering function—
+    plus for the debugging of world programs.
+
+  • 
+    (name name-expr)
+     
+       name-expr   :   (or/c symbol? string?)
+    provide a name (namer-expr) to this world, which is used as the title of
+    the canvas.
+
+The following example shows that (run-simulation create-UFO-scene) is a
+short-hand for three lines of code:
+
+    (define (create-UFO-scene height)
+      (underlay/xy (rectangle 100 100 "solid" "white") 50 height UFO))
+     
+    (define UFO
+      (underlay/align "center"
+                      "center"
+                      (circle 10 "solid" "green")
+                      (rectangle 40 4 "solid" "green")))
+     
+     
+    (big-bang 0
+              (on-tick add1)
+              (to-draw create-UFO-scene))
+
+Exercise: Add a condition for stopping the flight of the UFO when it reaches
+the bottom.
+
+2.3.4 A First Sample World
+
+This section uses a simple example to explain the design of worlds. The first
+subsection introduces the sample domain, a door that closes automatically. The
+second subsection is about the design of world programs in general, the
+remaining subsections implement a simulation of the door.
+
+2.3.4.1 Understanding a Door
+
+Say we wish to design a world program that simulates the working of a door with
+an automatic door closer. If this kind of door is locked, you can unlock it
+with a key. While this doesn’t open the door per se, it is now possible to do
+so. That is, an unlocked door is closed and pushing at the door opens it. Once
+you have passed through the door and you let go, the automatic door closer
+takes over and closes the door again. When a door is closed, you can lock it
+again.
+
+Here is a diagram that translates our words into a graphical representation:
+
+[door-real]
+
+Like the picture of the general workings of a world program, this diagram
+displays a so-called “state machine.” The three circled words are the states
+that our informal description of the door identified: locked, closed (and
+unlocked), and open. The arrows specify how the door can go from one state into
+another. For example, when the door is open, the automatic door closer shuts
+the door as time passes. This transition is indicated by the arrow labeled
+“time.” The other arrows represent transitions in a similar manner:
+
+  • “push” means a person pushes the door open (and let’s go);
+
+  • “lock” refers to the act of inserting a key into the lock and turning it to
+    the locked position; and
+
+  • “unlock” is the opposite of “lock.”
+
+2.3.4.2 Hints on Designing Worlds
+
+Simulating any dynamic behavior via a world program demands two different
+activities. First, we must tease out those portions of our domain that change
+over time or in reaction to actions, and we must develop a data representation
+for this information. This is what we call WorldState. Keep in mind that a good
+data definition makes it easy for readers to map data to information in the
+real world and vice versa. For all others aspects of the world, we use global
+constants, including graphical or visual constants that are used in conjunction
+with the rendering operations.
+
+Second, we must translate the actions in our domain—the arrows in the above
+diagram—into interactions with the computer that the universe teachpack can
+deal with. Once we have decided to use the passing of time for one aspect, key
+presses for another, and mouse movements for a third, we must develop functions
+that map the current state of the world—represented as data from WorldState—
+into the next state of the world. Put differently, we have just created a wish
+list with three handler functions that have the following general contract and
+purpose statements:
+
+    ; tick : WorldState -> WorldState
+    ; deal with the passing of time
+    (define (tick w) ...)
+     
+    ; click : WorldState Number Number MouseEvent -> WorldState
+    ; deal with a mouse click at (x,y) of kind me
+    ; in the current world w
+    (define (click w x y me) ...)
+     
+    ; control : WorldState KeyEvent -> WorldState
+    ; deal with a key event ke
+    ; in the current world w
+    (define (control w ke) ...)
+
+That is, the contracts of the various handler designations dictate what the
+contracts of our functions are, once we have defined how to represent the
+domain with data in our chosen language.
+
+A typical program does not use all three of these functions. Furthermore, the
+design of these functions provides only the top-level, initial design goal. It
+often demands the design of many auxiliary functions. The collection of all
+these functions is your world program.
+
+    An extended example is available in How to Design Programs/2e.
+
+2.3.5 The World is not Enough
+
+The library facilities covered so far are about designing individual programs
+with interactive graphical user interfaces (simulations, animations, games,
+etc.). In this section, we introduce capabilities for designing a distributed
+program, which is really a number of programs that coordinate their actions in
+some fashion. Each of the individual programs may run on any computer in the
+world (as in our planet and the spacecrafts that we sent out), as long as it is
+on the internet and as long as the computer allows the program to send and
+receive messages (via TCP). We call this arrangement a universe and the program
+that coordinates it all a universe server or just server.
+
+This section explains what messages are, how to send them from a world program,
+how to receive them, and how to connect a world program to a universe.
+
+2.3.5.1 Messages
+
+After a world program has become a part of a universe, it may send messages and
+receive them. In terms of data, a message is just an S-expression.
+
+S-expression An S-expression is roughly a nested list of basic data; to be
+precise, an S-expression is one of:
+
+  • a string,
+
+  • a symbol,
+
+  • a number,
+
+  • a boolean,
+
+  • a char, or
+
+  • a list of S-expressions.
+
+Note the last clause includes empty of course.
+
+(sexp? x) → boolean?
+  x : any/c
+determines whether x is an S-expression.
+
+2.3.5.2 Sending Messages
+
+Each world-producing callback in a world program—those for handling clock tick
+events, keyboard events, and mouse events—may produce a Package in addition to
+just a WorldState.
+
+Package represents a pair consisting of a WorldState and a message from a world
+program to the server. Because programs only send messages via Package, the
+teachpack does not provide the selectors for the structure, only the
+constructor and a predicate.
+
+(package? x) → boolean?
+  x : any/c
+determine whether x is a Package.
+
+(make-package w m) → package?
+  w : any/c
+  m : sexp?
+create a Package from a WorldState and an S-expression.
+
+As mentioned, all event handlers may return WorldStates or Packages; here are
+the revised specifications:
+
+(on-tick tick-expr)
+ 
+   tick-expr   :   (-> WorldState (or/c WorldState package?))
+
+(on-tick tick-expr rate-expr)
+ 
+       tick-expr   :   (-> WorldState (or/c WorldState package?))
+       rate-expr   :   (and/c real? positive?)
+
+
+(on-key key-expr)
+ 
+   key-expr   :   (-> WorldState key-event? (or/c WorldState package?))
+
+(on-release release-expr)
+ 
+   release-expr   :   (-> WorldState key-event? (or/c WorldState package?))
+
+(on-mouse mouse-expr)
+ 
+                    (-> WorldState
+   mouse-expr   :       integer? integer? MouseEvent
+                        (or/c WorldState package?))
+
+If one of these event handlers produces a Package, the content of the world
+field becomes the next world and the message field specifies what the world
+sends to the universe. This distinction also explains why the data definition
+for WorldState may not include a Package.
+
+2.3.5.3 Connecting with the Universe
+
+Messages are sent to the universe program, which runs on some computer in the
+world. The next section is about constructs for creating such a universe
+server. For now, we just need to know that it exists and that it is the
+recipient of messages.
+
+IP string?
+
+Before a world program can send messages, it must register with the server.
+Registration must specify the internet address of the computer on which the
+server runs, also known as an IP address or a host. Here a IP address is a
+string of the right shape, e.g., "192.168.1.1" or "www.google.com".
+
+LOCALHOST : string?
+the IP of your computer. Use it while you are developing a distributed program,
+especially while you are investigating whether the participating world programs
+collaborate in an appropriate manner. This is called integration testing and
+differs from unit testing quite a bit.
+
+A big-bang description of a world program that wishes to communicate with other
+programs must contain a register clause of one of the following shapes:
+
+  • 
+    (register ip-expr)
+     
+       ip-expr   :   string?
+    connect this world to a universe server at the specified ip-expr address
+    and set up capabilities for sending and receiving messages. If the world
+    description includes a name specification of the form (name SomeString) or
+    (name SomeSymbol), the name of the world is sent along to the server.
+
+When a world program registers with a universe program and the universe program
+stops working, the world program stops working, too.
+
+2.3.5.4 Receiving Messages
+
+Finally, the receipt of a message from the server is an event, just like tick
+events, keyboard events, and mouse events. Dealing with the receipt of a
+message works exactly like dealing with any other event. DrRacket applies the
+event handler that the world program specifies; if there is no clause, the
+message is discarded.
+
+The on-receive clause of a big-bang specifies the event handler for message
+receipts.
+
+(on-receive receive-expr)
+ 
+   receive-expr   :   (-> WorldState sexp? (or/c WorldState package?))
+tells DrRacket to call receive-expr for every message receipt, on the current
+WorldState and the received message. The result of the call becomes the current
+WorldState.
+
+Because receive-expr is (or evaluates to) a world-transforming function, it too
+can produce a Package instead of just a WorldState. If the result is a Package,
+its message content is sent to the server.
+
+The diagram below summarizes the extensions of this section in graphical form.
+
+[universe]
+
+A registered world program may send a message to the universe server at any
+time by returning a Package from an event handler. The message is transmitted
+to the server, which may forward it to some other world program as given or in
+some massaged form. The arrival of a message is just another event that a world
+program must deal with. Like all other event handlers receive accepts a
+WorldState and some auxiliary arguments (a message in this case) and produces a
+WorldState or a Package.
+
+When messages are sent from any of the worlds to the universe or vice versa,
+there is no need for the sender and receiver to synchronize. Indeed, a sender
+may dispatch as many messages as needed without regard to whether the receiver
+has processed them yet. The messages simply wait in queue until the receiving
+server or world program takes care of them.
+
+2.3.6 The Universe Server
+
+A server is the central control program of a universe and deals with receiving
+and sending of messages between the world programs that participate in the
+universe. Like a world program, a server is a program that reacts to events,
+though to different events than worlds. The two primary kinds of events are the
+appearance of a new world program in the universe and the receipt of a message
+from a world program.
+
+The teachpack provides a mechanism for designating event handlers for servers
+that is quite similar to the mechanism for describing world programs. Depending
+on the designated event handlers, the server takes on distinct roles:
+
+  • A server may be a “pass through” channel between two worlds, in which case
+    it has no other function than to communicate whatever message it receives
+    from one world to the other, without any interference.
+
+  • A server may enforce a “back and forth” protocol, i.e., it may force two
+    (or more) worlds to engage in a civilized tit-for-tat exchange. Each world
+    is given a chance to send a message and must then wait to get a reply
+    before it sends anything again.
+
+  • A server may play the role of a special-purpose arbiter, e.g., the referee
+    or administrator of a game. It may check that each world “plays” by the
+    rules, and it administrates the resources of the game.
+
+As a matter of fact, a pass-through server can become basically invisible,
+making it appear as if all communication goes from peer world to peer in a
+universe.
+
+This section first introduces some basic forms of data that the server uses to
+represent worlds and other matters. Second, it explains how to describe a
+server program.
+
+2.3.6.1 Worlds and Messages
+
+Understanding the server’s event handling functions demands several data
+representations: that of (a connection to) a world program and that of a
+response of a handler to an event.
+
+  • The server and its event handlers must agree on a data representation of
+    the worlds that participate in the universe.
+
+    (iworld? x) → boolean?
+      x : any/c
+    determines whether x is an iworld. Because the universe server represents
+    worlds via structures that collect essential information about the
+    connections, the teachpack does not export any constructor or selector
+    functions on worlds.
+
+    (iworld=? u v) → boolean?
+      u : iworld?
+      v : iworld?
+    compares two iworlds for equality.
+
+    (iworld-name w) → string?
+      w : iworld?
+    extracts the name from a iworld structure.
+
+    iworld1 : iworld?
+    an iworld for testing your programs
+    iworld2 : iworld?
+    another iworld for testing your programs
+    iworld3 : iworld?
+    and a third one
+
+    The three sample iworlds are provided so that you can test your functions
+    for universe programs. For example:
+
+        (check-expect (iworld=? iworld1 iworld2) false)
+        (check-expect (iworld=? iworld2 iworld2) true)
+
+  • Each event handler produces a bundle, which is a structure that contains
+    the server’s state, a list of mails to other worlds, and the list of
+    iworlds that are to be disconnected.
+
+    (bundle? x) → boolean?
+      x : any/c
+    determines whether x is a bundle.
+
+    (make-bundle state mails low) → bundle?
+      state : any/c
+      mails : (listof mail?)
+      low : (listof iworld?)
+    creates a bundle from a piece of data that represents a server state, a
+    list of mails, and a list of iworlds.
+
+    If disconnecting from these worlds results in an empty list of
+    participants, the universe server is restarted in the initial state.
+
+    A mail represents a message from an event handler to a world. The teachpack
+    provides only a predicate and a constructor for these structures:
+
+    (mail? x) → boolean?
+      x : any/c
+    determines whether x is a mail.
+
+    (make-mail to content) → mail?
+      to : iworld?
+      content : sexp?
+    creates a mail from a iworld and an S-expression.
+
+2.3.6.2 Universe Descriptions
+
+A server keeps track of information about the universe that it manages. One
+kind of tracked information is obviously the collection of participating world
+programs, but in general the kind of information that a server tracks and how
+the information is represented depends on the situation and the programmer,
+just as with world programs.
+
+UniverseState any/c represents the server’s state. For running universes, the
+teachpack demands that you come up with a data definition for (your state of
+the) server. Any piece of data can represent the state. We just assume that you
+introduce a data definition for the possible states and that your event
+handlers are designed according to the design recipe for this data definition.
+
+The server itself is created with a description that includes the first state
+and a number of clauses that specify functions for dealing with universe
+events.
+
+(universe state-expr clause ...)
+ 
+clause   =   (on-new new-expr)
+         |   (on-msg msg-expr)
+         |   (on-tick tick-expr)
+         |   (on-tick tick-expr rate-expr)
+         |   (on-disconnect dis-expr)
+         |   (state boolean-expr)
+         |   (to-string render-expr)
+         |   (check-with universe?-expr)
+creates a server with a given state, state-expr. The behavior is specified via
+handler functions through mandatory and optional clauses. These functions
+govern how the server deals with the registration of new worlds, how it
+disconnects worlds, how it sends messages from one world to the rest of the
+registered worlds, and how it renders its current state as a string.
+
+Evaluating a universe expression starts a server. Visually it opens a console
+window on which you can see that worlds join, which messages are received from
+which world, and which messages are sent to which world. For convenience, the
+console also has two buttons: one for shutting down a universe and another one
+for re-starting it. The latter functionality is especially useful during the
+integration of the various pieces of a distributed program.
+
+The mandatory clauses of a universe server description are on-new and on-msg:
+
+  • 
+    (on-new new-expr)
+     
+       new-expr   :   (-> UniverseState iworld? bundle?)
+    tells DrRacket to call the function new-expr every time another world joins
+    the universe. The event handler is called with the current state and the
+    joining iworld, which isn’t on the list yet. In particular, the handler may
+    reject a world program from participating in a universe, by simply
+    including it in the resulting bundle structure (third field).
+
+  • 
+    (on-msg msg-expr)
+     
+       msg-expr   :   (-> UniverseState iworld? sexp? bundle?)
+    tells DrRacket to apply msg-expr to the current state of the universe, the
+    world w that sent the message, and the message itself.
+
+All proper event handlers produce a bundle. The state in the bundle is
+safe-guarded by the server until the next event, and the mails are broadcast as
+specified. The list of iworlds in the third field of the bundle is removed from
+the list of participants from which to expect messages.
+
+The following picture provides a graphical overview of the server’s workings.
+
+[server]
+
+In addition to the mandatory handlers, a program may wish to add some optional
+handlers:
+
+  • 
+    (on-tick tick-expr)
+     
+       tick-expr   :   (-> UniverseState bundle?)
+    tells DrRacket to apply tick-expr to the current state of the universe.
+
+    (on-tick tick-expr rate-expr)
+     
+           tick-expr   :   (-> UniverseState bundle?)
+           rate-expr   :   (and/c real? positive?)
+
+    tells DrRacket to apply tick-expr as above; the clock ticks every rate-expr
+    seconds.
+
+  • 
+    (on-disconnect dis-expr)
+     
+       dis-expr   :   (-> UniverseState iworld? bundle?)
+    tells DrRacket to invoke dis-expr every time a participating world drops
+    its connection to the server. The first argument is the current state of
+    the universe server, while the second argument is the (representation of
+    the) world that got disconnected. The resulting bundle usually includes
+    this second argument in the third field, telling drscheme not to wait for
+    messages from this world anymore.
+
+  • 
+    (to-string render-expr)
+     
+       render-expr   :   (-> UniverseState string?)
+    tells DrRacket to render the state of the universe after each event and to
+    display this string in the universe console.
+
+  • 
+    (check-with universe?-expr)
+     
+       universe?-expr   :   (-> Any boolean?)
+    ensure that what the event handlers produce is really an element of
+    UniverseState.
+
+  • 
+    (state boolean-expr)
+     
+       boolean-expr   :   boolean?
+    tells DrRacket to display a separate window in which the current state is
+    rendered each time it is updated. This is mostly useful for debugging
+    server programs.
+
+2.3.6.3 Exploring a Universe
+
+In order to explore the workings of a universe, it is necessary to launch a
+server and several world programs on one and the same computer. We recommend
+launching one server out of one DrRacket tab and as many worlds as necessary
+out of a second tab. For the latter, the teachpack provides a special form.
+
+(launch-many-worlds expression ...)
+evaluates all sub-expressions in parallel. Typically each sub-expression is an
+application of a function that evaluates a big-bang expression. When all worlds
+have stopped, the expression returns all final worlds in order.
+
+Once you have designed a world program, add a function definition concerning
+big-bang to the end of the tab:
+
+    ; String -> World
+    (define (main n)
+      (big-bang ... (name n) ...))
+
+Then in DrRacket’s Interactions area, use launch-many-worlds to create several
+distinctively named worlds:
+
+    > (launch-many-worlds (main "matthew")
+                          (main "kathi")
+                          (main "h3"))
+    10
+    25
+    33
+
+The three worlds can then interact via a server. When all of them have stopped,
+they produce the final states, here 10, 25, and 33.
+
+2.3.7 A First Sample Universe
+
+This section uses a simple example to explain the design of a universe,
+especially its server and some participating worlds. The first subsection
+explains the example, the second introduces the general design plan for such
+universes. The remaining sections present the full-fledged solution.
+
+2.3.7.1 Two Ball Tossing Worlds
+
+Say we want to represent a universe that consists of a number of worlds and
+that gives each world a “turn” in a round-robin fashion. If a world is given
+its turn, it displays a ball that ascends from the bottom of a canvas to the
+top. It relinquishes its turn at that point and the server gives the next world
+a turn.
+
+Here is an image that illustrates how this universe would work if two worlds
+participated:
+
+[balls]
+
+The two world programs could be located on two distinct computers or on just
+one. A server mediates between the two worlds, including the initial start-up.
+
+2.3.7.2 Hints on Designing Universes
+
+The first step in designing a universe is to understand the coordination of the
+worlds from a global perspective. To some extent, it is all about knowledge and
+the distribution of knowledge throughout a system. We know that the universe
+doesn’t exist until the server starts and the worlds are joining. Because of
+the nature of computers and networks, however, we may assume little else. Our
+network connections ensure that if some world or the server sends two messages
+to the same place in some order, they arrive in the same order (if they arrive
+at all). In contrast, if two distinct world programs send one message each, the
+network does not guarantee the order of arrival at the server; similarly, if
+the server is asked to send some messages to several distinct world programs,
+they may arrive at those worlds in the order sent or in the some other order.
+In the same vein, it is impossible to ensure that one world joins before
+another. Worst, when someone removes the connection (cable, wireless) between a
+computer that runs a world program and the rest of the network or if some
+network cable is cut, messages don’t go anywhere. Due to this vagaries, it is
+therefore the designer’s task to establish a protocol that enforces a certain
+order onto a universe and this activity is called protocol design.
+
+From the perspective of the universe, the design of a protocol is about the
+design of data representations for tracking universe information in the server
+and the participating worlds and the design of a data representation for
+messages. As for the latter, we know that they must be S-expressions, but
+usually world programs don’t send all kinds of S-expressions. The data
+definitions for messages must therefore select a subset of suitable
+S-expressions. As for the state of the server and the worlds, they must reflect
+how they currently relate to the universe. Later, when we design their “local”
+behavior, we may add more components to their state space.
+
+In summary, the first step of a protocol design is to introduce:
+
+  • a data definition for the information about the universe that the server
+    tracks, call it UniverseState;
+
+  • a data definition for the world(s) about their current relationship to the
+    universe;
+
+  • data definitions for the messages that are sent from the server to the
+    worlds and vice versa. Let’s call them S2W for messages from the server to
+    the worlds and W2S for the other direction; in the most general case you
+    may need one pair per world.
+
+If all the worlds exhibit the same behavior over time, a single data definition
+suffices for step 2. If they play different roles, we may need one data
+definition per world.
+
+Of course, as you define these collections of data always keep in mind what the
+pieces of data mean, what they represent from the universe’s perspective.
+
+The second step of a protocol design is to figure out which major events—the
+addition of a world to the universe, the arrival of a message at the server or
+at a world—to deal with and what they imply for the exchange of messages.
+Conversely, when a server sends a message to a world, this may have
+implications for both the state of the server and the state of the world. A
+good tool for writing down these agreements is an interaction diagram.
+
+ 
+
+Server              World1                  World2
+
+  |                   |                       |
+
+  |   'go             |                       |
+
+  |<------------------|                       |
+
+  |    'go            |                       |
+
+  |------------------------------------------>|
+
+  |                   |                       |
+
+  |                   |                       |
+
+
+Each vertical line is the life line of a world program or the server. Each
+horizontal arrow denotes a message sent from one universe participant to
+another.
+
+The design of the protocol, especially the data definitions, have direct
+implications for the design of event handling functions. For example, in the
+server we may wish to deal with two kinds of events: the joining of a new world
+and the receipt of a message from one of the worlds. This translates into the
+design of two functions with the following headers,
+
+    ; Bundle is
+    ;   (make-bundle UniverseState [Listof mail?] [Listof iworld?])
+     
+    ; UniverseState iworld? -> Bundle
+    ; next list of worlds when world iw is joining
+    ; the universe in state s
+    (define (add-world s iw) ...)
+     
+    ; UniverseState iworld? W2U -> Bundle
+    ; next list of worlds when world iw is sending message m to
+    ; the universe in state s
+    (define (process s iw m) ...)
+
+Finally, we must also decide how the messages affect the states of the worlds;
+which of their callback may send messages and when; and what to do with the
+messages a world receives. Because this step is difficult to explain in the
+abstract, we move on to the protocol design for the universe of ball worlds.
+
+2.3.7.3 Designing the Ball Universe
+
+Running the ball universe has a simple overall goal: to ensure that at any
+point in time, one world is active and all others are passive. The active world
+displays a moving ball, and the passive worlds should display something,
+anything that indicates that it is some other world’s turn.
+
+As for the server’s state, it must obviously keep track of all worlds that
+joined the universe, and it must know which one is active and which ones are
+passive. Of course, initially the universe is empty, i.e., there are no worlds
+and, at that point, the server has nothing to track.
+
+While there are many different useful ways of representing such a universe, we
+just use the list of iworlds that is handed to each handler and that handlers
+return via their bundles. The UniverseState itself is useless for this trivial
+example. We interpret non-empty lists as those where the first iworld is active
+and the remainder are the passive iworlds. As for the two possible events,
+
+  • it is natural to add new iworlds to the end of the list; and
+
+  • it is natural to move an active iworld that relinquishes its turn to the
+    end of the list, too.
+
+The server should send messages to the first iworld of its list as long as it
+wishes this iworld to remain active. In turn, it should expect to receive
+messages only from this one active iworld and no other iworld. The content of
+these two messages is nearly irrelevant because a message from the server to an
+iworld means that it is the iworld’s turn and a message from the iworld to the
+server means that the turn is over. Just so that we don’t confuse ourselves, we
+use two distinct symbols for these two messages:
+
+  • A GoMessage is 'it-is-your-turn.
+
+  • A StopMessage is 'done.
+
+From the universe’s perspective, each world is in one of two states:
+
+  • A passive world is resting. We use 'resting for this state.
+
+  • An active world is not resting. We delay choosing a representation for this
+    part of a world’s state until we design its “local” behavior.
+
+It is also clear that an active world may receive additional messages, which it
+may ignore. When it is done with its turn, it will send a message.
+
+Server
+
+  |                 World1
+
+  |<==================|
+
+  |  'it-is-your-turn |
+
+  |------------------>|
+
+  |                   |                    World2
+
+  |<==========================================|
+
+  |  'done            |                       |
+
+  |<------------------|                       |
+
+  |  'it-is-your-turn |                       |
+
+  |------------------------------------------>|
+
+  |                   |                       |
+
+  |                   |                       |
+
+  |  'done            |                       |
+
+  |<------------------------------------------|
+
+  |  'it-is-your-turn |                       |
+
+  |------------------>|                       |
+
+  |                   |                       |
+
+  |                   |                       |
+
+
+Here the double-lines (horizontal) denote the registration step, the others are
+message exchanges. The diagram thus shows how the server decides to make the
+first registered world the active one and to enlist all others as they join.
+
+2.3.7.4 Designing the Ball Server
+
+The preceding subsection dictates that our server program starts like this:
+
+    ; teachpack: universe.rkt
+     
+    ; UniverseState is '*
+    ; StopMessage is 'done.
+    ; GoMessage is 'it-is-your-turn.
+
+The design of a protocol has immediate implications for the design of the event
+handling functions of the server. Here we wish to deal with two events: the
+appearance of a new world and the receipt of a message. Based on our data
+definitions and based on the general contracts of the event handling functions
+spelled out in this documentation, we get two functions for our wish list:
+
+    ; Result is
+    ;   (make-bundle [Listof iworld?]
+    ;                (list (make-mail iworld? GoMessage))
+    ;                '())
+     
+    ; [Listof iworld?] iworld? -> Result
+    ; add world iw to the universe, when server is in state u
+    (define (add-world u iw) ...)
+     
+    ; [Listof iworld?] iworld? StopMessage -> Result
+    ; world iw sent message m when server is in state u
+    (define (switch u iw m) ...)
+
+Although we could have re-used the generic contracts from this documentation,
+we also know from our protocol that our server sends a message to exactly one
+world. Note how these contracts are just refinements of the generic ones. (A
+type-oriented programmer would say that the contracts here are subtypes of the
+generic ones.)
+
+The second step of the design recipe calls for functional examples:
+
+    ; an obvious example for adding a world:
+    (check-expect
+      (add-world '() world1)
+      (make-bundle (list world1)
+                   (list (make-mail world1 'it-is-your-turn))
+                   '()))
+     
+    ; an example for receiving a message from the active world:
+    (check-expect
+     (switch (list world1 world2) world1 'done)
+     (make-bundle (list world2 world1)
+                  (list (make-mail world2 'it-is-your-turn))
+                  '()))
+
+Note that our protocol analysis dictates this behavior for the two functions.
+Also note how we use world1, world2, and world3 because the teachpack applies
+these event handlers to real worlds.
+
+Exercise: Create additional examples for the two functions based on our
+protocol.
+
+The protocol tells us that add-world just adds the given world structure—recall
+that this a data representation of the actual world program—to the given list
+of worlds. It then sends a message to the first world on this list to get
+things going:
+
+    (define (add-world univ wrld)
+      (local ((define univ* (append univ (list wrld))))
+        (make-bundle univ*
+                     (list (make-mail (first univ*) 'it-is-your-turn))
+                     '())))
+
+Because univ* contains at least wrld, it is acceptable to create a mail to (
+first univ*). Of course, this same reasoning also implies that if univ isn’t
+empty, its first element is an active world and is about to receive a second
+'it-is-your-turn message.
+
+Similarly, the protocol says that when switch is invoked because a world
+program sends a message, the data representation of the corresponding world is
+moved to the end of the list and the next world on the (resulting) list is sent
+a message:
+
+    (define (switch univ wrld m)
+      (local ((define univ* (append (rest univ) (list (first univ)))))
+        (make-bundle univ*
+                     (list (make-mail (first univ*) 'it-is-your-turn))
+                     '())))
+
+As before, appending the first world to the end of the list guarantees that
+there is at least this one world on this list. It is therefore acceptable to
+create a mail for this world.
+
+Start the server now.
+
+    (universe '() (on-new add-world) (on-msg switch))
+
+Exercise: The function definition simply assumes that wrld is world=? to (first
+univ) and that the received message m is 'done. Modify the function definition
+so that it checks these assumptions and raises an error signal if either of
+them is wrong. Start with functional examples. If stuck, re-read the section on
+checked functions from HtDP. (Note: in a universe it is quite possible that a
+program registers with a server but fails to stick to the agreed-upon protocol.
+How to deal with such situations properly depends on the context. For now, stop
+the universe at this point by returning an empty list of worlds. Consider
+alternative solutions, too.)
+
+Exercise: An alternative state representation would equate UniverseState with
+world structures, keeping track of the active world. The list of world in the
+server would track the passive worlds only. Design appropriate add-world and
+switch functions.
+
+2.3.7.5 Designing the Ball World
+
+The final step is to design the ball world. Recall that each world is in one of
+two possible states: active or passive. The second kind of world moves a ball
+upwards, decreasing the ball’s y coordinate; the first kind of world displays
+something that says it’s someone else’s turn. Assuming the ball always moves
+along a vertical line and that the vertical line is fixed, the state of the
+world is an enumeration of two cases:
+
+    ; teachpack: universe.rkt
+     
+    ; WorldState is one of:
+    ; – Number             %% representing the y coordinate
+    ; – 'resting
+     
+    (define WORLD0 'resting)
+     
+    ; A WorldResult is one of:
+    ; – WorldState
+    ; – (make-package WorldState StopMessage)
+
+The definition says that initially a world is passive.
+
+The communication protocol and the refined data definition of WorldState imply
+a number of contract and purpose statements:
+
+    ; WorldState GoMessage -> WorldResult
+    ; make sure the ball is moving
+    (define (receive w n) ...)
+     
+    ; WorldState -> WorldResult
+    ; move this ball upwards for each clock tick
+    ; or stay 'resting
+    (define (move w) ...)
+     
+    ; WorldState -> Scene
+    ; render the world as a scene
+    (define (render w) ...)
+
+Let’s design one function at a time, starting with receive. Since the protocol
+doesn’t spell out what receive is to compute, let’s create a good set of
+functional examples, exploiting the structure of the data organization of
+WorldState:
+
+    (check-expect (receive 'resting 'it-is-your-turn) HEIGHT)
+    (check-expect (receive (- HEIGHT 1) 'it-is-your-turn) ...)
+
+Since there are two kinds of states, we make up at least two kinds of examples:
+one for a 'resting state and another one for a numeric state. The dots in the
+result part of the second unit test reveal the first ambiguity; specifically it
+isn’t clear what the result should be when an active world receives another
+message to activate itself. The second ambiguity shows up when we study
+additional examples, which are suggested by our approach to designing functions
+on numeric intervals (HtDP, section 3). That is we should consider the
+following three inputs to receive:
+
+  • HEIGHT when the ball is at the bottom of the scene;
+
+  • (- HEIGHT 1) when the ball is properly inside the scene; and
+
+  • 0 when the ball has hit the top of the scene.
+
+In the third case the function could produce three distinct results: 0,
+'resting, or (make-package 'resting 'done). The first leaves things alone; the
+second turns the active world into a resting one; the third does so, too, and
+tells the universe about this switch.
+
+We choose to design receive so that it ignores the message and returns the
+current state of an active world. This ensures that the ball moves in a
+continuous fashion and that the world remains active.
+
+Exercise: One alternative design is to move the ball back to the bottom of the
+scene every time 'it-is-your-turn is received. Design this function, too.
+
+    (define (receive w m)
+      (cond
+        [(symbol? w) HEIGHT] ; meaning: (symbol=? w 'resting)
+        [else w]))
+
+Our second function to design is move, the function that computes the ball
+movement. We have the contract and the second step in the design recipe calls
+for examples:
+
+    ; WorldState -> WorldState or (make-package 'resting 'done)
+    ; move the ball if it is flying
+     
+    (check-expect (move 'resting) 'resting)
+    (check-expect (move HEIGHT) (- HEIGHT 1))
+    (check-expect (move (- HEIGHT 1)) (- HEIGHT 2))
+    (check-expect (move 0) (make-package 'resting 'done))
+     
+    (define (move x) ...)
+
+Following HtDP again, the examples cover four typical situations: 'resting, two
+end points of the specified numeric interval, and one interior point. They tell
+us that move leaves a passive world alone and that it otherwise moves the ball
+until the y coordinate becomes 0. In the latter case, the result is a package
+that renders the world passive and tells the server about it.
+
+Turning these thoughts into a complete definition is straightforward now:
+
+    (define (move x)
+      (cond
+        [(symbol? x) x]
+        [(number? x) (if (<= x 0)
+                         (make-package 'resting 'done)
+                         (sub1 x))]))
+
+Exercise: what could happen if we had designed receive so that it produces
+'resting when the state of the world is 0? Use your answer to explain why you
+think it is better to leave this kind of state change to the tick event handler
+instead of the message receipt handler?
+
+Finally, here is the third function, which renders the state as a scene:
+
+    ; WorldState -> Scene
+    ; render the state of the world as a scene
+     
+    (check-expect (render HEIGHT) (underlay/xy MT 50 HEIGHT BALL))
+    (check-expect (render 'resting)
+                  (underlay/xy MT 10 10 (text "resting" 11 "red")))
+     
+    (define (render w)
+      (underlay/xy
+        (cond
+          [(symbol? w) (underlay/xy MT 10 10 (text "resting" 11 "red"))]
+          [(number? w) (underlay/xy MT 50 w BALL)])
+        5 85
+        (text name 11 "black")))
+
+Here is an improvement that adds a name to the scene and abstracts over the
+name at the same time:
+
+    ; String -> (WorldState -> Scene)
+    ; render the state of the world as a scene
+     
+    (check-expect
+     ((draw "Carl") 100)
+     (underlay/xy (underlay/xy MT 50 100 BALL)
+                  5 85
+                  (text "Carl" 11 "black")))
+     
+    (define (draw name)
+      (lambda (w)
+        (overlay/xy
+         (cond
+           [(symbol? w) (underlay/xy MT 10 10 (text "resting" 11 "red"))]
+           [(number? w) (underlay/xy MT 50 w BALL)])
+         5 85
+         (text name 11 'black))))
+
+By doing so, we can use the same program to create many different worlds that
+register with a server on your computer:
+
+    ; String -> WorldState
+    ; create and hook up a world with the LOCALHOST server
+    (define (create-world n)
+      (big-bang WORLD0
+               (on-receive receive)
+               (to-draw (draw n))
+               (on-tick move)
+               (name n)
+               (register LOCALHOST)))
+
+Now you can use (create-world 'carl) and (create-world 'same), respectively, to
+run two different worlds, after launching a server first.
+
+Exercise: Design a function that takes care of a world to which the universe
+has lost its connection. Is Result the proper contract for the result of this
+function?
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

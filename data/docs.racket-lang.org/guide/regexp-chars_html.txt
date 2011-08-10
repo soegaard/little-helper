@@ -1,0 +1,178 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 9  Regular Expressions
+ 9.1  Writing Regexp Patterns
+ 9.2  Matching Regexp Patterns
+ 9.3  Basic Assertions
+ 9.4  Characters and Character Classes
+ 9.5  Quantifiers
+ 9.6  Clusters
+ 9.7  Alternation
+ 9.8  Backtracking
+ 9.9  Looking Ahead and Behind
+9.10  An Extended Example
+► 9.4  Characters and Character Classes
+9.4.1  Some Frequently Used Character Classes
+9.4.2  POSIX character classes
+On this page:
+9.4.1 Some Frequently Used Character Classes
+9.4.2 POSIX character classes
+[...search manuals...]
+  top← prev  up  next → 
+
+9.4 Characters and Character Classes
+
+Typically, a character in the regexp matches the same character in the text
+string. Sometimes it is necessary or convenient to use a regexp metasequence to
+refer to a single character. For example, the metasequence \. matches the
+period character.
+
+The metacharacter . matches any character (other than newline in multi-line
+mode; see Cloisters):
+
+    > (regexp-match #rx"p.t" "pet")
+    '("pet")
+
+
+The above pattern also matches pat, pit, pot, put, and p8t, but not peat or
+pfffft.
+
+A character class matches any one character from a set of characters. A typical
+format for this is the bracketed character class [...], which matches any one
+character from the non-empty sequence of characters enclosed within the
+brackets. Thus, #rx"p[aeiou]t" matches pat, pet, pit, pot, put, and nothing
+else.
+
+Inside the brackets, a - between two characters specifies the Unicode range
+between the characters. For example, #rx"ta[b-dgn-p]" matches tab, tac, tad,
+tag, tan, tao, and tap.
+
+An initial ^ after the left bracket inverts the set specified by the rest of
+the contents; i.e., it specifies the set of characters other than those
+identified in the brackets. For example, #rx"do[^g]" matches all
+three-character sequences starting with do except dog.
+
+Note that the metacharacter ^ inside brackets means something quite different
+from what it means outside. Most other metacharacters (., *, +, ?, etc.) cease
+to be metacharacters when inside brackets, although you may still escape them
+for peace of mind. A - is a metacharacter only when it’s inside brackets, and
+when it is neither the first nor the last character between the brackets.
+
+Bracketed character classes cannot contain other bracketed character classes
+(although they contain certain other types of character classes; see below).
+Thus, a [ inside a bracketed character class doesn’t have to be a
+metacharacter; it can stand for itself. For example, #rx"[a[b]" matches a, [,
+and b.
+
+Furthermore, since empty bracketed character classes are disallowed, a ]
+immediately occurring after the opening left bracket also doesn’t need to be a
+metacharacter. For example, #rx"[]ab]" matches ], a, and b.
+
+9.4.1 Some Frequently Used Character Classes
+
+In #px syntax, some standard character classes can be conveniently represented
+as metasequences instead of as explicit bracketed expressions: \d matches a
+digit (the same as [0-9]); \s matches an ASCII whitespace character; and \w
+matches a character that could be part of a “word”.
+
+            Following regexp custom, we identify “word” characters as
+            [A-Za-z0-9_], although these are too restrictive for what a
+            Racketeer might consider a “word.”
+
+The upper-case versions of these metasequences stand for the inversions of the
+corresponding character classes: \D matches a non-digit, \S a non-whitespace
+character, and \W a non-“word” character.
+
+Remember to include a double backslash when putting these metasequences in a
+Racket string:
+
+    > (regexp-match #px"\\d\\d"
+       "0 dear, 1 have 2 read catch 22 before 9")
+    '("22")
+
+
+These character classes can be used inside a bracketed expression. For example,
+#px"[a-z\\d]" matches a lower-case letter or a digit.
+
+9.4.2 POSIX character classes
+
+A POSIX character class is a special metasequence of the form [:...:] that can
+be used only inside a bracketed expression in #px syntax. The POSIX classes
+supported are
+
+  • [:alnum:] — ASCII letters and digits
+
+  • [:alpha:] — ASCII letters
+
+  • [:ascii:] — ASCII characters
+
+  • [:blank:] — ASCII widthful whitespace: space and tab
+
+  • [:cntrl:] — “control” characters: ASCII 0 to 32
+
+  • [:digit:] — ASCII digits, same as \d
+
+  • [:graph:] — ASCII characters that use ink
+
+  • [:lower:] — ASCII lower-case letters
+
+  • [:print:] — ASCII ink-users plus widthful whitespace
+
+  • [:space:] — ASCII whitespace, same as \s
+
+  • [:upper:] — ASCII upper-case letters
+
+  • [:word:] — ASCII letters and _, same as \w
+
+  • [:xdigit:] — ASCII hex digits
+
+For example, the #px"[[:alpha:]_]" matches a letter or underscore.
+
+    > (regexp-match #px"[[:alpha:]_]" "--x--")
+    '("x")
+
+    > (regexp-match #px"[[:alpha:]_]" "--_--")
+    '("_")
+
+    > (regexp-match #px"[[:alpha:]_]" "--:--")
+    #f
+
+
+The POSIX class notation is valid only inside a bracketed expression. For
+instance, [:alpha:], when not inside a bracketed expression, will not be read
+as the letter class. Rather, it is (from previous principles) the character
+class containing the characters :, a, l, p, h.
+
+    > (regexp-match #px"[:alpha:]" "--a--")
+    '("a")
+
+    > (regexp-match #px"[:alpha:]" "--x--")
+    #f
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

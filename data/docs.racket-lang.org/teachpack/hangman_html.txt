@@ -1,0 +1,62 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 1  Ht DP Teachpacks
+ 1.1  Manipulating Images: "image.ss"
+ 1.2  Simulations and Animations: "world.ss"
+ 1.3  Converting Temperatures: "convert.ss"
+ 1.4  Guessing Numbers: "guess.ss"
+ 1.5  Master Minding: "master.ss"
+ 1.6  Playing Master Mind: "master-play.ss"
+ 1.7  Simple Drawing: "draw.ss"
+ 1.8  Hangman: "hangman.ss"
+ 1.9  Playing Hangman: "hangman-play.ss"
+1.10  Managing Control Arrows: "arrow.ss"
+1.11  Manipulating Simple HTML Documents: "docs.ss"
+1.12  Working with Files and Directories: "dir.ss"
+1.13  Graphing Functions: "graphing.ss"
+1.14  Simple Graphical User Interfaces: "gui.ss"
+1.15  An Arrow GUI: "arrow-gui.ss"
+1.16  Controlling an Elevator: "elevator.ss"
+1.17  Lookup GUI: "lkup-gui.ss"
+1.18  Guess GUI: "guess-gui.ss"
+1.19  Queens: "show-queen.ss"
+1.20  Matrix Functions: "matrix.ss"
+On this page:
+hangman
+hangman-list
+[...search manuals...]
+  top← prev  up  next → 
+
+1.8 Hangman: "hangman.ss"
+
+ (require htdp/hangman)
+
+The teachpack implements the callback functions for playing a Hangman game,
+based on a function designed by a student. The player guesses a letter and the
+program responds with an answer that indicates how many times, if at all, the
+letter occurs in the secret word.
+
+(hangman make-word reveal draw-next-part) → true
+  make-word : (-> symbol? symbol? symbol? word?)
+  reveal : (-> word? word? word?)
+  draw-next-part : (-> symbol? true)
+Chooses a “secret” three-letter word and uses the given functions to manage the
+Hangman game.
+
+(hangman-list   reveal-for-list        
+                draw-next-part)   →   true
+   reveal-for-list   :   (-> symbol? (list-of symbol?) (list-of symbol?)
+                             (list-of symbol?))
+  draw-next-part : (-> symbol? true)
+Chooses a “secret” word—a list of symbolic letters—and uses the given functions
+to manage the Hangman game: reveal-for-list determines how many times the
+chosen letter occurs in the secret word; draw-next-part is given the symbolic
+name of a body part and draws it on a separately managed canvas.
+
+In addition, the teachpack re-exports the entire functionality of the drawing
+library; see Simple Drawing: "draw.ss" for documentation.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

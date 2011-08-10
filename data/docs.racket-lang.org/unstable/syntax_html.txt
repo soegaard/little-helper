@@ -1,0 +1,182 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+► 30  Syntax
+30.1  Syntax Object Source Locations
+On this page:
+explode-module-path-index
+phase-of-enclosing-module
+format-unique-id
+syntax-within?
+syntax-map
+syntax-list
+30.1 Syntax Object Source Locations
+syntax-source-directory
+syntax-source-file-name
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+30 Syntax
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require unstable/syntax)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(explode-module-path-index mpi)
+ → (listof (or/c module-path? resolved-module-path? #f))
+  mpi : module-path-index?
+Unfolds mpi using module-path-index-split, returning a list of the relative
+module paths together with the terminal resolved module path or #f for the
+“self” module.
+
+Examples:
+
+    > (explode-module-path-index (car (identifier-binding #'lambda)))
+    '("kw.rkt" racket/private/pre-base #f)
+
+    > (explode-module-path-index (caddr (identifier-binding #'lambda)))
+    '(racket/base #f)
+
+    > (explode-module-path-index (car (identifier-binding #'define-values)))
+    '('#%kernel #f)
+
+
+
+(phase-of-enclosing-module)
+Returns the phase level of the module in which the form occurs (and for the
+instantiation of the module in which the form is executed). For example, if a
+module is required directly by the “main” module (or the top level), its phase
+level is 0. If a module is required for-syntax by the “main” module (or the top
+level), its phase level is 1.
+
+Examples:
+
+    > (module helper racket
+        (require unstable/syntax)
+        (displayln (phase-of-enclosing-module)))
+    > (require 'helper)
+    0
+
+    > (require (for-meta 1 'helper))
+    1
+
+
+
+            The subsequent bindings were added by Vincent St-Amour <
+            stamourv@racket-lang.org>.
+
+(format-unique-id    lctx                 
+                     fmt                  
+                     v ...                
+                   [ #:source src         
+                     #:props props        
+                     #:cert cert])   →   identifier?
+  lctx : (or/c syntax? #f)
+  fmt : string?
+  v : (or/c string? symbol? identifier? keyword? char? number?)
+  src : (or/c syntax? #f) = #f
+  props : (or/c syntax? #f) = #f
+  cert : (or/c syntax? #f) = #f
+Like format-id, but returned identifiers are guaranteed to be unique.
+(syntax-within? a b) → boolean?
+  a : syntax?
+  b : syntax?
+Returns true is syntax a is within syntax b in the source. Bounds are
+inclusive.
+
+            The subsequent bindings were added by Sam Tobin-Hochstadt <
+            samth@racket-lang.org>.
+
+(syntax-map f stxl ...) → (listof A)
+  f : (-> syntax? A)
+  stxl : syntax?
+Performs (map f (syntax->list stxl) ...).
+
+Example:
+
+    > (syntax-map syntax-e #'(a b c))
+    '(a b c)
+
+
+
+            The subsequent bindings were added by Carl Eastlund <
+            cce@racket-lang.org>.
+
+(syntax-list template ...)
+This form constructs a list of syntax objects based on the given templates. It
+is equivalent to (syntax->list #'(template ...)).
+
+Example:
+
+    > (with-syntax ([(x ...) #'(1 2 3)])  (syntax-list x ...))
+    '(#<syntax:9:0 1> #<syntax:9:0 2> #<syntax:9:0 3>)
+
+
+
+30.1 Syntax Object Source Locations
+
+(syntax-source-directory stx) → (or/c path? #f)
+  stx : syntax?
+(syntax-source-file-name stx) → (or/c path? #f)
+  stx : syntax?
+These produce the directory and file name, respectively, of the path with which
+stx is associated, or #f if stx is not associated with a path.
+
+Examples:
+
+    (define loc
+      (list (build-path "/tmp" "dir" "somewhere.rkt")
+            #f #f #f #f))
+    (define stx1 (datum->syntax #f 'somewhere loc))
+    > (syntax-source-directory stx1)
+    #<path:/tmp/dir/>
+
+    > (syntax-source-file-name stx1)
+    #<path:somewhere.rkt>
+
+    (define stx2 (datum->syntax #f 'nowhere #f))
+    > (syntax-source-directory stx2)
+    #f
+
+    > (syntax-source-directory stx2)
+    #f
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

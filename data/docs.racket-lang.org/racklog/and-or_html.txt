@@ -1,0 +1,114 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Conjuctions and Disjunctions
+
+Goals may be combined using the forms %and and %or to form compound goals. (For
+%not, see Negation as Failure.) Eg,
+
+    > (%which (x)
+        (%and (%member x '(1 2 3))
+              (%< x 3)))
+    '((x . 1))
+
+
+gives solutions for x that satisfy both the argument goals of the %and. Ie, x
+should both be a member of '(1 2 3) and be less than 3. Typing (%more) gives
+another solution:
+
+    > (%more)
+    '((x . 2))
+
+    > (%more)
+    #f
+
+
+There are no more solutions, because [x 3] satisfies the first but not the
+second goal.
+
+Similarly, the query
+
+    > (%which (x)
+        (%or (%member x '(1 2 3))
+             (%member x '(3 4 5))))
+    '((x . 1))
+
+
+lists all x that are members of either list.
+
+    > (%more)
+    '((x . 2))
+
+    > (%more)
+    '((x . 3))
+
+    > (%more)
+    '((x . 3))
+
+    > (%more)
+    '((x . 4))
+
+    > (%more)
+    '((x . 5))
+
+
+(Yes, ([x 3]) is listed twice.)
+
+We can rewrite the predicate %computer-literate from Predicates with Rules
+using %and and %or:
+
+    (define %computer-literate
+      (%rel (person)
+        [(person)
+         (%or
+           (%and (%knows person
+                   'TeX)
+                 (%knows person
+                   'Racket))
+           (%and (%knows person
+                   'TeX)
+                 (%knows person
+                   'Prolog)))]))
+
+Or, more succinctly:
+
+    (define %computer-literate
+      (%rel (person)
+        [(person)
+          (%and (%knows person
+                  'TeX)
+            (%or (%knows person
+                   'Racket)
+                 (%knows person
+                   'Prolog)))]))
+
+We can even dispense with the %rel altogether:
+
+    (define %computer-literate
+      (lambda (person)
+        (%and (%knows person
+                'TeX)
+          (%or (%knows person
+                 'Racket)
+            (%knows person
+              'Prolog)))))
+
+This last looks like a conventional Racket predicate definition, and is
+arguably the most readable format for a Racket programmer.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

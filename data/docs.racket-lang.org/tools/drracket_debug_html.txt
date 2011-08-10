@@ -1,0 +1,196 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drracket: debug: profile-unit-frame-mixin
+drracket: debug: profile-interactions-text-mixin
+drracket: debug: profile-definitions-text-mixin
+drracket: debug: error-display-handler/ stacktrace
+drracket: debug: make-debug-error-display-handler
+drracket: debug: hide-backtrace-window
+drracket: debug: add-prefs-panel
+drracket: debug: open-and-highlight-in-file
+drracket: debug: show-backtrace-window/ edition-pairs
+drracket: debug: show-backtrace-window
+drracket: debug: srcloc->edition/ pair
+[...search manuals...]
+  top← prev  up  next → 
+
+13 drracket:debug
+
+drracket:debug:profile-unit-frame-mixin : (class? . -> . class?)
+  argument extends/implements:  drracket:frame:<%>
+                                drracket:unit:frame<%>
+
+drracket:debug:profile-interactions-text-mixin : (class? . -> . class?)
+  argument extends/implements:  drracket:rep:text<%>
+
+drracket:debug:profile-definitions-text-mixin : (class? . -> . class?)
+  argument extends/implements:  drracket:unit:definitions-text<%>
+                                text%
+
+(drracket:debug:error-display-handler/stacktrace  
+      msg                                         
+      exn                                         
+   [  stack                                       
+      #:definitions-text defs                     
+      #:interactions-text ints])                  
+ → any/c
+  msg : string?
+  exn : any/c
+  stack : (or/c false/c (listof srcloc?)) = #f
+   defs   :   (or/c #f (is-a?/c drracket:unit:definitions-text<%>))
+          =   #f
+  ints : (or/c #f (is-a?/c drracket:rep:text<%>)) = #f
+Displays the error message represented by the string, adding embellishments
+like those that appears in the DrRacket REPL, specifically a clickable icon for
+the stack trace (if the srcloc location is not empty), and a clickable icon for
+the source of the error (read & syntax errors show their source locations and
+otherwise the first place in the stack trace is shown).
+
+If stack is false, then the stack traces embedded in the exn argument (if any)
+are used. Specifically, this function looks for a stacktrace via errortrace-key
+in the continuation marks of exn and continuation-mark-set->context.
+
+If stack is not false, that stack is added to the stacks already in the
+exception.
+
+This should be called in the same eventspace and on the same thread as the
+error.
+(drracket:debug:make-debug-error-display-handler oedh)
+ → (-> string? (or/c any/c exn?) any)
+  oedh : (-> string? (or/c any/c exn?) any)
+This function implements an error-display-handler in terms of another
+error-display-handler.
+
+See also Racket’s error-display-handler parameter.
+
+If the current-error-port is the definitions window in DrRacket, this error
+handler inserts some debugging annotations, calls oedh, and then highlights the
+source location of the runtime error.
+
+It looks for both stack trace information in the continuation marks both via
+the errortrace/errortrace-key module and via continuation-mark-set->context.
+(drracket:debug:hide-backtrace-window) → void?
+Hides the backtrace window.
+(drracket:debug:add-prefs-panel) → void?
+Adds the profiling preferences panel.
+(drracket:debug:open-and-highlight-in-file    debug-info      
+                                            [ edition-pair])  
+ → void?
+  debug-info : (or/c srcloc? (listof srcloc?))
+                      (or/c #f (cons/c (λ (x) (and (weak-box? x)
+                                                   (let ([v (weak-box-value
+                       x)])
+   edition-pair   :                                  (or (not v)
+                                                         (is-a?/c v editor<%>
+                      )))))
+                                       number?))
+                  =   #f
+This function opens a DrRacket to display debug-info. Only the src the position
+and the span fields of the srcloc are considered.
+
+The edition-pair is used to determine if a warning message is shown when before
+opening the file. If the edition-pair is not #f, it is compared with the result
+of get-edition-number of the editor that is loaded to determine if the file has
+been edited since the source location was recorded. If so, it puts up a warning
+dialog message to that effect.
+(drracket:debug:show-backtrace-window/edition-pairs  
+        error-message                                
+        dis                                          
+        editions-pairs                               
+        defs                                         
+        ints)                                        
+ → void?
+  error-message : string?
+  dis : (listof srcloc?)
+                        (listof (or/c #f (cons/c (λ (x) (and (weak-box? x)
+                                                             (let ([v (
+                        weak-box-value x)])
+   editions-pairs   :                                          (or (not v)
+                                                                   (is-a?/c v 
+                        editor<%>)))))
+                                                 number?)))
+  defs : (or/c #f (is-a?/c drracket:unit:definitions-text<%>))
+  ints : (or/c #f (is-a?/c drracket:rep:text<%>))
+Shows the backtrace window you get when clicking on the bug in DrRacket’s REPL.
+
+The error-message argument is the text of the error, dis is the debug
+information, extracted from the continuation mark in the exception record,
+using errortrace-key.
+
+The editions argument indicates the editions of any editors that are open
+editing the files corresponding to the source locations
+
+The defs argument should be non-#f if there are possibly stacktrace frames that
+contain unsaved versions of the definitions window from DrRacket. Similarly,
+the ints argument should be non-#f if there are possibly stacktrace frames that
+contain unsaved versions of the interactions window.
+
+Use drracket:rep:current-rep to get the rep during evaluation of a program.
+(drracket:debug:show-backtrace-window    error-message        
+                                         dis                  
+                                       [ rep                  
+                                         defs])          →   void?
+  error-message : string?
+             (or/c exn?
+   dis   :         (listof srcloc?)
+                   (non-empty-listof (cons/c string? (listof srcloc?))))
+  rep : (or/c #f (is-a?/c drracket:rep:text<%>)) = #f
+   defs   :   (or/c #f (is-a?/c drracket:unit:definitions-text<%>))
+          =   #f
+Shows the backtrace window you get when clicking on the bug in DrRacket’s REPL.
+
+This function simply calls drracket:debug:show-backtrace-window/edition-pairs,
+using drracket:debug:srcloc->edition/pair.
+(drracket:debug:srcloc->edition/pair    srcloc   
+                                        ints     
+                                        defs     
+                                      [ cache])  
+      (or/c #f (cons/c (let ([weak-box-containing-an-editor?
+                              (λ (x) (and (weak-box? x)
+                                          (let ([v (weak-box-value x)])
+  →                                         (or (not v)
+                                                (is-a?/c v editor<%>)))))])
+                         weak-box-containing-an-editor?)
+                       number?))
+  srcloc : srcloc?
+  ints : (or/c #f (is-a?/c drracket:rep:text<%>))
+  defs : (or/c #f (is-a?/c drracket:unit:definitions-text<%>))
+  cache : (or/c #f (and/c hash? hash-equal?)) = #f
+Constructs a edition pair from a source location, returning the current edition
+of the editor editing the source location (if any).
+
+The ints and defs arguments are used to map source locations, in the case that
+the source location corresponds to the definitions window (when it has not been
+saved) or the interactions window. This calls normalize-path, so to avoid the
+severe performance penalty that can incur on some filesystems, the cache
+argument is consulted and updated, when it is provided. Use this argument if
+you’re calling drracket:debug:srcloc->edition/pair a number of times in a loop,
+when you do not expect the filesystem to change across iterations of the loop.
+The initial argument should be an empty equal hash (e.g., (make-hash)).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

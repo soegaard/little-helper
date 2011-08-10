@@ -1,0 +1,123 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+restart-mzscheme
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/restart)
+
+            See scheme/sandbox for a more general way to simulate running a new
+            Racket process.
+
+(restart-mzscheme   init-argv                
+                    adjust-flag-table        
+                    argv                     
+                    init-namespace)     →   boolean?
+  init-argv : (vectorof string?)
+  adjust-flag-table : (any/c . -> . any/c)
+  argv : (vectorof string?)
+  init-namespace : (-> any)
+Simulates starting Racket with the vector of command-line strings argv. The
+init-argv, adjust-flag-table, and init-namespace arguments are used to modify
+the default settings for command-line flags, adjust the parsing of command-line
+flags, and customize the initial namespace, respectively.
+
+The vector of strings init-argv is read first with the standard Racket
+command-line parsing. Flags that load files or evaluate expressions (e.g., -f
+and -e) are ignored, but flags that set Racket’s modes (e.g., -c or -j)
+effectively set the default mode before argv is parsed.
+
+Before argv is parsed, the procedure adjust-flag-table is called with a
+command-line flag table as accepted by parse-command-line. The return value
+must also be a table of command-line flags, and this table is used to parse
+argv. The intent is to allow adjust-flag-table to add or remove flags from the
+standard set.
+
+After argv is parsed, a new thread and a namespace are created for the
+“restarted” Racket. (The new namespace is installed as the current namespace in
+the new thread.) In the new thread, restarting performs the following actions:
+
+  • The init-namespace procedure is called with no arguments. The return value
+    is ignored.
+
+  • Expressions and files specified by argv are evaluated and loaded. If an
+    error occurs, the remaining expressions and files are ignored, and the
+    return value for restart-mzscheme is set to #f.
+
+  • The read-eval-print-loop procedure is called, unless a flag in init-argv or
+    argv disables it. When read-eval-print-loop returns, the return value for
+    restart-mzscheme is set to #t.
+
+Before evaluating command-line arguments, an exit handler is installed that
+immediately returns from restart-mzscheme with the value supplied to the
+handler. This exit handler remains in effect when read-eval-print-loop is
+called (unless a command-line argument changes it). If restart-mzscheme returns
+normally, the return value is determined as described above.
+
+Note that an error in a command-line expression followed by
+read-eval-print-loop produces a #t result. This is consistent with Racket’s
+stand-alone behavior.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

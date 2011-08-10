@@ -1,0 +1,555 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+► 2.18  Iterations and Comprehensions: for, for/ list, ...
+2.18.1  Iteration and Comprehension Forms
+2.18.2  Deriving New Iteration Forms
+2.18.3  Do Loops
+On this page:
+2.18.1 Iteration and Comprehension Forms
+for
+for/ list
+for/ vector
+for/ hash
+for/ hasheq
+for/ hasheqv
+for/ and
+for/ or
+for/ lists
+for/ first
+for/ last
+for/ fold
+for*
+for*/ list
+for*/ lists
+for*/ vector
+for*/ hash
+for*/ hasheq
+for*/ hasheqv
+for*/ and
+for*/ or
+for*/ first
+for*/ last
+for*/ fold
+2.18.2 Deriving New Iteration Forms
+for/ fold/ derived
+for*/ fold/ derived
+define-sequence-syntax
+: do-in
+for-clause-syntax-protect
+2.18.3 Do Loops
+do
+[...search manuals...]
+  top← prev  up  next → 
+
+2.18 Iterations and Comprehensions: for, for/list, ...
+
+            +Iterations and Comprehensions in The Racket Guide introduces
+            iterations and comprehensions.
+
+The for iteration forms are based on SRFI-42 [SRFI-42].
+
+2.18.1 Iteration and Comprehension Forms
+
+(for (for-clause ...) body ...+)
+ 
+for-clause   =   [id seq-expr]
+             |   [(id ...) seq-expr]
+             |   #:when guard-expr
+             |   #:unless guard-expr
+ 
+   seq-expr   :   sequence?
+Iteratively evaluates body. The for-clauses introduce bindings whose scope
+includes body and that determine the number of times that body is evaluated.
+
+In the simple case, each for-clause has one of its first two forms, where [id
+seq-expr] is a shorthand for [(id) seq-expr]. In this simple case, the
+seq-exprs are evaluated left-to-right, and each must produce a sequence value
+(see Sequences).
+
+The for form iterates by drawing an element from each sequence; if any sequence
+is empty, then the iteration stops, and #<void> is the result of the for
+expression. Otherwise a location is created for each id to hold the values of
+each element; the sequence produced by a seq-expr must return as many values
+for each iteration as corresponding ids.
+
+The ids are then bound in the body, which is evaluated, and whose results are
+ignored. Iteration continues with the next element in each sequence and with
+fresh locations for each id.
+
+A for form with zero for-clauses is equivalent to a single for-clause that
+binds an unreferenced id to a sequence containing a single element. All of the
+ids must be distinct according to bound-identifier=?.
+
+If any for-clause has the form #:when guard-expr, then only the preceding
+clauses (containing no #:when or #:unless) determine iteration as above, and
+the body is effectively wrapped as
+
+    (when guard-expr
+      (for (for-clause ...) body ...+))
+
+using the remaining for-clauses. A for-clause of the form #:unless guard-expr
+corresponds to the same transformation with unless in place of when.
+
+Examples:
+
+    > (for ([i '(1 2 3)]
+            [j "abc"]
+            #:when (odd? i)
+            [k #(#t #f)])
+        (display (list i j k)))
+    (1 a #t)(1 a #f)(3 c #t)(3 c #f)
+
+    > (for ([(i j) #hash(("a" . 1) ("b" . 20))])
+        (display (list i j)))
+    (a 1)(b 20)
+
+    > (for ()
+        (display "here"))
+    here
+
+    > (for ([i '()])
+        (error "doesn't get here"))
+
+
+(for/list (for-clause ...) body ...+)
+Iterates like for, but that the last expression in the bodys must produce a
+single value, and the result of the for/list expression is a list of the
+results in order. When evaluation of a body is skipped due to a #:when or
+#:unless clause, the result list includes no corresponding element.
+
+Examples:
+
+    > (for/list ([i '(1 2 3)]
+                 [j "abc"]
+                 #:when (odd? i)
+                 [k #(#t #f)])
+        (list i j k))
+    '((1 #\a #t) (1 #\a #f) (3 #\c #t) (3 #\c #f))
+
+    > (for/list () 'any)
+    '(any)
+
+    > (for/list ([i '()])
+        (error "doesn't get here"))
+    '()
+
+
+
+(for/vector (for-clause ...) body ...+)
+(for/vector #:length length-expr (for-clause ...) body ...+)
+Iterates like for/list, but the result are accumulated into a vector instead of
+a list. If the optional #:length form is used, then length-expr must evaluate
+to an exact-nonnegative-integer?, and the result vector is constructed with
+this length. In this case, the iteration can be performed more efficiently, and
+terminates when the vector is full or the requested number of iterations have
+been performed, whichever comes first. If the provided length-expr evaluates to
+a length longer than the number of iterations then the remaining slots of the
+vector are intialized to the default argument of make-vector.
+
+(for/hash (for-clause ...) body ...+)
+(for/hasheq (for-clause ...) body ...+)
+(for/hasheqv (for-clause ...) body ...+)
+Like for/list, but the result is an immutable hash table; for/hash creates a
+table using equal? to distinguish keys, for/hasheq produces a table using eq?,
+and for/hasheqv produces a table using eqv?. The last expression in the bodys
+must return two values: a key and a value to extend the hash table accumulated
+by the iteration.
+
+Example:
+
+    > (for/hash ([i '(1 2 3)])
+        (values i (number->string i)))
+    '#hash((1 . "1") (2 . "2") (3 . "3"))
+
+
+
+(for/and (for-clause ...) body ...+)
+Iterates like for, but when last expression of body produces #f, then iteration
+terminates, and the result of the for/and expression is #f. If the body is
+never evaluated, then the result of the for/and expression is #t. Otherwise,
+the result is the (single) result from the last evaluation of body.
+
+Examples:
+
+    > (for/and ([i '(1 2 3 "x")])
+        (i . < . 3))
+    #f
+
+    > (for/and ([i '(1 2 3 4)])
+        i)
+    4
+
+    > (for/and ([i '()])
+        (error "doesn't get here"))
+    #t
+
+
+
+(for/or (for-clause ...) body ...+)
+Iterates like for, but when last expression of body produces a value other than
+#f, then iteration terminates, and the result of the for/or expression is the
+same (single) value. If the body is never evaluated, then the result of the for
+/or expression is #f. Otherwise, the result is #f.
+
+Examples:
+
+    > (for/or ([i '(1 2 3 "x")])
+        (i . < . 3))
+    #t
+
+    > (for/or ([i '(1 2 3 4)])
+        i)
+    1
+
+    > (for/or ([i '()])
+        (error "doesn't get here"))
+    #f
+
+
+
+(for/lists (id ...) (for-clause ...) body ...+)
+Similar to for/list, but the last body expression should produce as many values
+as given ids, and the result is as many lists as supplied ids. The ids are
+bound to the lists accumulated so far in the for-clauses and bodys.
+
+(for/first (for-clause ...) body ...+)
+Iterates like for, but after body is evaluated the first time, then the
+iteration terminates, and the for/first result is the (single) result of body.
+If the body is never evaluated, then the result of the for/first expression is
+#f.
+
+Examples:
+
+    > (for/first ([i '(1 2 3 "x")]
+                  #:when (even? i))
+         (number->string i))
+    "2"
+
+    > (for/first ([i '()])
+        (error "doesn't get here"))
+    #f
+
+
+
+(for/last (for-clause ...) body ...+)
+Iterates like for, but the for/last result is the (single) result of the last
+evaluation of body. If the body is never evaluated, then the result of the for/
+last expression is #f.
+
+Examples:
+
+    > (for/last ([i '(1 2 3 4 5)]
+                  #:when (even? i))
+         (number->string i))
+    "4"
+
+    > (for/last ([i '()])
+        (error "doesn't get here"))
+    #f
+
+
+
+(for/fold ([accum-id init-expr] ...) (for-clause ...) . body)
+Iterates like for. Before iteration starts, the init-exprs are evaluated to
+produce initial accumulator values. At the start of each iteration, a location
+is generated for each accum-id, and the corresponding current accumulator value
+is placed into the location. The last expression in body must produce as many
+values as accum-ids, and those values become the current accumulator values.
+When iteration terminates, the results of the fold/for expression are the
+accumulator values.
+
+Example:
+
+    > (for/fold ([sum 0]
+                 [rev-roots null])
+                ([i '(1 2 3 4)])
+        (values (+ sum i) (cons (sqrt i) rev-roots)))
+    10
+
+    '(2 1.7320508075688772 1.4142135623730951 1)
+
+
+
+(for* (for-clause ...) body ...+)
+Like for, but with an implicit #:when #t between each pair of for-clauses, so
+that all sequence iterations are nested.
+
+Example:
+
+    > (for* ([i '(1 2)]
+             [j "ab"])
+        (display (list i j)))
+    (1 a)(1 b)(2 a)(2 b)
+
+
+
+(for*/list (for-clause ...) body ...+)
+(for*/lists (id ...) (for-clause ...) body ...+)
+(for*/vector (for-clause ...) body ...+)
+(for*/vector #:length length-expr (for-clause ...) body ...+)
+(for*/hash (for-clause ...) body ...+)
+(for*/hasheq (for-clause ...) body ...+)
+(for*/hasheqv (for-clause ...) body ...+)
+(for*/and (for-clause ...) body ...+)
+(for*/or (for-clause ...) body ...+)
+(for*/first (for-clause ...) body ...+)
+(for*/last (for-clause ...) body ...+)
+(for*/fold ([accum-id init-expr] ...) (for-clause ...) body ...+)
+Like for/list, etc., but with the implicit nesting of for*.
+
+Example:
+
+    > (for*/list ([i '(1 2)]
+                  [j "ab"])
+        (list i j))
+    '((1 #\a) (1 #\b) (2 #\a) (2 #\b))
+
+
+
+2.18.2 Deriving New Iteration Forms
+
+(for/fold/derived orig-datum
+  ([accum-id init-expr] ...) (for-clause ...) body ...+)
+Like for/fold, but the extra orig-datum is used as the source for all syntax
+errors.
+
+Examples:
+
+    > (define-syntax (for/digits stx)
+        (syntax-case stx ()
+          [(_ clauses . defs+exprs)
+           (with-syntax ([original stx])
+             #'(let-values
+                 ([(n k)
+                   (for/fold/derived original ([n 0] [k 1]) clauses
+                     (define d (let () . defs+exprs))
+                     (values (+ n (* d k)) (* k 10)))])
+                 n))]))
+    > (for/digits
+          [a (in-list '(1 2 3))]
+          [b (in-list '(4 5 6))]
+        (+ a b))
+    eval:480:0: for/digits: bad sequence binding clause at: a
+
+    in: (for/digits (a (in-list (quote (1 2 3)))) (b (in-list
+
+    (quote (4 5 6)))) (+ a b))
+
+    > (for/digits
+          ([a (in-list '(1 2 3))]
+           [b (in-list '(2 4 6))])
+        (+ a b))
+    963
+
+
+
+(for*/fold/derived orig-datum
+  ([accum-id init-expr] ...) (for-clause ...) body ...+)
+Like for*/fold, but the extra orig-datum is used as the source for all syntax
+errors.
+
+Examples:
+
+    > (define-syntax (for*/digits stx)
+        (syntax-case stx ()
+          [(_ clauses . defs+exprs)
+           (with-syntax ([original stx])
+             #'(let-values
+                 ([(n k)
+                   (for*/fold/derived original ([n 0] [k 1]) clauses
+                     (define d (let () . defs+exprs))
+                     (values (+ n (* d k)) (* k 10)))])
+                 n))]))
+    > (for*/digits
+          [ds (in-list '((8 3) (1 1)))]
+          [d (in-list ds)]
+        d)
+    eval:483:0: for*/digits: bad sequence binding clause at: ds
+
+    in: (for*/digits (ds (in-list (quote ((8 3) (1 1))))) (d
+
+    (in-list ds)) d)
+
+    > (for*/digits
+          ([ds (in-list '((8 3) (1 1)))]
+           [d (in-list ds)])
+        d)
+    1138
+
+
+
+(define-sequence-syntax id
+  expr-transform-expr
+  clause-transform-expr)
+ 
+       expr-transform-expr   :   (or/c (-> identifier?)
+                                       (syntax? . -> . syntax?))
+       clause-transform-expr   :   (syntax? . -> . syntax?)
+
+Defines id as syntax. An (id . rest) form is treated specially when used to
+generate a sequence in a clause of for (or one of its variants). In that case,
+the procedure result of clause-transform-expr is called to transform the
+clause.
+
+When id is used in any other expression position, the result of
+expr-transform-expr is used. If it is a procedure of zero arguments, then the
+result must be an identifier other-id, and any use of id is converted to a use
+of other-id. Otherwise,expr-transform-expr must produce a procedure (of one
+argument) that is used as a macro transformer.
+
+When the clause-transform-expr transformer is used, it is given a clause as an
+argument, where the clause’s form is normalized so that the left-hand side is a
+parenthesized sequence of identifiers. The right-hand side is of the form (id .
+rest). The result can be either #f, to indicate that the forms should not be
+treated specially (perhaps because the number of bound identifiers is
+inconsistent with the (id . rest) form), or a new clause to replace the given
+one. The new clause might use :do-in. To protect identifiers in the result of
+clause-transform-expr, use for-clause-syntax-protect instead of syntax-protect.
+
+Examples:
+
+    > (define-sequence-syntax in-digits
+        (lambda () #'in-digits/proc)
+        (lambda (stx)
+          (syntax-case stx ()
+            [[(d) (_ nat)]
+             #'[(d)
+                (:do-in
+                  ([(n) nat])
+                  (unless (exact-nonnegative-integer? n)
+                    (raise-type-error 'in-digits "exact non-negative
+    integer" n))
+                  ([i n])
+                  (not (zero? i))
+                  ([(j d) (quotient/remainder i 10)])
+                  #true
+                  #true
+                  [j])]])))
+    > (define (in-digits/proc n [b 10])
+        (for/list ([d (in-digits n)]) d))
+    > (for/list ([d (in-digits 1138)]) d)
+    '(8 3 1 1)
+
+    > (map in-digits (list 137 216))
+    '((7 3 1) (6 1 2))
+
+
+
+(:do-in ([(outer-id ...) outer-expr] ...)
+        outer-check
+        ([loop-id loop-expr] ...)
+        pos-guard
+        ([(inner-id ...) inner-expr] ...)
+        pre-guard
+        post-guard
+        (loop-arg ...))
+A form that can only be used as a seq-expr in a clause of for (or one of its
+variants).
+
+Within a for, the pieces of the :do-in form are spliced into the iteration
+essentially as follows:
+
+    (let-values ([(outer-id ...) outer-expr] ...)
+      outer-check
+      (let loop ([loop-id loop-expr] ...)
+        (if pos-guard
+            (let-values ([(inner-id ...) inner-expr] ...)
+              (if pre-guard
+                  (let body-bindings
+                       (if post-guard
+                           (loop loop-arg ...)
+                           done-expr))
+                  done-expr))
+             done-expr)))
+
+where body-bindings and done-expr are from the context of the :do-in use. The
+identifiers bound by the for clause are typically part of the ([(inner-id ...)
+inner-expr] ...) section.
+
+The actual loop binding and call has additional loop arguments to support
+iterations in parallel with the :do-in form, and the other pieces are similarly
+accompanied by pieces from parallel iterations.
+
+For an example of :do-in, see define-sequence-syntax.
+
+(for-clause-syntax-protect stx) → syntax?
+  stx : syntax?
+Provided for-syntax: Like syntax-protect, but allows the for expander to disarm
+the result syntax object, and arms the pieces of a clause instead of the entire
+syntax object.
+
+Use this function to protect the result of a clause-transform-expr that is
+bound by define-sequence-syntax.
+
+2.18.3 Do Loops
+
+(do ([id init-expr step-expr-maybe] ...)
+    (stop?-expr finish-expr ...)
+  expr ...)
+ 
+step-expr-maybe   =  
+                  |   step-expr
+Iteratively evaluates the exprs for as long as stop?-expr returns #f.
+
+To initialize the loop, the init-exprs are evaluated in order and bound to the
+corresponding ids. The ids are bound in all expressions within the form other
+than the init-exprs.
+
+After the ids have been bound, the stop?-expr is evaluated. If it produces #f,
+each expr is evaluated for its side-effect. The ids are then effectively
+updated with the values of the step-exprs, where the default step-expr for id
+is just id; more precisely, iteration continues with fresh locations for the
+ids that are initialized with the values of the corresponding step-exprs.
+
+When stop?-expr produces a true value, then the finish-exprs are evaluated in
+order, and the last one is evaluated in tail position to produce the overall
+value for the do form. If no finish-expr is provided, the value of the do form
+is #<void>.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

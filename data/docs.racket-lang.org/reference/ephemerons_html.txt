@@ -1,0 +1,80 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 15  Memory Management
+15.1  Weak Boxes
+15.2  Ephemerons
+15.3  Wills and Executors
+15.4  Garbage Collection
+On this page:
+make-ephemeron
+ephemeron-value
+ephemeron?
+[...search manuals...]
+  top← prev  up  next → 
+
+15.2 Ephemerons
+
+An ephemeron [Hayes97] is a generalization of a weak box (see Weak Boxes).
+Instead of just containing one value, an ephemeron holds two values: one that
+is considered the value of the ephemeron and another that is the ephemeron’s
+key. Like the value in a weak box, the value in an ephemeron may be replaced by
+#f, but when the key is no longer reachable (except possibly via weak
+references) instead of when the value is no longer reachable.
+
+As long as an ephemeron’s value is retained, the reference is considered a
+non-weak reference. References to the key via the value are treated specially,
+however, in that the reference does not necessarily count toward the key’s
+reachability. A weak box can be seen as a specialization of an ephemeron where
+the key and value are the same.
+
+One particularly common use of ephemerons is to combine them with a weak hash
+table (see Hash Tables) to produce a mapping where the memory manager can
+reclaim key–value pairs even when the value refers to the key.
+
+More precisely,
+
+  • the value in an ephemeron is replaced by #f when the automatic memory
+    manager can prove that either the ephemeron or the key is reachable only
+    through weak references (see Weak Boxes); and
+
+  • nothing reachable from the value in an ephemeron counts toward the
+    reachability of an ephemeron key (whether for the same ephemeron or
+    another), unless the same value is reachable through a non-weak reference,
+    or unless the value’s ephemeron key is reachable through a non-weak
+    reference (see Weak Boxes for information on weak references).
+
+(make-ephemeron key v) → ephemeron?
+  key : any/c
+  v : any/c
+Returns a new ephemeron whose key is key and whose value is initially v.
+
+(ephemeron-value ephemeron) → any
+  ephemeron : ephemeron?
+Returns the value contained in ephemeron. If the garbage collector has proven
+that the key for ephemeron is only weakly reachable, then the result is #f.
+
+(ephemeron? v) → boolean?
+  v : any/c
+Returns #t if v is an ephemeron, #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,559 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 7
+
+Exceptions and conditions
+
+Scheme allows programs to deal with exceptional situations using two
+cooperating facilities: The exception system for raising and handling
+exceptional situations, and the condition system for describing these
+situations.
+
+The exception system allows the program, when it detects an exceptional
+situation, to pass control to an exception handler, and to dynamically
+establish such exception handlers. Exception handlers are always invoked with
+an object describing the exceptional situation. Scheme’s condition system
+provides a standardized taxonomy of such descriptive objects, as well as a
+facility for extending the taxonomy.
+
+7.1  Exceptions
+
+This section describes Scheme’s exception-handling and exception-raising
+constructs provided by the (rnrs exceptions (6))library.
+
+Exception handlers are one-argument procedures that determine the action the
+program takes when an exceptional situation is signalled. The system implicitly
+maintains a current exception handler.
+
+The program raises an exception by invoking the current exception handler,
+passing it an object encapsulating information about the exception. Any
+procedure accepting one argument may serve as an exception handler and any
+object may be used to represent an exception.
+
+The system maintains the current exception handler as part of the dynamic
+environment of the program; see report section on “Dynamic extent and dynamic
+environment”.
+
+When a program begins its execution, the current exception handler is expected
+to handle all &serious conditions by interrupting execution, reporting that an
+exception has been raised, and displaying information about the condition
+object that was provided. The handler may then exit, or may provide a choice of
+other options. Moreover, the exception handler is expected to return when
+passed any other non-&serious condition. Interpretation of these expectations
+necessarily depends upon the nature of the system in which programs are
+executed, but the intent is that users perceive the raising of an exception as
+a controlled escape from the situation that raised the exception, not as a
+crash.
+
+(with-exception-handler handler thunk)    procedure 
+
+Handler must be a procedure and should accept one argument. Thunk must be a
+procedure that accepts zero arguments. The with-exception-handler procedure
+returns the results of invoking thunk. Handler is installed as the current
+exception handler for the dynamic extent (as determined by dynamic-wind) of the
+invocation of thunk.
+
+Implementation responsibilities: The implementation must check the restrictions
+on handler to the extent performed by applying it as described when it is
+called as a result of a call to raise or raise-continuable. An implementation
+may check whether handler is an appropriate argument before applying it.
+
+(guard (<variable>    syntax 
+   <cond clause[1]> <cond clause[2]> ...)
+   <body>)
+=>    auxiliary syntax 
+else    auxiliary syntax 
+
+Syntax: Each <cond clause> is as in the specification of cond. (See report
+section on “Derived conditionals”.) >^ and else are the same as in the (rnrs
+base (6)) library.
+
+Semantics: Evaluating a guard form evaluates <body> with an exception handler
+that binds the raised object to <variable> and within the scope of that binding
+evaluates the clauses as if they were the clauses of a cond expression. That
+implicit cond expression is evaluated with the continuation and dynamic
+environment of the guard expression. If every <cond clause>’s <test> evaluates
+to #f and there is no else clause, then raise is re-invoked on the raised
+object within the dynamic environment of the original call to raise except that
+the current exception handler is that of the guard expression.
+
+The final expression in a <cond> clause is in a tail context if the guard
+expression itself is.
+
+(raise obj)    procedure 
+
+Raises a non-continuable exception by invoking the current exception handler on
+obj. The handler is called with a continuation whose dynamic environment is
+that of the call to raise, except that the current exception handler is the one
+that was in place when the handler being called was installed. When the handler
+returns, a non-continuable exception with condition type &non-continuable is
+raised in the same dynamic environment as the handler.
+
+(raise-continuable obj)    procedure 
+
+Raises a continuable exception by invoking the current exception handler on
+obj. The handler is called with a continuation that is equivalent to the
+continuation of the call to raise-continuable, with these two exceptions: (1)
+the current exception handler is the one that was in place when the handler
+being called was installed, and (2) if the handler being called returns, then
+it will again become the current exception handler. If the handler returns, the
+values it returns become the values returned by the call to raise-continuable.
+
+(guard (con
+         ((error? con)
+          (if (message-condition? con)
+              (display (condition-message con))
+              (display "an error has occurred"))
+          ’error)
+         ((violation? con)
+          (if (message-condition? con)
+              (display (condition-message con))
+              (display "the program has a bug"))
+          ’violation))
+  (raise
+    (condition
+      (make-error)
+      (make-message-condition "I am an error"))))
+    prints: I am an error
+           ⇒ error
+
+(guard (con
+         ((error? con)
+          (if (message-condition? con)
+              (display (condition-message con))
+              (display "an error has occurred"))
+          ’error))
+  (raise
+    (condition
+      (make-violation
+      (make-message-condition "I am an error"))))
+          ⇒  &violation exception
+
+(guard (con
+         ((error? con)
+          (display "error opening file")
+          #f))
+  (call-with-input-file "foo.scm" read))
+    prints: error opening file
+           ⇒ #f
+
+(with-exception-handler
+  (lambda (con)
+    (cond
+      ((not (warning? con))
+       (raise con))
+      ((message-condition? con)
+       (display (condition-message con)))
+      (else
+       (display "a warning has been issued")))
+    42)
+  (lambda ()
+    (+ (raise-continuable
+         (condition
+           (make-warning)
+           (make-message-condition
+             "should be a number")))
+       23)))
+    prints: should be a number
+           ⇒ 65
+
+7.2  Conditions
+
+The section describes Scheme’s (rnrs conditions (6))library for creating and
+inspecting condition types and values. A condition value encapsulates
+information about an exceptional situation. Scheme also defines a number of
+basic condition types.
+
+Scheme conditions provides two mechanisms to enable communication about an
+exceptional situation: subtyping among condition types allows handling code to
+determine the general nature of an exception even though it does not anticipate
+its exact nature, and compound conditions allow an exceptional situation to be
+described in multiple ways.
+
+7.2.1  Condition objects
+
+Conceptually, there are two different kinds of condition objects: simple
+conditionsand compound conditions. An object that is either a simple condition
+or a compound condition is simply a condition. Compound conditions form a type
+disjoint from the base types described in report section on “Base types”. A
+simple condition describes a single aspect of an exceptional situation. A
+compound condition represents multiple aspects of an exceptional situation as a
+list of simple conditions, its components. Most of the operations described in
+this section treat a simple condition identically to a compound condition with
+itself as its own sole component. For a subtype t of &condition, a condition of
+type t is either a record of type t or a compound condition containing a
+component of type t.
+
+&condition    condition type 
+
+Simple conditions are records of subtypes of the &condition record type. The &
+condition type has no fields and is neither sealed nor opaque.
+
+(condition condition[1] ...)    procedure 
+
+The condition procedure returns a condition object with the components of the
+conditions as its components, in the same order, i.e., with the components of
+condition[1] appearing first in the same order as in condition[1], then with
+the components of condition[2], and so on. The returned condition is compound
+if the total number of components is zero or greater than one. Otherwise, it
+may be compound or simple.
+
+(simple-conditions condition)    procedure 
+
+The simple-conditions procedure returns a list of the components of condition,
+in the same order as they appeared in the construction of condition. The
+returned list is immutable. If the returned list is modified, the effect on
+condition is unspecified.
+
+    Note:   Because condition decomposes its arguments into simple conditions,
+    simple-conditions always returns a “flattened” list of simple conditions.
+
+(condition? obj)    procedure 
+
+Returns #t if obj is a (simple or compound) condition, otherwise returns #f.
+
+(condition-predicate rtd)    procedure 
+
+Rtd must be a record-type descriptor of a subtype of &condition. The
+condition-predicate procedure returns a procedure that takes one argument. This
+procedure returns #t if its argument is a condition of the condition type
+represented by rtd, i.e., if it is either a simple condition of that record
+type (or one of its subtypes) or a compound conditition with such a simple
+condition as one of its components, and #f otherwise.
+
+(condition-accessor rtd proc)    procedure 
+
+Rtd must be a record-type descriptor of a subtype of &condition. Proc should
+accept one argument, a record of the record type of rtd. The condition-accessor
+procedure returns a procedure that accepts a single argument, which must be a
+condition of the type represented by rtd. This procedure extracts the first
+component of the condition of the type represented by rtd, and returns the
+result of applying proc to that component.
+
+(define-record-type (&cond1 make-cond1 real-cond1?)
+  (parent &condition)
+  (fields
+   (immutable x real-cond1-x)))
+
+(define cond1?
+  (condition-predicate
+    (record-type-descriptor &cond1)))
+(define cond1-x
+  (condition-accessor
+    (record-type-descriptor &cond1)
+    real-cond1-x))
+
+(define foo (make-cond1 ’foo))
+
+(condition? foo)         ⇒ #t
+(cond1? foo)         ⇒ #t
+(cond1-x foo)         ⇒ foo
+
+(define-record-type (&cond2 make-cond2 real-cond2?)
+  (parent &condition)
+  (fields
+   (immutable y real-cond2-y)))
+
+(define cond2?
+  (condition-predicate
+    (record-type-descriptor &cond2)))
+(define cond2-y
+  (condition-accessor
+     (record-type-descriptor &cond2)
+     real-cond2-y))
+
+(define bar (make-cond2 ’bar))
+
+(condition? (condition foo bar)) 
+                ⇒ #t
+(cond1? (condition foo bar)) 
+                ⇒ #t
+(cond2? (condition foo bar)) 
+                ⇒ #t
+(cond1? (condition foo))         ⇒ #t
+(real-cond1? (condition foo)) 
+                ⇒ unspecified
+(real-cond1? (condition foo bar)) 
+                ⇒ #f
+(cond1-x (condition foo bar) 
+                ⇒ foo
+(cond2-y (condition foo bar) 
+                ⇒ bar
+ 
+(equal? (simple-conditions (condition foo bar))
+        (list foo bar))         ⇒ #t
+
+(equal? (simple-conditions
+          (condition foo (condition bar)))
+        (list foo bar))         ⇒ #t
+
+(define-condition-type <condition-type>    syntax 
+
+<supertype>
+<constructor> <predicate>
+<field-spec[1]> ...)
+
+Syntax: <Condition-type>, <supertypes>, <constructor>, and <predicate> must all
+be identifiers. Each <field-spec> must be of the form
+
+(<field> <accessor>)
+
+where both <field> and <accessor> must be identifiers.
+
+Semantics: The define-condition-type form expands into a record-type definition
+for a record type <condition-type> (see section 6.2). The record type will be
+non-opaque, non-sealed, and its fields will be immutable. It will have
+<supertype> has its parent type. The remaining identifiers will be bound as
+follows:
+
+  • <Constructor> is bound to a default constructor for the type (see section 
+    6.3): It accepts one argument for each of the record type’s complete set of
+    fields (including parent types, with the fields of the parent coming before
+    those of the extension in the arguments) and returns a condition object
+    initialized to those arguments.
+
+  • <Predicate> is bound to a predicate that identifies conditions of type
+    <condition-type> or any of its subtypes.
+
+  • Each <accessor> is bound to a procedure that extracts the corresponding
+    field from a condition of type <condition-type>.
+
+(define-condition-type &c &condition
+  make-c c?
+  (x c-x))
+
+(define-condition-type &c1 &c
+  make-c1 c1?
+  (a c1-a))
+
+(define-condition-type &c2 &c
+  make-c2 c2?
+  (b c2-b))
+
+(define v1 (make-c1 "V1" "a1"))
+
+(c? v1)                ⇒ #t
+(c1? v1)               ⇒ #t
+(c2? v1)               ⇒ #f
+(c-x v1)               ⇒ "V1"
+(c1-a v1)              ⇒ "a1"
+
+(define v2 (make-c2 "V2" "b2"))
+
+(c? v2)                ⇒ #t
+(c1? v2)               ⇒ #f
+(c2? v2)               ⇒ #t
+(c-x v2)               ⇒ "V2"
+(c2-b v2)              ⇒ "b2"
+
+(define v3 (condition
+             (make-c1 "V3/1" "a3")
+             (make-c2 "V3/2" "b3")))
+
+(c? v3)                ⇒ #t
+(c1? v3)               ⇒ #t
+(c2? v3)               ⇒ #t
+(c-x v3)               ⇒ "V3/1"
+(c1-a v3)              ⇒ "a3"
+(c2-b v3)              ⇒ "b3"
+
+(define v4 (condition v1 v2))
+
+(c? v4)                ⇒ #t
+(c1? v4)               ⇒ #t
+(c2? v4)               ⇒ #t
+(c-x v4)               ⇒ "V1"
+(c1-a v4)              ⇒ "a1"
+(c2-b v4)              ⇒ "b2"
+
+(define v5 (condition v2 v3))
+
+(c? v5)                ⇒ #t
+(c1? v5)               ⇒ #t
+(c2? v5)               ⇒ #t
+(c-x v5)               ⇒ "V2"
+(c1-a v5)              ⇒ "a3"
+(c2-b v5)              ⇒ "b2"
+
+7.3  Standard condition types
+
+[r6rs-lib-Z-G-3.gif]
+Figure 1:  Hierarchy of standard condition types
+
+&message    condition type 
+(make-message-condition message)    procedure 
+(message-condition? obj)    procedure 
+(condition-message condition)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &message &condition
+  make-message-condition message-condition?
+  (message condition-message))
+
+It carries a message further describing the nature of the condition to humans.
+
+&warning    condition type 
+(make-warning)    procedure 
+(warning? obj)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &warning &condition
+  make-warning warning?)
+
+This type describes conditions that do not, in principle, prohibit immediate
+continued execution of the program, but may interfere with the program’s
+execution later.
+
+&serious    condition type 
+(make-serious-condition)    procedure 
+(serious-condition? obj)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &serious &condition
+  make-serious-condition serious-condition?)
+
+This type describes conditions serious enough that they cannot safely be
+ignored. This condition type is primarily intended as a supertype of other
+condition types.
+
+&error    condition type 
+(make-error)    procedure 
+(error? obj)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &error &serious
+  make-error error?)
+
+This type describes errors, typically caused by something that has gone wrong
+in the interaction of the program with the external world or the user.
+
+&violation    condition type 
+(make-violation)    procedure 
+(violation? obj)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &violation &serious
+  make-violation violation?)
+
+This type describes violations of the language standard or a library standard,
+typically caused by a programming error.
+
+&assertion    condition type 
+(make-assertion-violation)    procedure 
+(assertion-violation? obj)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &assertion &violation
+  make-assertion-violation assertion-violation?)
+
+This type describes an invalid call to a procedure, either passing an invalid
+number of arguments, or passing an argument of the wrong type.
+
+&irritants    condition type 
+(make-irritants-condition irritants)    procedure 
+(irritants-condition? obj)    procedure 
+(condition-irritants condition)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &irritants &condition
+  make-irritants-condition irritants-condition?
+  (irritants condition-irritants))
+
+Irritants should be a list of objects. This condition provides additional
+information about a condition, typically the argument list of a procedure that
+detected an exception. Conditions of this type are created by the error and
+assertion-violation procedures of report section on “Errors and violations”.
+
+&who    condition type 
+(make-who-condition who)    procedure 
+(who-condition? obj)    procedure 
+(condition-who condition)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &who &condition
+  make-who-condition who-condition?
+  (who condition-who))
+
+Who should be a symbol or string identifying the entity reporting the
+exception. Conditions of this type are created by the error and
+assertion-violation procedures (report section on “Errors and violations”), and
+the syntax-violation procedure (section on “Syntax violations”).
+
+&non-continuable    condition type 
+(make-non-continuable-violation)    procedure 
+(non-continuable-violation? obj)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &non-continuable &violation
+  make-non-continuable-violation
+  non-continuable-violation?)
+
+This type indicates that an exception handler invoked via raise has returned.
+
+&implementation-restriction    condition type 
+(make-implementation-restriction-violation)    procedure 
+(implementation-restriction-violation? obj)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &implementation-restriction
+    &violation
+  make-implementation-restriction-violation
+  implementation-restriction-violation?)
+
+This type describes a violation of an implementation restriction allowed by the
+specification, such as the absence of representations for NaNs and infinities.
+(See section 11.3.)
+
+&lexical    condition type 
+(make-lexical-violation)    procedure 
+(lexical-violation? obj)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &lexical &violation
+  make-lexical-violation lexical-violation?)
+
+This type describes syntax violations at the level of the datum syntax.
+
+&syntax    condition type 
+(make-syntax-violation form subform)    procedure 
+(syntax-violation? obj)    procedure 
+(syntax-violation-form condition)    procedure 
+(syntax-violation-subform condition)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &syntax &violation
+  make-syntax-violation syntax-violation?
+  (form syntax-violation-form)
+  (subform syntax-violation-subform))
+
+This type describes syntax violations. Form should be the erroneous syntax
+object or a datum representing the code of the erroneous form. Subform should
+be an optional syntax object or datum within the erroneous form that more
+precisely locates the violation. It can be #f to indicate the absence of more
+precise information.
+
+&undefined    condition type 
+(make-undefined-violation)    procedure 
+(undefined-violation? obj)    procedure 
+
+This condition type could be defined by
+
+(define-condition-type &undefined &violation
+  make-undefined-violation undefined-violation?)
+
+This type describes unbound identifiers in the program.
+
+                        [Go to first, previous, next page;   contents;   index]
+

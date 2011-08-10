@@ -1,0 +1,303 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Contracts and Boundaries
+7.2  Simple Contracts on Functions
+7.3  Contracts on Functions in General
+7.4  Contracts: A Thorough Example
+7.5  Contracts on Structures
+7.6  Abstract Contracts using #: exists and #: ∃
+7.7  Additional Examples
+7.8  Gotchas
+[...search manuals...]
+  top← prev  up  next → 
+
+7.4 Contracts: A Thorough Example
+
+This section develops several different flavors of contracts for one and the
+same example: Racket’s argmax function. According to its Racket documentation,
+the function consumes a procedure proc and a non-empty list of values, lst. It
+
+
+    returns the first element in the list lst that maximizes the result of
+    proc.
+
+The emphasis on first is ours.
+
+Examples:
+
+    > (argmax add1 (list 1 2 3))
+    3
+
+    > (argmax sqrt (list 0.4 0.9 0.16))
+    0.9
+
+    > (argmax second '((a 2) (b 3) (c 4) (d 1) (e 4)))
+    '(c 4)
+
+
+Here is the simplest possible contract for this function:
+
+
+        version 1
+
+            #lang racket
+             
+            (define (argmax f lov) ...)
+             
+            (provide/contract
+              [argmax (-> (-> any/c real?) (and/c pair? list?) any/c)])
+
+This contract captures two essential conditions of the informal description of
+argmax:
+
+  • the given function must produce numbers that are comparable according to <.
+    In particular, the contract (-> any/c number?) would not do, because
+    number? also recognizes complex numbers in Racket.
+
+  • the given list must contain at least one item.
+
+When combined with the name, the contract explains the behavior of argmax at
+the same level as an ML function type in a module signature (except for the
+non-empty list aspect).
+
+Contracts may communicate significantly more than a type signature, however.
+Take a look at this second contract for argmax:
+
+
+        version 2
+
+            #lang racket
+             
+            (define (argmax f lov) ...)
+             
+            (provide/contract
+              [argmax
+                (->i ([f (-> any/c real?)] [lov (and/c pair? list?)]) ()
+                     (r (f lov)
+                        (lambda (r)
+                          (define f@r (f r))
+                          (for/and ((v lov)) (>= f@r (f v))))))])
+
+It is a dependent contract that names the two arguments and uses the names to
+impose a predicate on the result. This predicate computes (f r) – where r is
+the result of argmax – and then validates that this value is greater than or
+equal to all values of f on the items of lov.
+
+Is it possible that argmax could cheat by returning a random value that
+accidentally maximizes f over all elements of lov? With a contract, it is
+possible to rule out this possibility:
+
+
+        version 2 rev. a
+
+            #lang racket
+             
+            (define (argmax f lov) ...)
+             
+            (provide/contract
+              [argmax
+                (->i ([f (-> any/c real?)] [lov (and/c pair? list?)]) ()
+                     (r (f lov)
+                        (lambda (r)
+                          (define f@r (f r))
+                          (and
+                            (memq r lov)
+                            (for/and ((v lov)) (>= f@r (f v)))))))])
+
+The memq function ensures that r is intensionally equal That is, "pointer
+equality" for those who prefer to think at the hardware level. to one of the
+members of lov. Of course, a moment’s worth of reflection shows that it is
+impossible to make up such a value. Functions are opaque values in Racket and
+without applying a function, it is impossible to determine whether some random
+input value produces an output value or triggers some exception. So we ignore
+this possibility from here on.
+
+Version 2 formulates the overall sentiment of argmax’s documentation, but it
+fails to bring across that the result is the first element of the given list
+that maximizes the given function f. Here is a version that communicates this
+second aspect of the informal documentation:
+
+
+        version 3
+
+            #lang racket
+             
+            (define (argmax f lov) ...)
+             
+            (provide/contract
+              [argmax
+                (->i ([f (-> any/c real?)] [lov (and/c pair? list?)]) ()
+                     (r (f lov)
+                        (lambda (r)
+                          (define f@r (f r))
+                          (and (for/and ((v lov)) (>= f@r (f v)))
+                               (eq? (first (memf (lambda (v) (= (f v) f@r))
+             lov))
+                                    r)))))])
+
+That is, the memf function determines the first element of lov whose value
+under f is equal to r’s value under f. If this element is intensionally equal
+to r, the result of argmax is correct.
+
+This second refinement step introduces two problems. First, both conditions
+recompute the values of f for all elements of lov. Second, the contract is now
+quite difficult to read. Contracts should have a concise formulation that a
+client can comprehend with a simple scan. Let us eliminate the readability
+problem with two auxiliary functions that have reasonably meaningful names:
+
+        version 3 rev. a
+
+            #lang racket
+             
+            (define (argmax f lov) ...)
+             
+            (provide/contract
+              [argmax
+                (->i ([f (-> any/c real?)] [lov (and/c pair? list?)]) ()
+                     (r (f lov)
+                        (lambda (r)
+                          (define f@r (f r))
+                          (and (is-first-max? r f@r f lov)
+                               (dominates-all f@r f lov)))))])
+             
+            ; where
+             
+            ; f@r is greater or equal to all (f v) for v in lov
+            (define (dominates-all f@r f lov)
+              (for/and ((v lov)) (>= (f v) f@r)))
+             
+            ; r is eq? to the first element v of lov for which (pred? v)
+            (define (is-first-max? r f@r f lov)
+              (eq? (first (memf (lambda (v) (= (f v) f@r)) lov)) r))
+
+The names of the two predicates express their functionality and, in principle,
+render it unnecessary to read their definitions.
+
+This step leaves us with the problem of the newly introduced inefficiency. To
+avoid the recomputation of (f v) for all v on lov, we change the contract so
+that it computes these values and reuses them as needed:
+
+        version 3 rev. b
+
+            #lang racket
+             
+            (define (argmax f lov) ...)
+             
+            (provide/contract
+              [argmax
+                (->i ([f (-> any/c real?)] [lov (and/c pair? list?)]) ()
+                     (r (f lov)
+                        (lambda (r)
+                          (define f@r (f r))
+                          (define flov (map f lov))
+                          (and (is-first-max? r f@r (map list lov flov))
+                               (dominates-all f@r flov)))))])
+             
+            ; where
+             
+            ; f@r is greater or equal to all f@v in flov
+            (define (dominates-all f@r flov)
+              (for/and ((f@v flov)) (>= f@r f@v)))
+             
+            ; r is (second x) for the first x in flov+lov s.t. (= (first x)
+            f@r)
+            (define (is-first-max? r f@r lov+flov)
+              (define fst (first lov+flov))
+              (if (= (second fst) f@r)
+                  (eq? (first fst) r)
+                  (is-first-max? f@r r (rest lov+flov))))
+
+Now the predicate on the result once again computes all values of f for
+elements of lov once.
+
+            The word "eager" comes from the literature on the linguistics of
+            contracts.
+
+Version 3 may still be too eager when it comes to calling f. While Racket’s
+argmax always calls f no matter how many items lov contains, let us imagine for
+illustrative purposes that our own implementation first checks whether the list
+is a singleton. If so, the first element would be the only element of lov and
+in that case there would be no need to compute (f r). The argmax of Racket
+implicitly argues that it not only promises the first value that maximizes f
+over lov but also that f produces/produced a value for the result. As a matter
+of fact, since f may diverge or raise an exception for some inputs, argmax
+should avoid calling f when possible.
+
+The following contract demonstrates how a higher-order dependent contract needs
+to be adjusted so as to avoid being over-eager:
+
+        version 4
+
+            #lang racket
+             
+            (define (argmax f lov)
+              (if (empty? (rest lov))
+                  (first lov)
+                  ...))
+             
+            (provide/contract
+              [argmax
+                (->i ([f (-> any/c real?)] [lov (and/c pair? list?)]) ()
+                     (r (f lov)
+                        (lambda (r)
+                          (cond
+                            [(empty? (rest lov)) (eq? (first lov) r)]
+                            [else
+                             (define f@r (f r))
+                             (define flov (map f lov))
+                             (and (is-first-max? r f@r (map list lov flov))
+                                  (dominates-all f@r flov))]))))])
+             
+            ; where
+             
+            ; f@r is greater or equal to all f@v in flov
+            (define (dominates-all f@r lov) ...)
+             
+            ; r is (second x) for the first x in flov+lov s.t. (= (first x)
+            f@r)
+            (define (is-first-max? r f@r lov+flov) ...)
+
+Note that such considerations don’t apply to the world of first-order
+contracts. Only a higher-order (or lazy) language forces the programmer to
+express contracts with such precision.
+
+The problem of diverging or exception-raising functions should alert the reader
+to the even more general problem of functions with side-effects. If the given
+function f has visible effects – say it logs its calls to a file – then the
+clients of argmax will be able to observe two sets of logs for each call to
+argmax. To be precise, if the list of values contains more than one element,
+the log will contain two calls of f per value on lov. If f is expensive to
+compute, doubling the calls imposes a high cost.
+
+To avoid this cost and to signal problems with overly eager contracts, a
+contract system could record the i/o of contracted function arguments and use
+these hashtables in the dependency specification. This is a topic of on-going
+research in PLT. Stay tuned.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

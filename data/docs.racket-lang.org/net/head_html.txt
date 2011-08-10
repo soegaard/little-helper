@@ -1,0 +1,283 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 8  Headers: Parsing and Constructing
+8.1  Functions
+8.2  Header Unit
+8.3  Header Signature
+On this page:
+8.1 Functions
+empty-header
+validate-header
+extract-field
+extract-all-fields
+remove-field
+insert-field
+replaces-field
+append-headers
+standard-message-header
+data-lines->data
+extract-addresses
+assemble-address-field
+8.2 Header Unit
+head@
+8.3 Header Signature
+head^
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Headers: Parsing and Constructing
+
+ (require net/head)
+The net/head module provides utilities for parsing and constructing RFC 822
+headers [RFC822], which are used in protocols such as HTTP, SMTP, and NNTP.
+
+A header is represented as a string or byte string containing CRLF-delimited
+lines. Each field within the header spans one or more lines. In addition, the
+header ends with two CRLFs (because the first one terminates the last field,
+and the second terminates the header).
+
+8.1 Functions
+
+empty-header : string?
+The string "\r\n\r\n", which corresponds to the empty header. This value is
+useful for building up headers with insert-field and append-headers.
+
+(validate-header candidate) → void?
+  candidate : (or string? bytes?)
+Checks that candidate matches RFC 822. If it does not, an exception is raised.
+
+(extract-field field header) → (or/c string? bytes? false/c)
+  field : (or/c string? bytes?)
+  header : (or/c string? bytes?)
+Returns the header content for the specified field, or #f if the field is not
+in the header. The field string should not end with ":", and it is used
+case-insensitively. The returned string will not contain the field name, color
+separator, or CRLF terminator for the field; however, if the field spans
+multiple lines, the CRLFs separating the lines will be intact.
+
+The field and header arguments must be both strings or both byte strings, and
+the result (if not #f) is of the same type.
+
+Example:
+
+    > (extract-field "TO" (insert-field "to" "me@localhost"
+                                        empty-header))
+    "me@localhost"
+
+
+
+(extract-all-fields header)
+  →   (listof (cons/c (or/c string? bytes?)
+                      (or/c string? bytes?)))
+  header : (or/c string? bytes?)
+Returns an association-list version of the header; the case of the field names
+is preserved, as well as the order and duplicate uses of a field name.
+
+The result provides strings if header is a string, byte strings if header is a
+byte string.
+
+(remove-field field header) → (or/c string? bytes?)
+  field : (or/c string? bytes?)
+  header : (or/c string? bytes?)
+Creates a new header by removing the specified field from header (or the first
+instance of the field, if it occurs multiple times). If the field is not in
+header, then the return value is header.
+
+The field and header arguments must be both strings or both byte strings, and
+the result is of the same type.
+
+(insert-field field value header) → (or/c string? bytes?)
+  field : (or/c string? bytes?)
+  value : (or/c string? bytes?)
+  header : (or/c string? bytes?)
+Creates a new header by prefixing the given header with the given field-value
+pair. The value string should not contain a terminating CRLF, but a multi-line
+value (perhaps created with data-lines->data) may contain separator CRLFs.
+
+The field, value, and header arguments must be all strings or all byte strings,
+and the result is of the same type.
+
+(replaces-field field value header) → (or/c string? bytes?)
+  field : (or/c string? bytes?)
+  value : (or/c string? bytes? false/c)
+  header : (or/c string? bytes?)
+Composes remove-field and (if value is not #f) insert-field.
+
+(append-headers header1 header2) → (or/c string? bytes?)
+  header1 : (or/c string? bytes?)
+  header2 : (or/c string? bytes?)
+Appends two headers.
+
+The header1 and header2 arguments must be both strings or both byte strings,
+and the result is of the same type.
+
+(standard-message-header   from            
+                           to              
+                           cc              
+                           bcc             
+                           subject)   →   string?
+  from : string?
+  to : (listof string?)
+  cc : (listof string?)
+  bcc : (listof string?)
+  subject : string?
+Creates a standard mail header given the sender, various lists of recipients, a
+subject. A "Date" field is added to the header automatically, using the current
+time.
+
+The BCC recipients do not actually appear in the header, but they’re accepted
+anyway to complete the abstraction.
+
+(data-lines->data listof) → string?
+  listof : string?
+Merges multiple lines for a single field value into one string, adding CRLF-TAB
+separators.
+
+(extract-addresses line kind)
+  →   (or/c (listof string?)
+            (listof (list/c string? string? string?)))
+  line : string?
+   kind   :   (one-of/c 'name 'address
+                        'full 'all)
+Parses string as a list of comma-delimited mail addresses, raising an exception
+if the list is ill-formed. This procedure can be used for single-address
+strings, in which case the returned list contains only one address.
+
+The kind argument specifies which portion of an address should be returned:
+
+  • 'name — the free-form name in the address, or the address itself if no name
+    is available.
+
+    Examples:
+
+        > (extract-addresses "John Doe <doe@localhost>" 'name)
+        '("John Doe")
+
+        > (extract-addresses "doe@localhost (Johnny Doe)" 'name)
+        '("Johnny Doe")
+
+        > (extract-addresses "doe@localhost" 'name)
+        '("doe@localhost")
+
+        > (extract-addresses " \"Doe, John\" <doe@localhost>, jane"
+                             'name)
+        '("\"Doe, John\"" "jane")
+
+
+  • 'address — just the mailing address, without any free-form names.
+
+    Examples:
+
+        > (extract-addresses "John Doe <doe@localhost>" 'address)
+        '("doe@localhost")
+
+        > (extract-addresses "doe@localhost (Johnny Doe)" 'address)
+        '("doe@localhost")
+
+        > (extract-addresses "doe@localhost" 'address)
+        '("doe@localhost")
+
+        > (extract-addresses " \"Doe, John\" <doe@localhost>, jane"
+                             'address)
+        '("doe@localhost" "jane")
+
+
+  • 'full — the full address, essentially as it appears in the input, but
+    normalized.
+
+    Examples:
+
+        > (extract-addresses "John Doe   < doe@localhost >" 'full)
+        '("John Doe <doe@localhost>")
+
+        > (extract-addresses "  doe@localhost  (Johnny Doe)" 'full)
+        '("doe@localhost (Johnny Doe)")
+
+        > (extract-addresses "doe@localhost" 'full)
+        '("doe@localhost")
+
+        > (extract-addresses " \"Doe, John\" <doe@localhost>, jane"
+                             'full)
+        '("\"Doe, John\" <doe@localhost>" "jane")
+
+
+  • 'all — a list containing each of the three possibilities: free-form name,
+    address, and full address (in that order).
+
+    Examples:
+
+        > (extract-addresses "John Doe <doe@localhost>" 'all)
+        '(("John Doe" "doe@localhost" "John Doe <doe@localhost>"))
+
+        > (extract-addresses "doe@localhost (Johnny Doe)" 'all)
+        '(("Johnny Doe" "doe@localhost" "doe@localhost (Johnny Doe)"))
+
+        > (extract-addresses "doe@localhost" 'all)
+        '(("doe@localhost" "doe@localhost" "doe@localhost"))
+
+        > (define r
+            (extract-addresses " \"John\" <doe@localhost>, jane"
+                               'all))
+        > (length r)
+        2
+
+        > (car r)
+        '("\"John\"" "doe@localhost" "\"John\" <doe@localhost>")
+
+        > (cadr r)
+        '("jane" "jane" "jane")
+
+
+
+(assemble-address-field addrs) → string?
+  addrs : (listof string?)
+Creates a header field value from a list of addresses. The addresses are
+comma-separated, and possibly broken into multiple lines.
+
+Example:
+
+    > (assemble-address-field '("doe@localhost"
+                                "Jane <jane@elsewhere>"))
+    "doe@localhost, Jane <jane@elsewhere>"
+
+
+
+8.2 Header Unit
+
+ (require net/head-unit)
+
+head@ : unit?
+Imports nothing, exports head^.
+
+8.3 Header Signature
+
+ (require net/head-sig)
+
+head^ : signature
+
+Includes everything exported by the net/head module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

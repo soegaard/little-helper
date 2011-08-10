@@ -1,0 +1,55 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drracket: language: module-language<%>
+get-users-language-name
+drracket: module-language: add-module-language
+drracket: module-language: module-language-put-file-mixin
+[...search manuals...]
+  top← prev  up  next → 
+
+20 drracket:module-language
+
+drracket:language:module-language<%> : interface?
+The only language that implements this interface is DrRacket’s “Use the
+language declared in the source” language.
+
+
+    (send a-drracket:language:module-language get-users-language-name)
+     → string
+    Returns the name of the language that is declared in the source, as a
+    string.
+
+(drracket:module-language:add-module-language) → any
+Adds the module language to DrRacket. This is called during DrRacket’s startup.
+(drracket:module-language:module-language-put-file-mixin super%)
+ → (implementation?/c text:basic<%>)
+  super% : (implementation?/c text:basic<%>)
+Extends super% by overriding the put-file method to use a default name from the
+buffer, if the buffer contains something like (module name ...).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

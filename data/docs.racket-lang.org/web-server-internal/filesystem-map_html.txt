@@ -1,0 +1,69 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 2  Dispatchers
+ 2.1  General
+ 2.2  Mapping URLs to Paths
+ 2.3  Sequencing
+ 2.4  Timeouts
+ 2.5  Lifting Procedures
+ 2.6  Filtering Requests
+ 2.7  Procedure Invocation upon Request
+ 2.8  Logging
+ 2.9  Password Protection
+2.10  Virtual Hosts
+2.11  Serving Files
+2.12  Serving Servlets
+2.13  Statistics
+2.14  Limiting Requests
+On this page:
+url->path/ c
+make-url->path
+make-url->valid-path
+filter-url->path
+[...search manuals...]
+  top← prev  up  next → 
+
+2.2 Mapping URLs to Paths
+
+ (require web-server/dispatchers/filesystem-map)
+This module provides a means of mapping URLs to paths on the filesystem.
+
+url->path/c : contract?
+This contract is equivalent to (->* (url?) (path? (listof path-element?))). The
+returned path? is the path on disk. The list is the list of path elements that
+correspond to the path of the URL.
+
+(make-url->path base) → url->path/c
+  base : path-string?
+The url-path/c returned by this procedure considers the root URL to be base. It
+ensures that ".."s in the URL do not escape the base and removes them silently
+otherwise.
+
+(make-url->valid-path url->path) → url->path/c
+  url->path : url->path/c
+Runs the underlying url->path, but only returns if the path refers to a file
+that actually exists. If it is does not, then the suffix elements of the URL
+are removed until a file is found. If this never occurs, then an error is
+thrown.
+
+This is primarily useful for dispatchers that allow path information after the
+name of a service to be used for data, but where the service is represented by
+a file. The most prominent example is obviously servlets.
+
+(filter-url->path regex url->path) → url->path/c
+  regex : regexp?
+  url->path : url->path/c
+Runs the underlying url->path but will only return if the path, when considered
+as a string, matches the regex. This is useful to disallow strange files, like
+GIFs, from being considered servlets when using the servlet dispatchers. It
+will return a exn:fail:filesystem:exists? exception if the path does not match.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

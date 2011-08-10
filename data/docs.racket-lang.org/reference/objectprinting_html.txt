@@ -1,0 +1,66 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+On this page:
+printable<%>
+writable<%>
+[...search manuals...]
+  top← prev  up  next → 
+
+5.10 Object Printing
+
+To customize the way that a class instance is printed by print, write and
+display, implement the printable<%> interface.
+
+printable<%> : interface?
+The printable<%> interface includes only the custom-print, custom-write, and
+custom-display methods. The custom-print method accepts two arguments: the
+destination port and the current quasiquote depth as an exact nonnegative
+integer. The custom-write and custom-display methods each accepts a single
+argument, which is the destination port to write or display the object.
+
+Calls to the custom-print, custom-write, or custom-display methods are like
+calls to a procedure attached to a structure type through the prop:custom-write
+property. In particular, recursive printing can trigger an escape from the
+call.
+
+See prop:custom-write for more information. The printable<%> interface is
+implemented with interface* and prop:custom-write.
+
+writable<%> : interface?
+Like printable<%>, but includes only the custom-write and custom-display
+methods. A print request is directed to custom-write.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

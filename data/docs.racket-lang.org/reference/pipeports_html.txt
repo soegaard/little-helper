@@ -1,0 +1,85 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 12  Input and Output
+ 12.1  Ports
+ 12.2  Byte and String Input
+ 12.3  Byte and String Output
+ 12.4  Reading
+ 12.5  Writing
+ 12.6  The Reader
+ 12.7  The Printer
+ 12.8  Pretty Printing
+ 12.9  Reader Extension
+12.10  Printer Extension
+12.11  Serialization
+12.12  Fast-Load Serialization
+▼ 12.1  Ports
+ 12.1.1  Encodings and Locales
+ 12.1.2  Managing Ports
+ 12.1.3  Port Buffers and Positions
+ 12.1.4  Counting Positions, Lines, and Columns
+ 12.1.5  File Ports
+ 12.1.6  String Ports
+ 12.1.7  Pipes
+ 12.1.8  Structures as Ports
+ 12.1.9  Custom Ports
+12.1.10  More Port Constructors, Procedures, and Events
+On this page:
+make-pipe
+pipe-content-length
+[...search manuals...]
+  top← prev  up  next → 
+
+12.1.7 Pipes
+
+A Racket pipe is internal to Racket, and not related to OS-level pipes (which
+are file-stream ports) for communicating between different processes.
+
+(make-pipe [limit input-name output-name])
+  →   input-port?   output-port?
+  limit : exact-positive-integer? = #f
+  input-name : any/c = 'pipe
+  output-name : any/c = 'pipe
+Returns two port values: the first port is an input port and the second is an
+output port. Data written to the output port is read from the input port, with
+no intermediate buffering. Unlike some other kinds of ports, pipe ports do not
+need to be explicitly closed to be reclaimed by garbage collection.
+
+If limit is #f, the new pipe holds an unlimited number of unread bytes (i.e.,
+limited only by the available memory). If limit is a positive number, then the
+pipe will hold at most limit unread/unpeeked bytes; writing to the pipe’s
+output port thereafter will block until a read or peek from the input port
+makes more space available. (Peeks effectively extend the port’s capacity until
+the peeked bytes are read.)
+
+The optional input-name and output-name are used as the names for the returned
+input and output ports, respectively.
+
+(pipe-content-length pipe-port) → exact-nonnegative-integer?
+  pipe-port : port?
+Returns the number of bytes contained in a pipe, where pipe-port is either of
+the pipe’s ports produced by make-pipe. The pipe’s content length counts all
+bytes that have been written to the pipe and not yet read (though possibly
+peeked).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,94 @@
+►  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+▼ 1  Die Macht der Abstraktion - Anfa:nger
+ 1.1  Definitionen
+ 1.2  Record-Typ-Definitionen
+ 1.3  Prozedurapplikation
+ 1.4  #t and #f
+ 1.5  lambda
+ 1.6  Bezeichner
+ 1.7  cond
+ 1.8  if
+ 1.9  and
+1.10  or
+1.11  Signaturen
+1.12  Testfa:lle
+1.13  Parametrische Record-Typ-Definitionen
+1.14  Eigenschaften
+1.15  Primitive Operationen
+On this page:
+for-all
+expect
+expect-within
+expect-member-of
+expect-range
+==>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.14 Eigenschaften
+
+Eine Eigenschaft definiert eine Aussage u:ber einen Scheme-Ausdruck, die
+experimentell u:berpru:ft werden kann. Der einfachste Fall einer Eigenschaft
+ist ein boolescher Ausdruck. Die folgende Eigenschaft gilt immer:
+
+    (= 1 1)
+
+Es ist auch mo:glich, in einer Eigenschaft Variablen zu verwenden, fu:r die
+verschiedene Werte eingesetzt werden. Dafu:r mu:ssen die Variablen gebunden und
+quantifiziert werden, d.h. es muss festgelegt werden, welche Signatur die Werte
+der Variable erfu:llen sollen. Eigenschaften mit Variablen werden mit der
+for-all-Form erzeugt:
+
+(for-all ((id sig) ...) expr)
+Dies bindet die Variablen id in der Eigenschaft expr. Zu jeder Variable geho:rt
+eine Signatur sig, der von den Werten der Variable erfu:llt werden muss.
+
+Beispiel:
+
+    (for-all ((x integer))
+      (= x (/ (* x 2) 2)))
+
+(expect expr expr)
+Ein expect-Ausdruck ergibt eine Eigenschaft, die dann gilt, wenn die Werte von
+expr und expr gleich sind, im gleichen Sinne wie bei check-expect.
+
+(expect-within expr expr expr)
+Wie expect, aber entsprechend check-within mit einem weiteren Ausdruck, der als
+Wert eine Zahl delta hat. Die resultierende Eigenschaft gilt, wenn jede Zahl im
+Resultat des ersten expr maximal um delta von der entsprechenden Zahl im
+zweiten expr abweicht.
+
+(expect-member-of expr expr ...)
+Wie expect, aber entsprechend check-member-of mit weiteren Ausdru:cken, die mit
+dem ersten verglichen werden. Die resultierende Eigenschaft gilt, wenn das
+erste Argument gleich einem der anderen Argumente ist.
+
+(expect-range expr expr expr)
+Wie expect, aber entsprechend check-range: Die Argumente mu:ssen Zahlen sein.
+Die Eigenschaft gilt, wenn die erste Zahl zwischen der zweiten und dritten Zahl
+liegt (inklusive).
+
+(==> expr expr)
+Der erste Operand ist ein boolescher Ausdruck, der zweite Operand eine
+Eigenschaft: (==> c p) legt fest, dass die Eigenschaft p nur erfu:llt sein
+muss, wenn c (die Bedingung) #t ergibt, also erfu:llt ist.
+
+    (for-all ((x integer))
+      (==> (even? x)
+           (= x (* 2 (/ x 2)))))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

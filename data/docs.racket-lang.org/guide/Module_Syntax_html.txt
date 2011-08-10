@@ -1,0 +1,143 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 6  Modules
+6.1  Module Basics
+6.2  Module Syntax
+6.3  Module Paths
+6.4  Imports: require
+6.5  Exports: provide
+6.6  Assignment and Redefinition
+► 6.2  Module Syntax
+6.2.1  The module Form
+6.2.2  The #lang Shorthand
+On this page:
+6.2.1 The module Form
+6.2.2 The #lang Shorthand
+[...search manuals...]
+  top← prev  up  next → 
+
+6.2 Module Syntax
+
+The #lang at the start of a module file begins a shorthand for a module form,
+much like ' is a shorthand for a quote form. Unlike ', the #lang shorthand does
+not work well in a REPL, in part because it must be terminated by an
+end-of-file, but also because the longhand expansion of #lang depends on the
+name of the enclosing file.
+
+6.2.1 The module Form
+
+The longhand form of a module declaration, which works in a REPL as well as a
+file, is
+
+    (module name-id initial-module-path
+      decl ...)
+
+where the name-id is a name for the module, initial-module-path is an initial
+import, and each decl is an import, export, definition, or expression. In the
+case of a file, name-id must match the name of the containing file, minus its
+directory path or file extension.
+
+The initial-module-path is needed because even the require form must be
+imported for further use in the module body. In other words, the
+initial-module-path import bootstraps the syntax available in the body. The
+most commonly used initial-module-path is racket, which supplies most of the
+bindings described in this guide, including require, define, and provide.
+Another commonly used initial-module-path is racket/base, which provides less
+functionality, but still much of the most commonly needed functions and syntax.
+
+For example, the "cake.rkt" example of the previous section could be written as
+
+    (module cake racket
+      (provide print-cake)
+     
+      (define (print-cake n)
+        (printf "   ~a  \n" (make-string n #\.))
+        (printf " .-~a-.\n" (make-string n #\|))
+        (printf " | ~a |\n" (make-string n #\space))
+        (printf "---~a---\n" (make-string n #\-))))
+
+Furthermore, this module form can be evaluated in a REPL to declare a cake
+module that is not associated with any file. To refer to such an unassociated
+module, quote the module name:
+
+Examples:
+
+    > (require 'cake)
+    > (print-cake 3)
+      ...  
+
+    .-|||-.
+
+    |     |
+
+    ---------
+
+
+
+Declaring a module does not immediately evaluate the body definitions and
+expressions of the module. The module must be explicitly required at the top
+level to trigger evaluation. After evaluation is triggered once, later requires
+do not re-evaluate the module body.
+
+Examples:
+
+    > (module hi racket
+        (printf "Hello\n"))
+    > (require 'hi)
+    Hello
+
+    > (require 'hi)
+
+
+6.2.2 The #lang Shorthand
+
+The body of a #lang shorthand has no specific syntax, because the syntax is
+determined by the language name that follows #lang.
+
+In the case of #lang racket, the syntax is
+
+    #lang racket
+    decl ...
+
+which reads the same as
+
+    (module name racket
+      decl ...)
+
+where name is derived from the name of the file that contains the #lang form.
+
+The #lang racket/base form has the same syntax as #lang racket, except that the
+longhand expansion uses racket/base instead of racket. The #lang honu form, in
+contrast, has a completely different syntax that doesn’t even look like Racket,
+and which we do not attempt to describe in this guide.
+
+Unless otherwise specified, a module that is documented as a “language” using
+the #lang notation will expand to module in the same way as #lang racket. The
+documented language name can be used directly with module or require, too.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

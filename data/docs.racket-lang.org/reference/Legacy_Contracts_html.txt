@@ -1,0 +1,104 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Data-structure Contracts
+7.2  Function Contracts
+7.3  Parametric Contracts
+7.4  Lazy Data-structure Contracts
+7.5  Attaching Contracts to Values
+7.6  Building New Contract Combinators
+7.7  Contract Utilities
+7.8  Legacy Contracts
+On this page:
+make-proj-contract
+raise-contract-error
+contract-proc
+[...search manuals...]
+  top← prev  up  next → 
+
+7.8 Legacy Contracts
+
+(make-proj-contract name proj first-order) → contract?
+  name : any/c
+              (or/c (-> any/c
+                        any/c
+                        (list/c any/c any/c)
+                        contact?
+                        (-> any/c any/c))
+   proj   :         (-> any/c
+                        any/c
+                        (list/c any/c any/c)
+                        contact?
+                        boolean?
+                        (-> any/c any/c)))
+  first-order : (-> any/c boolean?)
+Builds a contract using an old interface.
+
+Modulo errors, it is equivalent to:
+
+    (make-contract
+     #:name name
+     #:first-order first-order
+     #:projection
+     (cond
+       [(procedure-arity-includes? proj 5)
+        (lambda (blame)
+          (proj (blame-positive blame)
+                (blame-negative blame)
+                (list (blame-source blame) (blame-value blame))
+                (blame-contract blame)
+                (not (blame-swapped? blame))))]
+       [(procedure-arity-includes? proj 4)
+        (lambda (blame)
+          (proj (blame-positive blame)
+                (blame-negative blame)
+                (list (blame-source blame) (blame-value blame))
+                (blame-contract blame)))]))
+
+(raise-contract-error   val             
+                        src             
+                        pos             
+                        name            
+                        fmt             
+                        arg ...)   →   any/c
+  val : any/c
+  src : any/c
+  pos : any/c
+  name : any/c
+  fmt : string?
+  arg : any/c
+Calls raise-blame-error after building a blame struct from the val, src, pos,
+and name arguments. The fmt string and following arguments are passed to format
+and used as the string in the error message.
+
+(contract-proc c)
+      (->* (symbol? symbol? (or/c syntax? (list/c any/c any/c)))
+  →        (boolean?)
+           (-> any/c any))
+  c : contract?
+Constructs an old-style projection from a contract.
+
+The resulting function accepts the information that is in a blame struct and
+returns a projection function that checks the contract.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

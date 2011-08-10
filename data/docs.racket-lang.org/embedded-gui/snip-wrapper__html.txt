@@ -1,0 +1,45 @@
+►  Embedded GUI: Widgets Within Editors
+1  Containers
+2  Controls
+3  Control Snips
+4  Helpers
+5  Snip Functions
+▼ 3  Control Snips
+3.1  snip-wrapper%
+3.2  text-button-snip%
+3.3  button-snip%
+3.4  toggle-button-snip%
+Inherited methods:
+from alignment<%>
+align
+get-min-height
+get-min-width
+get-parent
+set-min-sizes
+show
+show/ hide
+stretchable-height
+stretchable-width
+from dllist<%>
+for-each
+map-to-list
+next
+prev
+[...search manuals...]
+  top← prev  up  next → 
+
+snip-wrapper% : class?
+  superclass: dllist<%>
+
+  extends:  alignment<%>
+Adapts an arbitrary snip<%> to work in an alignment container.
+
+(new snip-wrapper%   [parent parent]        
+                     [snip snip])      →   (is-a?/c snip-wrapper%)
+  parent : (is-a?/c alignment-parent<%>)
+  snip : (is-a?/c snip%)
+Adds snip to parent.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

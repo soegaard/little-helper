@@ -1,0 +1,124 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 12  Input and Output
+ 12.1  Ports
+ 12.2  Byte and String Input
+ 12.3  Byte and String Output
+ 12.4  Reading
+ 12.5  Writing
+ 12.6  The Reader
+ 12.7  The Printer
+ 12.8  Pretty Printing
+ 12.9  Reader Extension
+12.10  Printer Extension
+12.11  Serialization
+12.12  Fast-Load Serialization
+▼ 12.1  Ports
+ 12.1.1  Encodings and Locales
+ 12.1.2  Managing Ports
+ 12.1.3  Port Buffers and Positions
+ 12.1.4  Counting Positions, Lines, and Columns
+ 12.1.5  File Ports
+ 12.1.6  String Ports
+ 12.1.7  Pipes
+ 12.1.8  Structures as Ports
+ 12.1.9  Custom Ports
+12.1.10  More Port Constructors, Procedures, and Events
+On this page:
+open-input-bytes
+open-input-string
+open-output-bytes
+open-output-string
+get-output-bytes
+get-output-string
+[...search manuals...]
+  top← prev  up  next → 
+
+12.1.6 String Ports
+
+String input and output ports do not need to be explicitly closed. The
+file-position procedure works for string ports in position-setting mode.
+
+(open-input-bytes bstr [name]) → input-port?
+  bstr : bytes?
+  name : any/c = 'string
+Creates an input port that reads characters from bstr (see Byte Strings).
+Modifying bstr afterward does not affect the byte stream produced by the port.
+The optional name argument is used as the name for the returned port.
+
+(open-input-string str [name]) → input-port?
+  str : string?
+  name : any/c = 'string
+Creates an input port that reads bytes from the UTF-8 encoding (see Encodings
+and Locales) of str. The optional name argument is used as the name for the
+returned port.
+
+(open-output-bytes [name]) → output-port?
+  name : any/c = 'string
+Creates an output port that accumulates the output into a byte string. The
+optional name argument is used as the name for the returned port.
+
+(open-output-string [name]) → output-port?
+  name : any/c = 'string
+The same as open-output-bytes.
+
+(get-output-bytes    out              
+                   [ reset?           
+                     start-pos        
+                     end-pos])   →   bytes?
+  out : output-port?
+  reset? : any/c = #f
+  start-pos : exact-nonnegative-integer? = 0
+  end-pos : exact-nonnegative-integer? = #f
+Returns the bytes accumulated in out so far in a freshly allocated byte string
+(including any bytes written after the port’s current position, if any). The
+out port must be a string output port produced by open-output-bytes (or
+open-output-string) or a structure whose prop:output-port property refers to
+such an output port (transitively).
+
+If reset? is true, then all bytes are removed from the port, and the port’s
+position is reset to 0; if reset? is #f, then all bytes remain in the port for
+further accumulation (so they are returned for later calls to get-output-bytes
+or get-output-string), and the port’s position is unchanged.
+
+The start-pos and end-pos arguments specify the range of bytes in the port to
+return; supplying start-pos and end-pos is the same as using subbytes on the
+result of get-output-bytes, but supplying them to get-output-bytes can avoid an
+allocation. The end-pos argument can be #f, which corresponds to not passing a
+second argument to subbytes.
+
+(get-output-string out) → string?
+  out : output-port?
+Returns (bytes->string/utf-8 (get-output-bytes out) #\?).
+
+Examples:
+
+    > (define i (open-input-string "hello world"))
+    > (define o (open-output-string))
+    > (write (read i) o)
+    > (get-output-string o)
+    "hello"
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

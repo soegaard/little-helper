@@ -1,0 +1,176 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 5  Snip and Style Classes
+ 5.1  add-color<%>
+ 5.2  image-snip%
+ 5.3  mult-color<%>
+ 5.4  readable-snip<%>
+ 5.5  snip%
+ 5.6  snip-admin%
+ 5.7  snip-class%
+ 5.8  snip-class-list<%>
+ 5.9  string-snip%
+5.10  style<%>
+5.11  style-delta%
+5.12  style-list%
+5.13  tab-snip%
+On this page:
+get-alignment
+get-background
+get-base-style
+get-delta
+get-face
+get-family
+get-font
+get-foreground
+get-name
+get-shift-style
+get-size
+get-size-in-pixels
+get-smoothing
+get-style
+get-text-descent
+get-text-height
+get-text-space
+get-text-width
+get-transparent-text-backing
+get-underlined
+get-weight
+is-join?
+set-base-style
+set-delta
+set-shift-style
+switch-to
+[...search manuals...]
+  top← prev  up  next → 
+
+style<%> : interface?
+A style<%> object encapsulates drawing information (font, color, alignment,
+etc.) in a hierarchical manner. A style<%> object always exists within the
+context of a style-list% object and is never created except by a style-list%
+object.
+
+See also Styles.
+
+(send a-style get-alignment) → (one-of/c 'top 'center 'bottom)
+Returns the style’s alignment: 'top, 'center, or 'bottom.
+
+(send a-style get-background) → (is-a?/c color%)
+Returns the style’s background color.
+
+(send a-style get-base-style)
+ → (or/c (is-a?/c style<%>) false/c)
+Returns the style’s base style. See Styles for more information. The return
+value is #f only for the basic style in the list.
+
+(send a-style get-delta delta) → void?
+  delta : (is-a?/c style-delta%)
+Mutates delta, changing it to match the style’s delta, if the style is not a
+join style. See Styles for more information.
+
+(send a-style get-face) → (or/c string? false/c)
+Returns the style’s face name. See font%.
+
+(send a-style get-family)
+  →   (one-of/c 'default 'decorative 'roman 'script
+                'swiss 'modern 'symbol 'system)
+Returns the style’s font family. See font%.
+
+(send a-style get-font) → (is-a?/c font%)
+Returns the style’s font information.
+
+(send a-style get-foreground) → (is-a?/c color%)
+Returns the style’s foreground color.
+
+(send a-style get-name) → (or/c string? false/c)
+Returns the style’s name, or #f if it is unnamed. Style names are only set
+through the style’s style-list% object.
+
+(send a-style get-shift-style) → (is-a?/c style<%>)
+Returns the style’s shift style if it is a join style. Otherwise, the root
+style is returned. See Styles for more information.
+
+(send a-style get-size) → (integer-in 0 255)
+Returns the style’s font size.
+
+(send a-style get-size-in-pixels) → boolean?
+Returns #t if the style size is in pixels, instead of points, or #f otherwise.
+
+(send a-style get-smoothing)
+ → (one-of/c 'default 'partly-smoothed 'smoothed 'unsmoothed)
+Returns the style’s font smoothing. See font%.
+
+(send a-style get-style) → (one-of/c 'normal 'italic 'slant)
+Returns the style’s font style. See font%.
+
+(send a-style get-text-descent dc)
+ → (and/c real? (not/c negative?))
+  dc : (is-a?/c dc<%>)
+Returns the descent of text using this style in a given DC.
+
+(send a-style get-text-height dc)
+ → (and/c real? (not/c negative?))
+  dc : (is-a?/c dc<%>)
+Returns the height of text using this style in a given DC.
+
+(send a-style get-text-space dc)
+ → (and/c real? (not/c negative?))
+  dc : (is-a?/c dc<%>)
+Returns the vertical spacing for text using this style in a given DC.
+
+(send a-style get-text-width dc)
+ → (and/c real? (not/c negative?))
+  dc : (is-a?/c dc<%>)
+Returns the width of a space character using this style in a given DC.
+
+(send a-style get-transparent-text-backing) → boolean?
+Returns #t if text is drawn without erasing the text background or #f
+otherwise.
+
+(send a-style get-underlined) → boolean?
+Returns #t if the style is underlined or #f otherwise.
+
+(send a-style get-weight) → (one-of/c 'normal 'bold 'light)
+Returns the style’s font weight. See font%.
+
+(send a-style is-join?) → boolean?
+Returns #t if the style is a join style or #f otherwise. See Styles for more
+information.
+
+(send a-style set-base-style base-style) → void?
+  base-style : (is-a?/c style<%>)
+Sets the style’s base style and recomputes the style’s font, etc. See Styles
+for more information.
+
+(send a-style set-delta delta) → void?
+  delta : (is-a?/c style-delta%)
+Sets the style’s delta (if it is not a join style) and recomputes the style’s
+font, etc. See Styles for more information.
+
+(send a-style set-shift-style style) → void?
+  style : (is-a?/c style<%>)
+Sets the style’s shift style (if it is a join style) and recomputes the style’s
+font, etc. See Styles for more information.
+
+(send a-style switch-to dc old-style) → void?
+  dc : (is-a?/c dc<%>)
+  old-style : (or/c (is-a?/c style<%>) false/c)
+Sets the font, pen color, etc. of the given drawing context. If oldstyle is not
+#f, only differences between the given style and this one are applied to the
+drawing context.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

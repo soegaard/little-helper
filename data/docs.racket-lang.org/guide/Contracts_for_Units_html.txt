@@ -1,0 +1,244 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 14  Units (Components)
+14.1  Signatures and Units
+14.2  Invoking Units
+14.3  Linking Units
+14.4  First-Class Units
+14.5  Whole-module Signatures and Units
+14.6  Contracts for Units
+14.7  unit versus module
+► 14.6  Contracts for Units
+14.6.1  Adding Contracts to Signatures
+14.6.2  Adding Contracts to Units
+On this page:
+14.6.1 Adding Contracts to Signatures
+14.6.2 Adding Contracts to Units
+[...search manuals...]
+  top← prev  up  next → 
+
+14.6 Contracts for Units
+
+There are a couple of ways of protecting units with contracts. One way is
+useful when writing new signatures, and the other handles the case when a unit
+must conform to an already existing signature.
+
+14.6.1 Adding Contracts to Signatures
+
+When contracts are added to a signature, then all units which implement that
+signature are protected by those contracts. The following version of the
+toy-factory^ signature adds the contracts previously written in comments:
+
+        "contracted-toy-factory-sig.rkt"
+
+            #lang racket
+             
+            (define-signature contracted-toy-factory^
+              ((contracted
+                [build-toys (-> integer? (listof toy?))]
+                [repaint    (-> toy? symbol? toy?)]
+                [toy?       (-> any/c boolean?)]
+                [toy-color  (-> toy? symbol?)])))
+             
+            (provide contracted-toy-factory^)
+
+Now we take the previous implementation of simple-factory@ and implement this
+version of toy-factory^ instead:
+
+        "contracted-simple-factory-unit.rkt"
+
+            #lang racket
+             
+            (require "contracted-toy-factory-sig.rkt")
+             
+            (define-unit contracted-simple-factory@
+              (import)
+              (export contracted-toy-factory^)
+             
+              (printf "Factory started.\n")
+             
+              (define-struct toy (color) #:transparent)
+             
+              (define (build-toys n)
+                (for/list ([i (in-range n)])
+                  (make-toy 'blue)))
+             
+              (define (repaint t col)
+                (make-toy col)))
+             
+            (provide contracted-simple-factory@)
+
+As before, we can invoke our new unit and bind the exports so that we can use
+them. This time, however, misusing the exports causes the appropriate contract
+errors.
+
+    > (require "contracted-simple-factory-unit.rkt")
+    > (define-values/invoke-unit/infer contracted-simple-factory@)
+    Factory started.
+
+    > (build-toys 3)
+    (list (toy 'blue) (toy 'blue) (toy 'blue))
+
+    > (build-toys #f)
+    build-toys: contract violation, expected <integer?>, given:
+
+    #f
+
+      contract from
+
+        (unit contracted-simple-factory@)
+
+      blaming top-level
+
+      contract: (-> integer? (listof toy?))
+
+            at: eval:32.0
+
+    > (repaint 3 'blue)
+    repaint: contract violation, expected <toy?>, given: 3
+
+      contract from
+
+        (unit contracted-simple-factory@)
+
+      blaming top-level
+
+      contract: (-> toy? symbol? toy?)
+
+            at: eval:32.0
+
+
+14.6.2 Adding Contracts to Units
+
+However, sometimes we may have a unit that must conform to an already existing
+signature that is not contracted. In this case, we can create a unit contract
+with unit/c or use the define-unit/contract form, which defines a unit which
+has been wrapped with a unit contract.
+
+For example, here’s a version of toy-factory@ which still implements the
+regular toy-factory^, but whose exports have been protected with an appropriate
+unit contract.
+
+        "wrapped-simple-factory-unit.rkt"
+
+            #lang racket
+             
+            (require "toy-factory-sig.rkt")
+             
+            (define-unit/contract wrapped-simple-factory@
+              (import)
+              (export (toy-factory^
+                       [build-toys (-> integer? (listof toy?))]
+                       [repaint    (-> toy? symbol? toy?)]
+                       [toy?       (-> any/c boolean?)]
+                       [toy-color  (-> toy? symbol?)]))
+             
+              (printf "Factory started.\n")
+             
+              (define-struct toy (color) #:transparent)
+             
+              (define (build-toys n)
+                (for/list ([i (in-range n)])
+                  (make-toy 'blue)))
+             
+              (define (repaint t col)
+                (make-toy col)))
+             
+            (provide contracted-simple-factory@)
+
+    > (require "wrapped-simple-factory-unit.rkt")
+    > (define-values/invoke-unit/infer wrapped-simple-factory@)
+    Factory started.
+
+    > (build-toys 3)
+    (list (toy 'blue) (toy 'blue) (toy 'blue))
+
+    > (build-toys #f)
+    wrapped-simple-factory@: contract violation, expected
+
+    <integer?>, given: #f
+
+      contract from
+
+        (unit wrapped-simple-factory@)
+
+      blaming top-level
+
+      contract:
+
+        (unit/c
+
+        (import)
+
+        (export (toy-factory^
+
+                  (build-toys
+
+                  (-> integer? (listof toy?)))
+
+                  (repaint (-> toy? symbol? toy?))
+
+                  (toy? (-> any/c boolean?))
+
+                  (toy-color (-> toy? symbol?)))))
+
+      at: <collects>/mzlib/unit.rkt
+
+    > (repaint 3 'blue)
+    wrapped-simple-factory@: contract violation, expected
+
+    <toy?>, given: 3
+
+      contract from
+
+        (unit wrapped-simple-factory@)
+
+      blaming top-level
+
+      contract:
+
+        (unit/c
+
+        (import)
+
+        (export (toy-factory^
+
+                  (build-toys
+
+                  (-> integer? (listof toy?)))
+
+                  (repaint (-> toy? symbol? toy?))
+
+                  (toy? (-> any/c boolean?))
+
+                  (toy-color (-> toy? symbol?)))))
+
+      at: <collects>/mzlib/unit.rkt
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

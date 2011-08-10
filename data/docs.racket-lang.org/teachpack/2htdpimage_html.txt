@@ -1,0 +1,2399 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 2  Ht DP/ 2e Teachpacks
+2.1  Batch Input/ Output: "batch-io.ss"
+2.2  Images: "image.ss"
+2.3  Worlds and the Universe: "universe.ss"
+2.4  Porting World Programs to Universe
+► 2.2  Images: "image.ss"
+ 2.2.1  Basic Images
+ 2.2.2  Polygons
+ 2.2.3  Overlaying Images
+ 2.2.4  Placing Images & Scenes
+ 2.2.5  Rotating, Scaling, Flipping, Cropping, and Framing Images
+ 2.2.6  Bitmaps
+ 2.2.7  Image Properties
+ 2.2.8  Image Predicates
+ 2.2.9  Equality Testing of Images
+2.2.10  Pinholes
+2.2.11  The nitty gritty of pixels, pens, and lines
+2.2.12  Exporting Images to Disk
+On this page:
+2.2.1 Basic Images
+circle
+ellipse
+line
+add-line
+add-curve
+text
+text/ font
+empty-image
+2.2.2 Polygons
+triangle
+right-triangle
+isosceles-triangle
+triangle/ sss
+triangle/ ass
+triangle/ sas
+triangle/ ssa
+triangle/ aas
+triangle/ asa
+triangle/ saa
+square
+rectangle
+rhombus
+star
+star-polygon
+radial-star
+regular-polygon
+polygon
+2.2.3 Overlaying Images
+overlay
+overlay/ align
+overlay/ offset
+overlay/ align/ offset
+overlay/ xy
+underlay
+underlay/ align
+underlay/ offset
+underlay/ align/ offset
+underlay/ xy
+beside
+beside/ align
+above
+above/ align
+2.2.4 Placing Images & Scenes
+empty-scene
+place-image
+place-image/ align
+scene+ line
+scene+ curve
+2.2.5 Rotating, Scaling, Flipping, Cropping, and Framing Images
+rotate
+scale
+scale/ xy
+flip-horizontal
+flip-vertical
+crop
+frame
+2.2.6 Bitmaps
+bitmap
+bitmap/ url
+image->color-list
+color-list->bitmap
+freeze
+2.2.7 Image Properties
+image-width
+image-height
+image-baseline
+2.2.8 Image Predicates
+image?
+mode?
+image-color?
+color
+y-place?
+x-place?
+angle?
+side-count?
+step-count?
+real-valued-posn?
+pen
+pen-style?
+pen-cap?
+pen-join?
+2.2.9 Equality Testing of Images
+2.2.10 Pinholes
+center-pinhole
+put-pinhole
+pinhole-x
+pinhole-y
+clear-pinhole
+overlay/ pinhole
+underlay/ pinhole
+2.2.11 The nitty gritty of pixels, pens, and lines
+2.2.12 Exporting Images to Disk
+save-image
+[...search manuals...]
+  top← prev  up  next → 
+
+2.2 Images: "image.ss"
+
+ (require 2htdp/image)
+
+The image teachpack provides a number of basic image construction functions,
+along with combinators for building more complex images out of existing images.
+Basic images include various polygons, ellipses and circles, and text, as well
+as bitmaps (typically bitmaps come about via the Insert Image... menu item in
+DrRacket). Existing images can be rotated, scaled, flipped, and overlaid on top
+of each other.
+
+2.2.1 Basic Images
+
+(circle radius mode color) → image?
+  radius : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(circle radius outline-mode pen-or-color) → image?
+  radius : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs a circle with the given radius, height, mode, and color.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (circle 30 "outline" "red")
+    image
+
+    > (circle 20 "solid" "blue")
+    image
+
+    > (circle 20 100 "blue")
+    image
+
+
+
+(ellipse width height mode color) → image?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(ellipse width height mode pen-or-color) → image?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+  mode : (or/c 'outline "outline")
+  pen-or-color : (or/c image-color? pen?)
+Constructs an ellipse with the given width, height, mode, and color.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (ellipse 60 30 "outline" "black")
+    image
+
+    > (ellipse 30 60 "solid" "blue")
+    image
+
+    > (ellipse 30 60 100 "blue")
+    image
+
+
+
+(line x1 y1 pen-or-color) → image?
+  x1 : real?
+  y1 : real?
+  pen-or-color : (or/c pen? image-color?)
+Constructs an image representing a line segment that connects the points (0,0)
+to (x1,y1).
+
+Examples:
+
+    > (line 30 30 "black")
+    image
+
+    > (line -30 20 "red")
+    image
+
+    > (line 30 -20 "red")
+    image
+
+
+
+(add-line image x1 y1 x2 y2 pen-or-color) → image?
+  image : image?
+  x1 : real?
+  y1 : real?
+  x2 : real?
+  y2 : real?
+  pen-or-color : (or/c pen? image-color?)
+Adds a line to the image image, starting from the point (x1,y1) and going to
+the point (x2,y2). Unlike scene+line, if the line passes outside of image, the
+image gets larger to accommodate the line.
+
+Examples:
+
+    > (add-line (ellipse 40 40 "outline" "maroon")
+                0 40 40 0 "maroon")
+    image
+
+    > (add-line (rectangle 40 40 "solid" "gray")
+                -10 50 50 -10 "maroon")
+    image
+
+    > (add-line
+        (rectangle 100 100 "solid" "darkolivegreen")
+        25 25 75 75
+        (make-pen "goldenrod" 30 "solid" "round" "round"))
+    image
+
+
+
+(add-curve   image                
+             x1                   
+             y1                   
+             angle1               
+             pull1                
+             x2                   
+             y2                   
+             angle2               
+             pull2                
+             pen-or-color)   →   image?
+  image : image?
+  x1 : real?
+  y1 : real?
+  angle1 : angle?
+  pull1 : real?
+  x2 : real?
+  y2 : real?
+  angle2 : angle?
+  pull2 : real?
+  pen-or-color : (or/c pen? image-color?)
+Adds a curve to image, starting at the point (x1,y1), and ending at the point
+(x2,y2).
+
+The angle1 and angle2 arguments specify the angle that the curve has as it
+leaves the initial point and as it reaches the final point, respectively.
+
+The pull1 and pull2 arguments control how long the curve tries to stay with
+that angle. Larger numbers mean that the curve stays with the angle longer.
+
+Unlike scene+curve, if the line passes outside of image, the image gets larger
+to accommodate the curve.
+
+Examples:
+
+    > (add-curve (rectangle 100 100 "solid" "black")
+                 20 20 0 1/3
+                 80 80 0 1/3
+                 "white")
+    image
+
+    > (add-curve (rectangle 100 100 "solid" "black")
+                 20 20 0 1
+                 80 80 0 1
+                 "white")
+    image
+
+    > (add-curve
+       (add-curve
+        (rectangle 40 100 "solid" "black")
+        20 10 180 1/2
+        20 90 180 1/2
+        (make-pen "white" 4 "solid" "round" "round"))
+       20 10 0 1/2
+       20 90 0 1/2
+       (make-pen "white" 4 "solid" "round" "round"))
+    image
+
+    > (add-curve (rectangle 100 100 "solid" "black")
+                 -20 -20 0 1
+                 120 120 0 1
+                 "red")
+    image
+
+
+
+(text string font-size color) → image?
+  string : string?
+  font-size : (and/c integer? (<=/c 1 255))
+  color : image-color?
+Constructs an image that draws the given string, using the font size and color.
+
+Examples:
+
+    > (text "Hello" 24 "olive")
+    image
+
+    > (text "Goodbye" 36 "indigo")
+    image
+
+
+
+(text/font   string             
+             font-size          
+             color              
+             face               
+             family             
+             style              
+             weight             
+             underline?)   →   image?
+  string : string?
+  font-size : (and/c integer? (<=/c 1 255))
+  color : image-color?
+  face : (or/c string? #f)
+  family : (or/c
+ 'default 'decorative 'roman 'script 'swiss 'modern 'symbol 'system)
+  style : (or/c 'normal 'italic 'slant)
+  weight : (or/c 'normal 'bold 'light)
+  underline? : any/c
+Constructs an image that draws the given string, using a complete font
+specification.
+
+The face and the family combine to give the complete typeface. If face is
+available on the system, it is used, but if not then a default typeface based
+on the family is chosen. The style controls if the face is italic or not (on
+Windows and Mac OS X, 'slant and 'italic are the same), the weight controls if
+it is boldface (or light), and underline? determines if the face is underlined.
+For more details on these arguments, see font%, which ultimately is what this
+code uses to draw the font.
+
+Examples:
+
+    > (text/font "Hello" 24 "olive"
+                 "Gill Sans" 'swiss 'normal 'bold #f)
+    image
+
+    > (text/font "Goodbye" 18 "indigo"
+                 #f 'modern 'italic 'normal #f)
+    image
+
+    > (text/font "not really a link" 18 "blue"
+                 #f 'roman 'normal 'normal #t)
+    image
+
+
+
+empty-image : image?
+The empty image. Its width and height are both zero and it does not draw at
+all.
+
+Examples:
+
+    > (image-width empty-image)
+    0
+
+    > (equal? (above empty-image
+                     (rectangle 10 10 "solid" "red"))
+              (beside empty-image
+                      (rectangle 10 10 "solid" "red")))
+    #t
+
+
+
+2.2.2 Polygons
+
+(triangle side-length mode color) → image?
+  side-length : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(triangle   side-length          
+            outline-mode         
+            pen-or-color)   →   image?
+  side-length : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs a upward-pointing equilateral triangle. The side-length argument
+determines the length of the side of the triangle.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Example:
+
+    > (triangle 40 "solid" "tan")
+    image
+
+
+
+(right-triangle   side-length1        
+                  side-length2        
+                  mode                
+                  color)         →   image?
+  side-length1 : (and/c real? (not/c negative?))
+  side-length2 : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(right-triangle   side-length1         
+                  side-length2         
+                  outline-mode         
+                  pen-or-color)   →   image?
+  side-length1 : (and/c real? (not/c negative?))
+  side-length2 : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs a triangle with a right angle where the two sides adjacent to the
+right angle have lengths side-length1 and side-length2.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Example:
+
+    > (right-triangle 36 48 "solid" "black")
+    image
+
+
+
+(isosceles-triangle   side-length        
+                      angle              
+                      mode               
+                      color)        →   image?
+  side-length : (and/c real? (not/c negative?))
+  angle : angle?
+  mode : mode?
+  color : image-color?
+(isosceles-triangle   side-length          
+                      angle                
+                      outline-mode         
+                      pen-or-color)   →   image?
+  side-length : (and/c real? (not/c negative?))
+  angle : angle?
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Creates a triangle with two equal-length sides, of length side-length where the
+angle between those sides is angle. The third leg is straight, horizontally. If
+the angle is less than 180, then the triangle will point up and if the angle is
+more, then the triangle will point down.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (isosceles-triangle 200 170 "solid" "seagreen")
+    image
+
+    > (isosceles-triangle 60 30 "solid" "aquamarine")
+    image
+
+    > (isosceles-triangle 60 330 "solid" "lightseagreen")
+    image
+
+
+
+To create a general triangle given known sides and angles the following family
+of functions are useful: triangle/sss, triangle/ass, triangle/sas, triangle/ssa
+, triangle/sss, triangle/sss, and, triangle/sss. They all construct a triangle
+oriented as follows:
+
+[triangle-x]
+
+(triangle/sss   side-length-a        
+                side-length-b        
+                side-length-c        
+                mode                 
+                color)          →   image?
+  side-length-a : (and/c real? (not/c negative?))
+  side-length-b : (and/c real? (not/c negative?))
+  side-length-c : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(triangle/sss   side-length-a        
+                side-length-b        
+                side-length-c        
+                outline-mode         
+                pen-or-color)   →   image?
+  side-length-a : (and/c real? (not/c negative?))
+  side-length-b : (and/c real? (not/c negative?))
+  side-length-c : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Creates a triangle where the side lengths a, b, and, c are given by
+side-length-a, side-length-b, and, side-length-c respectively.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (triangle/sss 40 60 80 "solid" "seagreen")
+    image
+
+    > (triangle/sss 80 40 60 "solid" "aquamarine")
+    image
+
+    > (triangle/sss 80 80 40 "solid" "lightseagreen")
+    image
+
+
+
+(triangle/ass   angle-a              
+                side-length-b        
+                side-length-c        
+                mode                 
+                color)          →   image?
+  angle-a : angle?
+  side-length-b : (and/c real? (not/c negative?))
+  side-length-c : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(triangle/ass   angle-a              
+                side-length-b        
+                side-length-c        
+                outline-mode         
+                pen-or-color)   →   image?
+  angle-a : angle?
+  side-length-b : (and/c real? (not/c negative?))
+  side-length-c : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Creates a triangle where the angle A and side length a and b, are given by
+angle-a, side-length-b, and, side-length-c respectively.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (triangle/ass 10  60 100 "solid" "seagreen")
+    image
+
+    > (triangle/ass 90  60 100 "solid" "aquamarine")
+    image
+
+    > (triangle/ass 130 60 100 "solid" "lightseagreen")
+    image
+
+
+
+(triangle/sas   side-length-a        
+                angle-b              
+                side-length-c        
+                mode                 
+                color)          →   image?
+  side-length-a : (and/c real? (not/c negative?))
+  angle-b : angle?
+  side-length-c : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(triangle/sas   side-length-a        
+                angle-b              
+                side-length-c        
+                outline-mode         
+                pen-or-color)   →   image?
+  side-length-a : (and/c real? (not/c negative?))
+  angle-b : angle?
+  side-length-c : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Creates a triangle where the side length a, angle B, and, side length c given
+by side-length-a, angle-b, and, side-length-c respectively.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (triangle/sas 60  10 100 "solid" "seagreen")
+    image
+
+    > (triangle/sas 60  90 100 "solid" "aquamarine")
+    image
+
+    > (triangle/sas 60 130 100 "solid" "lightseagreen")
+    image
+
+
+
+(triangle/ssa   side-length-a        
+                side-length-b        
+                angle-c              
+                mode                 
+                color)          →   image?
+  side-length-a : (and/c real? (not/c negative?))
+  side-length-b : (and/c real? (not/c negative?))
+  angle-c : angle?
+  mode : mode?
+  color : image-color?
+(triangle/ssa   side-length-a        
+                side-length-b        
+                angle-c              
+                outline-mode         
+                pen-or-color)   →   image?
+  side-length-a : (and/c real? (not/c negative?))
+  side-length-b : (and/c real? (not/c negative?))
+  angle-c : angle?
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Creates a triangle where the side length a, side length b, and, angle c given
+by side-length-a, side-length-b, and, angle-c respectively.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (triangle/ssa 60 100  10 "solid" "seagreen")
+    image
+
+    > (triangle/ssa 60 100  90 "solid" "aquamarine")
+    image
+
+    > (triangle/ssa 60 100 130 "solid" "lightseagreen")
+    image
+
+
+(triangle/aas   angle-a              
+                angle-b              
+                side-length-c        
+                mode                 
+                color)          →   image?
+  angle-a : angle?
+  angle-b : angle?
+  side-length-c : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(triangle/aas   angle-a              
+                angle-b              
+                side-length-c        
+                outline-mode         
+                pen-or-color)   →   image?
+  angle-a : angle?
+  angle-b : angle?
+  side-length-c : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Creates a triangle where the angle A, angle B, and, side length c given by
+angle-a, angle-b, and, side-length-c respectively.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (triangle/aas  10 40 200 "solid" "seagreen")
+    image
+
+    > (triangle/aas  90 40 200 "solid" "aquamarine")
+    image
+
+    > (triangle/aas 130 40 40  "solid" "lightseagreen")
+    image
+
+
+
+(triangle/asa   angle-a              
+                side-length-b        
+                angle-c              
+                mode                 
+                color)          →   image?
+  angle-a : angle?
+  side-length-b : (and/c real? (not/c negative?))
+  angle-c : angle?
+  mode : mode?
+  color : image-color?
+(triangle/asa   angle-a              
+                side-length-b        
+                angle-c              
+                outline-mode         
+                pen-or-color)   →   image?
+  angle-a : angle?
+  side-length-b : (and/c real? (not/c negative?))
+  angle-c : angle?
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Creates a triangle where the angle A, side length b, and, angle C given by
+angle-a, side-length-b, and, angle-c respectively.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (triangle/asa  10 200 40 "solid" "seagreen")
+    image
+
+    > (triangle/asa  90 200 40 "solid" "aquamarine")
+    image
+
+    > (triangle/asa 130 40  40 "solid" "lightseagreen")
+    image
+
+
+
+(triangle/saa   side-length-a        
+                angle-b              
+                angle-c              
+                mode                 
+                color)          →   image?
+  side-length-a : (and/c real? (not/c negative?))
+  angle-b : angle?
+  angle-c : angle?
+  mode : mode?
+  color : image-color?
+(triangle/saa   side-length-a        
+                angle-b              
+                angle-c              
+                outline-mode         
+                pen-or-color)   →   image?
+  side-length-a : (and/c real? (not/c negative?))
+  angle-b : angle?
+  angle-c : angle?
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Creates a triangle where the side length a, angle B, and, angle C given by
+side-length-a, angle-b, and, angle-c respectively.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (triangle/saa 200  10 40 "solid" "seagreen")
+    image
+
+    > (triangle/saa 200  90 40 "solid" "aquamarine")
+    image
+
+    > (triangle/saa 40  130 40 "solid" "lightseagreen")
+    image
+
+
+
+(square side-len mode color) → image?
+  side-len : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(square side-len outline-mode pen-or-color) → image?
+  side-len : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs a square.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (square 40 "solid" "slateblue")
+    image
+
+    > (square 50 "outline" "darkmagenta")
+    image
+
+
+
+(rectangle width height mode color) → image?
+  width : real?
+  height : real?
+  mode : mode?
+  color : image-color?
+(rectangle   width                
+             height               
+             outline-mode         
+             pen-or-color)   →   image?
+  width : real?
+  height : real?
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs a rectangle with the given width, height, mode, and color.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (rectangle 40 20 "outline" "black")
+    image
+
+    > (rectangle 20 40 "solid" "blue")
+    image
+
+
+
+(rhombus side-length angle mode color) → image?
+  side-length : (and/c real? (not/c negative?))
+  angle : angle?
+  mode : mode?
+  color : image-color?
+(rhombus   side-length          
+           angle                
+           outline-mode         
+           pen-or-color)   →   image?
+  side-length : (and/c real? (not/c negative?))
+  angle : angle?
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs a four sided polygon with all equal sides and thus where opposite
+angles are equal to each other. The top and bottom pair of angles is angle and
+the left and right are (- 180 angle).
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (rhombus 40 45 "solid" "magenta")
+    image
+
+    > (rhombus 80 150 "solid" "mediumpurple")
+    image
+
+
+
+(star side-length mode color) → image?
+  side-length : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(star side-length outline-mode color) → image?
+  side-length : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  color : (or/c pen? image-color?)
+Constructs a star with five points. The side-length argument determines the
+side length of the enclosing pentagon.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Example:
+
+    > (star 40 "solid" "gray")
+    image
+
+
+
+(star-polygon   side-length        
+                side-count         
+                step-count         
+                mode               
+                color)        →   image?
+  side-length : (and/c real? (not/c negative?))
+  side-count : side-count?
+  step-count : step-count?
+  mode : mode?
+  color : image-color?
+(star-polygon   side-length          
+                side-count           
+                step-count           
+                outline-mode         
+                pen-or-color)   →   image?
+  side-length : (and/c real? (not/c negative?))
+  side-count : side-count?
+  step-count : step-count?
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs an arbitrary regular star polygon (a generalization of the regular
+polygons). The polygon is enclosed by a regular polygon with side-count sides
+each side-length long. The polygon is actually constructed by going from vertex
+to vertex around the regular polgon, but skipping over every step-count
+vertices.
+
+For examples, if side-count is 5 and step-count is 2, then this function
+produces a shape just like star.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (star-polygon 40 5 2 "solid" "seagreen")
+    image
+
+    > (star-polygon 40 7 3 "outline" "darkred")
+    image
+
+    > (star-polygon 20 10 3 "solid" "cornflowerblue")
+    image
+
+
+
+(radial-star   point-count         
+               inner-radius        
+               outer-radius        
+               mode                
+               color)         →   image?
+  point-count : (and/c integer? (>=/c 2))
+  inner-radius : (and/c real? (not/c negative?))
+  outer-radius : (and/c real? (not/c negative?))
+  mode : mode?
+  color : image-color?
+(radial-star   point-count          
+               inner-radius         
+               outer-radius         
+               outline-mode         
+               pen-or-color)   →   image?
+  point-count : (and/c integer? (>=/c 2))
+  inner-radius : (and/c real? (not/c negative?))
+  outer-radius : (and/c real? (not/c negative?))
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs a star-like polygon where the star is specified by two radii and a
+number of points. The first radius determines where the points begin, the
+second determines where they end, and the point-count argument determines how
+many points the star has.
+
+Examples:
+
+    > (radial-star 8 8 64 "solid" "darkslategray")
+    image
+
+    > (radial-star 32 30 40 "outline" "black")
+    image
+
+
+
+(regular-polygon   side-length        
+                   side-count         
+                   mode               
+                   color)        →   image?
+  side-length : (and/c real? (not/c negative?))
+  side-count : side-count?
+  mode : mode?
+  color : image-color?
+(regular-polygon   side-length          
+                   side-count           
+                   outline-mode         
+                   pen-or-color)   →   image?
+  side-length : (and/c real? (not/c negative?))
+  side-count : side-count?
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs a regular polygon with side-count sides.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (regular-polygon 50 3 "outline" "red")
+    image
+
+    > (regular-polygon 40 4 "outline" "blue")
+    image
+
+    > (regular-polygon 20 8 "solid" "red")
+    image
+
+
+
+(polygon vertices mode color) → image?
+  vertices : (listof real-valued-posn?)
+  mode : mode?
+  color : image-color?
+(polygon vertices outline-mode pen-or-color) → image?
+  vertices : (listof real-valued-posn?)
+  outline-mode : (or/c 'outline "outline")
+  pen-or-color : (or/c pen? image-color?)
+Constructs a polygon connecting the given vertices.
+
+If the mode is 'outline or "outline", then the last argument can be a pen
+struct or an image-color?, but if the mode is 'solid or "solid", then the last
+argument must be an image-color?.
+
+Examples:
+
+    > (polygon (list (make-posn 0 0)
+                     (make-posn -10 20)
+                     (make-posn 60 0)
+                     (make-posn -10 -20))
+               "solid"
+               "burlywood")
+    image
+
+    > (polygon (list (make-posn 0 0)
+                     (make-posn 0 40)
+                     (make-posn 20 40)
+                     (make-posn 20 60)
+                     (make-posn 40 60)
+                     (make-posn 40 20)
+                     (make-posn 20 20)
+                     (make-posn 20 0))
+               "solid"
+               "plum")
+    image
+
+    > (underlay
+       (rectangle 80 80 "solid" "mediumseagreen")
+       (polygon
+        (list (make-posn 0 0)
+              (make-posn 50 0)
+              (make-posn 0 50)
+              (make-posn 50 50))
+        "outline"
+        (make-pen "darkslategray" 10 "solid" "round" "round")))
+    image
+
+    > (underlay
+       (rectangle 90 80 "solid" "mediumseagreen")
+       (polygon
+        (list (make-posn 0 0)
+              (make-posn 50 0)
+              (make-posn 0 50)
+              (make-posn 50 50))
+        "outline"
+        (make-pen "darkslategray" 10 "solid" "projecting" "miter")))
+    image
+
+
+
+2.2.3 Overlaying Images
+
+(overlay i1 i2 is ...) → image?
+  i1 : image?
+  i2 : image?
+  is : image?
+Overlays all of its arguments building a single image. The first argument goes
+on top of the second argument, which goes on top of the third argument, etc.
+The images are all lined up on their centers.
+
+Examples:
+
+    > (overlay (rectangle 30 60 "solid" "orange")
+               (ellipse 60 30 "solid" "purple"))
+    image
+
+    > (overlay (ellipse 10 10 "solid" "red")
+               (ellipse 20 20 "solid" "black")
+               (ellipse 30 30 "solid" "red")
+               (ellipse 40 40 "solid" "black")
+               (ellipse 50 50 "solid" "red")
+               (ellipse 60 60 "solid" "black"))
+    image
+
+    > (overlay (regular-polygon 20 5 "solid" (make-color  50  50 255))
+               (regular-polygon 26 5 "solid" (make-color 100 100 255))
+               (regular-polygon 32 5 "solid" (make-color 150 150 255))
+               (regular-polygon 38 5 "solid" (make-color 200 200 255))
+               (regular-polygon 44 5 "solid" (make-color 250 250 255)))
+    image
+
+
+
+(overlay/align x-place y-place i1 i2 is ...) → image?
+  x-place : x-place?
+  y-place : y-place?
+  i1 : image?
+  i2 : image?
+  is : image?
+Overlays all of its image arguments, much like the overlay function, but using
+x-place and y-place to determine where the images are lined up. For example, if
+x-place and y-place are both "middle", then the images are lined up on their
+centers.
+
+Examples:
+
+    > (overlay/align "left" "middle"
+                     (rectangle 30 60 "solid" "orange")
+                     (ellipse 60 30 "solid" "purple"))
+    image
+
+    > (overlay/align "right" "bottom"
+                     (rectangle 20 20 "solid" "silver")
+                     (rectangle 30 30 "solid" "seagreen")
+                     (rectangle 40 40 "solid" "silver")
+                     (rectangle 50 50 "solid" "seagreen"))
+    image
+
+
+
+(overlay/offset i1 x y i2) → image?
+  i1 : image?
+  x : real?
+  y : real?
+  i2 : image?
+Just like overlay, this function lines up its image arguments on top of each
+other. Unlike overlay, it moves i2 by x pixels to the right and y down before
+overlaying them.
+
+Examples:
+
+    > (overlay/offset (circle 40 "solid" "red")
+                      10 10
+                      (circle 40 "solid" "blue"))
+    image
+
+    > (overlay/offset (overlay/offset (rectangle 60 20 "solid" "black")
+                                      -50 0
+                                      (circle 20 "solid" "darkorange"))
+                      70 0
+                      (circle 20 "solid" "darkorange"))
+    image
+
+    > (overlay/offset
+       (overlay/offset (circle 30 'solid (color 0 150 0 127))
+                       26 0
+                       (circle 30 'solid (color 0 0 255 127)))
+       0 26
+       (circle 30 'solid (color 200 0 0 127)))
+    image
+
+
+
+(overlay/align/offset   x-place        
+                        y-place        
+                        i1             
+                        x              
+                        y              
+                        i2)       →   image?
+  x-place : x-place?
+  y-place : y-place?
+  i1 : image?
+  x : real?
+  y : real?
+  i2 : image?
+Overlays image i1 on top of i2, using x-place and y-place as the starting
+points for the overlaying, and then adjusts i2 by x to the right and y pixels
+down.
+
+This function combines the capabilities of overlay/align and overlay/offset.
+
+Examples:
+
+    > (overlay/align/offset
+       "right" "bottom"
+       (star-polygon 20 20 3 "solid" "navy")
+       10 10
+       (circle 30 "solid" "cornflowerblue"))
+    image
+
+    > (overlay/align/offset
+       "left" "bottom"
+       (star-polygon 20 20 3 "solid" "navy")
+       -10 10
+       (circle 30 "solid" "cornflowerblue"))
+    image
+
+
+
+(overlay/xy i1 x y i2) → image?
+  i1 : image?
+  x : real?
+  y : real?
+  i2 : image?
+Constructs an image by overlaying i1 on top of i2. The images are initially
+lined up on their upper-left corners and then i2 is shifted to the right by x
+pixels to and down by y pixels.
+
+This is the same as (underlay/xy i2 (- x) (- y) i1).
+
+See also overlay/offset and underlay/offset.
+
+Examples:
+
+    > (overlay/xy (rectangle 20 20 "outline" "black")
+                  20 0
+                  (rectangle 20 20 "outline" "black"))
+    image
+
+    > (overlay/xy (rectangle 20 20 "solid" "red")
+                  10 10
+                  (rectangle 20 20 "solid" "black"))
+    image
+
+    > (overlay/xy (rectangle 20 20 "solid" "red")
+                  -10 -10
+                  (rectangle 20 20 "solid" "black"))
+    image
+
+    > (overlay/xy
+       (overlay/xy (ellipse 40 40 "outline" "black")
+                   10
+                   15
+                   (ellipse 10 10 "solid" "forestgreen"))
+       20
+       15
+       (ellipse 10 10 "solid" "forestgreen"))
+    image
+
+
+
+(underlay i1 i2 is ...) → image?
+  i1 : image?
+  i2 : image?
+  is : image?
+Underlays all of its arguments building a single image.
+
+It behaves like overlay, but with the arguments in the reverse order. That is,
+the first argument goes underneath of the second argument, which goes
+underneath the third argument, etc. The images are all lined up on their
+centers.
+
+Examples:
+
+    > (underlay (rectangle 30 60 "solid" "orange")
+                (ellipse 60 30 "solid" "purple"))
+    image
+
+    > (underlay (ellipse 10 60 "solid" "red")
+                (ellipse 20 50 "solid" "black")
+                (ellipse 30 40 "solid" "red")
+                (ellipse 40 30 "solid" "black")
+                (ellipse 50 20 "solid" "red")
+                (ellipse 60 10 "solid" "black"))
+    image
+
+    > (underlay (ellipse 10 60 40 "red")
+                (ellipse 20 50 40 "red")
+                (ellipse 30 40 40 "red")
+                (ellipse 40 30 40 "red")
+                (ellipse 50 20 40 "red")
+                (ellipse 60 10 40 "red"))
+    image
+
+
+
+(underlay/align x-place y-place i1 i2 is ...) → image?
+  x-place : x-place?
+  y-place : y-place?
+  i1 : image?
+  i2 : image?
+  is : image?
+Underlays all of its image arguments, much like the underlay function, but
+using x-place and y-place to determine where the images are lined up. For
+example, if x-place and y-place are both "middle", then the images are lined up
+on their centers.
+
+Examples:
+
+    > (underlay/align "left" "middle"
+                      (rectangle 30 60 "solid" "orange")
+                      (ellipse 60 30 "solid" "purple"))
+    image
+
+    > (underlay/align "right" "top"
+                      (rectangle 50 50 "solid" "seagreen")
+                      (rectangle 40 40 "solid" "silver")
+                      (rectangle 30 30 "solid" "seagreen")
+                      (rectangle 20 20 "solid" "silver"))
+    image
+
+    > (underlay/align "left" "middle"
+                      (rectangle 50 50 50 "seagreen")
+                      (rectangle 40 40 50 "seagreen")
+                      (rectangle 30 30 50 "seagreen")
+                      (rectangle 20 20 50 "seagreen"))
+    image
+
+
+
+(underlay/offset i1 x y i2) → image?
+  i1 : image?
+  x : real?
+  y : real?
+  i2 : image?
+Just like overlay, this function lines up its image arguments on top of each
+other. Unlike overlay, it moves i2 by x pixels to the right and y down before
+overlaying them.
+
+Examples:
+
+    > (underlay/offset (circle 40 "solid" "red")
+                      10 10
+                      (circle 40 "solid" "blue"))
+    image
+
+    > (underlay/offset (circle 40 "solid" "gray")
+                       0 -10
+                       (underlay/offset (circle 10 "solid" "navy")
+                                       -30 0
+                                       (circle 10 "solid" "navy")))
+    image
+
+
+
+(underlay/align/offset   x-place        
+                         y-place        
+                         i1             
+                         x              
+                         y              
+                         i2)       →   image?
+  x-place : x-place?
+  y-place : y-place?
+  i1 : image?
+  x : real?
+  y : real?
+  i2 : image?
+Underlays image i1 underneath i2, using x-place and y-place as the starting
+points for the combination, and then adjusts i2 by x to the right and y pixels
+down.
+
+This function combines the capabilities of underlay/align and underlay/offset.
+
+Examples:
+
+    > (underlay/align/offset
+       "right" "bottom"
+       (star-polygon 20 20 3 "solid" "navy")
+       10 10
+       (circle 30 "solid" "cornflowerblue"))
+    image
+
+    > (underlay/align/offset
+       "right" "bottom"
+       (underlay/align/offset
+        "left" "bottom"
+        (underlay/align/offset
+         "right" "top"
+         (underlay/align/offset
+          "left" "top"
+          (rhombus 120 90 "solid" "navy")
+          16 16
+          (star-polygon 20 11 3 "solid" "cornflowerblue"))
+         -16 16
+         (star-polygon 20 11 3 "solid" "cornflowerblue"))
+        16 -16
+        (star-polygon 20 11 3 "solid" "cornflowerblue"))
+       -16 -16
+       (star-polygon 20 11 3 "solid" "cornflowerblue"))
+    image
+
+
+
+(underlay/xy i1 x y i2) → image?
+  i1 : image?
+  x : real?
+  y : real?
+  i2 : image?
+Constructs an image by underlaying i1 underneath i2. The images are initially
+lined up on their upper-left corners and then i2 is shifted to the right by x
+pixels to and down by y pixels.
+
+This is the same as (overlay/xy i2 (- x) (- y) i1).
+
+See also underlay/offset and overlay/offset.
+
+Examples:
+
+    > (underlay/xy (rectangle 20 20 "outline" "black")
+                   20 0
+                   (rectangle 20 20 "outline" "black"))
+    image
+
+    > (underlay/xy (rectangle 20 20 "solid" "red")
+                   10 10
+                   (rectangle 20 20 "solid" "black"))
+    image
+
+    > (underlay/xy (rectangle 20 20 "solid" "red")
+                   -10 -10
+                   (rectangle 20 20 "solid" "black"))
+    image
+
+    > (underlay/xy
+       (underlay/xy (ellipse 40 40 "solid" "gray")
+                    10
+                    15
+                    (ellipse 10 10 "solid" "forestgreen"))
+       20
+       15
+       (ellipse 10 10 "solid" "forestgreen"))
+    image
+
+
+
+(beside i1 i2 is ...) → image?
+  i1 : image?
+  i2 : image?
+  is : image?
+Constructs an image by placing all of the argument images in a horizontal row,
+aligned along their centers.
+
+Example:
+
+    > (beside (ellipse 20 70 "solid" "gray")
+              (ellipse 20 50 "solid" "darkgray")
+              (ellipse 20 30 "solid" "dimgray")
+              (ellipse 20 10 "solid" "black"))
+    image
+
+
+
+(beside/align y-place i1 i2 is ...) → image?
+  y-place : y-place?
+  i1 : image?
+  i2 : image?
+  is : image?
+Constructs an image by placing all of the argument images in a horizontal row,
+lined up as indicated by the y-place argument. For example, if y-place is
+"middle", then the images are placed side by side with their centers lined up
+with each other.
+
+Examples:
+
+    > (beside/align "bottom"
+                    (ellipse 20 70 "solid" "lightsteelblue")
+                    (ellipse 20 50 "solid" "mediumslateblue")
+                    (ellipse 20 30 "solid" "slateblue")
+                    (ellipse 20 10 "solid" "navy"))
+    image
+
+    > (beside/align "top"
+                    (ellipse 20 70 "solid" "mediumorchid")
+                    (ellipse 20 50 "solid" "darkorchid")
+                    (ellipse 20 30 "solid" "purple")
+                    (ellipse 20 10 "solid" "indigo"))
+    image
+
+    > (beside/align "baseline"
+                    (text "ijy" 18 "black")
+                    (text "ijy" 24 "black"))
+    image
+
+
+
+(above i1 i2 is ...) → image?
+  i1 : image?
+  i2 : image?
+  is : image?
+Constructs an image by placing all of the argument images in a vertical row,
+aligned along their centers.
+
+Example:
+
+    > (above (ellipse 70 20 "solid" "gray")
+             (ellipse 50 20 "solid" "darkgray")
+             (ellipse 30 20 "solid" "dimgray")
+             (ellipse 10 20 "solid" "black"))
+    image
+
+
+
+(above/align x-place i1 i2 is ...) → image?
+  x-place : x-place?
+  i1 : image?
+  i2 : image?
+  is : image?
+Constructs an image by placing all of the argument images in a vertical row,
+lined up as indicated by the x-place argument. For example, if x-place is
+"middle", then the images are placed above each other with their centers lined
+up.
+
+Examples:
+
+    > (above/align "right"
+                   (ellipse 70 20 "solid" "gold")
+                   (ellipse 50 20 "solid" "goldenrod")
+                   (ellipse 30 20 "solid" "darkgoldenrod")
+                   (ellipse 10 20 "solid" "sienna"))
+    image
+
+    > (above/align "left"
+                   (ellipse 70 20 "solid" "yellowgreen")
+                   (ellipse 50 20 "solid" "olivedrab")
+                   (ellipse 30 20 "solid" "darkolivegreen")
+                   (ellipse 10 20 "solid" "darkgreen"))
+    image
+
+
+
+2.2.4 Placing Images & Scenes
+
+Placing images into scenes is particularly useful when building worlds and
+universes using 2htdp/universe.
+
+(empty-scene width height) → image?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+(empty-scene width height color) → image?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+  color : image-color?
+Creates an empty scene, i.e., a white rectangle with a black outline.
+
+Example:
+
+    > (empty-scene 160 90)
+    image
+
+
+
+The three-argument version creates a rectangle of the specified color with a
+black outline.
+
+(place-image image x y scene) → image?
+  image : image?
+  x : real?
+  y : real?
+  scene : image?
+Places image onto scene with its center at the coordinates (x,y) and crops the
+resulting image so that it has the same size as scene. The coordinates are
+relative to the top-left of scene.
+
+Examples:
+
+    > (place-image
+       (triangle 32 "solid" "red")
+       24 24
+       (rectangle 48 48 "solid" "gray"))
+    image
+
+    > (place-image
+       (triangle 64 "solid" "red")
+       24 24
+       (rectangle 48 48 "solid" "gray"))
+    image
+
+    > (place-image
+       (circle 4 "solid" "white")
+       18 20
+       (place-image
+        (circle 4 "solid" "white")
+        0 6
+        (place-image
+         (circle 4 "solid" "white")
+         14 2
+         (place-image
+          (circle 4 "solid" "white")
+          8 14
+          (rectangle 24 24 "solid" "goldenrod")))))
+    image
+
+
+(place-image/align   image          
+                     x              
+                     y              
+                     x-place        
+                     y-place        
+                     scene)    →   image?
+  image : image?
+  x : real?
+  y : real?
+  x-place : x-place?
+  y-place : y-place?
+  scene : image?
+Like place-image, but uses image’s x-place and y-place to anchor the image.
+Also, like place-image, place-image/align crops the resulting image so that it
+has the same size as scene.
+
+Examples:
+
+    > (place-image/align (triangle 48 "solid" "yellowgreen")
+                         64 64 "right" "bottom"
+                         (rectangle 64 64 "solid" "mediumgoldenrod"))
+    image
+
+    > (beside
+       (place-image/align (circle 8 "solid" "tomato")
+                          0 0 "center" "center"
+                          (rectangle 32 32 "outline" "black"))
+       (place-image/align (circle 8 "solid" "tomato")
+                          8 8 "center" "center"
+                          (rectangle 32 32 "outline" "black"))
+       (place-image/align (circle 8 "solid" "tomato")
+                          16 16 "center" "center"
+                          (rectangle 32 32 "outline" "black"))
+       (place-image/align (circle 8 "solid" "tomato")
+                          24 24 "center" "center"
+                          (rectangle 32 32 "outline" "black"))
+       (place-image/align (circle 8 "solid" "tomato")
+                          32 32 "center" "center"
+                          (rectangle 32 32 "outline" "black")))
+    image
+
+
+
+(scene+line image x1 y1 x2 y2 pen-or-color) → image?
+  image : image?
+  x1 : real?
+  y1 : real?
+  x2 : real?
+  y2 : real?
+  pen-or-color : (or/c pen? image-color?)
+Adds a line to the image scene, starting from the point (x1,y1) and going to
+the point (x2,y2); unlike add-line, this function crops the resulting image to
+the size of scene.
+
+Examples:
+
+    > (scene+line (ellipse 40 40 "outline" "maroon")
+                  0 40 40 0 "maroon")
+    image
+
+    > (scene+line (rectangle 40 40 "solid" "gray")
+                  -10 50 50 -10 "maroon")
+    image
+
+    > (scene+line
+       (rectangle 100 100 "solid" "darkolivegreen")
+       25 25 100 100
+       (make-pen "goldenrod" 30 "solid" "round" "round"))
+    image
+
+
+
+(scene+curve   scene         
+               x1            
+               y1            
+               angle1        
+               pull1         
+               x2            
+               y2            
+               angle2        
+               pull2         
+               color)   →   image?
+  scene : image?
+  x1 : real?
+  y1 : real?
+  angle1 : angle?
+  pull1 : real?
+  x2 : real?
+  y2 : real?
+  angle2 : angle?
+  pull2 : real?
+  color : image-color?
+Adds a curve to scene, starting at the point (x1,y1), and ending at the point
+(x2,y2).
+
+The angle1 and angle2 arguments specify the angle that the curve has as it
+leaves the initial point and as it reaches the final point, respectively.
+
+The pull1 and pull2 arguments control how long the curve tries to stay with
+that angle. Larger numbers mean that the curve stays with the angle longer.
+
+Unlike add-curve, this function crops the curve, only showing the parts that
+fit onto scene.
+
+Examples:
+
+    > (scene+curve (rectangle 100 100 "solid" "black")
+                   20 20 0 1/3
+                   80 80 0 1/3
+                   "white")
+    image
+
+    > (scene+curve (rectangle 100 100 "solid" "black")
+                   20 20 0 1
+                   80 80 0 1
+                   "white")
+    image
+
+    > (scene+curve
+       (add-curve
+        (rectangle 40 100 "solid" "black")
+        20 10 180 1/2
+        20 90 180 1/2
+        "white")
+       20 10 0 1/2
+       20 90 0 1/2
+       "white")
+    image
+
+    > (scene+curve (rectangle 100 100 "solid" "black")
+                   -20 -20 0 1
+                   120 120 0 1
+                   "red")
+    image
+
+
+
+2.2.5 Rotating, Scaling, Flipping, Cropping, and Framing Images
+
+(rotate angle image) → image?
+  angle : angle?
+  image : image?
+Rotates image by angle degrees in a counter-clockwise direction.
+
+Examples:
+
+    > (rotate 45 (ellipse 60 20 "solid" "olivedrab"))
+    image
+
+    > (rotate 5 (rectangle 50 50 "outline" "black"))
+    image
+
+    > (rotate 45
+              (beside/align
+               "center"
+               (rectangle 40 20 "solid" "darkseagreen")
+               (rectangle 20 100 "solid" "darkseagreen")))
+    image
+
+
+
+(scale factor image) → image?
+  factor : (and/c real? positive?)
+  image : image?
+Scales image by factor.
+
+The pen sizes are also scaled and thus draw thicker (or thinner) lines than the
+original image, unless the pen was size 0. That pen size is treated specially
+to mean “the smallest available line” and thus it always draws a one pixel wide
+line; this is also the case for 'outline and "outline" shapes that are drawn
+with an image-color? instead of a pen.
+
+Examples:
+
+    > (scale 2 (ellipse 20 30 "solid" "blue"))
+    image
+
+    > (ellipse 40 60 "solid" "blue")
+    image
+
+
+
+(scale/xy x-factor y-factor image) → image?
+  x-factor : (and/c real? positive?)
+  y-factor : (and/c real? positive?)
+  image : image?
+Scales image by x-factor horizontally and by y-factor vertically.
+
+Examples:
+
+    > (scale/xy 3
+                2
+                (ellipse 20 30 "solid" "blue"))
+    image
+
+    > (ellipse 60 60 "solid" "blue")
+    image
+
+
+
+(flip-horizontal image) → image?
+  image : image?
+Flips image left to right.
+
+Flipping images with text is not supported (so passing flip-horizontal an image
+that contains a text or text/font image inside somewhere signals an error).
+
+Example:
+
+    > (beside
+       (rotate 30 (square 50 "solid" "red"))
+       (flip-horizontal
+        (rotate 30 (square 50 "solid" "blue"))))
+    image
+
+
+
+(flip-vertical image) → image?
+  image : image?
+Flips image top to bottom.
+
+Flipping images with text is not supported (so passing flip-horizontal an image
+that contains a text or text/font image inside somewhere signals an error).
+
+Example:
+
+    > (above
+       (star 40 "solid" "firebrick")
+       (scale/xy 1 1/2 (flip-vertical (star 40 "solid" "gray"))))
+    image
+
+
+
+(crop x y width height image) → image?
+  x : real?
+  y : real?
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+  image : image?
+Crops image to the rectangle with the upper left at the point (x,y) and with
+width and height.
+
+Examples:
+
+    > (crop 0 0 40 40 (circle 40 "solid" "chocolate"))
+    image
+
+    > (crop 40 60 40 60 (ellipse 80 120 "solid" "dodgerblue"))
+    image
+
+    > (above
+       (beside (crop 40 40 40 40 (circle 40 "solid" "palevioletred"))
+               (crop 0 40 40 40 (circle 40 "solid" "lightcoral")))
+       (beside (crop 40 0 40 40 (circle 40 "solid" "lightcoral"))
+               (crop 0 0 40 40 (circle 40 "solid" "palevioletred"))))
+    image
+
+
+
+(frame image) → image?
+  image : image?
+Returns an image just like image, except with a black, single pixel frame drawn
+around the bounding box of the image.
+
+Example:
+
+    > (frame (ellipse 40 40 "solid" "gray"))
+    image
+
+
+
+Generally speaking, this function is useful to debug image constructions, i.e.,
+to see where certain sub-images appear within some larger image.
+
+Example:
+
+    > (beside
+       (ellipse 20 70 "solid" "lightsteelblue")
+       (frame (ellipse 20 50 "solid" "mediumslateblue"))
+       (ellipse 20 30 "solid" "slateblue")
+       (ellipse 20 10 "solid" "navy"))
+    image
+
+
+
+2.2.6 Bitmaps
+
+DrRacket’s Insert Image ... menu item allows you to insert images into your
+program text, and those images are treated as images for this library.
+
+Unlike all of the other images in this library, those images (and the other
+images created by functions in this section of the documentation) are
+represented as bitmaps, i.e., an array of colors (that can be quite large in
+some cases). This means that scaling and rotating them loses fidelity in the
+image and is significantly more expensive than with the other shapes.
+
+(bitmap bitmap-spec)
+ 
+bitmap-spec   =   rel-string
+              |   id
+Loads the bitmap specified by bitmap-spec. If bitmap-spec is a string, it is
+treated as a relative path. If it is an identifier, it is treated like a
+require spec and used to refer to a file in a collection.
+
+Examples:
+
+    > (bitmap icons/stop-16x16.png)
+    image
+
+    > (bitmap icons/b-run.png)
+    image
+
+
+
+(bitmap/url url) → image?
+  url : string?
+Goes out on the web and downloads the image at url.
+
+Downloading the image happens each time this function is called, so you may
+find it simpler to download the image once with a browser and then paste it
+into your program or download it and use bitmap.
+
+(image->color-list image) → (listof color?)
+  image : image?
+Returns a list of colors that correspond to the colors in the image, reading
+from left to right, top to bottom.
+
+Examples:
+
+    > (image->color-list (rectangle 2 2 "solid" "black"))
+    (list (color 0 0 0 255) (color 0 0 0 255) (color 0 0 0 255) (color 0 0 0
+    255))
+
+    > (image->color-list
+       (above (beside (rectangle 1 1 "solid" (make-color 1 1 1))
+                      (rectangle 1 1 "solid" (make-color 2 2 2)))
+              (beside (rectangle 1 1 "solid" (make-color 3 3 3))
+                      (rectangle 1 1 "solid" (make-color 4 4 4)))))
+    (list (color 1 1 1 255) (color 2 2 2 255) (color 3 3 3 255) (color 4 4 4
+    255))
+
+
+
+(color-list->bitmap colors width height) → image?
+  colors : (listof image-color?)
+  width : (and/c real? (not/c negative?))
+  height : (and/c real? (not/c negative?))
+Constructs a bitmap from the given colors, with the given width and height.
+
+Example:
+
+    > (scale
+       40
+       (color-list->bitmap
+        (list "red" "green" "blue")
+        3 1))
+    image
+
+
+
+(freeze image) → image?
+  image : image?
+(freeze width width image) → image?
+  width : (and/c real? (not/c negative?))
+  width : (and/c real? (not/c negative?))
+  image : image?
+(freeze x y width width image) → image?
+  x : real?
+  y : real?
+  width : (and/c real? (not/c negative?))
+  width : (and/c real? (not/c negative?))
+  image : image?
+Freezing an image internally builds a bitmap, crops the image, draws the
+cropped image into the bitmap and then uses the bitmap to draw that image
+afterwards. Typically this is used as a performance hint. When an image both
+contains many sub-images and is going to be drawn many times (but not scaled or
+rotated), using freeze on the image can substantially improve performance
+without changing how the image draws.
+
+If freeze is passed only the image argument, then it crops the image to its
+bounding box. If it is given three arguments, the two numbers are used as the
+width and height and the five argument version fully specifies where to crop
+the image.
+
+2.2.7 Image Properties
+
+(image-width i) → (and/c integer? (not/c negative?) exact?)
+  i : image?
+Returns the width of i.
+
+Examples:
+
+    > (image-width (ellipse 30 40 "solid" "orange"))
+    30
+
+    > (image-width (circle 30 "solid" "orange"))
+    60
+
+    > (image-width (beside (circle 20 "solid" "orange")
+                           (circle 20 "solid" "purple")))
+    80
+
+    > (image-width (rectangle 0 10 "solid" "purple"))
+    0
+
+
+
+(image-height i) → (and/c integer? (not/c negative?) exact?)
+  i : image?
+Returns the height of i.
+
+Examples:
+
+    > (image-height (ellipse 30 40 "solid" "orange"))
+    40
+
+    > (image-height (circle 30 "solid" "orange"))
+    60
+
+    > (image-height (overlay (circle 20 "solid" "orange")
+                             (circle 30 "solid" "purple")))
+    60
+
+    > (image-height (rectangle 10 0 "solid" "purple"))
+    0
+
+
+
+(image-baseline i) → (and/c integer? (not/c negative?) exact?)
+  i : image?
+Returns the distance from the top of the image to its baseline. Unless the
+image was constructed with text, text/font or, in some cases, crop, this will
+be the same as its height.
+
+Examples:
+
+    > (image-baseline (text "Hello" 24 "black"))
+    31
+
+    > (image-height (text "Hello" 24 "black"))
+    40
+
+    > (image-baseline (rectangle 100 100 "solid" "black"))
+    100
+
+    > (image-height (rectangle 100 100 "solid" "black"))
+    100
+
+
+
+A cropped image’s baseline is the same as the image’s baseline, if the cropping
+stays within the original image’s bounding box. But if the cropping actually
+enlarges the image, then the baseline can end up being smaller.
+
+Examples:
+
+    > (image-height (rectangle 20 20 "solid" "black"))
+    20
+
+    > (image-baseline (rectangle 20 20 "solid" "black"))
+    20
+
+    > (image-height (crop 10 10 5 5 (rectangle 20 20 "solid" "black")))
+    5
+
+    > (image-baseline (crop 10 10 5 5 (rectangle 20 20 "solid" "black")))
+    5
+
+    > (image-height (crop 10 10 30 30 (rectangle 20 20 "solid" "black")))
+    30
+
+    > (image-baseline (crop 10 10 30 30 (rectangle 20 20 "solid" "black")))
+    20
+
+
+
+2.2.8 Image Predicates
+
+This section lists predicates for the basic structures provided by the image
+library.
+
+(image? x) → boolean?
+  x : any/c
+Determines if x is an image. Images are returned by functions like ellipse and
+rectangle and accepted by functions like overlay and beside.
+
+Additionally, images inserted into a DrRacket window are treated as bitmap
+images, as are instances of image-snip% and bitmap%.
+
+(mode? x) → boolean?
+  x : any/c
+Determines if x is a mode suitable for constructing images.
+
+It can be one of 'solid, "solid", 'outline, or "outline", indicating if the
+shape is filled in or not.
+
+It can also be an integer between 0 and 255 (inclusive) indicating the
+transparency of the image. The integer 255 is fully opaque, and is the same as
+"solid" (or 'solid). The integer 0 means fully transparent.
+
+(image-color? x) → boolean?
+  x : any/c
+Determines if x represents a color. Strings, symbols, and color structs are
+allowed as colors.
+
+For example, "magenta", "black", 'orange, and 'purple are allowed. Colors are
+not case-sensitive, so "Magenta", "Black", 'Orange, and 'Purple are also
+allowed, and are the same colors as in the previous sentence. If a string or
+symbol color name is not recognized, black is used in its place.
+
+The complete list of colors is available in the documentation for
+color-database<%>.
+
+(struct   color (red green blue alpha)
+          #:extra-constructor-name make-color)
+  red : (and/c natural-number/c (<=/c 255))
+  green : (and/c natural-number/c (<=/c 255))
+  blue : (and/c natural-number/c (<=/c 255))
+  alpha : (and/c natural-number/c (<=/c 255))
+The color struct defines a color with red, green, blue, and alpha components
+that range from 0 to 255.
+
+The red, green, and blue fields combine to make a color, with the higher values
+meaning more of the given color. For example, (make-color 255 0 0) makes a
+bright red color and (make-color 255 0 255) makes a bright purple.
+
+The alpha field controls the transparency of the color. A value of 255 means
+that the color is opaque and 0 means the color is fully transparent.
+
+The constructor, make-color, also accepts only three arguments, in which case
+the three arguments are used for the red, green, and blue fields, and the alpha
+field defaults to 255.
+
+(y-place? x) → boolean?
+  x : any/c
+Determines if x is a placement option for the vertical direction. It can be one
+of "top", 'top, "bottom", 'bottom, "middle", 'middle, "center", 'center,
+"baseline", 'baseline, "pinhole", or 'pinhole.
+
+The baseline of an image is the place where the bottoms any letters line up,
+not counting descenders, e.g. the tail on “y” or “g” or “j”.
+
+Using "pinhole" or 'pinhole is only allowed when all of the image arguments
+have pinholes.
+
+(x-place? x) → boolean?
+  x : any/c
+Determines if x is a placement option for the horizontal direction. It can be
+one of "left", 'left, "right", 'right, "middle", 'middle, "center", 'center,
+"pinhole", or 'pinhole.
+
+Using "pinhole" or 'pinhole is only allowed when all of the image arguments
+have pinholes.
+
+(angle? x) → boolean?
+  x : any/c
+Determines if x is an angle, namely a real number between 0 (inclusive) and 360
+(exclusive).
+
+(side-count? x) → boolean?
+  x : any/c
+Determines if x is an integer greater than or equal to 3.
+
+(step-count? x) → boolean?
+  x : any/c
+Determines if x is an integer greater than or equal to 1.
+
+(real-valued-posn? x) → boolean?
+  x : any/c
+Determines if x is a posn whose x and y fields are both real? numbers.
+
+(struct   pen (color width style cap join)
+          #:extra-constructor-name make-pen)
+  color : image-color?
+  width : (and/c real? (<=/c 0 255))
+  style : pen-style?
+  cap : pen-cap?
+  join : pen-join?
+The pen struct specifies how the drawing library draws lines.
+
+A good default for style is "solid", and good default values for the cap and
+join fields are "round".
+
+Using 0 as a width is special; it means to always draw the smallest possible,
+but visible, pen. This means that the pen will always be one pixel in size, no
+matter how the image is scaled.
+
+(pen-style? x) → boolean?
+  x : any/c
+Determines if x is a valid pen style. It can be one of "solid", 'solid, "dot",
+'dot, "long-dash", 'long-dash, "short-dash", 'short-dash, "dot-dash", or
+'dot-dash.
+
+(pen-cap? x) → boolean?
+  x : any/c
+Determines if x is a valid pen cap. It can be one of "round", 'round,
+"projecting", 'projecting, "butt", or 'butt.
+
+(pen-join? x) → boolean?
+  x : any/c
+Determines if x is a valid pen join. It can be one of "round", 'round, "bevel",
+'bevel, "miter", or 'miter.
+
+2.2.9 Equality Testing of Images
+
+Two images are equal? if they draw exactly the same way at their current size
+(not necessarily at all sizes) and, if there are pinholes, the pinholes are in
+the same place.
+
+2.2.10 Pinholes
+
+A pinhole is an optional property of an image that identifies a point somewhere
+in the image. The pinhole can then be used to facilitate overlaying images by
+lining them up on the their pinholes.
+
+When an image has a pinhole, the pinhole is drawn with crosshairs on the image.
+The crosshairs are drawn with a two one pixel wide black lines (one horizontal
+and one vertical) and two one pixel wide white lines, where the black lines is
+drawn .5 pixels to the left and above the pinhole, and the white lines are
+drawn .5 pixels to the right and below the pinhole. Accordingly, when the pixel
+is on an integral coordinate, then black and white lines all take up a single
+pixel and in the center of their intersections is the actual pinholes. See The
+nitty gritty of pixels, pens, and lines for more details about pixels.
+
+When images are overlay’d, underlay’d (or the variants of those functions),
+placed beside, or above each other, the pinhole of the resulting image is the
+pinhole of the first image argument passed to the combining operation. When
+images are combined with place-image (or the variants of place-image), then the
+scene argument’s pinhole is preserved.
+
+(center-pinhole image) → image?
+  image : image?
+Creates a pinhole in image at its center.
+Examples:
+
+    > (center-pinhole (rectangle 40 20 "solid" "red"))
+    image
+
+    > (rotate 30 (center-pinhole (rectangle 40 20 "solid" "orange")))
+    image
+
+
+(put-pinhole x y image) → image?
+  x : integer?
+  y : integer?
+  image : image?
+Creates a pinhole in image at the point (x,y).
+Example:
+
+    > (put-pinhole 2 18 (rectangle 40 20 "solid" "forestgreen"))
+    image
+
+
+(pinhole-x image) → (or/c integer? #f)
+  image : image?
+Returns the x coordinate of image’s pinhole.
+Example:
+
+    > (pinhole-x (center-pinhole (rectangle 10 10 "solid" "red")))
+    5
+
+
+(pinhole-y image) → (or/c integer? #f)
+  image : image?
+Returns the y coordinate of image’s pinhole.
+Example:
+
+    > (pinhole-y (center-pinhole (rectangle 10 10 "solid" "red")))
+    5
+
+
+(clear-pinhole image) → image?
+  image : image?
+Removes a pinhole from image (if the image has a pinhole).
+
+(overlay/pinhole i1 i2 is ...) → image?
+  i1 : image?
+  i2 : image?
+  is : image?
+Overlays all of the image arguments on their pinholes. If any of the arguments
+do not have pinholes, then the center of the image is used instead.
+
+Examples:
+
+    > (overlay/pinhole
+       (put-pinhole 25 10 (ellipse 100 50 "solid" "red"))
+       (put-pinhole 75 40 (ellipse 100 50 "solid" "blue")))
+    image
+
+    > (let ([petal (put-pinhole
+                    20 20
+                    (ellipse 100 40 "solid" "purple"))])
+        (clear-pinhole
+         (overlay/pinhole
+          (circle 30 "solid" "yellow")
+          (rotate (* 60 0) petal)
+          (rotate (* 60 1) petal)
+          (rotate (* 60 2) petal)
+          (rotate (* 60 3) petal)
+          (rotate (* 60 4) petal)
+          (rotate (* 60 5) petal))))
+    image
+
+
+
+(underlay/pinhole i1 i2 is ...) → image?
+  i1 : image?
+  i2 : image?
+  is : image?
+Underlays all of the image arguments on their pinholes. If any of the arguments
+do not have pinholes, then the center of the image is used instead.
+
+Examples:
+
+    > (underlay/pinhole
+       (put-pinhole 25 10 (ellipse 100 50 "solid" "red"))
+       (put-pinhole 75 40 (ellipse 100 50 "solid" "blue")))
+    image
+
+    > (let* ([t (triangle 40 "solid" "orange")]
+             [w (image-width t)]
+             [h (image-height t)])
+        (clear-pinhole
+         (overlay/pinhole
+          (put-pinhole (/ w 2) 0 t)
+          (put-pinhole w h t)
+          (put-pinhole 0 h t))))
+    image
+
+
+
+2.2.11 The nitty gritty of pixels, pens, and lines
+
+The image library treats coordinates as if they are in the upper-left corner of
+each pixel, and infinitesimally small (unlike pixels which have some area).
+
+Thus, when drawing a solid square of whose side-length is 10, the image library
+colors in all of the pixels enclosed by the square starting at the upper left
+corner of (0,0) and going down to the upper left corner of (10,10), so the
+pixel whose upper left at (9,9) is colored in, but the pixel at (10,10) is not.
+All told, 100 pixels get colored in, just as expected for a square with a side
+length of 10.
+
+When drawing lines, however, things get a bit more complex. Specifically,
+imagine drawing the outline of that rectangle. Since the border is between the
+pixels, there really isn’t a natural pixel to draw to indicate the border.
+Accordingly, when drawing an outline square (without a pen specification, but
+just a color as the last argument), the image library uses a pen whose width is
+1 pixel, but draws a line centered at the point (0.5,0.5) that goes down and
+around to the point (10.5,10.5). This means that the outline slightly exceeds
+the bounding box of the shape. Specifically, the upper and left-hand lines
+around the square are within the bounding box, but the lower and right-hand
+lines are just outside.
+
+This kind of rectangle is useful when putting rectangles next to each other and
+avoiding extra thick lines on the interior. For example, imagine building a
+grid like this:
+
+Example:
+
+    > (let* ([s (rectangle 20 20 "outline" "black")]
+             [r (beside s s s s s s)])
+        (above r r r r r r))
+    image
+
+
+
+The reason interior lines in this grid are the same thickness as the lines
+around the edge is because the rectangles overlap with each other. That is, the
+upper-left rectangle’s right edge is right on top of the next rectangle’s left
+edge.
+
+The special case of adding 0.5 to each coordinate when drawing the square
+applies to all outline polygon-based shapes that just pass color, but does not
+apply when a pen is passed as the last argument to create the shape. For
+example, if using a pen of thickness 2 to draw a rectangle, we get a shape that
+has a border drawing the row of pixels just inside and just outside the shape.
+One might imagine that a pen of thickness 1 would draw an outline around the
+shape with a 1 pixel thick line, but this would require 1/2 of each pixel to be
+illuminated, something that is not possible. Instead, the same pixels are lit
+up as with the 2 pixel wide pen, but with only 1/2 of the intensity of the
+color. So a 1 pixel wide black pen object draws a 2 pixel wide outline, but in
+gray.
+
+When combining pens and cropping, we can make a rectangle that has a line that
+is one pixel wide, but where the line is drawn entirely within the rectangle
+
+Example:
+
+    > (crop
+       0 0 20 20
+       (rectangle
+        20 20 "outline"
+        (make-pen "black" 2 "solid" "round" "round")))
+    image
+
+
+
+and we can use that to build a grid now too, but this grid has doubled lines on
+the interior.
+
+Example:
+
+    > (let* ([s (crop
+                 0 0 20 20
+                 (rectangle
+                  20 20 "outline"
+                  (make-pen "black" 2 "solid" "round" "round")))]
+             [r (beside s s s s s s)])
+        (above r r r r r r))
+    image
+
+
+
+While this kind of rectangle is not useful for building grids, it is important
+to be able to build rectangles whose drawing does not exceed its bounding box.
+Specifically, this kind of drawing is used by frame and empty-scene so that the
+extra drawn pixels are not lost if the image is later clipped to its bounding
+box.
+
+2.2.12 Exporting Images to Disk
+
+In order to use an image as an input to another program (e.g., Photoshop or a
+web browser), it is necessary to represent it in a format that these programs
+can understand. The save-image function provides this functionality, writing an
+image to disk using the PNG format. Since this format represents an image using
+a set of pixel values, an image written to disk generally contains less
+information than the image that was written, and cannot be scaled or
+manipulated as cleanly (by any image program).
+
+(save-image image filename [width height]) → boolean?
+  image : image?
+  filename : path-string?
+  width : (and/c real? (not/c negative?)) = (image-width image)
+   height   :   (and/c real? (not/c negative?))
+            =   (image-height image)
+Writes an image to the path specified by filename, using the PNG format.
+
+The last two arguments are optional. If present, they determine the width and
+height of the save image file. If absent, the width and height of the image is
+used.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

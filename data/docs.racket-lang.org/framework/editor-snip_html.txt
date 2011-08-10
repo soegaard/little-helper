@@ -1,0 +1,155 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+editor-snip: decorated<%>
+get-corner-bitmap
+get-color
+get-menu
+get-position
+reset-min-sizes
+editor-snip: decorated-mixin
+get-corner-bitmap
+get-color
+get-menu
+get-position
+editor-snip: decorated%
+make-snip
+make-editor
+copy
+editor-snip: decorated-snipclass%
+make-snip
+read
+[...search manuals...]
+  top← prev  up  next → 
+
+10 Editor Snip
+
+editor-snip:decorated<%> : interface?
+  implements:  editor-snip%
+
+
+    (send an-editor-snip:decorated get-corner-bitmap)
+     → (or/c false/c (is-a?/c bitmap%))
+    Returns a bitmap that is drawn in the upper-right corner of this snip.
+    (send an-editor-snip:decorated get-color)
+     → (or/c string? (is-a?/c color%))
+    Returns the color used to draw the background part of the snip.
+    (send an-editor-snip:decorated get-menu)
+     → (or/c false/c (is-a?/c popup-menu%))
+    Returns a popup menu that is used when clicking on the top part of the
+    snip.
+    (send an-editor-snip:decorated get-position)
+     → (symbols 'top-right 'left-top)
+    Returns the location of the image and the clickable region. The symbol
+    'top-right indicates top portion is clickable and icon on right. The symbol
+    'left-top means left portion is clickable and icon on top.
+    (send an-editor-snip:decorated reset-min-sizes) → void?
+    Sets the minimum sizes based on the result of get-corner-bitmap.
+
+editor-snip:decorated-mixin : (class? . -> . class?)
+  argument extends/implements:  editor-snip%
+  result implements:  editor-snip:decorated<%>
+
+
+    (send an-editor-snip:decorated get-corner-bitmap)
+     → (or/c false/c (is-a?/c bitmap%))
+    Returns #f.
+    (send an-editor-snip:decorated get-color)
+     → (or/c string? (is-a?/c color%))
+    Returns
+
+        (if (preferences:get 'framework:white-on-black?)
+            "white"
+            "black")
+
+    (send an-editor-snip:decorated get-menu)
+     → (or/c false/c (is-a?/c popup-menu%))
+    Returns #f.
+    (send an-editor-snip:decorated get-position)
+     → (symbols 'top-right 'left-top)
+    Returns 'top-right.
+
+editor-snip:decorated% : class?
+  superclass: (editor-snip:decorated-mixin editor-snip%)
+
+
+
+    (new editor-snip:decorated% ...superclass-args...)
+     → (is-a?/c editor-snip:decorated%)
+    Invokes the super constructor with the keyword editor as a call to
+    make-editor.
+
+    (send an-editor-snip:decorated make-snip)
+     → (is-a?/c editor-snip:decorated%)
+    This method should return an instance of the class it is invoked in. If you
+    create a subclass of this class, be sure to override this method and have
+    it create instances of the subclass.
+    (send an-editor-snip:decorated make-editor)
+     → (is-a?/c editor<%>)
+    Creates an editor to be used in this snip.
+
+    (send an-editor-snip:decorated copy)
+     → (is-a?/c editor-snip:decorated%)
+    Uses the make-editor and make-snip methods to create a copy of this snip,
+    as follows:
+
+
+        #lang (let ([snip (make-snip)]) (send snip set-editor (send
+        (get-editor) copy-self)) (send snip set-style (get-style)) snip)
+
+editor-snip:decorated-snipclass% : class?
+  superclass: snip-class%
+
+
+
+    (send an-editor-snip:decorated-snipclass make-snip stream-in)
+     → (is-a?/c editor-snip:decorated<%>)
+      stream-in : (is-a?/c editor-stream-in%)
+    Returns an instance of editor-snip:decorated%.
+    (send an-editor-snip:decorated-snipclass read stream-in)
+     → (is-a?/c editor-snip:decorated<%>)
+      stream-in : (is-a?/c editor-stream-in%)
+    Calls make-snip to get an object and then invokes its editor<%>’s
+    read-from-file method in order to read a snip from stream-in, eg:
+
+        (let ([snip (make-snip stream-in)])
+          (send (send snip get-editor) read-from-file stream-in #f)
+          snip)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

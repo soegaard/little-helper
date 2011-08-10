@@ -1,0 +1,98 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+color-model: rgb->xyz
+color-model: rgb-color-distance
+color-model: xyz->rgb
+color-model: xyz?
+color-model: xyz-x
+color-model: xyz-y
+color-model: xyz-z
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Color Model
+
+(color-model:rgb->xyz r g b) → color-model:xyz?
+  r : number?
+  g : number?
+  b : number?
+Converts a color represented as a red-green-blue tuple (each value from 0 to
+255) into an XYZ tuple. This describes a point in the CIE XYZ color space.
+(color-model:rgb-color-distance   red-a          
+                                  green-a        
+                                  blue-a         
+                                  red-b          
+                                  green-b        
+                                  blue-b)   →   number?
+  red-a : number?
+  green-a : number?
+  blue-a : number?
+  red-b : number?
+  green-b : number?
+  blue-b : number?
+This calculates a distance between two colors. The smaller the distance, the
+closer the colors should appear to the human eye. A distance of 10 is
+reasonably close that it could be called the same color.
+
+This function is not symmetric in red, green, and blue, so it is important to
+pass red, green, and blue components of the colors in the proper order. The
+first three arguments are red, green and blue for the first color,
+respectively, and the second three arguments are red green and blue for the
+second color, respectively.
+(color-model:xyz->rgb x y z) → (list/c number? number? number?)
+  x : number?
+  y : number?
+  z : number?
+Converts an XYZ-tuple (in the CIE XYZ colorspace) into a list of values
+representing an RGB-tuple.
+(color-model:xyz? val) → boolean?
+  val : any/c
+Determines if val an xyz color record.
+(color-model:xyz-x xyz) → number?
+  xyz : color-model:xyz?
+Extracts the x component of xyz.
+(color-model:xyz-y xyz) → number?
+  xyz : color-model:xyz?
+Extracts the y component of xyz.
+(color-model:xyz-z xyz) → number?
+  xyz : color-model:xyz?
+Extracts the z component of xyz.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

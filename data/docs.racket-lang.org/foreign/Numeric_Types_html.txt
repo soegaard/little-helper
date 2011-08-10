@@ -1,0 +1,129 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 3  C Types
+3.1  Type Constructors
+3.2  Numeric Types
+3.3  Other Atomic Types
+3.4  String Types
+3.5  Pointer Types
+3.6  Function Types
+3.7  C Struct Types
+3.8  Enumerations and Masks
+On this page:
+_ int8
+_ sint8
+_ uint8
+_ int16
+_ sint16
+_ uint16
+_ int32
+_ sint32
+_ uint32
+_ int64
+_ sint64
+_ uint64
+_ byte
+_ sbyte
+_ ubyte
+_ short
+_ sshort
+_ ushort
+_ int
+_ sint
+_ uint
+_ word
+_ sword
+_ uword
+_ long
+_ slong
+_ ulong
+_ llong
+_ sllong
+_ ullong
+_ intptr
+_ sintptr
+_ uintptr
+_ fixnum
+_ ufixnum
+_ fixint
+_ ufixint
+_ float
+_ double
+_ double*
+[...search manuals...]
+  top← prev  up  next → 
+
+3.2 Numeric Types
+
+_int8 : ctype?
+_sint8 : ctype?
+_uint8 : ctype?
+_int16 : ctype?
+_sint16 : ctype?
+_uint16 : ctype?
+_int32 : ctype?
+_sint32 : ctype?
+_uint32 : ctype?
+_int64 : ctype?
+_sint64 : ctype?
+_uint64 : ctype?
+The basic integer types at various sizes. The s or u prefix specifies a signed
+or an unsigned integer, respectively; the ones with no prefix are signed.
+
+_byte : ctype?
+_sbyte : ctype?
+_ubyte : ctype?
+_short : ctype?
+_sshort : ctype?
+_ushort : ctype?
+_int : ctype?
+_sint : ctype?
+_uint : ctype?
+_word : ctype?
+_sword : ctype?
+_uword : ctype?
+_long : ctype?
+_slong : ctype?
+_ulong : ctype?
+_llong : ctype?
+_sllong : ctype?
+_ullong : ctype?
+_intptr : ctype?
+_sintptr : ctype?
+_uintptr : ctype?
+Aliases for basic integer types. The _byte aliases correspond to _int8. The
+_short and _word aliases correspond to _int16. The _int aliases correspond to
+_int32. The _long aliases correspond to either _int32 or _int64, depending on
+the platform. Similarly, the _intptr aliases correspond to either _int32 or
+_int64, depending on the platform.
+
+_fixnum : ctype?
+_ufixnum : ctype?
+For cases where speed matters and where you know that the integer is small
+enough, the types _fixnum and _ufixnum are similar to _intptr and _uintptr but
+assume that the quantities fit in Racket’s immediate integers (i.e., not
+bignums).
+
+_fixint : ctype?
+_ufixint : ctype?
+Similar to _fixnum/_ufixnum, but based on _int/_uint instead of _intptr/
+_uintptr, and coercions from C are checked to be in range.
+
+_float : ctype?
+_double : ctype?
+_double* : ctype?
+The _float and _double types represent the corresponding C types. Both single-
+and double-precision Racket numbers are accepted for conversion via both _float
+and _double, while both _float and _double coerce C values to double-precision
+Racket numbers. The type _double* coerces any Racket real number to a C double.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

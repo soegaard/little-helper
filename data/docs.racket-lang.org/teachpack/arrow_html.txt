@@ -1,0 +1,98 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 1  Ht DP Teachpacks
+ 1.1  Manipulating Images: "image.ss"
+ 1.2  Simulations and Animations: "world.ss"
+ 1.3  Converting Temperatures: "convert.ss"
+ 1.4  Guessing Numbers: "guess.ss"
+ 1.5  Master Minding: "master.ss"
+ 1.6  Playing Master Mind: "master-play.ss"
+ 1.7  Simple Drawing: "draw.ss"
+ 1.8  Hangman: "hangman.ss"
+ 1.9  Playing Hangman: "hangman-play.ss"
+1.10  Managing Control Arrows: "arrow.ss"
+1.11  Manipulating Simple HTML Documents: "docs.ss"
+1.12  Working with Files and Directories: "dir.ss"
+1.13  Graphing Functions: "graphing.ss"
+1.14  Simple Graphical User Interfaces: "gui.ss"
+1.15  An Arrow GUI: "arrow-gui.ss"
+1.16  Controlling an Elevator: "elevator.ss"
+1.17  Lookup GUI: "lkup-gui.ss"
+1.18  Guess GUI: "guess-gui.ss"
+1.19  Queens: "show-queen.ss"
+1.20  Matrix Functions: "matrix.ss"
+On this page:
+control-left-right
+control-up-down
+control
+[...search manuals...]
+  top← prev  up  next → 
+
+1.10 Managing Control Arrows: "arrow.ss"
+
+ (require htdp/arrow)
+
+The teachpack implements a controller for moving shapes across a canvass.
+
+(control-left-right shape n move draw) → true
+  shape : Shape
+  n : number?
+  move : (-> number? Shape Shape)
+  draw : (-> Shape true)
+Moves shape n pixels left (negative) or right (positive).
+
+(control-up-down shape n move draw) → true
+  shape : Shape
+  n : number?
+  move : (-> number? Shape Shape)
+  draw : (-> Shape true)
+Moves shape n pixels up (negative) or down (positive).
+
+(control shape n move-lr move-ud draw) → true
+  shape : Shape
+  n : number?
+  move-lr : (-> number? Shape Shape)
+  move-ud : (-> number? Shape Shape)
+  draw : (-> Shape true)
+Moves shape N pixels left or right and up or down, respectively.
+
+Example:
+
+    ; A shape is a structure:
+    ;   (make-posn num num)
+     
+    ; RAD : the radius of the simple disk moving across a canvas
+    (define RAD 10)
+     
+    ; move : number shape -> shape or false
+    ; to move a shape by delta according to translate
+    ; effect: to redraw it
+    (define (move delta sh)
+      (cond
+        [(and (clear-solid-disk sh RAD)
+              (draw-solid-disk (translate sh delta) RAD))
+         (translate sh delta)]
+        [else false]))
+     
+    ; translate : shape number -> shape
+    ; to translate a shape by delta in the x direction
+    (define (translate sh delta)
+      (make-posn (+ (posn-x sh) delta) (posn-y sh)))
+     
+    ; draw-it : shape -> true
+    ; to draw a shape on the canvas: a disk with radius
+    (define (draw-it sh)
+      (draw-solid-disk sh RAD))
+     
+    ; Run:
+     
+    ; this creates the canvas
+    (start 100 50)
+     
+    ; this creates the controller GUI
+    (control-left-right (make-posn 10 20) 10 move draw-it)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

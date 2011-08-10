@@ -1,0 +1,109 @@
+▼  Make: Dependency Manager
+1  Overview
+2  Make from Dependencies
+3  Building Native-Code Extensions
+4  Making Collections
+► 2  Make from Dependencies
+2.1  Signature
+2.2  Unit
+On this page:
+make
+make/ proc
+exn: fail: make
+make-print-checking
+make-print-dep-no-line
+make-print-reasons
+2.1 Signature
+make^
+2.2 Unit
+make@
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Make from Dependencies
+
+ (require make)
+
+(make ((target-expr (depend-expr ...)
+         command-expr ...)
+       ...)
+      argv-expr)
+Expands to
+
+    (make/proc
+     (list (list target-expr (list depend-expr ...)
+                 (lambda () command-expr ...))
+           ...)
+     argv-expr)
+
+(make/proc spec argv) → void?
+              (listof
+               (cons/c (or/c path-string? (listof path-string?))
+   spec   :            (cons/c (listof path-string?)
+                               (or/c null?
+                                     (list/c (-> any))))))
+  argv : (or/c string? (vectorof string?) (listof string?))
+
+Performs a make according to spec and using argv as command-line arguments
+selecting one or more targets.
+
+Each element of the spec list is a target. A target element that starts with a
+list of strings is the same as multiple elements, one for each string. The
+second element of each target is a list of dependencies, and the third element
+(if any) of a target is the optional command thunk.
+
+To make a target, make/proc is first called recursively on each of the target’s
+dependencies. If a target is not in spec and it exists as a file, then the
+target is considered made. If a target’s modification date is older than any of
+its dependencies’ modification dates, the corresponding command thunk is
+called. If the dependency has no command thunk then no action is taken; such a
+target is useful for triggering the make of other targets (i.e., the
+dependencies).
+
+While running a command thunk, make/proc catches exceptions and wraps them in
+an exn:fail:make structure, the raises the resulting structure.}
+
+(struct   exn:fail:make exn:fail (targets orig-exn)
+          #:extra-constructor-name make-exn:fail:make)
+  targets : (listof path-string?)
+  orig-exn : any/c
+The targets field is a list of strings naming the target(s), and the orig-exn
+field is the original raised value.
+
+(make-print-checking) → boolean?
+(make-print-checking on?) → void?
+  on? : any/c
+A parameter that controls whether make/proc prints a message when making a
+target. The default is #t.
+
+(make-print-dep-no-line) → boolean?
+(make-print-dep-no-line on?) → void?
+  on? : any/c
+A parameter that controls whether make/proc prints “checking...” lines for
+dependencies that have no target in the given kspec. The default is #f.
+
+(make-print-reasons) → boolean?
+(make-print-reasons on?) → void?
+  on? : any/c
+A parameter that controls whether make/proc prints the reason that a command
+thunk is called. The default is #t.
+
+2.1 Signature
+
+ (require make/make-sig)
+
+make^ : signature
+
+
+    Includes all of the names provided by make.
+
+2.2 Unit
+
+ (require make/make-unit)
+
+make@ : unit?
+A unit that imports nothing and exports make^.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

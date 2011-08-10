@@ -1,0 +1,131 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+Inherited methods:
+from dc<%>
+cache-font-metrics-key
+clear
+copy
+draw-arc
+draw-bitmap
+draw-bitmap-section
+draw-ellipse
+draw-line
+draw-lines
+draw-path
+draw-point
+draw-polygon
+draw-rectangle
+draw-rounded-rectangle
+draw-spline
+draw-text
+end-doc
+end-page
+erase
+flush
+get-alpha
+get-background
+get-brush
+get-char-height
+get-char-width
+get-clipping-region
+get-device-scale
+get-font
+get-gl-context
+get-initial-matrix
+get-origin
+get-pen
+get-rotation
+get-scale
+get-size
+get-smoothing
+get-text-background
+get-text-extent
+get-text-foreground
+get-text-mode
+get-transformation
+glyph-exists?
+ok?
+resume-flush
+rotate
+scale
+set-alpha
+set-background
+set-brush
+set-clipping-rect
+set-clipping-region
+set-font
+set-initial-matrix
+set-origin
+set-pen
+set-rotation
+set-scale
+set-smoothing
+set-text-background
+set-text-foreground
+set-text-mode
+set-transformation
+start-doc
+start-page
+suspend-flush
+transform
+translate
+try-color
+[...search manuals...]
+  top← prev  up  next → 
+
+pdf-dc% : class?
+  superclass: object%
+
+  extends:  dc<%>
+Like post-script-dc%, but generates a PDF file instead of a PostScript file.
+
+(new pdf-dc%  [ [interactive interactive]        
+                [parent parent]                  
+                [use-paper-bbox use-paper-bbox]  
+                [as-eps as-eps]                  
+                [width width]                    
+                [height height]                  
+                [output output]])                
+ → (is-a?/c pdf-dc%)
+  interactive : any/c = #t
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%) false/c)
+            =   #f
+  use-paper-bbox : any/c = #f
+  as-eps : any/c = #t
+  width : (or/c (and/c real? (not/c negative?)) #f) = #f
+  height : (or/c (and/c real? (not/c negative?)) #f) = #f
+  output : (or/c path-string? output-port? #f) = #f
+See post-script-dc% for information on the arguments. The as-eps argument is
+allowed for consistency with post-script-dc%, but its value is ignored.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

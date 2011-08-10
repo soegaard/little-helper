@@ -1,0 +1,118 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 7  sendmail: Sending E-Mail
+7.1  Sendmail Functions
+7.2  Sendmail Unit
+7.3  Sendmail Signature
+On this page:
+7.1 Sendmail Functions
+send-mail-message/ port
+send-mail-message
+no-mail-recipients
+7.2 Sendmail Unit
+sendmail@
+7.3 Sendmail Signature
+sendmail^
+[...search manuals...]
+  top← prev  up  next → 
+
+7 sendmail: Sending E-Mail
+
+ (require net/sendmail)
+The net/sendmail module provides tools for sending electronic mail messages
+using a sendmail program on the local system. See also the net/smtp package,
+which sends mail via SMTP.
+
+All strings used in mail messages are assumed to conform to their corresponding
+SMTP specifications, except as noted otherwise.
+
+7.1 Sendmail Functions
+
+(send-mail-message/port   from                     
+                          subject                  
+                          to                       
+                          cc                       
+                          bcc                      
+                          extra-header ...)   →   output-port?
+  from : string?
+  subject : string?
+  to : (listof string?)
+  cc : (listof string?)
+  bcc : (listof string?)
+  extra-header : string?
+The first argument is the header for the sender, the second is the subject
+line, the third a list of “To:” recipients, the fourth a list of “CC:”
+recipients, and the fifth a list of “BCC:” recipients. Additional arguments
+argument supply other mail headers, which must be provided as lines (not
+terminated by a linefeed or carriage return) to include verbatim in the header.
+
+The return value is an output port into which the client must write the
+message. Clients are urged to use close-output-port on the return value as soon
+as the necessary text has been written, so that the sendmail process can
+complete.
+
+The from argument can be any value; of course, spoofing should be used with
+care.
+
+(send-mail-message   from                     
+                     subject                  
+                     to                       
+                     cc                       
+                     bcc                      
+                     body                     
+                     extra-header ...)   →   void?
+  from : string?
+  subject : string?
+  to : (listof string?)
+  cc : (listof string?)
+  bcc : (listof string?)
+  body : (listof string?)
+  extra-header : string?
+Like send-mail-message/port, but with body as a list of strings, each providing
+a line of the message body.
+
+Lines that contain a single period do not need to be quoted.
+
+(struct   no-mail-recipients exn ()
+          #:extra-constructor-name make-no-mail-recipients)
+Raised when no mail recipients were specified for send-mail-message/port.
+
+7.2 Sendmail Unit
+
+ (require net/sendmail-unit)
+
+sendmail@ : unit?
+Imports nothing, exports sendmail^.
+
+7.3 Sendmail Signature
+
+ (require net/sendmail-sig)
+
+sendmail^ : signature
+
+Includes everything exported by the net/sendmail module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

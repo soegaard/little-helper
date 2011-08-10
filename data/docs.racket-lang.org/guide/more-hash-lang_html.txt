@@ -1,0 +1,71 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 22  Dialects of Racket and Scheme
+22.1  More Rackets
+22.2  Standards
+22.3  Teaching
+[...search manuals...]
+  top← prev  up  next → 
+
+22.1 More Rackets
+
+“Racket” is more of an idea about programming languages than a language in the
+usual sense. Macros can extend a base language (as described in Macros), and
+alternate parsers can construct an entirely new language from the ground up (as
+described in Creating Languages).
+
+The #lang line that starts a Racket module declares the base language of the
+module. By “Racket,” we usually mean #lang followed by the base language racket
+or racket/base (of which racket is an extension). The Racket distribution
+provides additional languages, including the following:
+
+  • typed/racket — like racket, but statically typed; see The Typed Racket
+    Guide
+
+  • lazy — like racket/base, but avoids evaluating an expression until its
+    value is needed; see Lazy Racket
+
+  • frtime — changes evaluation in an even more radical way to support reactive
+    programming; see FrTime: A Language for Reactive Programs
+
+  • scribble/base — a language, which looks more like Latex than Racket, for
+    writing documentation; see Scribble: The Racket Documentation Tool
+
+Each of these languages is used by starting module with the language name after
+#lang. For example, this source of this document starts with #lang scribble/
+base.
+
+Furthermore, Racket users can define their own languages, as discussed in
+Creating Languages. Typically, a language name maps to its implementation
+through a module path by adding /lang/reader; for example, the language name
+scribble/base is expanded to scribble/base/lang/reader, which is the module
+that implements the surface-syntax parser. Some language names act as language
+loaders; for example, #lang planet planet-path downloads, installs, and uses a
+language via PLaneT.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

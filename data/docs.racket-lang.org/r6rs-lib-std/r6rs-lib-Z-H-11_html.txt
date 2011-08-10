@@ -1,0 +1,28 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 10
+
+Command-line access and exit values
+
+The procedures described in this section are exported by the (rnrs programs
+(6))library.
+
+(command-line)    procedure 
+
+Returns a nonempty list of strings. The first element is an
+implementation-specific name for the running top-level program. The remaining
+elements are command-line arguments according to the operating system’s
+conventions.
+
+(exit)    procedure 
+(exit obj)    procedure 
+
+Exits the running program and communicates an exit value to the operating
+system. If no argument is supplied, the exit procedure should communicate to
+the operating system that the program exited normally. If an argument is
+supplied, the exit procedure should translate the argument into an appropriate
+exit value for the operating system. If obj is #f, the exit is assumed to be
+abnormal.
+
+                        [Go to first, previous, next page;   contents;   index]
+

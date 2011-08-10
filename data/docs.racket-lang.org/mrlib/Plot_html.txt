@@ -1,0 +1,79 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+data-set
+plot-setup
+plot
+[...search manuals...]
+  top← prev  up  next → 
+
+12 Plot
+
+ (require mrlib/plot)
+The mrlib/plot library provides a simple tool for plotting data values to a
+device context.
+
+(struct   data-set (points connected? pen min-x max-x min-y max-y)
+          #:extra-constructor-name make-data-set)
+  points : (listof (is-a?/c point%))
+  connected? : any/c
+  pen : (is-a?/c pen%)
+  min-x : real?
+  max-x : real?
+  min-y : real?
+  max-y : real?
+The points field contains the data values to plot, and connected? indicates
+whether the points are connected by a line. The pen field provides a pen for
+plotting points/lines. The remaining fields determine the plotting area within
+a drawing context.
+
+(struct   plot-setup      ( axis-label-font
+                            axis-number-font
+                            axis-pen
+                            grid?
+                            grid-pen
+                            x-axis-marking
+                            y-axis-marking
+                            x-axis-label
+                            y-axis-label)
+          #:extra-constructor-name make-plot-setup)
+  axis-label-font : (is-a?/c font%)
+  axis-number-font : (is-a?/c font%)
+  axis-pen : (is-a?/c pen)
+  grid? : any/c
+  grid-pen : (is-a?/c pen)
+  x-axis-marking : (listof real?)
+  y-axis-marking : (listof real?)
+  x-axis-label : string?
+  y-axis-label : string?
+Configures a plot. The grid? field determines whether to draw a grid at axis
+markings, and the x-axis-marking and y-axis-marking lists supply locations for
+marks on each axis. The other fields are self-explanatory.
+
+(plot dc data setup) → void?
+  dc : (is-a?/c dc<%>)
+  data : (listof data-set?)
+  setup : plot-setup?
+Draws the data-sets in data into the given dc. Uses drawing-context coordinates
+in data-sets that will accommodate all of the data sets.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,75 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+► 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+▼ 8.2  Examples
+8.2.1  Modules and reusable syntax classes
+8.2.2  Optional keyword arguments
+8.2.3  Variants with uniform meanings
+8.2.4  Variants with varied meanings
+8.2.5  More keyword arguments
+8.2.6  Contracts on macro sub-expressions
+[...search manuals...]
+  top← prev  up  next → 
+
+8.2.6 Contracts on macro sub-expressions
+
+Just as procedures often expect certain kinds of values as arguments, macros
+often have expectations about the expressions they are given. And just as
+procedures express those expectations via contracts, so can macros, using the
+expr/c syntax class.
+
+For example, here is a macro myparameterize that behaves like parameterize but
+enforces the parameter? contract on the parameter expressions.
+
+    > (define-syntax (myparameterize stx)
+        (syntax-parse stx
+          [(_ ((p v:expr) ...) body:expr)
+           #:declare p (expr/c #'parameter?
+                               #:name "parameter argument")
+           #'(parameterize ((p.c v) ...) body)]))
+    > (myparameterize ((current-input-port
+                        (open-input-string "(1 2 3)")))
+        (read))
+    '(1 2 3)
+
+    > (myparameterize (('whoops 'something))
+        'whatever)
+    parameter argument of myparameterize: self-contract
+
+    violation, expected <parameter?>, given: 'whoops
+
+      contract from program, blaming program
+
+      contract: parameter?
+
+            at: eval:126.0
+
+
+Important: Make sure when using expr/c to use the c attribute. If the macro
+above had used p in the template, the expansion would have used the raw,
+unchecked expressions. The expr/c syntax class does not change how pattern
+variables are bound; it only computes an attribute that represents the checked
+expression.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

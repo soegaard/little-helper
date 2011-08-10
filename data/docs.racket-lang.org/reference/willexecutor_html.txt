@@ -1,0 +1,95 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 15  Memory Management
+15.1  Weak Boxes
+15.2  Ephemerons
+15.3  Wills and Executors
+15.4  Garbage Collection
+On this page:
+make-will-executor
+will-executor?
+will-register
+will-execute
+will-try-execute
+[...search manuals...]
+  top← prev  up  next → 
+
+15.3 Wills and Executors
+
+A will executor manages a collection of values and associated will procedures
+(a.k.a. finalizers). The will procedure for each value is ready to be executed
+when the value has been proven (by the garbage collector) to be unreachable,
+except through weak references (see Weak Boxes) or as the registrant for other
+will executors. A will is useful for triggering clean-up actions on data
+associated with an unreachable value, such as closing a port embedded in an
+object when the object is no longer used.
+
+Calling the will-execute or will-try-execute procedure executes a will that is
+ready in the specified will executor. Wills are not executed automatically,
+because certain programs need control to avoid race conditions. However, a
+program can create a thread whose sole job is to execute wills for a particular
+executor.
+
+If a value is registered with multiple wills (in one or multiple executors),
+the wills are readied in the reverse order of registration. Since readying a
+will procedure makes the value reachable again, the will must be executed and
+the value must be proven again unreachable through only weak references before
+another of the wills is readied or executed. However, wills for distinct
+unreachable values are readied at the same time, regardless of whether the
+values are reachable from each other.
+
+A will executor’s register is held non-weakly until after the corresponding
+will procedure is executed. Thus, if the content value of a weak box (see Weak
+Boxes) is registered with a will executor, the weak box’s content is not
+changed to #f until all wills have been executed for the value and the value
+has been proven again reachable through only weak references.
+
+(make-will-executor) → will-executor?
+Returns a new will executor with no managed values.
+
+(will-executor? v) → boolean?
+  v : any/c
+Returns #t if v is a will executor, #f otherwise.
+
+(will-register executor v proc) → void?
+  executor : will-executor?
+  v : any/c
+  proc : (any/c . -> . any)
+Registers the value v with the will procedure proc in the will executor
+executor. When v is proven unreachable, then the procedure proc is ready to be
+called with v as its argument via will-execute or will-try-execute. The proc
+argument is strongly referenced until the will procedure is executed.
+
+(will-execute executor) → any
+  executor : will-executor?
+Invokes the will procedure for a single “unreachable” value registered with the
+executor executor. The values returned by the will procedure are the result of
+the will-execute call. If no will is ready for immediate execution,
+will-execute blocks until one is ready.
+
+(will-try-execute executor) → any
+  executor : any/c
+Like will-execute if a will is ready for immediate execution. Otherwise, #f is
+returned.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

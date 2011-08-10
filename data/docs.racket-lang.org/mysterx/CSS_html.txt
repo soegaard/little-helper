@@ -1,0 +1,44 @@
+►  Myster X: Using Windows COM Objects in Racket
+1  Overview
+2  COM
+3  Active X and DHTML
+4  Version
+   Index
+► 3  Active X and DHTML
+3.1  Browsers
+3.2  Documents
+3.3  HTML Events
+3.4  HTML and Dynamic HTML
+▼ 3.4  HTML and Dynamic HTML
+3.4.1  HTML Elements
+3.4.2  Generating Active X HTML
+3.4.3  CSS
+3.4.4  Colors
+On this page:
+css-percentage
+css-length
+[...search manuals...]
+  top← prev  up  next → 
+
+3.4.3 CSS
+
+In the mx-element% method descriptions, “CSS” refers to the Cascading Style
+Sheets specification. A CSS length is string consisting of a decimal integer
+number followed by one of the units px (pixels), em (font height), ex (height
+of an “x”), in (inches), cm (centimeters), mm (millimeters), pc (picas), or pt
+(points). A CSS percentage is a string consisting of a decimal real number
+followed by %. When using -native methods, CSS lengths and percentages are
+given as strings. For use by non-native methods, the css-percentage and
+css-length structures have been defined.
+
+(struct   css-percentage (num)
+          #:extra-constructor-name make-css-percentage)
+  num : real?
+(struct   css-length (num units)
+          #:extra-constructor-name make-css-length)
+  num : real?
+  units : (symbols em ex cm mm in pt pc px)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

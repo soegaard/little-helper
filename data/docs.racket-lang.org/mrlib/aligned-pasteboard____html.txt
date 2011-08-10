@@ -1,0 +1,60 @@
+►  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+▼ 1  Aligned Pasteboard
+1.1  aligned-pasteboard<%>
+1.2  horizontal-pasteboard%
+1.3  vertical-pasteboard%
+1.4  aligned-editor-snip%
+1.5  aligned-editor-canvas%
+1.6  aligned-pasteboard-parent<%>
+1.7  stretchable-snip<%>
+On this page:
+get-aligned-min-height
+get-aligned-min-width
+realign
+set-aligned-min-sizes
+[...search manuals...]
+  top← prev  up  next → 
+
+aligned-pasteboard<%> : interface?
+
+(send an-aligned-pasteboard get-aligned-min-height) → real?
+The minimum height an aligned-pasteboard can be and still fit the heights of
+all of its children.
+
+(send an-aligned-pasteboard get-aligned-min-width) → real?
+The minimum width an aligned-pasteboard can be and still fit the widths of all
+of its children.
+
+(send an-aligned-pasteboard realign   width          
+                                      height)   →   void?
+  width : exact-nonnegative-integer?
+  height : exact-nonnegative-integer?
+(send an-aligned-pasteboard realign) → void?
+Realigns the children inside the aligned-pasteboard<%> to either a given width
+and height or the previously alloted width and height.
+
+(send an-aligned-pasteboard set-aligned-min-sizes) → void?
+Calculates the minimum width and height of the of the pasteboard based on
+children’s min-sizes and stores it for later retrieval via the getters.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,102 @@
+▼  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+The Racket Foreign Interface
+
+Eli Barzilay
+
+ (require ffi/unsafe)
+
+The ffi/unsafe library enables the direct use of C-based APIs within Racket
+programs—without writing any new C code. From the Racket perspective, functions
+and data with a C-based API are foreign, hence the term foreign interface.
+Furthermore, since most APIs consist mostly of functions, the foreign interface
+is sometimes called a foreign function interface, abbreviated FFI.
+
+    1 Overview
+
+    2 Loading Foreign Libraries
+
+    3 C Types
+
+      3.1 Type Constructors
+
+      3.2 Numeric Types
+
+      3.3 Other Atomic Types
+
+      3.4 String Types
+
+        3.4.1 Primitive String Types
+
+        3.4.2 Fixed Auto-Converting String Types
+
+        3.4.3 Variable Auto-Converting String Type
+
+        3.4.4 Other String Types
+
+      3.5 Pointer Types
+
+      3.6 Function Types
+
+        3.6.1 Custom Function Types
+
+      3.7 C Struct Types
+
+      3.8 Enumerations and Masks
+
+    4 Pointer Functions
+
+      4.1 Pointer Dereferencing
+
+      4.2 Memory Management
+
+    5 Derived Utilities
+
+      5.1 Safe Homogenous Vectors
+
+      5.2 Safe C Vectors
+
+      5.3 Tagged C Pointer Types
+
+      5.4 Defining Bindings
+
+      5.5 Allocation and Finalization
+
+      5.6 Atomic Execution
+
+      5.7 Speculatively Atomic Execution
+
+      5.8 Objective-C FFI
+
+        5.8.1 FFI Types and Constants
+
+        5.8.2 Syntactic Forms and Procedures
+
+        5.8.3 Raw Runtime Functions
+
+        5.8.4 Legacy Library
+
+      5.9 File Security-Guard Checks
+
+      5.10 Windows API Helpers
+
+    6 Miscellaneous Support
+
+    7 Unexported Primitive Functions
+
+    Index
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,97 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Contracts and Boundaries
+7.2  Simple Contracts on Functions
+7.3  Contracts on Functions in General
+7.4  Contracts: A Thorough Example
+7.5  Contracts on Structures
+7.6  Abstract Contracts using #: exists and #: ∃
+7.7  Additional Examples
+7.8  Gotchas
+[...search manuals...]
+  top← prev  up  next → 
+
+7.6 Abstract Contracts using #:exists and #:∃
+
+The contract system provides existential contracts that can protect
+abstractions, ensuring that clients of your module cannot depend on the precise
+representation choices you make for your data structures.
+
+            You can type #:exists instead of #:∃ if you cannot easily type
+            unicode characters; in DrRacket, typing \exists followed by either
+            alt-\ or control-\ (depending on your platform) will produce ∃.
+
+The provide/contract form allows you to write
+
+
+    #:∃ name-of-a-new-contract
+
+as one of its clauses. This declaration introduces the variable
+name-of-a-new-contract, binding it to a new contract that hides information
+about the values it protects.
+
+As an example, consider this (simple) implementation of a stack datastructure:
+
+    #lang racket
+    (define empty '())
+    (define (enq top queue) (append queue (list top)))
+    (define (next queue) (car queue))
+    (define (deq queue) (cdr queue))
+    (define (empty? queue) (null? queue))
+     
+    (provide/contract
+     [empty (listof integer?)]
+     [enq (-> integer? (listof integer?) (listof integer?))]
+     [next (-> (listof integer?) integer?)]
+     [deq (-> (listof integer?) (listof integer?))]
+     [empty? (-> (listof integer?) boolean?)])
+
+This code implements a queue purely in terms of lists, meaning that clients of
+this data structure might use car and cdr directly on the data structure
+(perhaps accidentally) and thus any change in the representation (say to a more
+efficient representation that supports amortized constant time enqueue and
+dequeue operations) might break client code.
+
+To ensure that the stack representation is abstract, we can use #:∃ in the
+provide/contract expression, like this:
+
+    (provide/contract
+     #:∃ stack
+     [empty stack]
+     [enq (-> integer? stack stack)]
+     [next (-> stack integer?)]
+     [deq (-> stack (listof integer?))]
+     [empty? (-> stack boolean?)])
+
+Now, if clients of the data structure try to use car and cdr, they receive an
+error, rather than mucking about with the internals of the queues.
+
+See also Exists Contracts and Predicates.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

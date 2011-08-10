@@ -1,0 +1,665 @@
+▼  Web Applications in Racket
+1  Running Web Servlets
+2  Stateful Servlets
+3  Stateless Servlets
+4  HTTP: Hypertext Transfer Protocol
+5  URL-Based Dispatch
+6  Formlets: Functional Form Abstraction
+7  Templates: Separation of View
+8  Page: Short-hand for Common Patterns
+9  Troubleshooting and Tips
+   Index
+► 3  Stateless Servlets
+ 3.1  Example
+ 3.2  Usage Considerations
+ 3.3  Serializable Continuations
+ 3.4  Native Interfaces
+ 3.5  Stateless Web Interaction
+ 3.6  Stateless Web Cells
+ 3.7  File Boxes
+ 3.8  Stateless Web Parameters
+ 3.9  Soft State
+3.10  Stuffers
+On this page:
+3.1 Example
+interface-version
+stuffer
+manager
+start
+3.2 Usage Considerations
+3.3 Serializable Continuations
+call-with-serializable-current-continuation
+serial->native
+native->serial
+3.4 Native Interfaces
+define-native
+3.5 Stateless Web Interaction
+send/ suspend/ url
+send/ suspend
+send/ suspend/ hidden
+send/ suspend/ url/ dispatch
+send/ suspend/ dispatch
+redirect/ get
+3.6 Stateless Web Cells
+web-cell?
+make-web-cell
+web-cell-ref
+web-cell-shadow
+3.7 File Boxes
+file-box?
+file-box
+file-unbox
+file-box-set?
+file-box-set!
+3.8 Stateless Web Parameters
+make-web-parameter
+web-parameter?
+web-parameterize
+3.9 Soft State
+soft-state?
+make-soft-state
+soft-state-ref
+soft-state
+3.10 Stuffers
+3.10.1 Basic Combinators
+stuffer
+stuffer/ c
+id-stuffer
+stuffer-compose
+stuffer-sequence
+stuffer-if
+stuffer-chain
+3.10.2 Serialization
+serialize-stuffer
+3.10.3 Base64 Encoding
+base64-stuffer
+3.10.4 GZip Compression
+gzip-stuffer
+3.10.5 Key/ Value Storage
+store
+dir-store
+3.10.6 Hash-addressed Storage
+hash-fun/ c
+hash-stuffer
+md5-stuffer
+3.10.7 HMAC-SHA1 Signing
+HMAC-SHA1
+HMAC-SHA1-stuffer
+3.10.8 Helpers
+is-url-too-big?
+make-default-stuffer
+default-stuffer
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Stateless Servlets
+
+ #lang web-server
+
+A stateless servlet should provide the following exports:
+
+interface-version : (one-of/c 'stateless)
+This indicates that the servlet is a stateless servlet.
+
+stuffer : (stuffer/c serializable? bytes?)
+This is the stuffer that will be used for the servlet.
+
+If it is not provided, it defaults to default-stuffer.
+
+manager : manager?
+This is the manager that will be used for the servlet.
+
+If it is not provided, it defaults to (create-none-manager #f).
+
+(start initial-request) → response?
+  initial-request : request?
+This function is called when an instance of this servlet is started. The
+argument is the HTTP request that initiated the instance.
+
+An example 'stateless servlet module:
+
+    #lang web-server
+    (provide interface-version stuffer start)
+    (define interface-version 'stateless)
+    (define stuffer
+     (stuffer-chain
+      serialize-stuffer
+      (md5-stuffer (build-path (find-system-path 'home-dir) ".urls"))))
+    (define (start req)
+      (response/xexpr
+       `(html (body (h2 "Look ma, no state!")))))
+
+These servlets have an extensive API available to them: net/url, web-server/
+http, web-server/http/bindings, web-server/lang/abort-resume, web-server/lang/
+web, web-server/lang/native, web-server/lang/web-param, web-server/lang/
+web-cells, web-server/lang/file-box, web-server/lang/soft, web-server/dispatch,
+and web-server/stuffers. Some of these are documented in the subsections that
+follow.
+
+3.2 Usage Considerations
+
+A stateless servlet has the following process performed on it automatically:
+
+  • All uses of letrec are removed and replaced with equivalent uses of let and
+    imperative features.
+
+  • The program is converted into ANF (Administrative Normal Form), making all
+    continuations explicit.
+
+  • All continuations and continuations marks are recorded in the continuation
+    marks of the expression they are the continuation of.
+
+  • All calls to external modules are identified and marked.
+
+  • All uses of call/cc are removed and replaced with equivalent gathering of
+    the continuations through the continuation marks installed earlier.
+
+  • The program is defunctionalized with a serializable data-structure for each
+    lambda.
+
+This process allows the continuations captured by your servlet to be
+serialized. This means they may be stored on the client’s browser or the
+server’s disk.
+
+This means your servlet has no cost to the server other than execution. This is
+very attractive if you’ve used Racket servlets and had memory problems.
+
+This means your server can restart in the middle of a long running Web
+interaction without the URLs that have been shared with the client expiring.
+This is very attractive if you’ve used Racket servlets and had session timeout
+problems.
+
+This process is defined on all of Racket and occurs after macro-expansion, so
+you are free to use all interesting features of Racket. However, there are some
+considerations you must make.
+
+First, this process drastically changes the structure of your program. It will
+create an immense number of lambdas and structures your program did not
+normally contain. The performance implication of this has not been studied with
+Racket.
+
+Second, the defunctionalization process is sensitive to the syntactic structure
+of your program. Therefore, if you change your program in a trivial way, for
+example, changing a constant, then all serialized continuations will be
+obsolete and will error when deserialization is attempted. This is a feature,
+not a bug! It is a small price to pay for protection from the sorts of errors
+that would occur if your program were changed in a meaningful way.
+
+Third, the values in the lexical scope of your continuations must be
+serializable for the continuations itself to be serializable. This means that
+you must use define-serializable-struct rather than define-struct, and take
+care to use modules that do the same. Similarly, you may not use parameterize,
+because parameterizations are not serializable.
+
+Fourth, and related, this process only runs on your code, not on the code you
+require. Thus, your continuations—to be serializable—must not be in the context
+of another module. For example, the following will fail with an "unsafe
+context" exception:
+
+    (define requests
+      (map (lambda (rg) (send/suspend/url rg))
+           response-generators))
+
+because map is not transformed by the process. However, if you defined your own
+map function, there would be no problem. Another solution is to store the map
+part of the continuation on the server with serial->native and native->serial:
+
+    (define requests
+      (serial->native
+       (map (lambda (rg) (native->serial (send/suspend/url rg)))
+           response-generators)))
+
+Fifth, the store is not serialized. If you rely on the store you will be taking
+huge risks. You will be assuming that the serialized continuation is invoked on
+the same server before the server is restarted or the memory is garbage
+collected.
+
+This process is derived from the papers Continuations from Generalized Stack
+Inspection by Pettyjohn et al. in 2005, Automatically RESTful Web Applications,
+Or Marking Modular Serializable Continuations by Jay McCarthy in 2009, and The
+Two-State Solution: Native and Serializable Continuations Accord by Jay
+McCarthy in 2010, We thank Greg Pettyjohn for his initial implementation of
+this algorithm.
+
+3.3 Serializable Continuations
+
+ (require web-server/lang/abort-resume)
+The main purpose of the stateless language is to provide serializable
+continuations to your servlet.
+
+(call-with-serializable-current-continuation response-generator)
+ → any
+  response-generator : (continuation? . -> . any)
+Captures the current continuation in a serializable way and calls
+response-generator with it, returning the result.
+
+This potentially uses resources of the current servlet’s manager if serial->
+native and native->serial were used to capture an untransformable context.
+
+(serial->native expr)
+serial->native informs the serializing runtime that expr is potentially a call
+to an untransformed context. This sets up the necessary information for
+native->serial to signal to call-with-serializable-current-continuation to
+capture the native (and thus unserializable) section of the context and store
+it on the server.
+
+(native->serial expr)
+native->serial informs the serializing runtime that expr marks first expression
+after returning from an untransformed context. This captures the untransformed
+context such that call-with-serializable-current-continuation can store it on
+the server and reference it from serializable continuations.
+
+For example,
+
+    (build-list
+     3
+     (lambda (i)
+       (call-with-serializable-current-continuation
+        (lambda (k) (serialize k)))))
+
+will fail at runtime because build-list is not transformed. However,
+
+    (serial->native
+     (build-list
+      3
+      (lambda (i)
+        (native->serial
+         (call-with-serializable-current-continuation
+          (lambda (k) (serialize k)))))))
+
+will succeed and k will reference a cell in the current servlet’s manager that
+stores the part of the continuation in build-list.
+
+3.4 Native Interfaces
+
+ (require web-server/lang/native)
+It is sometimes inconvenient to use serial->native and native->serial
+throughout your program. This module provides a macro for creating wrappers.
+
+(define-native (native arg-spec ...) original)
+ 
+       arg-spec    :   ho
+       arg-spec    :   _
+
+Builds an interface around original named native such that calls to native are
+wrapped in serial->native and all arguments marked with ho in arg-spec are
+assumed to procedures and are wrapped in native->serial.
+
+For example,
+
+
+    (define-native (build-list/native _ ho) build-list)
+
+is equivalent to
+
+    (define (build-list/native fst snd)
+      (serial->native
+       (build-list
+        fst
+        (lambda args
+          (native->serial
+           (apply snd args))))))
+
+3.5 Stateless Web Interaction
+
+ (require web-server/lang/web)
+
+(send/suspend/url response-generator) → request?
+  response-generator : (url? . -> . response?)
+Captures the current continuation. Serializes it and stuffs it into a URL.
+Calls response-generator with this URL and delivers the response to the client.
+If the URL is invoked the request is returned to this continuation.
+
+(send/suspend response-generator) → request?
+  response-generator : (string? . -> . response?)
+Like send/suspend/url but with a string URL representation.
+
+(send/suspend/hidden response-generator) → request?
+  response-generator : (url? xexpr/c . -> . response?)
+Captures the current continuation. Serializes it and stuffs it into a hidden
+INPUT form element. Calls response-generator with this URL and form field and
+delivers the response to the client. If the URL is invoked with form data
+containing the hidden form, the request is returned to this continuation.
+
+(send/suspend/url/dispatch make-response) → any
+  make-response : (((request? . -> . any) . -> . url?) . -> . response?)
+Calls make-response with a function that, when called with a procedure from
+request? to any/c will generate a URL, that when invoked will call the function
+with the request? object and return the result to the caller of send/suspend/
+dispatch.
+
+(send/suspend/dispatch make-response) → request?
+  make-response : (((request? . -> . any) . -> . string?) . -> . response?)
+Like send/suspend/url/dispatch but with a string URL representation.
+
+(redirect/get) → request?
+See web-server/servlet/web.
+
+3.6 Stateless Web Cells
+
+ (require web-server/lang/web-cells)
+The web-server/lang/web-cells library provides the same API as web-server/
+servlet/web-cells, but in a way compatible with the Web Language. The one
+difference is that make-web-cell is syntax, rather than a function.
+
+(web-cell? v) → boolean?
+  v : any/c
+(make-web-cell default-expr)
+(web-cell-ref wc) → any/c
+  wc : web-cell?
+(web-cell-shadow wc v) → void
+  wc : web-cell?
+  v : any/c
+See web-server/servlet/web-cells.
+
+3.7 File Boxes
+
+ (require web-server/lang/file-box)
+As mentioned earlier, it is dangerous to rely on the store in Web Language
+servlets, due to the deployment scenarios available to them. This module
+provides a simple API to replace boxes in a safe way.
+
+(file-box? v) → boolean?
+  v : any/c
+Checks if v is a file-box.
+
+(file-box p v) → file-box?
+  p : path-string?
+  v : serializable?
+Creates a file-box that is stored at p, with the default contents of v.
+
+(file-unbox fb) → serializable?
+  fb : file-box?
+Returns the value inside fb
+
+(file-box-set? fb) → boolean?
+  fb : file-box?
+Returns #t if fb contains a value.
+
+(file-box-set! fb v) → void
+  fb : file-box?
+  v : serializable?
+Saves v in the file represented by fb.
+
+Warning: If you plan on using a load-balancer, make sure your file-boxes are on
+a shared medium.
+
+3.8 Stateless Web Parameters
+
+ (require web-server/lang/web-param)
+It is not easy to use parameterize in the Web Language. This module provides
+(roughly) the same functionality in a way that is serializable. Like other
+serializable things in the Web Language, they are sensitive to source code
+modification.
+
+(make-web-parameter default)
+Expands to the definition of a web-parameter with default as the default value.
+A web-parameter is a procedure that, when called with zero arguments, returns
+default or the last value web-parameterized in the dynamic context of the call.
+
+(web-parameter? v) → boolean?
+  v : any/c
+Checks if v appears to be a web-parameter.
+
+(web-parameterize ([web-parameter-expr value-expr] ...) expr ...)
+Runs (begin expr ...) such that the web-parameters that the web-parameter-exprs
+evaluate to are bound to the value-exprs. From the perspective of the
+value-exprs, this is like let.
+
+3.9 Soft State
+
+ (require web-server/lang/soft)
+Sometimes you want to reference a large data-structure from a stateless program
+without the data-structure being serialized and increasing the size of the
+serialization. This module provides support for this scenario.
+
+(soft-state? v) → boolean?
+  v : any/c
+Determines if v is a soft state record.
+
+(make-soft-state thnk) → soft-state?
+  thnk : (-> any/c)
+Creates a piece of soft state that is computed by thnk. This value is
+serializable.
+
+(soft-state-ref ss) → any/c
+  ss : soft-state?
+Extracts the value associated with ss. If the value is not available (perhaps
+because of garbage collection, deserialization in an uninitialized process,
+etc), then the thunk associated with ss is invoked and the value is cached.
+
+(soft-state expr ...)
+Equivalent to (make-soft-state (lambda () expr ...)).
+
+Here’s an example servlet that uses soft state:
+
+    #lang web-server
+     
+    (provide interface-version start)
+    (define interface-version 'stateless)
+     
+    (define softie
+      (soft-state
+       (printf "Doing a long computation...\n")
+       (sleep 1)))
+     
+    (define (start req)
+      (soft-state-ref softie)
+      (printf "Done\n")
+      (start
+       (send/suspend
+        (lambda (k-url)
+          (response/xexpr
+           `(html (body (a ([href ,k-url]) "Done"))))))))
+
+When this is run and the link is clicked a few times, the output is:
+$ plt-web-server -p 8080
+
+Doing a long computation...
+
+Done
+
+Done
+
+Done
+
+Done
+
+
+If the server is restarted or the hostname in the URL is changed to a different
+host with the same code, and the URL is clicked:
+^Cuser break
+
+$ plt-web-server -p 8080
+
+Doing a long computation...
+
+Done
+
+
+3.10 Stuffers
+
+ (require web-server/stuffers)
+
+The web-server language provides serializable continuations. The serialization
+functionality is abstracted into stuffers that control how it operates. You can
+supply your own (built with these functions) when you write a stateless
+servlet.
+
+3.10.1 Basic Combinators
+
+ (require web-server/stuffers/stuffer)
+
+(struct   stuffer (in out)
+          #:extra-constructor-name make-stuffer)
+  in : (any/c . -> . any/c)
+  out : (any/c . -> . any/c)
+A stuffer is essentially an invertible function captured in this structure. The
+following should hold:
+
+    (out (in x)) = x
+    (in (out x)) = x
+
+(stuffer/c dom rng) → contract?
+  dom : any/c
+  rng : any/c
+Constructs a contract for a stuffer where in has the contract (-> dom rng) and
+out has the contract (-> rng dom).
+
+id-stuffer : (stuffer/c any/c any/c)
+The identitiy stuffer.
+
+(stuffer-compose g f) → (stuffer/c any/c any/c)
+  g : (stuffer/c any/c any/c)
+  f : (stuffer/c any/c any/c)
+Composes f and g, i.e., applies f then g for in and g then f for out.
+
+(stuffer-sequence f g) → (stuffer/c any/c any/c)
+  f : (stuffer/c any/c any/c)
+  g : (stuffer/c any/c any/c)
+stuffer-compose with arguments swapped.
+
+(stuffer-if c f) → (stuffer/c bytes? bytes?)
+  c : (bytes? . -> . boolean?)
+  f : (stuffer/c bytes? bytes?)
+Creates a stuffer that stuffs with f if c is true on the input to in.
+Similarly, applies f during out if it was applied during in (which is recorded
+by prepending a byte.)
+
+(stuffer-chain x ...) → stuffer?
+  x : (or/c stuffer? (bytes? . -> . boolean?))
+Applies stuffer-sequence and stuffer-if to successive tails of x.
+
+3.10.2 Serialization
+
+ (require web-server/stuffers/serialize)
+
+serialize-stuffer : (stuffer/c serializable? bytes?)
+A stuffer that uses serialize and write/bytes and deserialize and read/bytes.
+
+3.10.3 Base64 Encoding
+
+ (require web-server/stuffers/base64)
+
+base64-stuffer : (stuffer/c bytes? bytes?)
+A stuffer that uses base64-encode and base64-decode.
+
+Useful for getting URL-safe bytes.
+
+3.10.4 GZip Compression
+
+ (require web-server/stuffers/gzip)
+
+gzip-stuffer : (stuffer/c bytes? bytes?)
+A stuffer that uses gzip/bytes and gunzip/bytes.
+
+Warning: You should compose this with base64-stuffer to get URL-safe bytes.
+
+3.10.5 Key/Value Storage
+
+The web-server/stuffers/hash stuffers rely on a key/value store.
+
+ (require web-server/stuffers/store)
+
+(struct   store (write read)
+          #:extra-constructor-name make-store)
+  write : (bytes? bytes? . -> . void)
+  read : (bytes? . -> . bytes?)
+The following should hold:
+
+
+    (begin (write k v) (read k)) = v
+
+(dir-store root) → store?
+  root : path-string?
+A store that stores key key’s value in a file located at
+
+    (build-path
+     root
+     (bytes->string/utf-8 key))
+
+It should be easy to use this interface to create store for databases like
+SQLite, CouchDB, or BerkeleyDB.
+
+3.10.6 Hash-addressed Storage
+
+ (require web-server/stuffers/hash)
+
+hash-fun/c : contract?
+Equivalent to (-> bytes? bytes?).
+
+(hash-stuffer H store) → (stuffer/c bytes? bytes?)
+  H : hash-fun/c
+  store : store?
+A content-addressed storage stuffer that stores input bytes, input, in store
+with the key (H input) and returns the key. Similarly, on out the original
+bytes are looked up.
+
+(md5-stuffer root) → (stuffer/c bytes? bytes?)
+  root : path-string?
+Equivalent to (hash-stuffer md5 (dir-store root))
+
+3.10.7 HMAC-SHA1 Signing
+
+ (require web-server/stuffers/hmac-sha1)
+
+(HMAC-SHA1 kb db) → bytes?
+  kb : bytes?
+  db : bytes?
+Performs a HMAC-SHA1 calculation on db using kb as the key. The result is
+guaranteed to be 20 bytes. (You could curry this to use it with hash-stuffer,
+but there is little value in doing so over md5.)
+
+(HMAC-SHA1-stuffer kb) → (stuffer/c bytes? bytes?)
+  kb : bytes?
+A stuffer that signs input using HMAC-SHA1 with kb as the key. The result of
+the stuffer is the hash prepended to the input data. When the stuffer is run in
+reverse, it checks if the first 20 bytes are the correct has for the rest of
+the data.
+
+Warning: You should compose this with base64-stuffer to get URL-safe bytes.
+Warning: Without explicit provision, it is possible for users to modify the
+continuations they are sent through the other stuffers. This stuffer allows the
+servlet to certify that stuffed data was truly generated by the servlet.
+Therefore, you should use this if you are not using the hash-stuffers.
+Warning: This stuffer does not encrypt the data in anyway, so users can still
+observe the stuffed values.
+
+3.10.8 Helpers
+
+ (require web-server/lang/stuff-url)
+
+(is-url-too-big? v) → boolean?
+  v : bytes?
+Determines if stuffing v into the current servlet’s URL would result in a URL
+that is too big for Internet Explorer. (IE only supports URLs up to 2048
+characters.)
+
+(make-default-stuffer root) → (stuffer/c serializable? bytes?)
+  root : path-string?
+Constructs a stuffer that serializes, then if the URL is too big, compresses
+(and base64-encodes), if the URL is still too big then it stores it in an
+MD5-indexed database rooted at root.
+
+Equivalent to:
+
+    (stuffer-chain
+     serialize-stuffer
+     is-url-too-big?
+     (stuffer-chain
+      gzip-stuffer
+      base64-stuffer)
+     is-url-too-big?
+     (md5-stuffer root))
+
+default-stuffer : (stuffer/c serializable? bytes?)
+Equivalent to:
+
+    (make-default-stuffer
+     (build-path
+      (find-system-path 'home-dir)
+      ".urls"))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

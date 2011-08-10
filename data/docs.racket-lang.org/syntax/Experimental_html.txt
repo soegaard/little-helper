@@ -1,0 +1,300 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+▼ 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+► 8.10  Experimental
+8.10.1  Contracts for macro sub-expressions
+8.10.2  Contracts for syntax classes
+8.10.3  Reflection
+8.10.4  Procedural splicing syntax classes
+8.10.5  Ellipsis-head alternative sets
+8.10.6  Syntax class specialization
+On this page:
+8.10.1 Contracts for macro sub-expressions
+8.10.2 Contracts for syntax classes
+provide-syntax-class/ contract
+syntax-class/ c
+8.10.3 Reflection
+reify-syntax-class
+reified-syntax-class?
+reified-splicing-syntax-class?
+reified-syntax-class-attributes
+reified-syntax-class-arity
+reified-syntax-class-keywords
+reified-syntax-class-curry
+8.10.4 Procedural splicing syntax classes
+define-primitive-splicing-syntax-class
+8.10.5 Ellipsis-head alternative sets
+define-eh-alternative-set
+8.10.6 Syntax class specialization
+define-syntax-class/ specialize
+[...search manuals...]
+  top← prev  up  next → 
+
+8.10 Experimental
+
+The following facilities are experimental.
+
+8.10.1 Contracts for macro sub-expressions
+
+ (require syntax/parse/experimental/contract)
+
+This module is deprecated; it reprovides expr/c for backward compatibility.
+
+8.10.2 Contracts for syntax classes
+
+ (require syntax/parse/experimental/provide)
+
+(provide-syntax-class/contract
+  [syntax-class-id syntax-class-contract] ...)
+ 
+syntax-class-contract   =   (syntax-class/c (mandatory-arg ...))
+                        |   (syntax-class/c (mandatory-arg ...)
+                                            (optional-arg ...))
+                             
+                  arg   =   contract-expr
+                        |   keyword contract-expr
+ 
+   contract-expr    :   contract?
+Provides the syntax class (or splicing syntax class) syntax-class-id with the
+given contracts imposed on its formal parameters.
+
+syntax-class/c
+Keyword recognized by provide-syntax-class/contract.
+
+8.10.3 Reflection
+
+ (require syntax/parse/experimental/reflect)
+
+A syntax class can be reified into a run-time value, and a reified syntax class
+can be used in a pattern via the ~reflect and ~splicing-reflect pattern forms.
+
+(reify-syntax-class syntax-class-id)
+Reifies the syntax class named syntax-class-id as a run-time value. The same
+form also handles splicing syntax classes. Syntax classes with the
+#:no-delimit-cut option cannot be reified.
+
+(reified-syntax-class? x) → boolean?
+  x : any/c
+(reified-splicing-syntax-class? x) → boolean?
+  x : any/c
+Returns #t if x is a reified (normal) syntax class or a reified splicing syntax
+class, respectively.
+
+(reified-syntax-class-attributes r)
+ → (listof (list/c symbol? exact-nonnegative-integer?))
+  r : (or/c reified-syntax-class? reified-splicing-syntax-class?)
+Returns the reified syntax class’s attributes.
+
+(reified-syntax-class-arity r) → procedure-arity?
+  r : (or/c reified-syntax-class? reified-splicing-syntax-class?)
+(reified-syntax-class-keywords r)
+  →   (listof keyword?)   (listof keyword?)
+  r : (or/c reified-syntax-class? reified-splicing-syntax-class?)
+Returns the reified syntax class’s arity and keywords, respectively. Compare
+with procedure-arity and procedure-keywords.
+
+(reified-syntax-class-curry   r                   
+                              arg ...             
+                              #:<kw> kw-arg ...)  
+ → (or/c reified-syntax-class? reified-splicing-syntax-class?)
+  r : (or/c reified-syntax-class? reified-splicing-syntax-class?)
+  arg : any/c
+  kw-arg : any/c
+Partially applies the reified syntax class to the given arguments. If more
+arguments are given than the reified syntax class accepts, an error is raised.
+
+  S-pattern   =   ....
+              |   (~reflect var-id (reified-expr arg-expr ...) maybe-attrs)
+                   
+  H-pattern   =   ....
+              |   (~splicing-reflect var-id (reified-expr arg-expr ...)
+                                     maybe-attrs)
+
+    (~reflect var-id (reified-expr arg-expr ...) maybe-attrs)
+     
+    maybe-attrs   =  
+                  |   #:attributes (attr-arity-decl ...)
+
+    Like ~var, except that the syntax class position is an expression
+    evaluating to a reified syntax object, not a syntax class name, and the
+    attributes bound by the reified syntax class (if any) must be specified
+    explicitly.
+
+    (~splicing-reflect var-id (reified-expr arg-expr ...) maybe-attrs)
+
+    Like ~reflect but for reified splicing syntax classes.
+
+Examples:
+
+    > (define-syntax-class (nat> x)
+        #:description (format "natural number greater than ~s" x)
+        #:attributes (diff)
+        (pattern n:nat
+                 #:when (> (syntax-e #'n) x)
+                 #:with diff (- (syntax-e #'n) x)))
+    > (define-syntax-class (nat/mult x)
+        #:description (format "natural number multiple of ~s" x)
+        #:attributes (quot)
+        (pattern n:nat
+                 #:when (zero? (remainder (syntax-e #'n) x))
+                 #:with quot (quotient (syntax-e #'n) x)))
+    > (define r-nat> (reify-syntax-class nat>))
+    > (define r-nat/mult (reify-syntax-class nat/mult))
+    > (define (partition/r stx r n)
+        (syntax-parse stx
+          [((~or (~reflect yes (r n)) no) ...)
+           #'((yes ...) (no ...))]))
+    > (partition/r #'(1 2 3 4 5) r-nat> 3)
+    #<syntax:6:0 ((4 5) (1 2 3))>
+
+    > (partition/r #'(1 2 3 4 5) r-nat/mult 2)
+    #<syntax:6:0 ((2 4) (1 3 5))>
+
+    > (define (bad-attrs r)
+        (syntax-parse #'6
+          [(~reflect x (r 3) #:attributes (diff))
+           #'x.diff]))
+    > (bad-attrs r-nat>)
+    #<syntax 3>
+
+    > (bad-attrs r-nat/mult)
+    reflect-syntax-class: reified syntax-class is missing
+
+    declared attribute `diff'
+
+
+
+8.10.4 Procedural splicing syntax classes
+
+ (require syntax/parse/experimental/splicing)
+
+(define-primitive-splicing-syntax-class (name-id param-id ...)
+  maybe-description maybe-attrs
+  parser-expr)
+ 
+                (-> syntax?
+   parser   :       (->* () ((or/c string? #f) -> any))
+                    (cons/c exact-positive-integer? list?))
+Defines a splicing syntax via a procedural parser.
+
+The parser procedure is given two arguments, the syntax to parse and a failure
+procedure. To signal a successful parse, the parser procedure returns a list of
+N+1 elements, where N is the number of attributes declared by the splicing
+syntax class. The first element is the size of the prefix consumed. The rest of
+the list contains the values of the attributes.
+
+To indicate failure, the parser calls the failure procedure with an optional
+message argument.
+
+8.10.5 Ellipsis-head alternative sets
+
+ (require syntax/parse/experimental/eh)
+
+Unlike single-term patterns and head patterns, ellipsis-head patterns cannot be
+encapsulated by syntax classes, since they describe not only sets of terms but
+also repetition constraints.
+
+This module provides ellipsis-head alternative sets, reusable encapsulations of
+ellipsis-head patterns.
+
+(define-eh-alternative-set name eh-alternative ...)
+ 
+alternative   =   (pattern EH-pattern)
+Defines name as an ellipsis-head alternative set. Using name (via ~eh-var) in
+an ellipsis-head pattern is equivalent to including each of the alternatives in
+the pattern via ~oreh, except that the attributes bound by the alternatives are
+prefixed with the name given to ~eh-var.
+
+Unlike syntax classes, ellipsis-head alternative sets must be defined before
+they are referenced.
+
+  EH-pattern   =   ....
+               |   (~eh-var name eh-alternative-set-id)
+
+    (~eh-var name eh-alternative-set-id)
+
+    Includes the alternatives of eh-alternative-set-id, prefixing their
+    attributes with name.
+
+Examples:
+
+    > (define-eh-alternative-set options
+        (pattern (~once (~seq #:a a:expr) #:name "#:a option"))
+        (pattern (~seq #:b b:expr)))
+    > (define (parse/options stx)
+        (syntax-parse stx
+          [(_ (~eh-var s options) ...)
+           #'(s.a (s.b ...))]))
+    > (parse/options #'(m #:a 1 #:b 2 #:b 3))
+    #<syntax:13:0 (1 (2 3))>
+
+    > (parse/options #'(m #:a 1 #:a 2))
+    m: too many occurrences of #:a option at: ()
+
+    > (define (parse/more-options stx)
+        (syntax-parse stx
+          [(_ (~or (~eh-var s options)
+                   (~seq #:c c1:expr c2:expr))
+              ...)
+           #'(s.a (s.b ...) ((c1 c2) ...))]))
+    > (parse/more-options #'(m #:a 1 #:b 2 #:c 3 4 #:c 5 6))
+    #<syntax:16:0 (1 (2) ((3 4) (5 6)))>
+
+    > (define-eh-alternative-set ext-options
+        (pattern (~eh-var s options))
+        (pattern (~seq #:c c1 c2)))
+    > (syntax-parse #'(m #:a 1 #:b 2 #:c 3 4 #:c 5 6)
+        [(_ (~eh-var x ext-options) ...)
+         #'(x.s.a (x.s.b ...) ((x.c1 x.c2) ...))])
+    #<syntax:19:0 (1 (2) ((3 4) (5 6)))>
+
+
+
+8.10.6 Syntax class specialization
+
+ (require syntax/parse/experimental/specialize)
+
+(define-syntax-class/specialize header syntax-class-use)
+ 
+          header   =   id
+                   |   (id . kw-formals)
+                        
+syntax-class-use   =   target-stxclass-id
+                   |   (target-stxclass-id arg ...)
+Defines id as a syntax class with the same attributes, options (eg, #:commit,
+#:no-delimit-cut), and patterns as target-stxclass-id but with the given args
+supplied.
+
+Examples:
+
+    > (define-syntax-class/specialize nat>10 (nat> 10))
+    > (syntax-parse #'(11 12) [(n:nat>10 ...) 'ok])
+    'ok
+
+    > (syntax-parse #'(8 9) [(n:nat>10 ...) 'ok])
+    ?: expected natural number greater than 10 at: 8
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

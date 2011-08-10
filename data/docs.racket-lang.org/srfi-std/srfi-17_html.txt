@@ -1,0 +1,226 @@
+Title
+
+SRFI 17: Generalized set!
+
+Author
+
+Per Bothner
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access the discussion via the
+archive of the mailing list.
+
+  • Received: 1999/12/08
+  • Draft: 2000/01/16-2000/03/17
+  • Revised: 2000/04/28
+  • Final: 2000/07/24
+
+Abstract
+
+This is a proposal to allow procedure calls that evaluate to the "value of a
+location" to be used to set the value of the location, when used as the first
+operand of set!. For example:
+
+(set! (car x) (car y))
+
+becomes equivalent to
+
+(set-car! x (car y))
+
+Many programming languages have the concept of an lvalue. that is an
+"expression" that "evaluates" to a location, and which can appear on the
+left-hand-side of an assignment. Common Lisp has a related concept of
+"generalized variables" which can be used in setf and some other special forms.
+However, the Common Lisp concept is based on the idea of compile-time
+recognition of special "location-producing" functions; this does not seem to be
+in the "spirit of Scheme".
+
+This SRFI proposes an extension of set! so that it provides similar
+functionality as Common Lisp's setf, except that the updater is associated with
+a procedure value, rather than a name.
+
+Rationale
+
+There is ample precedent for general "lvalues" on the left-hand side of an
+assignment. This includes most statically typed languages, and many dynamically
+typed languages (including APL and Common Lisp). That suggests this is a
+natural idiom for people. One reason may be that there are fewer procedure
+names to learn. Another is that it becomes visually clearer which expression is
+the new value, and which are parameters. Also, the visual consistency between
+an expression evaluated for its value and one evaluated to yield a location
+seems natural to people.
+
+For most languages, the set of lvalue-producing operators is limited (typically
+array indexing and field selection). Some languages have general lvalues as
+first class values. For example Algol 68 has expressions that have reference
+type. However, this is made convenient by using automatic dereferencing
+coercions, which would not work for a dynamically typed language like Scheme.
+ML goes further: All mutable variables are first-class "cells", and accessing
+the contents of a cell requires an explicit operator. This is also not
+compatible with Scheme. Instead we need to stick to the model where using a
+variable in most contexts means using its value, but referring to a variable in
+certain lvalue contexts (lhs of assignment) refers to its actual location.
+Sticking to this model for general "lvalue expressions" in set! means that
+"evaluation" must be done differently from normal evaluation when in an "lvalue
+context". That is what this proposal does.
+
+This is a controversial issue. This srfi does not wish to imply that all Scheme
+implementations should support this feature; it only requests that
+implementations that do implement generalized set! should be compatible with
+this srfi.
+
+Specification
+
+The special form set! is extended so the first operand can be a procedure
+application, and not just a variable. The procedure is typically one that
+extracts a component from some data structure. Informally, when the procedure
+is called in the first operand of set!, it causes the corresponding component
+to be replaced by the second operand. For example,
+
+(set (vector-ref x i) v)
+
+would be equivalent to:
+
+(vector-set! x i v)
+
+Each procedure that may be used as the first operand to set! must have a
+corresponding "setter" procedure. The builtin procedure setter takes a
+procedure and returns the corresponding setter procedure.
+
+We define:
+
+(set! (proc arg ...) value)
+
+as:
+
+((setter proc) arg ... value)
+
+Note: This definition matches the existing Scheme convention for setter
+procedures, where the new value is given last. For example we can define
+(setter car) to be set-car!. An alternative definition would be:
+
+((setter proc) value arg ...) ;; Not the actual definition.
+
+This definition would work better when you consider procedures that take a
+variable number of arguments. This is because it is straight-forward to add one
+extra initial fixed argument, but if you add an extra fixed argument to the end
+of an argument list that has a "rest" parameter, then things get more messy.
+However, consistency with the existing new-value-last convention seems more
+valuable.
+
+Standard setters
+
+The following standard procedures have pre-defined setters:
+
+(set! (car x) v) == (set-car! x v)
+(set! (cdr x) v) == (set-cdr! x v)
+(set! (caar x) v) == (set-car! (car x) v)
+(set! (cadr x) v) == (set-car! (cdr x) v)
+....
+(set! (caXXr x) v) == (set-car! (cXXr x) v)
+(set! (cdXXr x) v) == (set-cdr! (cXXr x) v)
+(set! (string-ref x i) v) == (string-set! x i v)
+(set! (vector-ref x i) v) == (vector-set! x i v)
+
+Setting setters; properties
+
+A setter procedure is a special case of the concept of procedures having
+associated properties. Other properties might include the procedures's name or
+usage documentation. As a hypothetical example (i.e. not part of this SRFI), we
+can use the Common Lisp documentation function, where for example:
+
+(documentation sqrt)
+
+returns the "documentation string" (if defined) for sqrt. Such properties
+should also be settable using generalized set!. For example:
+
+(set! (documentation sqrt) "Calculates the square root.")
+
+This SRFI does not propose a general "procedure properties" feature, but it
+should be compatible with it. It does specify the special case for the setter
+property. This is defined such that:
+
+(set! (setter proc) setter)
+
+sets the setter procedure associated with proc to setter. For example, we can
+assume
+
+(set! (setter car) set-car!)
+
+has been executed by the Scheme prologue.
+
+Efficiency Issues
+
+If (set! (foo ..) ...) is to be the preferred idiom, we want to make ((setter
+foo) ...) as efficient as (set-foo! ...). This is only possible when the
+compiler knows both what function the symbol foo is bound to, and the setter
+associated with that function. Scheme (as opposed to Common Lisp) does not say
+anything about a compiler or what it can inline, so we cannot say much here. A
+compiler that does whole-program analysis can safely inline calls using a
+variable bound unchangably to a known procedure; it can make the same deduction
+if the procedure's setter is set. If separate compilation is supported, then a
+compiler cannot safely make such deductions for either plain calls or setter
+calls, without extra information, such as a module system, compiler switches,
+or other non-standard declarations. Thus my belief is that this srfi does not
+inherently make efficient compilation more difficult. However, the next section
+does define a way to inherently tie a setter to a procedure, which does reduce
+the problem of inlining generalized set! to the standard inlining problem.
+
+getter-with-setter
+
+The function getter-with-setter can be used to define a procedure with
+associated properties. Specifically:
+
+(getter-with-setter getter setter)
+
+This evaluates to a new anonymous procedure which when applied invokes getter,
+and whose setter is setter. It is an error for a program to subsequently try to
+modify the setter of the resulting compound.
+
+For example, we could define:
+
+(define car (getter-with-setter %primitive-car %primitive-set-car!))
+(define set-car! %primitive-set-car!)
+
+The advantage of this approach that whenever a compiler can inline car, it can
+also inline (setter car).
+
+Implementation
+
+Here is a sample implementation for Twobit.
+
+Here is a sample definition of getter-with-setter:
+
+(define (getter-with-setter get set)
+  (let ((proc (lambda args (apply get args))))
+    (set! (setter proc) set)
+    proc))
+
+Copyright
+
+Copyright (C) Per Bothner (1999, 2000). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Mike Sperber
+Last modified: Mon Jul 24 12:00:06 MST 2000

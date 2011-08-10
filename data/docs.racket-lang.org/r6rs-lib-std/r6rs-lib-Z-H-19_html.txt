@@ -1,0 +1,38 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 18
+
+Mutable strings
+
+The string-set! procedure provided by the (rnrs mutable-strings (6))library
+allows mutating the characters of a string in-place.
+
+(string-set! string k char)    procedure 
+
+K must be a valid index of string. The string-set! procedure stores char in
+element
+
+k of string and returns unspecified values.
+
+Passing an immutable string to string-set! should cause an exception with
+condition type &assertion to be raised.
+
+(define (f) (make-string 3 #\*))
+(define (g) "***")
+(string-set! (f) 0 #\?)          ⇒  unspecified
+(string-set! (g) 0 #\?)          ⇒  unspecified
+             ; should raise  &assertion exception
+(string-set! (symbol->string ’immutable)
+             0
+             #\?)          ⇒  unspecified
+             ; should raise  &assertion exception
+
+    Note:   Implementors should make string-set! run in constant time.
+
+(string-fill! string char)    procedure 
+
+Stores char in every element of the given string and returns unspecified
+values.
+
+                        [Go to first, previous, next page;   contents;   index]
+

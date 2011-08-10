@@ -1,0 +1,131 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 12  Input and Output
+ 12.1  Ports
+ 12.2  Byte and String Input
+ 12.3  Byte and String Output
+ 12.4  Reading
+ 12.5  Writing
+ 12.6  The Reader
+ 12.7  The Printer
+ 12.8  Pretty Printing
+ 12.9  Reader Extension
+12.10  Printer Extension
+12.11  Serialization
+12.12  Fast-Load Serialization
+▼ 12.1  Ports
+ 12.1.1  Encodings and Locales
+ 12.1.2  Managing Ports
+ 12.1.3  Port Buffers and Positions
+ 12.1.4  Counting Positions, Lines, and Columns
+ 12.1.5  File Ports
+ 12.1.6  String Ports
+ 12.1.7  Pipes
+ 12.1.8  Structures as Ports
+ 12.1.9  Custom Ports
+12.1.10  More Port Constructors, Procedures, and Events
+On this page:
+input-port?
+output-port?
+port?
+close-input-port
+close-output-port
+port-closed?
+current-input-port
+current-output-port
+current-error-port
+file-stream-port?
+terminal-port?
+eof
+eof-object?
+[...search manuals...]
+  top← prev  up  next → 
+
+12.1.2 Managing Ports
+
+(input-port? v) → boolean?
+  v : any/c
+Returns #t if v is an input port, #f otherwise.
+
+(output-port? v) → boolean?
+  v : any/c
+Returns #t if v is an output port, #f otherwise.
+
+(port? v) → boolean?
+  v : any/c
+Returns #t if either (input-port? v) or (output-port? v) is #t, #f otherwise.
+
+(close-input-port in) → void?
+  in : input-port?
+Closes the input port in. For some kinds of ports, closing the port releases
+lower-level resources, such as a file handle. If the port is already closed,
+close-input-port has no effect.
+
+(close-output-port out) → void?
+  out : output-port?
+Closes the output port out. For some kinds of ports, closing the port releases
+lower-level resources, such as a file handle. Also, if the port is buffered,
+closing may first flush the port before closing it, and this flushing process
+can block. If the port is already closed, close-output-port has no effect.
+
+(port-closed? port) → boolean?
+  port : port?
+Returns #t if the input or output port port is closed, #f otherwise.
+
+(current-input-port) → input-port?
+(current-input-port in) → void?
+  in : input-port?
+A parameter that determines a default input port for many operations, such as
+read.
+
+(current-output-port) → output-port?
+(current-output-port out) → void?
+  out : output-port?
+A parameter that determines a default output port for many operations, such as
+write.
+
+(current-error-port) → output-port?
+(current-error-port out) → void?
+  out : output-port?
+A parameter that determines an output port that is typically used for errors
+and logging. For example, the default error display handler writes to this
+port.
+
+(file-stream-port? port) → boolean?
+  port : port?
+Returns #t if the given port is a file-stream port (see File Ports), #f
+otherwise.
+
+(terminal-port? port) → boolean?
+  port : port?
+Returns #t if the given port is attached to an interactive terminal, #f
+otherwise.
+
+eof : eof-object?
+A value (distinct from all other values) that represents an end-of-file.
+
+(eof-object? a) → boolean?
+  a : any/c
+Returns #t if v is eof, #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

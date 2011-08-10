@@ -1,0 +1,129 @@
+▼  Make: Dependency Manager
+1  Overview
+2  Make from Dependencies
+3  Building Native-Code Extensions
+4  Making Collections
+On this page:
+pre-install
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Building Native-Code Extensions
+
+ (require make/setup-extension)
+
+The make/setup-extension library helps compile C code via Setup PLT’s
+“pre-install” phase (triggered by a pre-install-collection item in "info.rkt";
+see also Controlling raco setup with "info.rkt" Files).
+
+The pre-install function takes a number of arguments that describe how the C
+code is compiled—mainly the libraries that it depends on. It then drives a C
+compiler via the dynext/compile and dynext/link functions.
+
+Many issues can complicate C compilation, and the pre-install function helps
+with a few:
+
+  • finding non-standard libraries and header files,
+
+  • taming to some degree the differing conventions of Unix and Windows,
+
+  • setting up suitable dependencies on Racket headers, and
+
+  • using a pre-compiled binary when a "precompiled" directory is present.
+
+Many extension installers will have to sort out addition platform issues
+manually, however. For example, an old "readline" installer used to pick
+whether to link to "libcurses" or "libncurses" heuristically by inspecting "/
+usr/lib". More generally, the “last chance” argument to pre-install allows an
+installer to patch compiler and linker options (see dynext/compile and dynext/
+link) before the C code is compiled or linked.
+
+(pre-install    plthome-dir              
+                collection-dir           
+                c-file                   
+                default-lib-dir          
+                include-subdirs          
+                find-unix-libs           
+                find-windows-libs        
+                unix-libs                
+                windows-libs             
+                extra-depends            
+                last-chance-k            
+              [ 3m-too?])           →   void?
+  plthome-dir : path-string?
+  collection-dir : path-string?
+  c-file : path-string?
+  default-lib-dir : path-string?
+  include-subdirs : (listof path-string?)
+  find-unix-libs : (listof string?)
+  find-windows-libs : (listof string?)
+  unix-libs : (listof string?)
+  windows-libs : (listof string?)
+  extra-depends : (listof path-string?)
+  last-chance-k : ((-> any) . -> . any)
+  3m-too? : any/c = #f
+The arguments are as follows:
+
+  • plthome-dir — the directory provided to a `pre-installer’ function.
+
+  • collection-dir — a directory to use as the current directory while
+    building.
+
+  • c-file — the name of the source file (relative to collection-dir). The
+    output file will be the same, except with a ".c" suffix replaced with (
+    system-type 'so-suffix), and the path changed to (build-path "compiled"
+    "native" (system-library-subpath)).
+
+    If (build-path "precompiled" "native" (system-library-subpath) (
+    path-replace-suffix c-file (system-type 'so-suffix))) exists, then c-file
+    is not used at all, and the file in the "precompiled" directory is simply
+    copied.
+
+  • default-lib-dir — a default directory for finding supporting libraries,
+    often a subdirectory of "collection-dir". The user can supplement this path
+    by setting the PLT_EXTENSION_LIB_PATHS environment variable, which applies
+    to all extensions manged by pre-install.
+
+  • include-subdirs — a list of relative paths in which #include files will be
+    found; the path will be determined through a search, in case it’s not in a
+    standard place like "/usr/include".
+
+    For example, the list used to be '("openssl") for the "openssl" collection,
+    because the source uses #include <openssl/ssl.h> and #include <openssl/
+    err.h>.
+
+  • find-unix-libs — like include-subdirs, but a list of library bases. Leave
+    off the "lib" prefix and any suffix (such as ".a" or ".so"). For "openssl",
+    the list used to be '("ssl" "crypto"). Each name will essentially get a -l
+    prefix for the linker command line.
+
+  • find-windows-libs — like find-unix-libs, but for Windows. The library name
+    will be suffixed with ".lib" and supplied directly to the linker.
+
+  • unix-libs — like find-unix-libs, except that the installer makes no attempt
+    to find the libraries in a non-standard place. For example, the "readline"
+    installer used to supply '("curses").
+
+  • windows-libs — like unix-libs, but for Windows. For example, the "openssl"
+    installer used to supply '("wsock32").
+
+  • extra-depends — a list of relative paths to treat as dependencies for
+    compiling "file.c". Often this list will include "file.c" with the ".c"
+    suffix replaced by ".rkt". For example, the "openssl" installer supplies '
+    ("mzssl.rkt") to ensure that the stub module "mzssl.rkt" is never used when
+    the true extension can be built.
+
+  • last-chance-k — a procedure of one argument, which is a thunk. This
+    procedure should invoke the thunk to make the file, but it may add
+    parameterizations before the final build. For example, the "readline"
+    installer used to add an AIX-specific compile flag in this step when
+    compiling on AIX.
+
+  • 3m-too?— a boolean. If true, when the 3m variant is installed, use the
+    equivalent to raco ctool --xform to transform the source file and then
+    compile and link for 3m. Otherwise, the extension is built only for CGC
+    when the CGC variant is installed.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

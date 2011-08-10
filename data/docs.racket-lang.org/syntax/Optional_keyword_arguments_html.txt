@@ -1,0 +1,106 @@
+►  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+► 8  Parsing and specifying syntax
+ 8.1  Introduction
+ 8.2  Examples
+ 8.3  Parsing syntax
+ 8.4  Specifying syntax with syntax classes
+ 8.5  Syntax patterns
+ 8.6  Defining simple macros
+ 8.7  Literal sets and Conventions
+ 8.8  Library syntax classes and literal sets
+ 8.9  Debugging and inspection tools
+8.10  Experimental
+▼ 8.2  Examples
+8.2.1  Modules and reusable syntax classes
+8.2.2  Optional keyword arguments
+8.2.3  Variants with uniform meanings
+8.2.4  Variants with varied meanings
+8.2.5  More keyword arguments
+8.2.6  Contracts on macro sub-expressions
+[...search manuals...]
+  top← prev  up  next → 
+
+8.2.2 Optional keyword arguments
+
+This section explains how to write a macro that accepts (simple) optional
+keyword arguments. We use the example mycond, which is like Racket’s cond
+except that it takes an optional keyword argument that controls what happens if
+none of the clauses match.
+
+Optional keyword arguments are supported via head patterns. Unlike normal
+patterns, which match one term, head patterns can match a variable number of
+subterms in a list. Some important head-pattern forms are ~seq, ~or, and
+~optional.
+
+Here’s one way to do it:
+
+    > (define-syntax (mycond stx)
+        (syntax-parse stx
+          [(mycond (~or (~seq #:error-on-fallthrough who:expr) (~seq))
+                   clause ...)
+           (with-syntax ([error? (if (attribute who) #'#t #'#f)]
+                         [who (or (attribute who) #'#f)])
+             #'(mycond* error? who clause ...))]))
+    > (define-syntax mycond*
+        (syntax-rules ()
+          [(mycond error? who [question answer] . clauses)
+           (if question answer (mycond* error? who . clauses))]
+          [(mycond #t who)
+           (error who "no clauses matched")]
+          [(mycond #f _)
+           (void)]))
+
+We cannot write #'who in the macro’s right-hand side, because the who attribute
+does not receive a value if the keyword argument is omitted. Instead we must
+write (attribute who), which produces #f if matching did not assign a value to
+the attribute.
+
+    > (mycond [(even? 13) 'blue]
+              [(odd? 4) 'red])
+    > (mycond #:error-on-fallthrough 'myfun
+              [(even? 13) 'blue]
+              [(odd? 4) 'red])
+    myfun: no clauses matched
+
+
+There’s a simpler way of writing the ~or pattern above:
+
+
+    (~optional (~seq #:error-on-fallthrough who:expr))
+
+Yet another way is to introduce a splicing syntax class, which is like an
+ordinary syntax class but for head patterns.
+
+    > (define-syntax (mycond stx)
+      
+        (define-splicing-syntax-class maybe-fallthrough-option
+          (pattern (~seq #:error-on-fallthough who:expr)
+                   #:with error? #'#t)
+          (pattern (~seq)
+                   #:with error? #'#f
+                   #:with who #'#f))
+      
+        (syntax-parse stx
+          [(mycond fo:maybe-fallthrough-option clause ...)
+           #'(mycond* fo.error? fo.who clause ...)]))
+
+Defining a splicing syntax class also makes it easy to eliminate the case
+analysis we did before using attribute by defining error? and who as attributes
+within both of the syntax class’s variants. (This is possible to do in the
+inline pattern version too, using ~and and ~parse, just less convenient.)
+Splicing syntax classes also closely parallel the style of grammars in macro
+documentation.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,378 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+▼ 3.2  Numbers
+3.2.1  Number Types
+3.2.2  Generic Numerics
+3.2.3  Flonums
+3.2.4  Fixnums
+On this page:
+number?
+complex?
+real?
+rational?
+integer?
+exact-integer?
+exact-nonnegative-integer?
+exact-positive-integer?
+inexact-real?
+fixnum?
+flonum?
+double-flonum?
+single-flonum?
+zero?
+positive?
+negative?
+even?
+odd?
+exact?
+inexact?
+inexact->exact
+exact->inexact
+real->single-flonum
+real->double-flonum
+[...search manuals...]
+  top← prev  up  next → 
+
+3.2.1 Number Types
+
+(number? v) → boolean?
+  v : any/c
+Returns #t if v is a number, #f otherwise.
+
+Examples:
+
+    > (number? 1)
+    #t
+
+    > (number? 2+3i)
+    #t
+
+    > (number? "hello")
+    #f
+
+
+
+(complex? v) → boolean?
+  v : any/c
+Returns (number? v), because all numbers are complex numbers.
+
+(real? v) → boolean?
+  v : any/c
+Returns #t if v is a real number, #f otherwise.
+
+Examples:
+
+    > (real? 1)
+    #t
+
+    > (real? +inf.0)
+    #t
+
+    > (real? 2+3i)
+    #f
+
+    > (real? 2.0+0.0i)
+    #f
+
+    > (real? "hello")
+    #f
+
+
+
+(rational? v) → boolean?
+  v : any/c
+Returns #t if v is a rational number, #f otherwise.
+
+Examples:
+
+    > (rational? 1)
+    #t
+
+    > (rational? +inf.0)
+    #f
+
+    > (rational? "hello")
+    #f
+
+
+
+(integer? v) → boolean?
+  v : any/c
+Returns #t if v is a number that is an integer, #f otherwise.
+
+Examples:
+
+    > (integer? 1)
+    #t
+
+    > (integer? 2.3)
+    #f
+
+    > (integer? 4.0)
+    #t
+
+    > (integer? +inf.0)
+    #f
+
+    > (integer? 2+3i)
+    #f
+
+    > (integer? "hello")
+    #f
+
+
+
+(exact-integer? v) → boolean?
+  v : any/c
+Returns (and (integer? v) (exact? v)).
+
+Examples:
+
+    > (exact-integer? 1)
+    #t
+
+    > (exact-integer? 4.0)
+    #f
+
+
+
+(exact-nonnegative-integer? v) → boolean?
+  v : any/c
+Returns (and (exact-integer? v) (not (negative? v))).
+
+Examples:
+
+    > (exact-nonnegative-integer? 0)
+    #t
+
+    > (exact-nonnegative-integer? -1)
+    #f
+
+
+
+(exact-positive-integer? v) → boolean?
+  v : any/c
+Returns (and (exact-integer? v) (positive? v)).
+
+Examples:
+
+    > (exact-positive-integer? 1)
+    #t
+
+    > (exact-positive-integer? 0)
+    #f
+
+
+
+(inexact-real? v) → boolean?
+  v : any/c
+Returns (and (real? v) (inexact? v)).
+
+(fixnum? v) → boolean?
+  v : any/c
+Return #t if v is a fixnum, #f otherwise.
+
+Note: the result of this function is platform-dependent, so using it in syntax
+transformers can lead to platform-dependent bytecode files.
+
+(flonum? v) → boolean?
+  v : any/c
+Return #t if v is a flonum, #f otherwise.
+
+(double-flonum? v) → boolean?
+  v : any/c
+Identical to flonum?.
+
+(single-flonum? v) → boolean?
+  v : any/c
+Return #t if v is a single-precision floating-point number, #f otherwise.
+
+(zero? z) → boolean?
+  z : number?
+Returns (= 0 z).
+
+Examples:
+
+    > (zero? 0)
+    #t
+
+    > (zero? -0.0)
+    #t
+
+
+
+(positive? x) → boolean?
+  x : real?
+Returns (> x 0).
+
+Examples:
+
+    > (positive? 10)
+    #t
+
+    > (positive? -10)
+    #f
+
+    > (positive? 0.0)
+    #f
+
+
+
+(negative? x) → boolean?
+  x : real?
+Returns (< x 0).
+
+Examples:
+
+    > (negative? 10)
+    #f
+
+    > (negative? -10)
+    #t
+
+    > (negative? -0.0)
+    #f
+
+
+
+(even? n) → boolean?
+  n : integer?
+Returns (zero? (modulo n 2)).
+
+Examples:
+
+    > (even? 10.0)
+    #t
+
+    > (even? 11)
+    #f
+
+    > (even? +inf.0)
+    even?: expects argument of type <integer>; given +inf.0
+
+
+
+(odd? n) → boolean?
+  n : integer?
+Returns (not (even? n)).
+
+Examples:
+
+    > (odd? 10.0)
+    #f
+
+    > (odd? 11)
+    #t
+
+    > (odd? +inf.0)
+    odd?: expects argument of type <integer>; given +inf.0
+
+
+
+(exact? z) → boolean?
+  z : number?
+Returns #t if z is an exact number, #f otherwise.
+
+Examples:
+
+    > (exact? 1)
+    #t
+
+    > (exact? 1.0)
+    #f
+
+
+
+(inexact? z) → boolean?
+  z : number?
+Returns #t if z is an inexact number, #f otherwise.
+
+Examples:
+
+    > (inexact? 1)
+    #f
+
+    > (inexact? 1.0)
+    #t
+
+
+
+(inexact->exact z) → exact?
+  z : number?
+Coerces z to an exact number. If z is already exact, it is returned. If z is
++inf.0, -inf.0, or +nan.0, then the exn:fail:contract exception is raised.
+
+Examples:
+
+    > (inexact->exact 1)
+    1
+
+    > (inexact->exact 1.0)
+    1
+
+
+
+(exact->inexact z) → inexact?
+  z : number?
+Coerces z to an inexact number. If z is already inexact, it is returned.
+
+Examples:
+
+    > (exact->inexact 1)
+    1.0
+
+    > (exact->inexact 1.0)
+    1.0
+
+
+
+(real->single-flonum x) → single-flonum?
+  x : real?
+Coerces x to a single-precision floating-point number. If x is already a
+single-precision floating-point number, it is returned.
+
+(real->double-flonum x) → flonum?
+  x : real?
+Coerces x to a double-precision floating-point number. If x is already a
+double-precision floating-point number, it is returned.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

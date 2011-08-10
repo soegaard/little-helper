@@ -1,0 +1,227 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 7  Low-Level Scribble API
+ 7.1  Scribble Layers
+ 7.2  @ Reader Internals
+ 7.3  Structures And Processing
+ 7.4  Renderer
+ 7.5  Decoding Text
+ 7.6  Document Language
+ 7.7  Document Reader
+ 7.8  Cross-Reference Utilities
+ 7.9  Extending and Configuring Scribble Output
+7.10  Connecting to "racket"
+► 7.1  Scribble Layers
+7.1.1  Typical Composition
+7.1.2  Layer Roadmap
+On this page:
+7.1.1 Typical Composition
+7.1.2 Layer Roadmap
+[...search manuals...]
+  top← prev  up  next → 
+
+7.1 Scribble Layers
+
+Scribble is made of independently usable parts. For example, the Scribble
+reader can be used in any situation that requires lots of free-form text. You
+can also skip Scribble’s special reader support, and instead use the
+document-generation structure directly.
+
+7.1.1 Typical Composition
+
+A Scribble document normally starts
+
+    #lang scribble/manual
+
+but it could also start
+
+    #lang scribble/base
+
+or
+
+    #lang scribble/doc
+
+The last one introduces the smallest number of typesetting bindings in the
+document body. Using scribble/base after #lang is the same as using scribble/
+doc plus (require scribble/base), and using scribble/manual after #lang is the
+same as using scribble/doc plus (require scribble/manual).
+
+Besides making the file a module, each of the #lang declarations selects the
+Scribble reader (instead of the usual Racket reader), and it starts the body of
+the file in “text” mode. The reader layer mostly leaves text alone, but @ forms
+escape to S-expression mode.
+
+A module written as
+
+  #lang scribble/doc
+
+  @(require scribble/manual)
+
+  
+
+  @(define to-be "To Be")
+
+  
+
+  @title{@|to-be| or Not @|to-be|}
+
+  
+
+  @bold{That} is the question.
+
+  Whether 'tis nobler...
+
+
+reads as
+
+    (module ‹name› scribble/doc
+      (require scribble/manual)
+      "\n"
+      (define to-be "To Be") "\n"
+      "\n"
+      (title to-be " or Not " to-be) "\n"
+      "\n"
+      (bold "That") " is the question." "\n"
+      "Whether 'tis nobler..." "\n")
+
+As shown in this example, the read result is a module whose content mingles
+text and definitions. The scribble/doc language lifts definitions, requires,
+and provides to the beginning of the module, while everything else is collected
+into a document bound to the provided identifier doc. That is, the module is
+transformed to something like this:
+
+    (module ‹name› racket/base
+      (require scribble/decode
+               scribble/manual)
+      (define to-be "To Be")
+      (define doc
+        (decode
+         "\n" "\n" "\n"
+         (title to-be " or Not " to-be) "\n"
+         "\n"
+         (bold "That") " is the question." "\n"
+         "Whether 'tis nobler..." "\n"))
+      (provide doc))
+
+The decode function produces a part structure instance that represents the
+document. To build the part instance, it inspects its arguments to find a
+title-decl value created by title to name the part, part-start values created
+by section to designate sub-parts, etc.
+
+A part is the input to a rendering back-end, such as the HTML renderer. All
+renderers recognize a fixed structure hierarchy: the content of a part is a
+flow, which is a sequence of flow elements, such as paragraphs and tables; a
+table, in turn, consists of a list of list of flows; a paragraph is a list of
+elements, which can be instances of the element structure type, plain strings,
+or certain special symbols.
+
+The value bound to doc in the example above is something like
+
+    (make-part ....
+               (list "To Be" " or Not " "To Be") ; title
+               ....
+               (make-flow
+                 (list
+                  (make-paragraph
+                   (list (make-element 'bold (list "That"))
+                         " is the question." "\n"
+                         "Whether " 'rsquo "tis nobler..."))))
+               ....)
+
+Notice that the ' in the input’s 'tis has turned into 'rsquo (rendered as a
+curly apostrophe). The conversion to use 'rsquo was performed by decode via
+decode-flow via decode-paragraph via decode-content via decode-string.
+
+In contrast, (make-element 'bold (list "That")) was produced by the bold
+function. The decode operation is a function, not a syntactic form, and so bold
+has control over its argument before decode sees the result. Also, decoding
+traverses only immediate string arguments.
+
+As it turns out, bold also decodes its argument, because the bold function is
+implemented as
+
+    (define (bold . strs)
+      (make-element 'bold (decode-content strs)))
+
+The verbatim function, however, does not decode its content, and instead
+typesets its text arguments directly.
+
+A document module can construct elements directly using make-element, but
+normally functions like bold and verbatim are used to construct them. In
+particular, the scribble/manual library provides many functions and forms to
+typeset elements and flow elements.
+
+The part structure hierarchy includes built-in element types for setting
+hyperlink targets and references. Again, this machinery is normally packaged
+into higher-level functions and forms, such as secref, defproc, and racket.
+
+7.1.2 Layer Roadmap
+
+Working roughly from the bottom up, the Scribble layers are:
+
+  • scribble/reader: A reader that extends the syntax of Racket with @-forms
+    for conveniently embedding a mixin of text and escapes. See @ Syntax.
+
+  • scribble/core: A set of document datatypes and utilities that define the
+    basic layout and processing of a document. For example, the part datatype
+    is defined in this layer. See Structures And Processing.
+
+  • scribble/base-render with scribble/html-render, scribble/latex-render, or
+    scribble/text-render: A base renderer and mixins that generate documents in
+    various formats from instances of the scribble/struct datatypes. See
+    Renderer.
+
+  • scribble/decode: Processes a stream of text, section-start markers, etc. to
+    produce instances of the scribble/core datatypes. See Decoding Text.
+
+  • scribble/doclang: A language to be used for the initial import of a module;
+    processes the module top level through scribble/decode, and otherwise
+    provides all of racket/base. See Document Language.
+
+  • scribble/doc: A language that combines scribble/reader with scribble/
+    doclang. See Document Reader.
+
+  • scribble/base: A library of basic document operators—such as title, section
+    , and secref—for use with scribble/decode and a renderer. This library name
+    also can be used as a language, where it combines scribble/doc with the
+    exports of scribble/base. See Base Document Format.
+
+  • scribble/racket: A library of functions for typesetting Racket code. See
+    Racket. These functions are not normally used directly, but instead used
+    through scribble/manual.
+
+  • scribble/manual: A library of functions for writing Racket documentation;
+    re-exports scribble/base. Also, the scribble/manual-struct library provides
+    types for index-entry descriptions created by functions in scribble/manual.
+    See Manual Forms.
+
+  • scribble/eval: A library of functions for evaluating code at document-build
+    time, especially for showing examples. See Evaluation and Examples.
+
+  • scribble/bnf: A library of support functions for writing grammars. See BNF
+    Grammars.
+
+  • scribble/xref: A library of support functions for using cross-reference
+    information, typically after a document is rendered (e.g., to search). See
+    Cross-Reference Utilities.
+
+  • scribble/text: A language that uses scribble/reader preprocessing text
+    files.
+
+The scribble command-line utility generates output with a specified renderer.
+More specifically, the executable installs a renderer, loads the modules
+specified on the command line, extracts the doc export of each module (which
+must be an instance of part), and renders each—potentially with links that span
+documents.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

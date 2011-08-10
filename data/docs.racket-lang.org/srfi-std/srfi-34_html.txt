@@ -1,0 +1,325 @@
+Title
+
+SRFI 34: Exception Handling for Programs
+
+Authors
+
+Richard Kelsey and Michael Sperber
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. It will remain in draft until
+2002-10-20, or as amended. to provide input on this SRFI, please mail to
+srfi-34@srfi.schemers.org. See instructions here to subscribe to the list. You
+can access the discussion via the archive of the mailing list. You can access
+post-finalization messages via the archive of the mailing list.
+
+  • Draft: 2002/07/24-2002/10/20
+  • Revised: 2002/09/20
+  • Final: 2002/12/1
+  • Fixed reference implementation: 2003/03/10
+
+Abstract
+
+This SRFI defines exception-handling and exception-raising constructs for
+Scheme, including
+
+  • a with-exception-handler procedure and a guard form for installing
+    exception-handling procedures,
+  • a raise procedure for invoking the current exception handler.
+
+This SRFI is based on (withdrawn) SRFI 12: Exception Handling by William
+Clinger, R. Kent Dybvig, Matthew Flatt, and Marc Feeley.
+
+Rationale
+
+The goals of the exception mechanism specified in this SRFI are to help
+programmers share code which relies on exception handling, and to be easily
+added to existing Scheme systems.
+
+This SRFI is primarily useful in conjunction with one or more companion SRFIs:
+
+  • a SRFI specifying exception-describing objects (conditions). An example is
+    SRFI 35 (Conditions).
+  • a SRFI specifying a set of standard condition types to be raised by the
+    primitives provided by the Scheme implementation, and requiring that
+    certain Scheme primitives indeed raise exceptions within the framework
+    described. An example is SRFI 36 (I/O Conditions).
+  • a SRFI specifying how computations may be resumed after an exception is
+    raised.
+
+Specification
+
+Exception handlers are one-argument procedures that determine the action the
+program takes when an exceptional situation is signalled. The system implicitly
+maintains a current exception handler.
+
+The program raises an exception by invoking the current exception handler,
+passing to it an object encapsulating information about the exception. Any
+procedure accepting one argument may serve as an exception handler and any
+object may be used to represent an exception.
+
+The system maintains the current exception handler as part of the dynamic
+environment of the program, akin to the current input or output port, or the
+context for dynamic-wind. The dynamic environment can be thought of as that
+part of a continuation that does not specify the destination of any returned
+values. It includes the current input and output ports, the dynamic-wind
+context, and this SRFI's current exception handler. See the reference
+implementation for portable definitions of current-dynamic-environment and
+with-dynamic-environment.
+
+The initial current exception handler of the program is
+implementation-dependent. However, it should interrupt the program in some way
+visible to the user, either by aborting it, invoking a debugger, or some
+similar action.
+
+Establishing Exception Handlers
+
+(with-exception-handler handler thunk)
+
+    Returns the result(s) of invoking thunk. Handler must be a procedure that
+    accepts one argument. It is installed as the current exception handler for
+    the dynamic extent (as determined by dynamic-wind) of the invocation of
+    thunk.
+
+(guard ( <var> <clause[1] > <clause[2] > ...) <body>) (syntax)
+
+    Syntax: Each <clause> should have the same form as a cond clause
+
+    Semantics: Evaluating a guard form evaluates <body> with an exception
+    handler that binds the raised object to <var> and within the scope of that
+    binding evaluates the clauses as if they were the clauses of a cond
+    expression. That implicit cond expression is evaluated with the
+    continuation and dynamic environment of the guard expression. If every
+    <clause>'s <test> evaluates to false and there is no else clause, then
+    raise is re-invoked on the raised object within the dynamic environment of
+    the original call to raise except that the current exception handler is
+    that of the guard expression.
+
+Raising Exceptions
+
+(raise obj)
+
+    Invokes the current exception handler on obj. The handler is called in the
+    dynamic environment of the call to raise, except that the current exception
+    handler is that in place for the call to with-exception-handler that
+    installed the handler being called. The handler's continuation is otherwise
+    unspecified.
+
+Examples
+
+(call-with-current-continuation
+ (lambda (k)
+   (with-exception-handler (lambda (x)
+                             (display "condition: ")
+                             (write x)
+                             (newline)
+                             (k 'exception))
+     (lambda ()
+       (+ 1 (raise 'an-error))))))
+PRINTS: condition: an-error
+=> exception
+
+(call-with-current-continuation
+ (lambda (k)
+   (with-exception-handler (lambda (x)
+                             (display "something went wrong")
+                             (newline)
+                             'dont-care)
+     (lambda ()
+       (+ 1 (raise 'an-error))))))
+PRINTS: something went wrong
+then behaves in an unspecified way
+
+(guard (condition
+         (else
+          (display "condition: ")
+          (write condition)
+          (newline)
+          'exception))
+  (+ 1 (raise 'an-error)))
+PRINTS: condition: an-error
+=> exception
+
+(guard (condition
+         (else
+          (display "something went wrong")
+          (newline)
+          'dont-care))
+ (+ 1 (raise 'an-error)))
+PRINTS: something went wrong
+=> dont-care
+
+(call-with-current-continuation
+ (lambda (k)
+   (with-exception-handler (lambda (x)
+                             (display "reraised ") (write x) (newline)
+                             (k 'zero))
+     (lambda ()
+       (guard (condition
+                ((positive? condition) 'positive)
+                ((negative? condition) 'negative))
+        (raise 1))))))
+=> positive
+
+(call-with-current-continuation
+ (lambda (k)
+   (with-exception-handler (lambda (x)
+                             (display "reraised ") (write x) (newline)
+                             (k 'zero))
+     (lambda ()
+       (guard (condition
+                ((positive? condition) 'positive)
+                ((negative? condition) 'negative))
+        (raise -1))))))
+=> negative
+
+(call-with-current-continuation
+ (lambda (k)
+   (with-exception-handler (lambda (x)
+                             (display "reraised ") (write x) (newline)
+                             (k 'zero))
+     (lambda ()
+       (guard (condition
+                ((positive? condition) 'positive)
+                ((negative? condition) 'negative))
+        (raise 0))))))
+PRINTS: reraised 0
+=> zero
+
+(guard (condition
+         ((assq 'a condition) => cdr)
+         ((assq 'b condition)))
+  (raise (list (cons 'a 42))))
+=> 42
+
+(guard (condition
+         ((assq 'a condition) => cdr)
+         ((assq 'b condition)))
+  (raise (list (cons 'b 23))))
+=> (b . 23)
+
+Reference Implementation
+
+The reference implementation makes use of SRFI 9 ("Defining Record Types"), and
+SRFI 23 ("Error reporting mechanism").
+
+(define *current-exception-handlers*
+  (list (lambda (condition)
+          (error "unhandled exception" condition))))
+
+(define (with-exception-handler handler thunk)
+  (with-exception-handlers (cons handler *current-exception-handlers*)
+                           thunk))
+
+(define (with-exception-handlers new-handlers thunk)
+  (let ((previous-handlers *current-exception-handlers*))
+    (dynamic-wind
+      (lambda ()
+        (set! *current-exception-handlers* new-handlers))
+      thunk
+      (lambda ()
+        (set! *current-exception-handlers* previous-handlers)))))
+
+(define (raise obj)
+  (let ((handlers *current-exception-handlers*))
+    (with-exception-handlers (cdr handlers)
+      (lambda ()
+        ((car handlers) obj)
+        (error "handler returned"
+               (car handlers)
+               obj)))))
+
+(define-syntax guard
+  (syntax-rules ()
+    ((guard (var clause ...) e1 e2 ...)
+     ((call-with-current-continuation
+       (lambda (guard-k)
+         (with-exception-handler
+          (lambda (condition)
+            ((call-with-current-continuation
+               (lambda (handler-k)
+                 (guard-k
+                  (lambda ()
+                    (let ((var condition))      ; clauses may SET! var
+                      (guard-aux (handler-k (lambda ()
+                                              (raise condition)))
+                                 clause ...))))))))
+          (lambda ()
+            (call-with-values
+             (lambda () e1 e2 ...)
+             (lambda args
+               (guard-k (lambda ()
+                          (apply values args)))))))))))))
+
+(define-syntax guard-aux
+  (syntax-rules (else =>)
+    ((guard-aux reraise (else result1 result2 ...))
+     (begin result1 result2 ...))
+    ((guard-aux reraise (test => result))
+     (let ((temp test))
+       (if temp
+           (result temp)
+           reraise)))
+    ((guard-aux reraise (test => result) clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+           (result temp)
+           (guard-aux reraise clause1 clause2 ...))))
+    ((guard-aux reraise (test))
+     test)
+    ((guard-aux reraise (test) clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+           temp
+           (guard-aux reraise clause1 clause2 ...))))
+    ((guard-aux reraise (test result1 result2 ...))
+     (if test
+         (begin result1 result2 ...)
+         reraise))
+    ((guard-aux reraise (test result1 result2 ...) clause1 clause2 ...)
+     (if test
+         (begin result1 result2 ...)
+         (guard-aux reraise clause1 clause2 ...)))))
+
+References
+
+  • SRFI 12: Exception Handling by William Clinger, R. Kent Dybvig, Matthew
+    Flatt, and Marc Feeley
+  • SRFI 18: Multithreading support by Marc Feeley
+  • Richard Kelsey's 1996 proposal
+  • Proposal for Exception Handling in Scheme by Dan Friedman, Chris Haynes,
+    and Kent Dybvig
+  • Kent Pitman's history paper
+  • The Conditions chapter from the Common Lisp HyperSpec
+  • The Conditions chapter by Kent M. Pitman in Common Lisp the Language, 2nd
+    edition by Guy L. Steele
+  • The Conditions chapter in the Dylan Reference Manual
+  • The Exceptions chapter in Programming in Standard ML by Robert Harper
+
+Copyright
+
+Copyright (C) Richard Kelsey, Michael Sperber (2002). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Francisco Solsona

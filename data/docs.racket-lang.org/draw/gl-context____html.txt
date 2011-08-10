@@ -1,0 +1,116 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+call-as-current
+ok?
+swap-buffers
+[...search manuals...]
+  top← prev  up  next → 
+
+gl-context<%> : interface?
+A gl-context<%> object represents a context for drawing with OpenGL to a
+specific dc<%> instance. To obtain a gl-context<%> object, call get-gl-context
+of the target drawing context.
+
+Only canvas dc<%> and bitmap-dc% objects containing a bitmap from
+make-gl-bitmap support OpenGL (always on Windows and Mac OS X, sometimes on
+Unix). Normal dc<%> drawing and OpenGL drawing can be mixed in a bitmap-dc%,
+but a canvas that uses the 'gl style to support OpenGL does not reliably
+support normal dc<%> drawing; use a bitmap if you need to mix drawing modes,
+and use a canvas to maximize OpenGL performance.
+
+When the target bitmap for a bitmap-dc% context is changed via set-bitmap, the
+associated gl-context<%> changes. Canvas contexts are normally double buffered,
+and bitmap contexts are single buffered.
+
+The racket/gui/base library provides no OpenGL routines. Instead, they must be
+obtained from a separate library, such as sgl. The facilities in racket/gui/
+base merely manage the current OpenGL context, connecting it to windows and
+bitmaps.
+
+Only one OpenGL context can be active at a time across all threads and
+eventspaces. OpenGL contexts are not protected against interference among
+threads; that is, if a thread selects one of its OpenGL contexts, then other
+threads can write into the context via OpenGL commands. However, if all threads
+issue OpenGL commands only within a thunk passed to call-as-current, then
+drawing from the separate threads will not interfere, because call-as-current
+uses a lock to serialize context selection across all threads in Racket.
+
+(send a-gl-context call-as-current    thunk                   
+                                    [ alternate               
+                                      enable-breaks?])   →   any/c
+  thunk : (-> any)
+  alternate : evt? = never-evt
+  enable-breaks? : any/c = #f
+Calls a thunk with this OpenGL context as the current context for OpenGL
+commands.
+
+The method blocks to obtain a lock that protects the global OpenGL context, and
+it releases the lock when the thunk returns or escapes. The lock is re-entrant,
+so a nested use of the method in the same thread with the same OpenGL context
+does not obtain or release the lock.
+
+The lock prevents interference among OpenGL-using threads. If a thread is
+terminated while holding the context lock, the lock is released. Continuation
+jumps into the thunk do not grab the lock or set the OpenGL context. See
+gl-context<%> for more information on interference.
+
+The method accepts an alternate synchronizable event for use while blocking for
+the context lock; see also sync.
+
+The result of the method call is the result of the thunk if it is called, or
+the result of the alternate event if it is chosen instead of the context lock.
+
+If ok? returns #f at the time that this method is called, then an
+exn:fail:contract exception is raised.
+
+If enable-breaks? is true, then the method uses sync/enable-break while
+blocking for the context-setting lock instead of sync.
+
+(send a-gl-context ok?) → boolean?
+Returns #t if this context is available OpenGL drawing, #f otherwise.
+
+A context is unavailable if OpenGL support is disabled at compile time or run
+time, if the context is associated with a bitmap-dc% with no selected bitmap or
+with a monochrome selected bitmap, if the context is for a canvas that no
+longer exists, or if there was a low-level error when preparing the context.
+
+(send a-gl-context swap-buffers) → void?
+Swaps the front (visible) and back (OpenGL-drawing) buffer for a context
+associated with a canvas, and has no effect on a bitmap context.
+
+This method implicitly uses call-as-current to obtain the context lock. Since
+the lock is re-entrant, however, the swap-buffers method can be safely used
+within a call-as-current thunk.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

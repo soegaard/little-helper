@@ -1,0 +1,80 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 9  Regular Expressions
+ 9.1  Writing Regexp Patterns
+ 9.2  Matching Regexp Patterns
+ 9.3  Basic Assertions
+ 9.4  Characters and Character Classes
+ 9.5  Quantifiers
+ 9.6  Clusters
+ 9.7  Alternation
+ 9.8  Backtracking
+ 9.9  Looking Ahead and Behind
+9.10  An Extended Example
+[...search manuals...]
+  top← prev  up  next → 
+
+9.3 Basic Assertions
+
+The assertions ^ and $ identify the beginning and the end of the text string,
+respectively. They ensure that their adjoining regexps match at one or other
+end of the text string:
+
+    > (regexp-match-positions #rx"^contact" "first contact")
+    #f
+
+
+The regexp above fails to match because contact does not occur at the beginning
+of the text string. In
+
+    > (regexp-match-positions #rx"laugh$" "laugh laugh laugh laugh")
+    '((18 . 23))
+
+
+the regexp matches the last laugh.
+
+The metasequence \b asserts that a word boundary exists, but this metasequence
+works only with #px syntax. In
+
+    > (regexp-match-positions #px"yack\\b" "yackety yack")
+    '((8 . 12))
+
+
+the yack in yackety doesn’t end at a word boundary so it isn’t matched. The
+second yack does and is.
+
+The metasequence \B (also #px only) has the opposite effect to \b; it asserts
+that a word boundary does not exist. In
+
+    > (regexp-match-positions #px"an\\B" "an analysis")
+    '((3 . 5))
+
+
+the an that doesn’t end in a word boundary is matched.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

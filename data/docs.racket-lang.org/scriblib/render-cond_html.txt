@@ -1,0 +1,62 @@
+▼  Scriblib: Extra Scribble Libraries
+1  Examples Using the GUI Toolbox
+2  Figures
+3  Bibliographies
+4  Bib Te X Bibliographies
+5  Footnotes
+6  Conditional Content
+On this page:
+cond-element
+cond-block
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Conditional Content
+
+ (require scriblib/render-cond)
+
+As much as possible, Scribble documents should be independent of the target
+format for rendering the document. To customize generated output, use styes
+plus “back end” configurations for each target format (see Extending and
+Configuring Scribble Output in Scribble: The Racket Documentation Tool).
+
+As a last resort, the cond-element and cond-block forms support varying the
+document content depending on the target format. More precisely, they generate
+parts of a document where content is delayed until the traverse pass of
+document rendering. Format detection relies on the
+'scribble:current-render-mode registration that is accessible through a
+traverse-element or traverse-block.
+
+The syntax of cond-element and cond-block is based on SRFI-0.
+
+(cond-element [feature-requirement body ...+])
+(cond-element [feature-requirement body ...+] [else body ...+])
+ 
+feature-requirement   =   identifier
+                      |   (not feature-requirement)
+                      |   (and feature-requirement ...)
+                      |   (or feature-requirement ...)
+Generates a traverse-element whose replacement content is produced by the body
+of one of the first matching cond-element clause.
+
+A feature-requirement can be any identifier; a useful identifier is one whose
+symbol form can appear in a 'scribble:current-render-mode list. The identifier
+matches when its symbol form is in the 'scribble:current-render-mode list.
+Typically, the identifier is html, latex, or text to indicate the corresponding
+rendering target.
+
+A (not feature-requirement) test matches when feature-requirement does not
+match, and so on. An else clause always matches. If no else clause is present
+and no clause matches, then the exn:fail:contract exception is raised.
+Similarly, if the result of the selected body is not content according to
+content?, then the exn:fail:contract exception is raised.
+
+(cond-block [feature-requirement body ...+])
+(cond-block [feature-requirement body ...+] [else body ...+])
+Like cond-element, but generates a traverse-block where the selected body must
+produce a block according to block?.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

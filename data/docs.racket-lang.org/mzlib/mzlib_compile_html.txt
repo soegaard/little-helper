@@ -1,0 +1,95 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+compile-file
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/compile)
+
+(compile-file src [dest filter]) → path?
+  src : path-string?
+   dest   :   path-string?
+              (let-values ([(base name dir?) (split-path src)])
+          =     (build-path base "compiled"
+                            (path-add-suffix name #".zo")))
+  filter : (any/c . -> . any/c) = values
+Compiles the Scheme file src and saves the compiled code to dest. If dest is
+not provided and the "compiled" subdirectory does not already exist, the
+subdirectory is created. The result of compile-file is the destination file’s
+path.
+
+If the filter procedure is provided, it is applied to each source expression,
+and the result is compiled.
+
+The compile-file procedure is designed for compiling modules files, in that
+each expression in src is compiled independently. If src does not contain a
+single module expression, then earlier expressions can affect the compilation
+of later expressions when src is loaded directly. An appropriate filter can
+make compilation behave like evaluation, but the problem is also solved (as
+much as possible) by the compile-zos procedure.
+
+See also managed-compile-zo.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

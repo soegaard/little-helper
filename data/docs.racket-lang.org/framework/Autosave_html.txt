@@ -1,0 +1,74 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+autosave: autosavable<%>
+do-autosave
+autosave: register
+autosave: restore-autosave-files/ gui
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Autosave
+
+autosave:autosavable<%> : interface?
+Classes that implement this interface can be autosaved.
+
+
+    (send an-autosave:autosavable do-autosave) → void?
+    This method is called when the object is registered to be autosaved (see
+    autosave:register).
+
+(autosave:register obj) → void?
+   obj   :   (and/c (is-a?/c autosave:autosavable<%>)
+                    (is-a?/c editor<%>))
+Adds obj to the list of objects to be autosaved. When it is time to autosave,
+the do-autosave method of the object is called. This method is responsible for
+performing the autosave.
+
+There is no need to de-register an object because the autosaver keeps a “weak”
+pointer to the object; i.e., the autosaver does not keep an object from garbage
+collection.
+(autosave:restore-autosave-files/gui) → void?
+Opens a GUI to ask the user about recovering any autosave files left around
+from crashes and things.
+
+This function doesn’t return until the user has finished restoring the autosave
+files. (It uses yield to handle events however.)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

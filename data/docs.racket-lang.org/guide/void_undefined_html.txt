@@ -1,0 +1,82 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 3  Built-In Datatypes
+ 3.1  Booleans
+ 3.2  Numbers
+ 3.3  Characters
+ 3.4  Strings (Unicode)
+ 3.5  Bytes and Byte Strings
+ 3.6  Symbols
+ 3.7  Keywords
+ 3.8  Pairs and Lists
+ 3.9  Vectors
+3.10  Hash Tables
+3.11  Boxes
+3.12  Void and Undefined
+[...search manuals...]
+  top← prev  up  next → 
+
+3.12 Void and Undefined
+
+Some procedures or expression forms have no need for a result value. For
+example, the display procedure is called only for the side-effect of writing
+output. In such cases the result value is normally a special constant that
+prints as #<void>. When the result of an expression is simply #<void>, the REPL
+does not print anything.
+
+The void procedure takes any number of arguments and returns #<void>. (That is,
+the identifier void is bound to a procedure that returns #<void>, instead of
+being bound directly to #<void>.)
+
+Examples:
+
+    > (void)
+    > (void 1 2 3)
+    > (list (void))
+    '(#<void>)
+
+
+
+A constant that prints as #<undefined> is used as the result of a reference to
+a local binding when the binding is not yet initialized. Such early references
+are not possible for bindings that correspond to procedure arguments, let
+bindings, or let* bindings; early reference requires a recursive binding
+context, such as letrec or local defines in a procedure body. Also, early
+references to top-level and module-level bindings raise an exception, instead
+of producing #<undefined>. For these reasons, #<undefined> rarely appears.
+
+    (define (strange)
+      (define x x)
+      x)
+     
+
+    > (strange)
+    #<undefined>
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,920 @@
+▼  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+► 1  Windowing
+1.1  Creating Windows
+1.2  Drawing in Canvases
+1.3  Core Windowing Classes
+1.4  Geometry Management
+1.5  Mouse and Keyboard Events
+1.6  Event Dispatching and Eventspaces
+1.7  Animation in Canvases
+On this page:
+1.1 Creating Windows
+1.2 Drawing in Canvases
+1.3 Core Windowing Classes
+1.4 Geometry Management
+1.4.1 Containees
+1.4.2 Containers
+1.4.3 Defining New Types of Containers
+1.5 Mouse and Keyboard Events
+1.6 Event Dispatching and Eventspaces
+1.6.1 Event Types and Priorities
+1.6.2 Eventspaces and Threads
+1.6.3 Creating and Setting the Eventspace
+1.6.4 Continuations and Event Dispatch
+1.7 Animation in Canvases
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Windowing
+
+The windowing toolbox provides the basic building blocks of GUI programs,
+including frames (top-level windows), modal dialogs, menus, buttons, check
+boxes, text fields, and radio buttons—all as classes.
+
+            See Classes and Objects for an introduction to classes and
+            interfaces in Racket.
+
+1.1 Creating Windows
+
+To create a new top-level window, instantiate the frame% class:
+
+    ; Make a frame by instantiating the frame% class
+    (define frame (new frame% [label "Example"]))
+     
+    ; Show the frame by calling its show method
+    (send frame show #t)
+
+The built-in classes provide various mechanisms for handling GUI events. For
+example, when instantiating the button% class, supply an event callback
+procedure to be invoked when the user clicks the button. The following example
+program creates a frame with a text message and a button; when the user clicks
+the button, the message changes:
+
+    ; Make a frame by instantiating the frame% class
+    (define frame (new frame% [label "Example"]))
+     
+    ; Make a static text message in the frame
+    (define msg (new message% [parent frame]
+                              [label "No events so far..."]))
+     
+    ; Make a button in the frame
+    (new button% [parent frame]
+                 [label "Click Me"]
+                 ; Callback procedure for a button click:
+                 (callback (lambda (button event)
+                             (send msg set-label "Button click"))))
+     
+    ; Show the frame by calling its show method
+    (send frame show #t)
+
+Programmers never implement the GUI event loop directly. Instead, the windowing
+system automatically pulls each event from an internal queue and dispatches the
+event to an appropriate window. The dispatch invokes the window’s callback
+procedure or calls one of the window’s methods. In the above program, the
+windowing system automatically invokes the button’s callback procedure whenever
+the user clicks Click Me.
+
+If a window receives multiple kinds of events, the events are dispatched to
+methods of the window’s class instead of to a callback procedure. For example,
+a drawing canvas receives update events, mouse events, keyboard events, and
+sizing events; to handle them, derive a new class from the built-in canvas%
+class and override the event-handling methods. The following expression extends
+the frame created above with a canvas that handles mouse and keyboard events:
+
+    ; Derive a new canvas (a drawing window) class to handle events
+    (define my-canvas%
+      (class canvas% ; The base class is canvas%
+        ; Define overriding method to handle mouse events
+        (define/override (on-event event)
+          (send msg set-label "Canvas mouse"))
+        ; Define overriding method to handle keyboard events
+        (define/override (on-char event)
+          (send msg set-label "Canvas keyboard"))
+        ; Call the superclass init, passing on all init args
+        (super-new)))
+     
+    ; Make a canvas that handles events in the frame
+    (new my-canvas% [parent frame])
+
+After running the above code, manually resize the frame to see the new canvas.
+Moving the cursor over the canvas calls the canvas’s on-event method with an
+object representing a motion event. Clicking on the canvas calls on-event.
+While the canvas has the keyboard focus, typing on the keyboard invokes the
+canvas’s on-char method.
+
+The windowing system dispatches GUI events sequentially; that is, after
+invoking an event-handling callback or method, the windowing system waits until
+the handler returns before dispatching the next event. To illustrate the
+sequential nature of events, extend the frame again, adding a Pause button:
+
+    (new button% [parent frame]
+                 [label "Pause"]
+                 [callback (lambda (button event) (sleep 5))])
+
+After the user clicks Pause, the entire frame becomes unresponsive for five
+seconds; the windowing system cannot dispatch more events until the call to
+sleep returns. For more information about event dispatching, see Event
+Dispatching and Eventspaces.
+
+In addition to dispatching events, the GUI classes also handle the graphical
+layout of windows. Our example frame demonstrates a simple layout; the frame’s
+elements are lined up top-to-bottom. In general, a programmer specifies the
+layout of a window by assigning each GUI element to a parent container. A
+vertical container, such as a frame, arranges its children in a column, and a
+horizontal container arranges its children in a row. A container can be a child
+of another container; for example, to place two buttons side-by-side in our
+frame, create a horizontal panel for the new buttons:
+
+    (define panel (new horizontal-panel% [parent frame]))
+    (new button% [parent panel]
+                 [label "Left"]
+                 [callback (lambda (button event)
+                             (send msg set-label "Left click"))])
+    (new button% [parent panel]
+                 [label "Right"]
+                 [callback (lambda (button event)
+                             (send msg set-label "Right click"))])
+
+For more information about window layout and containers, see Geometry
+Management.
+
+1.2 Drawing in Canvases
+
+The content of a canvas is determined by its on-paint method, where the default
+on-paint calls the paint-callback function that is supplied when the canvas is
+created. The on-paint method receives no arguments and uses the canvas’s get-dc
+method to obtain a drawing context (DC) for drawing; the default on-paint
+method passes the canvas and this DC on to the paint-callback function. Drawing
+operations of the racket/draw toolbox on the DC are reflected in the content of
+the canvas onscreen.
+
+For example, the following program creates a canvas that displays large,
+friendly letters:
+
+    (define frame (new frame%
+                       [label "Example"]
+                       [width 300]
+                       [height 300]))
+    (new canvas% [parent frame]
+                 [paint-callback
+                  (lambda (canvas dc)
+                    (send dc set-scale 3 3)
+                    (send dc set-text-foreground "blue")
+                    (send dc draw-text "Don't Panic!" 0 0))])
+    (send frame show #t)
+
+The background color of a canvas can be set through the set-canvas-background
+method. To make the canvas transparent (so that it takes on its parent’s color
+and texture as its initial content), supply 'transparent in the style argument
+when creating the canvas.
+
+See Overview in The Racket Drawing Toolkit for an overview of drawing with the
+racket/draw library. For more advanced information on canvas drawing, see
+Animation in Canvases.
+
+1.3 Core Windowing Classes
+
+The fundamental graphical element in the windowing toolbox is an area. The
+following classes implement the different types of areas in the windowing
+toolbox:
+
+  • Containers — areas that can contain other areas:
+
+      □ frame% — a frame is a top-level window that the user can move and
+        resize.
+
+      □ dialog% — a dialog is a modal top-level window; when a dialog is shown,
+        other top-level windows are disabled until the dialog is dismissed.
+
+      □ panel% — a panel is a subcontainer within a container. The toolbox
+        provides three subclasses of panel%: vertical-panel%, horizontal-panel%
+        , and tab-panel%.
+
+      □ pane% — a pane is a lightweight panel. It has no graphical
+        representation or event-handling capabilities. The pane% class has
+        three subclasses: vertical-pane%, horizontal-pane%, and
+        grow-box-spacer-pane%.
+
+  • Containees — areas that must be contained within other areas:
+
+      □ panel% — a panel is a containee as well as a container.
+
+      □ pane% — a pane is a containee as well as a container.
+
+      □ canvas% — a canvas is a subwindow for drawing on the screen.
+
+      □ editor-canvas% — an editor canvas is a subwindow for displaying a text
+        editor or pasteboard editor. The editor-canvas% class is documented
+        with the editor classes in Editors.
+
+      □ Controls — containees that the user can manipulate:
+
+          ☆ message% — a message is a static text field or bitmap with no user
+            interaction.
+
+          ☆ button% — a button is a clickable control.
+
+          ☆ check-box% — a check box is a clickable control; the user clicks
+            the control to set or remove its check mark.
+
+          ☆ radio-box% — a radio box is a collection of mutually exclusive 
+            radio buttons; when the user clicks a radio button, it is selected
+            and the radio box’s previously selected radio button is deselected.
+
+          ☆ choice% — a choice item is a pop-up menu of text choices; the user
+            selects one item in the control.
+
+          ☆ list-box% — a list box is a scrollable lists of text choices; the
+            user selects one or more items in the list (depending on the style
+            of the list box).
+
+          ☆ text-field% — a text field is a box for simple text entry.
+
+          ☆ combo-field% — a combo field combines a text field with a pop-up
+            menu of choices.
+
+          ☆ slider% — a slider is a dragable control that selects an integer
+            value within a fixed range.
+
+          ☆ gauge% — a gauge is an output-only control (the user cannot change
+            the value) for reporting an integer value within a fixed range.
+
+As suggested by the above listing, certain areas, called containers, manage
+certain other areas, called containees. Some areas, such as panels, are both
+containers and containees.
+
+Most areas are windows, but some are non-windows. A window, such as a panel,
+has a graphical representation, receives keyboard and mouse events, and can be
+disabled or hidden. In contrast, a non-window, such as a pane, is useful only
+for geometry management; a non-window does not receive mouse events, and it
+cannot be disabled or hidden.
+
+Every area is an instance of the area<%> interface. Each container is also an
+instance of the area-container<%> interface, whereas each containee is an
+instance of subarea<%>. Windows are instances of window<%>. The area-container
+<%>, subarea<%>, and window<%> interfaces are subinterfaces of area<%>.
+
+The following diagram shows more of the type hierarchy under area<%>:
+
+                           area<%>
+
+       ______________________|_______________
+
+       |                  |                 |
+
+  subarea<%>          window<%>      area-container<%>      
+
+       |____       _______|__________       |
+
+            |      |                |       |
+
+           subwindow<%>          area-container-window<%>
+
+        ________|________                |
+
+        |               |                |
+
+     control<%>       canvas<%>   top-level-window<%>
+
+
+The diagram below extends the one above to show the complete type hierarchy
+under area<%>. (Some of the types are represented by interfaces, and some types
+are represented by classes. In principle, every area type should be represented
+by an interface, but whenever the windowing toolbox provides a concrete
+implementation, the corresponding interface is omitted from the toolbox.) To
+avoid intersecting lines, the hierarchy is drawn for a cylindrical surface;
+lines from subarea<%> and subwindow<%> wrap from the left edge of the diagram
+to the right edge.
+
+                           area<%>
+
+        _____________________|_______________
+
+        |               |                   |
+
+      subarea<%>     window<%>       area-container<%>      
+
+<<<____|____       _____|__________       __|___  ___________________<<<
+
+            |      |              |       |    |  |                  
+
+           subwindow<%>           |       |    |  |                  
+
+<<<______________|___________     |       |    |  |                 _<<<
+
+            |               |     |       |    pane%                |
+
+       control<%>           |     |       |     |- horizontal-pane% |
+
+        |- message%         |     |       |     |- vertical-pane%   |
+
+        |- button%          |     |       |                         |
+
+        |- check-box%       |  area-container-window<%>             |
+
+        |- slider%          |        |                              |
+
+        |- gauge%           |        |            __________________|
+
+        |- text-field%      |        |            |   
+
+            |- combo-field% |        |-------- panel%       
+
+        |- radio-box%       |        |          |- horizontal-panel%
+
+        |- list-control<%>  |        |          |- vertical-panel%
+
+            |- choice%      |        |              |- tab-panel%
+
+            |- list-box%    |        |              |- group-box-panel%
+
+                            |        |
+
+                            |        |- top-level-window<%>
+
+                            |            |- frame% 
+
+                         canvas<%>       |- dialog%
+
+                          |- canvas%
+
+                          |- editor-canvas%
+
+
+Menu bars, menus, and menu items are graphical elements, but not areas (i.e.,
+they do not have all of the properties that are common to areas, such as an
+adjustable graphical size). Instead, the menu classes form a separate
+container–containee hierarchy:
+
+  • Menu Item Containers
+
+      □ menu-bar% — a menu bar is a top-level collection of menus that are
+        associated with a frame.
+
+      □ menu% — a menu contains a set of menu items. The menu can appear in a
+        menu bar, in a popup menu, or as a submenu in another menu.
+
+      □ popup-menu% — a popup menu is a top-level menu that is dynamically
+        displayed in a canvas or editor canvas.
+
+  • Menu Items
+
+      □ separator-menu-item% — a separator is an unselectable line in a menu or
+        popup menu.
+
+      □ menu-item% — a plain menu item is a selectable text item in a menu.
+        When the item is selected, its callback procedure is invoked.
+
+      □ checkable-menu-item% — a checkable menu item is a text item in a menu;
+        the user selects a checkable menu item to toggle a check mark next to
+        the item.
+
+      □ menu% — a menu is a menu item as well as a menu item container.
+
+The following diagram shows the complete type hierarchy for the menu system:
+
+    menu-item<%>                menu-item-container<%> 
+
+        |                              | 
+
+        |- separator-menu-item%   _____|___ 
+
+        |- labelled-menu-item<%>  |       |- menu-bar% 
+
+            _________|_________   |       |- popup-menu% 
+
+            |                 |   | 
+
+            |                 menu%
+
+            |                          
+
+            |- selectable-menu-item<%>               
+
+                |- menu-item%                        
+
+                |- checkable-menu-item%
+
+
+1.4 Geometry Management
+
+The windowing toolbox’s geometry management makes it easy to design windows
+that look right on all platforms, despite different graphical representations
+of GUI elements. Geometry management is based on containers; each container
+arranges its children based on simple constraints, such as the current size of
+a frame and the natural size of a button.
+
+The built-in container classes include horizontal panels (and panes), which
+align their children in a row, and vertical panels (and panes), which align
+their children in a column. By nesting horizontal and vertical containers, a
+programmer can achieve most any layout. For example, to construct a dialog with
+the shape
+
+   ------------------------------------------------------
+
+  |              -------------------------------------   |
+
+  |  Your name: |                                     |  |
+
+  |              -------------------------------------   |
+
+  |                    --------     ----                 |
+
+  |                   ( Cancel )   ( OK )                |
+
+  |                    --------     ----                 |
+
+   ------------------------------------------------------
+
+
+with the following program:
+
+    ; Create a dialog
+    (define dialog (instantiate dialog% ("Example")))
+     
+    ; Add a text field to the dialog
+    (new text-field% [parent dialog] [label "Your name"])
+     
+    ; Add a horizontal panel to the dialog, with centering for buttons
+    (define panel (new horizontal-panel% [parent dialog]
+                                         [alignment '(center center)]))
+     
+    ; Add Cancel and Ok buttons to the horizontal panel
+    (new button% [parent panel] [label "Cancel"])
+    (new button% [parent panel] [label "Ok"])
+    (when (system-position-ok-before-cancel?)
+      (send panel change-children reverse))
+     
+    ; Show the dialog
+    (send dialog show #t)
+
+Each container arranges its children using the natural size of each child,
+which usually depends on instantiation parameters of the child, such as the
+label on a button or the number of choices in a radio box. In the above
+example, the dialog stretches horizontally to match the minimum width of the
+text field, and it stretches vertically to match the total height of the field
+and the buttons. The dialog then stretches the horizontal panel to fill the
+bottom half of the dialog. Finally, the horizontal panel uses the sum of the
+buttons’ minimum widths to center them horizontally.
+
+As the example demonstrates, a stretchable container grows to fill its
+environment, and it distributes extra space among its stretchable children. By
+default, panels are stretchable in both directions, whereas buttons are not
+stretchable in either direction. The programmer can change whether an
+individual GUI element is stretchable.
+
+The following subsections describe the container system in detail, first
+discussing the attributes of a containee in Containees, and then describing the
+attributes of a container in Containers. In addition to the built-in vertical
+and horizontal containers, programmers can define new types of containers as
+discussed in the final subsection, Defining New Types of Containers.
+
+1.4.1 Containees
+
+Each containee, or child, has the following properties:
+
+  • a graphical minimum width and a graphical minimum height;
+
+  • a requested minimum width and a requested minimum height;
+
+  • horizontal and vertical stretchability (on or off); and
+
+  • horizontal and vertical margins.
+
+A container arranges its children based on these four properties of each
+containee. A containee’s parent container is specified when the containee is
+created, and the parent cannot be changed. However, a containee can be hidden
+or deleted within its parent, as described in Containers.
+
+The graphical minimum size of a particular containee, as reported by
+get-graphical-min-size, depends on the platform, the label of the containee
+(for a control), and style attributes specified when creating the containee.
+For example, a button’s minimum graphical size ensures that the entire text of
+the label is visible. The graphical minimum size of a control (such as a
+button) cannot be changed; it is fixed at creation time. (A control’s minimum
+size is not recalculated when its label is changed.) The graphical minimum size
+of a panel or pane depends on the total minimum size of its children and the
+way that they are arranged.
+
+To select a size for a containee, its parent container considers the
+containee’s requested minimum size rather than its graphical minimum size
+(assuming the requested minimum is larger than the graphical minimum). Unlike
+the graphical minimum, the requested minimum size of a containee can be changed
+by a programmer at any time using the min-width and min-height methods.
+
+Unless a containee is stretchable (in a particular direction), it always
+shrinks to its minimum size (in the corresponding direction). Otherwise,
+containees are stretched to fill all available space in a container. Each
+containee begins with a default stretchability. For example, buttons are not
+initially stretchable, whereas a one-line text field is initially stretchable
+in the horizontal direction. A programmer can change the stretchability of a
+containee at any time using the stretchable-width and stretchable-height
+methods.
+
+A margin is space surrounding a containee. Each containee’s margin is
+independent of its minimum size, but from the container’s point of view, a
+margin effectively increases the minimum size of the containee. For example, if
+a button has a vertical margin of 2, then the container must allocate enough
+room to leave two pixels of space above and below the button, in addition to
+the space that is allocated for the button’s minimum height. A programmer can
+adjust a containee’s margin with horiz-margin and vert-margin. The default
+margin is 2 for a control, and 0 for any other type of containee.
+
+In practice, the requested minimum size and margin of a control are rarely
+changed, although they are often changed for a canvas. Stretchability is
+commonly adjusted for any type of containee, depending on the visual effect
+desired by the programmer.
+
+1.4.2 Containers
+
+A container has the following properties:
+
+  • a list of (non-deleted) children containees;
+
+  • a requested minimum width and a requested minimum height;
+
+  • a spacing used between the children;
+
+  • a border margin used around the total set of children;
+
+  • horizontal and vertical stretchability (on or off); and
+
+  • an alignment setting for positioning leftover space.
+
+These properties are factored into the container’s calculation of its own size
+and the arrangement of its children. For a container that is also a containee
+(e.g., a panel), the container’s requested minimum size and stretchability are
+the same as for its containee aspect.
+
+A containee’s parent container is specified when the containee is created, and
+the parent cannot be changed. However, a containee window can be hidden or
+deleted within its parent container (but a non-window containee cannot be
+hidden or deleted):
+
+  • A hidden child is invisible to the user, but space is still allocated for
+    each hidden child within a container. To hide or show a child, call the
+    child’s show method.
+
+  • A deleted child is hidden and ignored by container as it arranges its other
+    children, so no space is reserved in the container for a deleted child. To
+    make a child deleted or non-deleted, call the container’s delete-child or
+    add-child method (which calls the child’s show method).
+
+When a child is created, it is initially shown and non-deleted. A deleted child
+is subject to garbage collection when no external reference to the child
+exists. A list of non-deleted children (hidden or not) is available from a
+container through its get-children method.
+
+The order of the children in a container’s non-deleted list is significant. For
+example, a vertical panel puts the first child in its list at the top of the
+panel, and so on. When a new child is created, it is put at the end of its
+container’s list of children. The order of a container’s list can be changed
+dynamically via the change-children method. (The change-children method can
+also be used to activate or deactivate children.)
+
+The graphical minimum size of a container, as reported by
+get-graphical-min-size, is calculated by combining the minimum sizes of its
+children (summing them or taking the maximum, as appropriate to the layout
+strategy of the container) along with the spacing and border margins of the
+container. A larger minimum may be specified by the programmer using min-width
+and min-height methods; when the computed minimum for a container is larger
+than the programmer-specified minimum, then the programmer-specified minimum is
+ignored.
+
+A container’s spacing determines the amount of space left between adjacent
+children in the container, in addition to any space required by the children’s
+margins. A container’s border margin determines the amount of space to add
+around the collection of children; it effectively decreases the area within the
+container where children can be placed. A programmer can adjust a container’s
+border and spacing dynamically via the border and spacing methods. The default
+border and spacing are 0 for all container types.
+
+Because a panel or pane is a containee as well as a container, it has a
+containee margin in addition to its border margin. For a panel, these margins
+are not redundant because the panel can have a graphical border; the border is
+drawn inside the panel’s containee margin, but outside the panel’s border
+margin.
+
+For a top-level-window container, such as a frame or dialog, the container’s
+stretchability determines whether the user can resize the window to something
+larger than its minimum size. Thus, the user cannot resize a frame that is not
+stretchable. For other types of containers (i.e., panels and panes), the
+container’s stretchability is its stretchability as a containee in some other
+container. All types of containers are initially stretchable in both
+directions—except instances of grow-box-spacer-pane%, which is intended as a
+lightweight spacer class rather than a useful container class—but a programmer
+can change the stretchability of an area at any time via the stretchable-width
+and stretchable-height methods.
+
+The alignment specification for a container determines how it positions its
+children when the container has leftover space. (A container can only have
+leftover space in a particular direction when none of its children are
+stretchable in that direction.) For example, when the container’s horizontal
+alignment is 'left, the children are left-aligned in the container and leftover
+space is accumulated to the right. When the container’s horizontal alignment is
+'center, each child is horizontally centered in the container. A container’s
+alignment is changed with the set-alignment method.
+
+1.4.3 Defining New Types of Containers
+
+Although nested horizontal and vertical containers can express most layout
+patterns, a programmer can define a new type of container with an explicit
+layout procedure. A programmer defines a new type of container by deriving a
+class from panel% or pane% and overriding the container-size and place-children
+methods. The container-size method takes a list of size specifications for each
+child and returns two values: the minimum width and height of the container.
+The place-children method takes the container’s size and a list of size
+specifications for each child, and returns a list of sizes and placements (in
+parallel to the original list).
+
+An input size specification is a list of four values:
+
+  • the child’s minimum width;
+
+  • the child’s minimum height;
+
+  • the child’s horizontal stretchability (#t means stretchable, #f means not
+    stretchable); and
+
+  • the child’s vertical stretchability.
+
+For place-children, an output position and size specification is a list of four
+values:
+
+  • the child’s new horizontal position (relative to the parent);
+
+  • the child’s new vertical position;
+
+  • the child’s new actual width;
+
+  • the child’s new actual height.
+
+The widths and heights for both the input and output include the children’s
+margins. The returned position for each child is automatically incremented to
+account for the child’s margin in placing the control.
+
+1.5 Mouse and Keyboard Events
+
+Whenever the user moves the mouse, clicks or releases a mouse button, or
+presses a key on the keyboard, an event is generated for some window. The
+window that receives the event depends on the current state of the graphic
+display:
+
+  • The receiving window of a mouse event is usually the window under the
+    cursor when the mouse is moved or clicked. If the mouse is over a child
+    window, the child window receives the event rather than its parent.
+
+    When the user clicks in a window, the window “grabs” the mouse, so that all
+    mouse events go to that window until the mouse button is released
+    (regardless of the location of the cursor). As a result, a user can click
+    on a scrollbar thumb and drag it without keeping the cursor strictly inside
+    the scrollbar control.
+
+    A mouse button-release event is normally generated for each mouse
+    button-down event, but a button-release event might get dropped. For
+    example, a modal dialog might appear and take over the mouse. More
+    generally, any kind of mouse event can get dropped in principle, so avoid
+    algorithms that depend on precise mouse-event sequences. For example, a
+    mouse tracking handler should reset the tracking state when it receives an
+    event other than a dragging event.
+
+  • The receiving window of a keyboard event is the window that owns the 
+    keyboard focus at the time of the event. Only one window owns the focus at
+    any time, and focus ownership is typically displayed by a window in some
+    manner. For example, a text field control shows focus ownership by
+    displaying a blinking caret.
+
+    Within a top-level window, only certain kinds of subwindows can have the
+    focus, depending on the conventions of the platform. Furthermore, the
+    subwindow that initially owns the focus is platform-specific. A user can
+    moves the focus in various ways, usually by clicking the target window. A
+    program can use the focus method to move the focus to a subwindow or to set
+    the initial focus.
+
+    A 'wheel-up or 'wheel-down event may be sent to a window other than the one
+    with the keyboard focus, depending on how the operating system handles
+    wheel events.
+
+    A key-press event may correspond to either an actual key press or an
+    auto-key repeat. Multiple key-press events without intervening key-release
+    events normally indicate an auto-key. Like any input event, however,
+    key-release events sometimes get dropped (e.g., due to the appearance of a
+    modal dialog).
+
+Controls, such as buttons and list boxes, handle keyboard and mouse events
+automatically, eventually invoking the callback procedure that was provided
+when the control was created. A canvas propagates mouse and keyboard events to
+its on-event and on-char methods, respectively.
+
+A mouse and keyboard event is delivered in a special way to its window. Each
+ancestor of the receiving window gets a chance to intercept the event through
+the on-subwindow-event and on-subwindow-char methods. See the method
+descriptions for more information.
+
+The default on-subwindow-char method for a top-level window intercepts keyboard
+events to detect menu-shortcut events and focus-navigation events. See
+on-subwindow-char in frame% and on-subwindow-char in dialog% for details.
+Certain OS-specific key combinations are captured at a low level, and cannot be
+overridden. For example, on Windows and Unix, pressing and releasing Alt always
+moves the keyboard focus to the menu bar. Similarly, Alt-Tab switches to a
+different application on Windows. (Alt-Space invokes the system menu on
+Windows, but this shortcut is implemented by on-system-menu-char, which is
+called by on-subwindow-char in frame% and on-subwindow-char in dialog%.)
+
+1.6 Event Dispatching and Eventspaces
+
+A graphical user interface is an inherently multi-threaded system: one thread
+is the program managing windows on the screen, and the other thread is the user
+moving the mouse and typing at the keyboard. GUI programs typically use an 
+event queue to translate this multi-threaded system into a sequential one, at
+least from the programmer’s point of view. Each user action is handled one at a
+time, ignoring further user actions until the previous one is completely
+handled. The conversion from a multi-threaded process to a single-threaded one
+greatly simplifies the implementation of GUI programs.
+
+Despite the programming convenience provided by a purely sequential event
+queue, certain situations require a less rigid dialog with the user:
+
+  • Nested event handling: In the process of handling an event, it may be
+    necessary to obtain further information from the user. Usually, such
+    information is obtained via a modal dialog; in whatever fashion the input
+    is obtained, more user events must be received and handled before the
+    original event is completely handled. To allow the further processing of
+    events, the handler for the original event must explicitly yield to the
+    system. Yielding causes events to be handled in a nested manner, rather
+    than in a purely sequential manner.
+
+  • Asynchronous event handling: An application may consist of windows that
+    represent independent dialogs with the user. For example, a drawing program
+    might support multiple drawing windows, and a particularly time-consuming
+    task in one window (e.g., a special filter effect on an image) should not
+    prevent the user from working in a different window. Such an application
+    needs sequential event handling for each individual window, but
+    asynchronous (potentially parallel) event handling across windows. In other
+    words, the application needs a separate event queue for each window, and a
+    separate event-handling thread for each event queue.
+
+An eventspace is a context for processing GUI events. Each eventspace maintains
+its own queue of events, and events in a single eventspace are dispatched
+sequentially by a designated handler thread. An event-handling procedure
+running in this handler thread can yield to the system by calling yield, in
+which case other event-handling procedures may be called in a nested (but
+single-threaded) manner within the same handler thread. Events from different
+eventspaces are dispatched asynchronously by separate handler threads.
+
+When a frame or dialog is created without a parent, it is associated with the
+current eventspace as described in Creating and Setting the Eventspace. Events
+for a top-level window and its descendants are always dispatched in the
+window’s eventspace. Every dialog is modal; a dialog’s show method implicitly
+calls yield to handle events while the dialog is shown. (See also Eventspaces
+and Threads for information about threads and modal dialogs.) Furthermore, when
+a modal dialog is shown, the system disables key and mouse press/release events
+to other top-level windows in the dialog’s eventspace, but windows in other
+eventspaces are unaffected by the modal dialog. (Mouse motion, enter, and leave
+events are still delivered to all windows when a modal dialog is shown.)
+
+1.6.1 Event Types and Priorities
+
+In addition to events corresponding to user and windowing actions, such as
+button clicks, key presses, and updates, the system dispatches two kinds of
+internal events: timer events and explicitly queued events.
+
+Timer events are created by instances of timer%. When a timer is started and
+then expires, the timer queues an event to call the timer’s notify method. Like
+a top-level window, each timer is associated with a particular eventspace (the
+current eventspace as described in Creating and Setting the Eventspace) when it
+is created, and the timer queues the event in its eventspace.
+
+Explicitly queued events are created with queue-callback, which accepts a
+callback procedure to handle the event. The event is enqueued in the current
+eventspace at the time of the call to queue-callback, with either a high or low
+priority as specified by the (optional) second argument to queue-callback.
+
+An eventspace’s event queue is actually a priority queue with events sorted
+according to their kind, from highest-priority (dispatched first) to
+lowest-priority (dispatched last):
+
+  • The highest-priority events are high-priority events installed with
+    queue-callback.
+
+  • Timer events have the second-highest priority.
+
+  • Graphical events, such as mouse clicks or window updates, have the
+    second-lowest priority.
+
+  • The lowest-priority events are low-priority events installed with
+    queue-callback.
+
+Although a programmer has no direct control over the order in which events are
+dispatched, a programmer can control the timing of dispatches by setting the 
+event dispatch handler via the event-dispatch-handler parameter. This parameter
+and other eventspace procedures are described in more detail in Eventspaces.
+
+1.6.2 Eventspaces and Threads
+
+When a new eventspace is created, a corresponding handler thread is created for
+the eventspace. When the system dispatches an event for an eventspace, it
+always does so in the eventspace’s handler thread. A handler procedure can
+create new threads that run indefinitely, but as long as the handler thread is
+running a handler procedure, no new events can be dispatched for the
+corresponding eventspace.
+
+When a handler thread shows a dialog, the dialog’s show method implicitly calls
+yield for as long as the dialog is shown. When a non-handler thread shows a
+dialog, the non-handler thread simply blocks until the dialog is dismissed.
+Calling yield with no arguments from a non-handler thread has no effect.
+Calling yield with a semaphore from a non-handler thread is equivalent to
+calling semaphore-wait.
+
+1.6.3 Creating and Setting the Eventspace
+
+Whenever a frame, dialog, or timer is created, it is associated with the 
+current eventspace as determined by the current-eventspace parameter (see
+Parameters).
+
+The make-eventspace procedure creates a new eventspace. The following example
+creates a new eventspace and a new frame in the eventspace (the parameterize
+syntactic form temporary sets a parameter value):
+
+    (let ([new-es (make-eventspace)])
+      (parameterize ([current-eventspace new-es])
+        (new frame% [label "Example"])))
+
+When an eventspace is created, it is placed under the management of the current
+custodian. When a custodian shuts down an eventspace, all frames and dialogs
+associated with the eventspace are destroyed (without calling can-close? or
+on-close in top-level-window<%>), all timers in the eventspace are stopped, and
+all enqueued callbacks are removed. Attempting to create a new window, timer,
+or explicitly queued event in a shut-down eventspace raises the exn:misc
+exception.
+
+An eventspace is a synchronizable event (not to be confused with a GUI event),
+so it can be used with sync. As a synchronizable event, an eventspace is in a
+blocking state when a frame is visible, a timer is active, a callback is
+queued, or a menu-bar% is created with a 'root parent. (Note that the blocking
+state of an eventspace is unrelated to whether an event is ready for
+dispatching.)
+
+1.6.4 Continuations and Event Dispatch
+
+Whenever the system dispatches an event, the call to the handler is wrapped
+with a continuation prompt (see call-with-continuation-prompt) that delimits
+continuation aborts (such as when an exception is raised) and continuations
+captured by the handler. The delimited continuation prompt is installed outside
+the call to the event dispatch handler, so any captured continuation includes
+the invocation of the event dispatch handler.
+
+For example, if a button callback raises an exception, than the abort performed
+by the default exception handler returns to the event-dispatch point, rather
+than terminating the program or escaping past an enclosing (yield). If
+with-handlers wraps a (yield) that leads to an exception raised by a button
+callback, however, the exception can be captured by the with-handlers.
+
+Along similar lines, if a button callback captures a continuation (using the
+default continuation prompt tag), then applying the continuation re-installs
+only the work to be done by the handler up until the point that it returns; the
+dispatch machinery to invoke the button callback is not included in the
+continuation. A continuation captured during a button callback is therefore
+potentially useful outside of the same callback.
+
+1.7 Animation in Canvases
+
+The content of a canvas is buffered, so if a canvas must be redrawn, the
+on-paint method or paint-callback function usually does not need to be called
+again. To further reduce flicker, while the on-paint method or paint-callback
+function is called, the windowing system avoids flushing the canvas-content
+buffer to the screen.
+
+Canvas content can be updated at any time by drawing with the result of the
+canvas’s get-dc method, and drawing is thread-safe. Changes to the canvas’s
+content are flushed to the screen periodically (not necessarily on an
+event-handling boundary), but the flush method immediately flushes to the
+screen—as long as flushing has not been suspended. The suspend-flush and
+resume-flush methods suspend and resume both automatic and explicit flushes,
+although on some platforms, automatic flushes are forced in rare cases.
+
+For most animation purposes, suspend-flush, resume-flush, and flush can be used
+to avoid flicker and the need for an additional drawing buffer for animations.
+During an animation, bracket the construction of each animation frame with
+suspend-flush and resume-flush to ensure that partially drawn frames are not
+flushed to the screen. Use flush to ensure that canvas content is flushed when
+it is ready if a suspend-flush will soon follow, because the process of
+flushing to the screen can be starved if flushing is frequently suspend. The
+method refresh-now in canvas% conveniently encapsulates this sequence.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

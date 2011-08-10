@@ -1,0 +1,442 @@
+▼  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 16  Unsafe Operations
+16.1  Unsafe Numeric Operations
+16.2  Unsafe Data Extraction
+On this page:
+16.1 Unsafe Numeric Operations
+unsafe-fx+
+unsafe-fx-
+unsafe-fx*
+unsafe-fxquotient
+unsafe-fxremainder
+unsafe-fxmodulo
+unsafe-fxabs
+unsafe-fxand
+unsafe-fxior
+unsafe-fxxor
+unsafe-fxnot
+unsafe-fxlshift
+unsafe-fxrshift
+unsafe-fx=
+unsafe-fx<
+unsafe-fx>
+unsafe-fx<=
+unsafe-fx>=
+unsafe-fxmin
+unsafe-fxmax
+unsafe-fl+
+unsafe-fl-
+unsafe-fl*
+unsafe-fl/
+unsafe-flabs
+unsafe-fl=
+unsafe-fl<
+unsafe-fl>
+unsafe-fl<=
+unsafe-fl>=
+unsafe-flmin
+unsafe-flmax
+unsafe-flround
+unsafe-flfloor
+unsafe-flceiling
+unsafe-fltruncate
+unsafe-flsin
+unsafe-flcos
+unsafe-fltan
+unsafe-flasin
+unsafe-flacos
+unsafe-flatan
+unsafe-fllog
+unsafe-flexp
+unsafe-flsqrt
+unsafe-make-flrectangular
+unsafe-flreal-part
+unsafe-flimag-part
+unsafe-fx->fl
+unsafe-fl->fx
+16.2 Unsafe Data Extraction
+unsafe-car
+unsafe-cdr
+unsafe-mcar
+unsafe-mcdr
+unsafe-set-mcar!
+unsafe-set-mcdr!
+unsafe-unbox
+unsafe-set-box!
+unsafe-unbox*
+unsafe-set-box*!
+unsafe-vector-length
+unsafe-vector-ref
+unsafe-vector-set!
+unsafe-vector*-length
+unsafe-vector*-ref
+unsafe-vector*-set!
+unsafe-string-length
+unsafe-string-ref
+unsafe-string-set!
+unsafe-bytes-length
+unsafe-bytes-ref
+unsafe-bytes-set!
+unsafe-flvector-length
+unsafe-flvector-ref
+unsafe-flvector-set!
+unsafe-f64vector-ref
+unsafe-f64vector-set!
+unsafe-s16vector-ref
+unsafe-s16vector-set!
+unsafe-u16vector-ref
+unsafe-u16vector-set!
+unsafe-struct-ref
+unsafe-struct-set!
+unsafe-struct*-ref
+unsafe-struct*-set!
+[...search manuals...]
+  top← prev  up  next → 
+
+16 Unsafe Operations
+
+ (require racket/unsafe/ops)
+
+All fuctions and forms provided by racket/base and racket check their arguments
+to ensure that the arguments conform to contracts and other constraints. For
+example, vector-ref checks its arguments to ensure that the first argument is a
+vector, that the second argument is an exact integer, and that the second
+argument is between 0 and one less than the vector’s length, inclusive.
+
+Functions provided by racket/unsafe/ops are unsafe. They have certain
+constraints, but the constraints are not checked, which allows the system to
+generate and execute faster code. If arguments violate an unsafe function’s
+constraints, the function’s behavior and result is unpredictable, and the
+entire system can crash or become corrupted.
+
+All of the exported bindings of racket/unsafe/ops are protected in the sense of
+protect-out, so access to unsafe operations can be prevented by adjusting the
+code inspector (see Code Inspectors).
+
+16.1 Unsafe Numeric Operations
+
+(unsafe-fx+ a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fx- a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fx* a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxquotient a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxremainder a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxmodulo a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxabs a) → fixnum?
+  a : fixnum?
+For fixnums: Like +, -, *, quotient, remainder, modulo, and abs, but
+constrained to consume fixnums and produce a fixnum result. The mathematical
+operation on a and b must be representable as a fixnum. In the case of
+unsafe-fxquotient, unsafe-fxremainder, and unsafe-fxmodulo, b must not be 0.
+
+(unsafe-fxand a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxior a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxxor a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxnot a) → fixnum?
+  a : fixnum?
+(unsafe-fxlshift a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxrshift a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+For fixnums: Like bitwise-and, bitwise-ior, bitwise-xor, bitwise-not, and
+arithmetic-shift, but constrained to consume fixnums; the result is always a
+fixnum. The unsafe-fxlshift and unsafe-fxrshift operations correspond to
+arithmetic-shift, but require non-negative arguments; unsafe-fxlshift is a
+positive (i.e., left) shift, and unsafe-fxrshift is a negative (i.e., right)
+shift, where the number of bits to shift must be less than the number of bits
+used to represent a fixnum. In the case of unsafe-fxlshift, bits in the result
+beyond the number of bits used to represent a fixnum are effectively replaced
+with a copy of the high bit.
+
+(unsafe-fx= a b) → boolean?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fx< a b) → boolean?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fx> a b) → boolean?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fx<= a b) → boolean?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fx>= a b) → boolean?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxmin a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+(unsafe-fxmax a b) → fixnum?
+  a : fixnum?
+  b : fixnum?
+For fixnums: Like =, <, >, <=, >=, min, and max, but constrained to consume
+fixnums.
+
+(unsafe-fl+ a b) → inexact-real?
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-fl- a b) → inexact-real?
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-fl* a b) → inexact-real?
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-fl/ a b) → inexact-real?
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-flabs a) → inexact-real?
+  a : inexact-real?
+For flonums: Unchecked versions of fl+, fl-, fl*, fl/, and flabs.
+
+(unsafe-fl= a b) → boolean?
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-fl< a b) → boolean?
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-fl> a b) → boolean?
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-fl<= a b) → boolean?
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-fl>= a b) → boolean?
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-flmin a) → inexact-real?
+  a : inexact-real?
+(unsafe-flmax a) → inexact-real?
+  a : inexact-real?
+For flonums: Unchecked versions of fl=, fl<, fl>, fl<=, fl>=, flmin, and flmax.
+
+(unsafe-flround a) → inexact-real?
+  a : inexact-real?
+(unsafe-flfloor a) → inexact-real?
+  a : inexact-real?
+(unsafe-flceiling a) → inexact-real?
+  a : inexact-real?
+(unsafe-fltruncate a) → inexact-real?
+  a : inexact-real?
+For flonums: Unchecked (potentially) versions of flround, flfloor, flceiling,
+and fltruncate. Currently, these bindings are simply aliases for the
+corresponding safe bindings.
+
+(unsafe-flsin a) → inexact-real?
+  a : inexact-real?
+(unsafe-flcos a) → inexact-real?
+  a : inexact-real?
+(unsafe-fltan a) → inexact-real?
+  a : inexact-real?
+(unsafe-flasin a) → inexact-real?
+  a : inexact-real?
+(unsafe-flacos a) → inexact-real?
+  a : inexact-real?
+(unsafe-flatan a) → inexact-real?
+  a : inexact-real?
+(unsafe-fllog a) → inexact-real?
+  a : inexact-real?
+(unsafe-flexp a) → inexact-real?
+  a : inexact-real?
+(unsafe-flsqrt a) → inexact-real?
+  a : inexact-real?
+For flonums: Unchecked (potentially) versions of flsin, flcos, fltan, flasin,
+flacos, flatan, fllog, flexp, and flsqrt. Currently, some of these bindings are
+simply aliases for the corresponding safe bindings.
+
+(unsafe-make-flrectangular a b)
+ → (and/c complex? inexact? (not/c real?))
+  a : inexact-real?
+  b : inexact-real?
+(unsafe-flreal-part a) → inexact-real?
+  a : (and/c complex? inexact? (not/c real?))
+(unsafe-flimag-part a) → inexact-real?
+  a : (and/c complex? inexact? (not/c real?))
+For flonums: Unchecked versions of make-flrectangular, flreal-part, and
+flimag-part.
+
+(unsafe-fx->fl a) → inexact-real?
+  a : fixnum?
+(unsafe-fl->fx a) → fixnum?
+  a : inexact-real?
+Unchecked conversion of a fixnum to an integer flonum and vice versa. These are
+similar to the safe bindings ->fl and fl->exact-integer, but further
+constrained to consume or produce a fixnum.
+
+16.2 Unsafe Data Extraction
+
+(unsafe-car p) → any/c
+  p : pair?
+(unsafe-cdr p) → any/c
+  p : pair?
+(unsafe-mcar p) → any/c
+  p : mpair?
+(unsafe-mcdr p) → any/c
+  p : mpair?
+(unsafe-set-mcar! p v) → void?
+  p : mpair?
+  v : any/c
+(unsafe-set-mcdr! p v) → void?
+  p : mpair?
+  v : any/c
+Unsafe variants of car, cdr, mcar, mcdr, set-mcar!, and set-mcdr!.
+
+(unsafe-unbox b) → fixnum?
+  b : box?
+(unsafe-set-box! b k) → void?
+  b : box?
+  k : fixnum?
+(unsafe-unbox* v) → any/c
+  v : (and/c box? (not/c impersonator?))
+(unsafe-set-box*! v val) → void?
+  v : (and/c box? (not/c impersonator?))
+  val : any/c
+Unsafe versions of unbox and set-box!.
+
+(unsafe-vector-length v) → fixnum?
+  v : vector?
+(unsafe-vector-ref v k) → any/c
+  v : vector?
+  k : fixnum?
+(unsafe-vector-set! v k val) → void?
+  v : vector?
+  k : fixnum?
+  val : any/c
+(unsafe-vector*-length v) → fixnum?
+  v : (and/c vector? (not/c impersonator?))
+(unsafe-vector*-ref v k) → any/c
+  v : (and/c vector? (not/c impersonator?))
+  k : fixnum?
+(unsafe-vector*-set! v k val) → void?
+  v : (and/c vector? (not/c impersonator?))
+  k : fixnum?
+  val : any/c
+Unsafe versions of vector-length, vector-ref, and vector-set!. A vector’s size
+can never be larger than a fixnum (so even vector-length always returns a
+fixnum).
+
+(unsafe-string-length str) → fixnum?
+  str : string?
+(unsafe-string-ref str k)
+ → (and/c char? (lambda (ch) (<= 0 (char->integer ch) 255)))
+  str : string?
+  k : fixnum?
+(unsafe-string-set! str k ch) → void?
+  str : (and/c string? (not/c immutable?))
+  k : fixnum?
+  ch : char?
+Unsafe versions of string-length, string-ref, and string-set!. The
+unsafe-string-ref procedure can be used only when the result will be a Latin-1
+character. A string’s size can never be larger than a fixnum (so even
+string-length always returns a fixnum).
+
+(unsafe-bytes-length bstr) → fixnum?
+  bstr : bytes?
+(unsafe-bytes-ref bstr k) → byte?
+  bstr : bytes?
+  k : fixnum?
+(unsafe-bytes-set! bstr k b) → void?
+  bstr : (and/c bytes? (not/c immutable?))
+  k : fixnum?
+  b : byte?
+Unsafe versions of bytes-length, bytes-ref, and bytes-set!. A bytes’s size can
+never be larger than a fixnum (so even bytes-length always returns a fixnum).
+
+(unsafe-flvector-length v) → fixnum?
+  v : flvector?
+(unsafe-flvector-ref v k) → any/c
+  v : flvector?
+  k : fixnum?
+(unsafe-flvector-set! v k x) → void?
+  v : flvector?
+  k : fixnum?
+  x : inexact-real?
+Unsafe versions of flvector-length, flvector-ref, and flvector-set!. A flvector
+’s size can never be larger than a fixnum (so even flvector-length always
+returns a fixnum).
+
+(unsafe-f64vector-ref vec k) → inexact-real?
+  vec : f64vector?
+  k : fixnum?
+(unsafe-f64vector-set! vec k n) → void?
+  vec : f64vector?
+  k : fixnum?
+  n : inexact-real?
+Unsafe versions of f64vector-ref and f64vector-set!.
+
+(unsafe-s16vector-ref vec k) → (integer-in -32768 32767)
+  vec : s16vector?
+  k : fixnum?
+(unsafe-s16vector-set! vec k n) → void?
+  vec : s16vector?
+  k : fixnum?
+  n : (integer-in -32768 32767)
+Unsafe versions of s16vector-ref and s16vector-set!.
+
+(unsafe-u16vector-ref vec k) → (integer-in 0 65535)
+  vec : u16vector?
+  k : fixnum?
+(unsafe-u16vector-set! vec k n) → void?
+  vec : u16vector?
+  k : fixnum?
+  n : (integer-in 0 65535)
+Unsafe versions of u16vector-ref and u16vector-set!.
+
+(unsafe-struct-ref v k) → any/c
+  v : any/c
+  k : fixnum?
+(unsafe-struct-set! v k val) → void?
+  v : any/c
+  k : fixnum?
+  val : any/c
+(unsafe-struct*-ref v k) → any/c
+  v : (not/c impersonator?)
+  k : fixnum?
+(unsafe-struct*-set! v k val) → void?
+  v : (not/c impersonator?)
+  k : fixnum?
+  val : any/c
+Unsafe field access and update for an instance of a structure type. The index k
+must be between 0 (inclusive) and the number of fields in the struture
+(exclusive). In the case of unsafe-struct-set!, the field must be mutable.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

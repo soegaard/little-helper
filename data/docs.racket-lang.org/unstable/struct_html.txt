@@ -1,0 +1,111 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+make
+struct->list
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+29 Structs
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require unstable/struct)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(make struct-id expr ...)
+Creates an instance of struct-id, which must be bound as a struct name. The
+number of exprs is statically checked against the number of fields associated
+with struct-id. If they are different, or if the number of fields is not known,
+an error is raised at compile time.
+
+Examples:
+
+    > (define-struct triple (a b c))
+    > (make triple 3 4 5)
+    #<triple>
+
+    > (make triple 2 4)
+    eval:4:0: make: wrong number of arguments for struct triple
+
+    (expected 3, got 2) in: (make triple 2 4)
+
+
+
+(struct->list v [#:on-opaque on-opaque]) → (or/c list? #f)
+  v : any/c
+  on-opaque : (or/c 'error 'return-false 'skip) = 'error
+Returns a list containing the struct instance v’s fields. Unlike struct->vector
+, the struct name itself is not included.
+
+If any fields of v are inaccessible via the current inspector the behavior of
+struct->list is determined by on-opaque. If on-opaque is 'error (the default),
+an error is raised. If it is 'return-false, struct->list returns #f. If it is
+'skip, the inaccessible fields are omitted from the list.
+
+Examples:
+
+    > (define-struct open (u v) #:transparent)
+    > (struct->list (make-open 'a 'b))
+    '(a b)
+
+    > (struct->list #s(pre 1 2 3))
+    '(1 2 3)
+
+    > (define-struct (secret open) (x y))
+    > (struct->list (make-secret 0 1 17 22))
+    struct->list: expected argument of type <non-opaque
+
+    struct>; given (secret 0 1 ...)
+
+    > (struct->list (make-secret 0 1 17 22) #:on-opaque 'return-false)
+    #f
+
+    > (struct->list (make-secret 0 1 17 22) #:on-opaque 'skip)
+    '(0 1)
+
+    > (struct->list 'not-a-struct #:on-opaque 'return-false)
+    #f
+
+    > (struct->list 'not-a-struct #:on-opaque 'skip)
+    '()
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

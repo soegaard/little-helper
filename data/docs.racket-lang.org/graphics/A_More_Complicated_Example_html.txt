@@ -1,0 +1,42 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+[...search manuals...]
+  top← prev  up  next → 
+
+8 A More Complicated Example
+
+The use of multiple viewports, viewport descriptors, drawing operations for
+multiple viewports is as easy as the use of a single viewport:
+
+    (open-graphics)
+    (let* (; w1 and w2 are viewports for different windows
+           [w1  (open-viewport "viewport 1" 300 300)]
+           [w2  (open-viewport "viewport 2" 200 500)]
+           ; d1 and d2 draw lines in different viewports
+           [d1  (draw-line w1)]
+           [d2  (draw-line w2)])
+      ; draws a line in viewport labeled “viewport 1”
+      (d1 (make-posn 100 5) (make-posn 5 100))
+      ; draws a line in viewport labeled “viewport 2”
+      (d2 (make-posn 100 100) (make-posn 101 400)))
+     
+    ; we no longer have access to viewports 1 and 2,
+    ; since their descriptors did not escape the let
+    (close-graphics)
+    ; removes the viewports
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

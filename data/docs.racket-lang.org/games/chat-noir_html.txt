@@ -1,0 +1,90 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18 [chat-noir] Chat Noir — Puzzle Game
+
+Robby Findler,
+Eli Barzilay,
+and Matthew Flatt
+
+The goal of Chat Noir is to stop the cat from escaping the board. Each turn you
+click on a circle, which prevents the cat from stepping on that space, and the
+cat responds by taking a step. If the cat is completely boxed in and thus
+unable reach the border, you win. If the cat does reach the border, you lose.
+
+To start a new game, hit the “n” key (but only after losing or winning a game).
+
+            To play Chat Noir, run the PLT Games program. (Under Unix, it’s
+            called plt-games).
+
+To get some insight into the cat’s behavior, hold down the “h” key. It will
+show you the cells that are on the cat’s shortest path to the edge, assuming
+that the cell underneath the mouse has been blocked, so you can experiment to
+see how the shortest paths change by moving your mouse around.
+
+The game was inspired by the one at Game Design and has essentially the same
+rules. It also inspired the final project for the introductory programming
+course at the University of Chicago in the fall of 2008.
+
+The remainder of this document explains the implementation of the Chat Noir
+game in a Literate Programming style.
+
+    1.18.1 Overview
+
+    1.18.2 The World
+
+    1.18.3 Breadth-first Search
+
+    1.18.4 Board to Graph
+
+    1.18.5 The Cat’s Path
+
+    1.18.6 Drawing the Cat
+
+    1.18.7 Drawing the World
+
+    1.18.8 Handling Input
+
+    1.18.9 Tests
+
+    1.18.10 Run, program, run
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

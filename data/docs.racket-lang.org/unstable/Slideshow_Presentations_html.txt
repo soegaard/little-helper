@@ -1,0 +1,506 @@
+►  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+▼ 32  GUI libraries
+32.1  Dr Racket Language Levels
+32.2  Notify-boxes
+32.3  Preferences
+32.4  Slideshow Presentations
+32.5  Progressive Picts and Slides
+► 32.4  Slideshow Presentations
+32.4.1  Text Formatting
+32.4.2  Pict Colors
+32.4.3  Pict Manipulation
+32.4.4  Staged Slides
+32.4.5  Tables
+32.4.6  Multiple Columns
+On this page:
+32.4.1 Text Formatting
+with-size
+with-scale
+big
+small
+with-font
+with-style
+bold
+italic
+subscript
+superscript
+caps
+32.4.2 Pict Colors
+color
+red
+orange
+yellow
+green
+blue
+purple
+black
+brown
+gray
+white
+cyan
+magenta
+light
+dark
+color/ c
+32.4.3 Pict Manipulation
+fill
+32.4.3.1 Conditional Manipulations
+show
+hide
+strike
+shade
+32.4.3.2 Conditional Combinations
+pict-if
+pict-cond
+pict-case
+pict-match
+pict-combine
+with-pict-combine
+32.4.4 Staged Slides
+staged
+stage
+stage-name
+slide/ staged
+32.4.5 Tables
+tabular
+32.4.6 Multiple Columns
+two-columns
+mini-slide
+columns
+column
+column-size
+ellipse/ border
+circle/ border
+rectangle/ border
+rounded-rectangle/ border
+blank-line
+pin-label-line
+pin-arrow-label-line
+pin-arrows-label-line
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+32.4 Slideshow Presentations
+
+Carl Eastlund <cce@racket-lang.org>
+
+ (require unstable/gui/slideshow)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+32.4.1 Text Formatting
+
+(with-size size expr)
+Sets current-font-size to size while running expr.
+
+(with-scale scale expr)
+Multiplies current-font-size by scale while running expr.
+
+(big text)
+(small text)
+Scale current-font-size by 3/2 or 2/3, respectively, while running text.
+
+(with-font font expr)
+Sets current-main-font to font while running expr.
+
+(with-style style expr)
+Adds style to current-main-font (via cons) while running expr.
+
+(bold text)
+(italic text)
+(subscript text)
+(superscript text)
+(caps text)
+Adds the attributes for bold, italic, superscript, subscript, or small caps
+text, respectively, to current-main-font while running text.
+
+32.4.2 Pict Colors
+
+(color c p) → pict?
+  c : color/c
+  p : pict?
+Applies color c to picture p. Equivalent to (colorize p c).
+
+(red pict) → pict?
+  pict : pict?
+(orange pict) → pict?
+  pict : pict?
+(yellow pict) → pict?
+  pict : pict?
+(green pict) → pict?
+  pict : pict?
+(blue pict) → pict?
+  pict : pict?
+(purple pict) → pict?
+  pict : pict?
+(black pict) → pict?
+  pict : pict?
+(brown pict) → pict?
+  pict : pict?
+(gray pict) → pict?
+  pict : pict?
+(white pict) → pict?
+  pict : pict?
+(cyan pict) → pict?
+  pict : pict?
+(magenta pict) → pict?
+  pict : pict?
+These functions apply appropriate colors to picture p.
+
+(light color) → color/c
+  color : color/c
+(dark color) → color/c
+  color : color/c
+These functions produce ligher or darker versions of a color.
+
+color/c : flat-contract?
+This contract recognizes color strings, color% instances, and RGB color lists.
+
+32.4.3 Pict Manipulation
+
+(fill pict width height) → pict?
+  pict : pict?
+  width : (or/c real? #f)
+  height : (or/c real? #f)
+Extends pict’s bounding box to a minimum width and/or height, placing the
+original picture in the middle of the space.
+
+32.4.3.1 Conditional Manipulations
+
+These pict transformers all take boolean arguments that determine whether to
+transform the pict or leave it unchanged. These transformations can be useful
+for staged slides, as the resulting pict always has the same size and shape,
+and its contents always appear at the same position, but changing the boolean
+argument between slides can control when the transformation occurs.
+
+(show pict [show?]) → pict?
+  pict : pict?
+  show? : truth/c = #t
+(hide pict [hide?]) → pict?
+  pict : pict?
+  hide? : truth/c = #t
+These functions conditionally show or hide an image, essentially choosing
+between pict and (ghost pict). The only difference between the two is the
+default behavior and the opposite meaning of the show? and hide? booleans. Both
+functions are provided for mnemonic purposes.
+
+(strike pict [strike?]) → pict?
+  pict : pict?
+  strike? : truth/c = #t
+Displays a strikethrough image by putting a line through the middle of pict if
+strike? is true; produces pict unchanged otherwise.
+
+(shade pict [shade? #:ratio ratio]) → pict?
+  pict : pict?
+  shade? : truth/c = #t
+  ratio : (real-in 0 1) = 1/2
+Shades pict to show with ratio of its normal opacity; if ratio is 1 or shade?
+is #f, shows pict unchanged.
+
+32.4.3.2 Conditional Combinations
+
+These pict control flow operators decide which pict of several to use. All
+branches are evaluated; the resulting pict is a combination of the pict chosen
+by normal conditional flow with ghost applied to all the other picts. The
+result is a picture large enough to accommodate each alternative, but showing
+only the chosen one. This is useful for staged slides, as the pict chosen may
+change with each slide but its size and position will not.
+
+(pict-if maybe-combine test-expr then-expr else-expr)
+ 
+maybe-combine   =  
+                |   #:combine combine-expr
+Chooses either then-expr or else-expr based on test-expr, similarly to if.
+Combines the chosen, visible image with the other, invisible image using
+combine-expr, defaulting to pict-combine.
+
+(pict-cond maybe-combine [test-expr pict-expr] ...)
+ 
+maybe-combine   =  
+                |   #:combine combine-expr
+Chooses a pict-expr based on the first successful test-expr, similarly to cond.
+Combines the chosen, visible image with the other, invisible images using
+combine-expr, defaulting to pict-combine.
+
+(pict-case test-expr maybe-combine [literals pict-expr] ...)
+ 
+maybe-combine   =  
+                |   #:combine combine-expr
+Chooses a pict-expr based on test-expr and each list of literals, similarly to
+case. Combines the chosen, visible image with the other, invisible images using
+combine-expr, defaulting to pict-combine.
+
+(pict-match test-expr maybe-combine [pattern pict-expr] ...)
+ 
+maybe-combine   =  
+                |   #:combine combine-expr
+Chooses a pict-expr based on test-expr and each pattern, similarly to match.
+Combines the chosen, visible image with the other, invisible images using
+combine-expr, defaulting to pict-combine.
+
+pict-combine
+This syntax parameter determines the default pict combining form used by the
+above macros. It defaults to lbl-superimpose.
+
+(with-pict-combine combine-id body ...)
+Sets pict-combine to refer to combine-id within each of the body terms, which
+are spliced into the containing context.
+
+32.4.4 Staged Slides
+
+(staged [name ...] body ...)
+Executes the body terms once for each stage name. The terms may include
+expressions and mutually recursive definitions. Within the body, each name is
+bound to a number from 1 to the number of stages in order. Furthermore, during
+execution stage is bound to the number of the current stage and stage-name is
+bound to a symbol representing the name of the current stage. By comparing
+stage to the numeric value of each name, or stage-name to quoted symbols of the
+form 'name, the user may compute based on the progression of the stages.
+
+stage
+stage-name
+These keywords are bound during the execution of staged and should not be used
+otherwise.
+
+(slide/staged [name ...] arg ...)
+Creates a staged slide. Equivalent to (staged [name ...] (slide arg ...)).
+
+Within a staged slide, the boolean arguments to hide, show, strike, and shade
+can be used to determine in which stages to perform a transformation. The
+macros pict-if, pict-cond, pict-case, and pict-match may also be used to create
+images which change naturally between stages.
+
+32.4.5 Tables
+
+(tabular    row                      
+            ...                      
+          [ #:gap gap                
+            #:hgap hgap              
+            #:vgap vgap              
+            #:align align            
+            #:halign halign          
+            #:valign valign])   →   pict?
+  row : (listof (or/c string? pict?))
+  gap : natural-number/c = gap-size
+  hgap : natural-number/c = gap
+  vgap : natural-number/c = gap
+   align   :   (->* [] [] #:rest (listof pict?) pict?)
+           =   lbl-superimpose
+  halign : (->* [] [] #:rest (listof pict?) pict?) = align
+  valign : (->* [] [] #:rest (listof pict?) pict?) = align
+Constructs a table containing the given rows, all of which must be of the same
+length. Applies t to each string in a row to construct a pict. The hgap, vgap,
+halign, and valign are used to determine the horizontal and vertical gaps and
+alignments as in table (except that every row and column is uniform).
+
+32.4.6 Multiple Columns
+
+(two-columns one two)
+Constructs a two-column pict using one and two as the two columns. Sets
+current-para-width appropriately in each column.
+
+(mini-slide pict ...) → pict?
+  pict : pict?
+Appends each pict vertically with space between them, similarly to the slide
+function.
+
+(columns pict ...) → pict?
+  pict : pict?
+Combines each pict horizontally, aligned at the top, with space in between.
+
+(column width body ...)
+Sets current-para-width to width during execution of the body expressions.
+
+(column-size n [r]) → real?
+  n : exact-positive-integer?
+  r : real? = (/ n)
+Computes the width of one column out of n that takes up a ratio of r of the
+available space (according to current-para-width).
+
+            The subsequent bindings were added by Vincent St-Amour.
+
+(ellipse/border   w                                   
+                  h                                   
+                  #:color color                       
+                  #:border-color border-color         
+                  #:border-width border-width)   →   pict?
+  w : real?
+  h : real?
+  color : color/c
+  border-color : color/c
+  border-width : real?
+(circle/border   diameter                            
+                 #:color color                       
+                 #:border-color border-color         
+                 #:border-width border-width)   →   pict?
+  diameter : real?
+  color : color/c
+  border-color : color/c
+  border-width : real?
+(rectangle/border   w                                   
+                    h                                   
+                    #:color color                       
+                    #:border-color border-color         
+                    #:border-width border-width)   →   pict?
+  w : real?
+  h : real?
+  color : color/c
+  border-color : color/c
+  border-width : real?
+(rounded-rectangle/border   w                                   
+                            h                                   
+                            #:color color                       
+                            #:border-color border-color         
+                            #:border-width border-width)   →   pict?
+  w : real?
+  h : real?
+  color : color/c
+  border-color : color/c
+  border-width : real?
+These functions create shapes with border of the given color and width.
+
+            The subsequent bindings were added by Scott Owens.
+
+(blank-line) → pict?
+Adds a blank line of the current font size’s height.
+
+(pin-label-line   label                            
+                  pict                             
+                  src-pict                         
+                  src-coord-fn                     
+                  dest-pict                        
+                  dest-coord-fn                    
+                  #:start-angle start-angle        
+                  #:end-angle end-angle            
+                  #:start-pull start-pull          
+                  #:end-pull end-pull              
+                  #:line-width line-width          
+                  #:color color                    
+                  #:under? under?                  
+                  #:x-adjust x-adjust              
+                  #:y-adjust y-adjust)        →   pict?
+  label : pict?
+  pict : pict?
+  src-pict : pict-path?
+  src-coord-fn : (-> pict-path? (values real? real?))
+  dest-pict : pict-path?
+  dest-coord-fn : (-> pict-path? (values real? real?))
+  start-angle : (or/c real? #f)
+  end-angle : (or/c real? #f)
+  start-pull : real?
+  end-pull : real?
+  line-width : (or/c real? #f)
+  color : (or/c #f string? (is-a?/c color%))
+  under? : any/c
+  x-adjust : real?
+  y-adjust : real?
+(pin-arrow-label-line   label                              
+                        arrow-size                         
+                        pict                               
+                        src-pict                           
+                        src-coord-fn                       
+                        dest-pict                          
+                        dest-coord-fn                      
+                        #:start-angle start-angle          
+                        #:end-angle end-angle              
+                        #:start-pull start-pull            
+                        #:end-pull end-pull                
+                        #:line-width line-width            
+                        #:color color                      
+                        #:under? under?                    
+                        #:hide-arrowhead? hide-arrowhead?  
+                        #:x-adjust x-adjust                
+                        #:y-adjust y-adjust)               
+ → pict?
+  label : pict?
+  arrow-size : real?
+  pict : pict?
+  src-pict : pict-path?
+  src-coord-fn : (-> pict-path? (values real? real?))
+  dest-pict : pict-path?
+  dest-coord-fn : (-> pict-path? (values real? real?))
+  start-angle : (or/c real? #f)
+  end-angle : (or/c real? #f)
+  start-pull : real?
+  end-pull : real?
+  line-width : (or/c real? #f)
+  color : (or/c #f string? (is-a?/c color%))
+  under? : any/c
+  hide-arrowhead? : any/c
+  x-adjust : real?
+  y-adjust : real?
+(pin-arrows-label-line   label                              
+                         arrow-size                         
+                         pict                               
+                         src-pict                           
+                         src-coord-fn                       
+                         dest-pict                          
+                         dest-coord-fn                      
+                         #:start-angle start-angle          
+                         #:end-angle end-angle              
+                         #:start-pull start-pull            
+                         #:end-pull end-pull                
+                         #:line-width line-width            
+                         #:color color                      
+                         #:under? under?                    
+                         #:hide-arrowhead? hide-arrowhead?  
+                         #:x-adjust x-adjust                
+                         #:y-adjust y-adjust)               
+ → pict?
+  label : pict?
+  arrow-size : real?
+  pict : pict?
+  src-pict : pict-path?
+  src-coord-fn : (-> pict-path? (values real? real?))
+  dest-pict : pict-path?
+  dest-coord-fn : (-> pict-path? (values real? real?))
+  start-angle : (or/c real? #f)
+  end-angle : (or/c real? #f)
+  start-pull : real?
+  end-pull : real?
+  line-width : (or/c real? #f)
+  color : (or/c #f string? (is-a?/c color%))
+  under? : any/c
+  hide-arrowhead? : any/c
+  x-adjust : real?
+  y-adjust : real?
+These functions behave like pin-line, pin-arrow-line and pin-arrows-line with
+the addition of a label attached to the line.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

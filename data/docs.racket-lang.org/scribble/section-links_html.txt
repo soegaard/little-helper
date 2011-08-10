@@ -1,0 +1,137 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+▼ 4.3  Manual Forms
+ 4.3.1  Typesetting Code
+ 4.3.2  Documenting Modules
+ 4.3.3  Documenting Forms, Functions, Structure Types, and Values
+ 4.3.4  Documenting Classes and Interfaces
+ 4.3.5  Documenting Signatures
+ 4.3.6  Various String Forms
+ 4.3.7  Links
+ 4.3.8  Indexing
+ 4.3.9  Images
+4.3.10  Bibliography
+4.3.11  Miscellaneous
+4.3.12  Index-Entry Descriptions
+On this page:
+racketlink
+schemelink
+link
+other-manual
+deftech
+tech
+techlink
+[...search manuals...]
+  top← prev  up  next → 
+
+4.3.7 Links
+
+See also Links.
+
+(racketlink id pre-content ...)
+ 
+       id   :   identifier?
+       pre-content   :   pre-content?
+
+An element where the decoded pre-content is hyperlinked to the definition of
+id.
+
+(schemelink id pre-content ...)
+Compatibility alias for racketlink.
+
+(link    url                            
+         pre-content ...                
+       [ #:underline? underline?        
+         #:style style])           →   element?
+  url : string?
+  pre-content : any/c
+  underline? : any/c = #t
+   style   :   (or/c style? string? symbol? #f)
+           =   (if underline? #f "plainlink")
+Alias of hyperlink for backward compatibility.
+
+(other-manual    module-path                      
+               [ #:underline? underline?])   →   element?
+  module-path : module-path?
+  underline? : any/c = #t
+Alias of other-doc for backward compatibility.
+
+(deftech pre-content ... [#:style? style?]) → element?
+  pre-content : pre-content?
+  style? : boolean? = #t
+Produces an element for the decoded pre-content, and also defines a term that
+can be referenced elsewhere using tech.
+
+The content->string result of the decoded pre-content is used as a key for
+references, but normalized as follows:
+
+  • A trailing “ies” is replaced by “y”.
+
+  • A trailing “s” is removed.
+
+  • Consecutive hyphens and whitespaces are all replaced by a single space.
+
+These normalization steps help support natural-language references that differ
+slightly from a defined form. For example, a definition of “bananas” can be
+referenced with a use of “banana”.
+
+If style? is true, then defterm is used on pre-content.
+
+(tech    pre-content                      
+         ...                              
+       [ #:key key                        
+         #:doc module-path                
+         #:tag-prefixes prefixes])   →   element?
+  pre-content : pre-content?
+  key : (or/c string? #f) = #f
+  module-path : (or/c module-path? #f) = #f
+  prefixes : (or/c (listof string?) #f) = #f
+Produces an element for the decoded pre-content, and hyperlinks it to the
+definition of the key as established by deftech. If key is false, the decoded
+content is converted to a string (using content->string) to use as a key; in
+either case, the key is normalized in the same way as for deftech. The #:doc
+and #:tag-prefixes arguments support cross-document and section-specific
+references, like in secref.
+
+With the default style files, the hyperlink created by tech is somewhat quieter
+than most hyperlinks: the underline in HTML output is gray, instead of blue,
+and the term and underline turn blue only when the mouse is moved over the
+term.
+
+In some cases, combining both natural-language uses of a term and proper
+linking can require some creativity, even with the normalization performed on
+the term. For example, if “bind” is defined, but a sentence uses the term
+“binding,” the latter can be linked to the former using @tech{bind}ing.
+
+(techlink    pre-content                      
+             ...                              
+           [ #:key key                        
+             #:doc module-path                
+             #:tag-prefixes prefixes])   →   element?
+  pre-content : pre-content?
+  key : (or/c string? #f) = #f
+  module-path : (or/c module-path? #f) = #f
+  prefixes : (or/c (listof string?) #f) = #f
+Like tech, but the link is not quiet. For example, in HTML output, a hyperlink
+underline appears even when the mouse is not over the link.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

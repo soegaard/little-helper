@@ -1,0 +1,206 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 14  Operating System
+14.1  Paths
+14.2  Filesystem
+14.3  Networking
+14.4  Processes
+14.5  Logging
+14.6  Time
+14.7  Environment and Runtime Information
+14.8  Command-Line Parsing
+On this page:
+getenv
+putenv
+system-type
+system-language+ country
+system-library-subpath
+version
+banner
+current-command-line-arguments
+current-thread-initial-stack-size
+vector-set-performance-stats!
+[...search manuals...]
+  top← prev  up  next → 
+
+14.7 Environment and Runtime Information
+
+(getenv name) → (or/c string? #f)
+  name : string?
+Gets the value of an operating system environment variable. The name argument
+cannot contain a null character; if an environment variable named by name
+exists, its value is returned (as a string); otherwise, #f is returned.
+
+(putenv name value) → boolean?
+  name : string?
+  value : string?
+Sets the value of an operating system environment variable. The name and value
+arguments are strings that cannot contain a null character; the environment
+variable named by name is set to value. The return value is #t if the
+assignment succeeds, #f otherwise.
+
+(system-type [mode]) → (or/c symbol? string? bytes?)
+  mode : (or/c 'os 'gc 'link 'so-suffix 'machine) = 'os
+Returns information about the operating system, build mode, or machine for a
+running Racket.
+
+In 'os mode, the possible symbol results are:
+
+  • 'unix
+
+  • 'windows
+
+  • 'macosx
+
+In 'gc mode, the possible symbol results are:
+
+  • 'cgc
+
+  • '3m
+
+In 'link mode, the possible symbol results are:
+
+  • 'static (Unix)
+
+  • 'shared (Unix)
+
+  • 'dll (Windows)
+
+  • 'framework (Mac OS X)
+
+Future ports of Racket may expand the list of 'os, 'gc, and 'link results.
+
+In 'so-suffix mode, then the result is a byte string that represents the file
+extension used for shared objects on the current platform. The byte string
+starts with a period, so it is suitable as a second argument to
+path-replace-suffix.
+
+In 'machine mode, then the result is a string, which contains further details
+about the current machine in a platform-specific format.
+
+(system-language+country) → string?
+Returns a string to identify the current user’s language and country.
+
+On Unix and Mac OS X, the string is five characters: two lowercase ASCII
+letters for the language, an underscore, and two uppercase ASCII letters for
+the country. On Windows, the string can be arbitrarily long, but the language
+and country are in English (all ASCII letters or spaces) separated by an
+underscore.
+
+On Unix, the result is determined by checking the LC_ALL, LC_TYPE, and LANG
+environment variables, in that order (and the result is used if the environment
+variable’s value starts with two lowercase ASCII letters, an underscore, and
+two uppercase ASCII letters, followed by either nothing or a period). On
+Windows and Mac OS X, the result is determined by system calls.
+
+(system-library-subpath [mode]) → path?
+  mode : (or/c 'cgc '3m #f) = (system-type 'gc)
+Returns a relative directory path. This string can be used to build paths to
+system-specific files. For example, when Racket is running on Solaris on a
+Sparc architecture, the subpath starts "sparc-solaris", while the subpath for
+Windows on an i386 architecture starts "win32\\i386".
+
+The optional mode argument specifies the relevant garbage-collection variant,
+which one of the possible results of (system-type 'gc): 'cgc or '3m. It can
+also be #f, in which case the result is independent of the garbage-collection
+variant.
+
+(version) → (and/c string? immutable?)
+Returns an string indicating the currently executing version of Racket.
+
+(banner) → (and/c string? immutable?)
+Returns an immutable string for Racket’s start-up banner text (or the banner
+text for an embedding program, such as GRacket). The banner string ends with a
+newline.
+
+(current-command-line-arguments)
+ → (vectorof (and/c string? immutable?))
+(current-command-line-arguments argv) → void?
+  argv : (vectorof (and/c string? immutable?))
+A parameter that is initialized with command-line arguments when Racket starts
+(not including any command-line arguments that were treated as flags for the
+system).
+
+(current-thread-initial-stack-size) → exact-positive-integer?
+(current-thread-initial-stack-size size) → void?
+  size : exact-positive-integer?
+A parameter that provides a hint about how much space to reserve for a newly
+created thread’s local variables. The actual space used by a computation is
+affected by just-in-time (JIT) compilation, but it is otherwise
+platform-independent.
+
+(vector-set-performance-stats! results [thd]) → void?
+   results   :   (and/c vector?
+                        (not/c immutable?))
+  thd : (or/c thread? #f) = #f
+Sets elements in results to report current performance statistics. If thd is
+not #f, a particular set of thread-specific statistics are reported, otherwise
+a different set of global statics are reported.
+
+For global statistics, up to 11 elements are set in the vector, starting from
+the beginning. If results has n elements where n < 11, then the n elements are
+set to the first n performance-statistics values. The reported statistics
+values are as follows, in the order that they are set within results:
+
+  • 0: The same value as returned by current-process-milliseconds.
+
+  • 1: The same value as returned by current-milliseconds.
+
+  • 2: The same value as returned by current-gc-milliseconds.
+
+  • 3: The number of garbage collections performed since start-up.
+
+  • 4: The number of thread context switches performed since start-up.
+
+  • 5: The number of internal stack overflows handled since start-up.
+
+  • 6: The number of threads currently scheduled for execution (i.e., threads
+    that are running, not suspended, and not unscheduled due to a
+    synchronization).
+
+  • 7: The number of syntax objects read from compiled code since start-up.
+
+  • 8: The number of hash-table searches performed. When this counter reaches
+    the maximum value of a fixnum, it overflows to the most negative fixnum.
+
+  • 9: The number of additional hash slots searched to complete hash searches
+    (using double hashing). When this counter reaches the maximum value of a
+    fixnum, it overflows to the most negative fixnum.
+
+  • 10: The number of bytes allocated for machine code that is not reported by
+    current-memory-use.
+
+For thread-specific statistics, up to 4 elements are set in the vector:
+
+  • 0: #t if the thread is running, #f otherwise (same result as
+    thread-running?).
+
+  • 1: #t if the thread has terminated, #f otherwise (same result as
+    thread-dead?).
+
+  • 2: #t if the thread is currently blocked on a synchronizable event (or
+    sleeping for some number of milliseconds), #f otherwise.
+
+  • 3: The number of bytes currently in use for the thread’s continuation.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

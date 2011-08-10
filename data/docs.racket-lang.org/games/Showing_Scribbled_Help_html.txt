@@ -1,0 +1,24 @@
+▼  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+On this page:
+show-scribbling
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Showing Scribbled Help
+
+ (require games/show-scribbling)
+
+(show-scribbling mod-path section-tag) → (-> void?)
+  mod-path : module-path?
+  section-tag : string?
+Returns a thunk for opening a Scribbled section in the user’s HTML browser. The
+mod-path is the document’s main source module, and section-tag specifies the
+section in the document.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

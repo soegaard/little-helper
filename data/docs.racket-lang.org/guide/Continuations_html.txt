@@ -1,0 +1,114 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 10  Exceptions and Control
+10.1  Exceptions
+10.2  Prompts and Aborts
+10.3  Continuations
+[...search manuals...]
+  top← prev  up  next → 
+
+10.3 Continuations
+
+A continuation is a value that encapsulates a piece of an expression context.
+The call-with-composable-continuation function captures the current
+continuation starting outside the current function call and running up to the
+nearest enclosing prompt. (Keep in mind that each REPL interaction is
+implicitly wrapped in a prompt.)
+
+For example, in
+
+    (+ 1 (+ 1 (+ 1 0)))
+
+at the point where 0 is evaluated, the expression context includes three nested
+addition expressions. We can grab that context by changing 0 to grab the
+continuation before returning 0:
+
+    > (define saved-k #f)
+    > (define (save-it!)
+        (call-with-composable-continuation
+         (lambda (k) ; k is the captured continuation
+           (set! saved-k k)
+           0)))
+    > (+ 1 (+ 1 (+ 1 (save-it!))))
+    3
+
+
+The continuation saved in save-k encapsulates the program context (+ 1 (+ 1 (+
+1 ?))), where ? represents a place to plug in a result value—because that was
+the expression context when save-it! was called. The continuation is
+encapsulated so that it behaves like the function (lambda (v) (+ 1 (+ 1 (+ 1
+v)))):
+
+    > (saved-k 0)
+    3
+
+    > (saved-k 10)
+    13
+
+    > (saved-k (saved-k 0))
+    6
+
+
+The continuation captured by call-with-composable-continuation is determined
+dynamically, not syntactically. For example, with
+
+    > (define (sum n)
+        (if (zero? n)
+            (save-it!)
+            (+ n (sum (sub1 n)))))
+    > (sum 5)
+    15
+
+
+the continuation in saved-k becomes (lambda (x) (+ 5 (+ 4 (+ 3 (+ 2 (+ 1
+x)))))):
+
+    > (saved-k 0)
+    15
+
+    > (saved-k 10)
+    25
+
+
+A more traditional continuation operator in Racket (or Scheme) is
+call-with-current-continuation, which is usually abbreviated call/cc. It is
+like call-with-composable-continuation, but applying the captured continuation
+first aborts (to the current prompt) before restoring the saved continuation.
+In addition, Scheme systems traditionally support a single prompt at the
+program start, instead of allowing new prompts via
+call-with-continuation-prompt. Continuations as in Racket are sometimes called 
+delimited continuations, since a program can introduce new delimiting prompts,
+and continuations as captured by call-with-composable-continuation are
+sometimes called composable continuations, because they do not have a built-in
+abort.
+
+For an example of how continuations are useful, see More: Systems Programming
+with Racket. For specific control operators that have more convenient names
+than the primitives described here, see racket/control.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

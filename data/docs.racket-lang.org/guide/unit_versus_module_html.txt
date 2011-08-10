@@ -1,0 +1,79 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 14  Units (Components)
+14.1  Signatures and Units
+14.2  Invoking Units
+14.3  Linking Units
+14.4  First-Class Units
+14.5  Whole-module Signatures and Units
+14.6  Contracts for Units
+14.7  unit versus module
+[...search manuals...]
+  top← prev  up  next → 
+
+14.7 unit versus module
+
+As a form for modularity, unit complements module:
+
+  • The module form is primarily for managing a universal namespace. For
+    example, it allows a code fragment to refer specifically to the car
+    operation from racket/base—the one that extracts the first element of an
+    instance of the built-in pair datatype—as opposed to any number of other
+    functions with the name car. In other word, the module construct lets you
+    refer to the binding that you want.
+
+  • The unit form is for parameterizing a code fragment with respect to most
+    any kind of run-time value. For example, it allows a code fragment for work
+    with a car function that accepts a single argument, where the specific
+    function is determined later by linking the fragment to another. In other
+    words, the unit construct lets you refer to a binding that meets some
+    specification.
+
+The lambda and class forms, among others, also allow paremetrization of code
+with respect to values that are chosen later. In principle, any of those could
+be implemented in terms of any of the others. In practice, each form offers
+certain conveniences—such as allowing overriding of methods or especially
+simple application to values—that make them suitable for different purposes.
+
+The module form is more fundamental than the others, in a sense. After all, a
+program fragment cannot reliably refer to lambda, class, or unit form without
+the namespace management provided by module. At the same time, because
+namespace management is closely related to separate expansion and compilation,
+module boundaries end up as separate-compilation boundaries in a way that
+prohibits mutual dependencies among fragments. For similar reasons, module does
+not separate interface from implementation.
+
+Use unit when module by itself almost works, but when separately compiled
+pieces must refer to each other, or when you want a stronger separation between
+interface (i.e., the parts that need to be known at expansion and compilation
+time) and implementation (i.e., the run-time parts). More generally, use unit
+when you need to parameterize code over functions, datatypes, and classes, and
+when the parameterized code itself provides definitions to be linked with other
+parameterized code.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

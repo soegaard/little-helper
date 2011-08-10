@@ -1,0 +1,360 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 2  Making Pictures
+2.1  Pict Datatype
+2.2  Basic Pict Constructors
+2.3  Pict Combiners
+2.4  Pict Drawing Adjusters
+2.5  Bounding-Box Adjusters
+2.6  Pict Finders
+2.7  More Pict Constructors
+2.8  Miscellaneous
+2.9  Rendering
+On this page:
+dc
+blank
+text
+hline
+vline
+frame
+ellipse
+circle
+filled-ellipse
+disk
+rectangle
+filled-rectangle
+rounded-rectangle
+filled-rounded-rectangle
+bitmap
+arrow
+arrowhead
+pip-line
+pip-arrow-line
+pip-arrows-line
+pin-line
+pin-arrow-line
+pin-arrows-line
+text-style/ c
+bitmap-draft-mode
+[...search manuals...]
+  top← prev  up  next → 
+
+2.2 Basic Pict Constructors
+
+(dc draw w h) → pict?
+  draw : ((is-a?/c dc<%>) real? real? . -> . any)
+  w : real?
+  h : real?
+(dc draw w h a d) → pict?
+  draw : ((is-a?/c dc<%>) real? real? . -> . any)
+  w : real?
+  h : real?
+  a : real?
+  d : real?
+Creates an arbitrary self-rendering pict. The arguments to the rendering
+procedure will be a device context and top-left location for drawing.
+
+When the rendering procedure is called, the current pen and brush will be solid
+and in the pict’s color (and linewidth), and the scale and offset of the dc
+will be set. The text mode will be transparent, but the font and text colors
+are not guaranteed to be anything in particular.
+
+(blank [size]) → pict?
+  size : real? = 0
+(blank w h) → pict?
+  w : real?
+  h : real?
+(blank w a d) → pict?
+  w : real?
+  a : real?
+  d : real?
+(blank w h a d) → pict?
+  w : real?
+  h : real?
+  a : real?
+  d : real?
+Creates a pict that draws nothing. The one-argument case supplies a value used
+for both the width and height. In the one- and two-argument case, the ascent
+and descent are 0 for the resulting pict’s bounding box; in the three-argument
+case, the height is computed by adding the given ascent and descent.
+
+(text content [style size angle]) → pict?
+  content : string?
+  style : text-style/c = null
+  size : (integer-in 1 255) = 12
+  angle : real? = 0
+Creates a pict that draws text. For creating text picts within a slide
+presentation, see t. The size of the resulting pict may depend on the value of
+dc-for-text-size.
+
+The style argument must be one of the following:
+
+  • null — the default, same as 'default
+
+  • a font% object
+
+  • a font family symbol, such a 'roman (see font%)
+
+  • a font face string, such as "Helvetica" (see font%)
+
+  • (cons str sym) combining a face string and a font family (in case the face
+    is unavailable; see font%)
+
+  • (cons 'bold style) for a valid style
+
+  • (cons 'italic style)
+
+  • (cons 'subscript style)
+
+  • (cons 'superscript style)
+
+  • (cons 'caps style)
+
+  • (cons 'combine style) — allows kerning and ligatures (the default, unless
+    the 'modern family is specified)
+
+  • (cons 'no-combine style) — renders characters individually
+
+If both 'combine and 'no-combine are specified, the first one takes precedence.
+If caps is specified, the angle must be zero.
+
+The given size is in pixels, but it is ignored if a font% object is provided in
+the text-style.
+
+The angle is in radians, and positive values rotate counter-clockwise. For a
+non-zero angle, the resulting pict’s bounding box covers the rotated text, and
+the descent is zero and the ascent is the height.
+
+(hline w h [#:segment seg-length]) → pict?
+  w : real?
+  h : real?
+  seg-length : (or/c #f real?) = #f
+(vline w h [#:segment seg-length]) → pict?
+  w : real?
+  h : real?
+  seg-length : (or/c #f real?) = #f
+Straight lines, centered within their bounding boxes.
+
+(frame    pict                        
+        [ #:segment seg-length        
+          #:color color               
+          #:line-width width])   →   pict?
+  pict : pict?
+  seg-length : (or/c #f real?) = #f
+  color : (or/c #f string? (is-a?/c color<%>)) = #f
+  width : (or/c #f real?) = #f
+Frames a given pict. If the color or line width are provided, the override
+settings supplied by the context.
+
+(ellipse w h) → pict?
+  w : real?
+  h : real?
+(circle diameter) → pict?
+  diameter : real?
+(filled-ellipse w h) → pict?
+  w : real?
+  h : real?
+(disk diameter) → pict?
+  diameter : real?
+Unfilled and filled ellipses.
+
+(rectangle w h) → pict?
+  w : real?
+  h : real?
+(filled-rectangle    w                                    
+                     h                                    
+                   [ #:draw-border? draw-border?])   →   pict?
+  w : real?
+  h : real?
+  draw-border? : any/c = #t
+Unfilled and filled rectangles.
+
+If draw-border? is #f, then the pen is set to be transparent before drawing the
+rectangle.
+
+(rounded-rectangle    w                      
+                      h                      
+                    [ corner-radius          
+                      #:angle angle])   →   pict?
+  w : real?
+  h : real?
+  corner-radius : real? = -0.25
+  angle : real? = 0
+(filled-rounded-rectangle    w                      
+                             h                      
+                           [ corner-radius          
+                             #:angle angle])   →   pict?
+  w : real?
+  h : real?
+  corner-radius : real? = -0.25
+  angle : real? = 0
+Unfilled and filled rectangles with rounded corners. The corner-radius is used
+to determine how much rounding occurs in the corners. If it is a positive
+number, then it determines the radius of a circle touching the edges in each
+corner, and the rounding of the rectangle follow the edge of those circles. If
+it is a negative number, then the radius of the circles in the corners is the
+absolute value of the corner-radius times the smaller of width and height.
+
+The angle determines how much the rectangle is rotated, in radians.
+
+(bitmap img) → pict
+  img : (or/c path-string? (is-a?/c bitmap%))
+A pict that display a bitmap. When a path is provided, the image is loaded with
+the 'unknown/mask flag, which means that a mask bitmap is generated if the file
+contains a mask.
+
+If the bitmap cannot be loaded, if the given bitmap% object is not valid, or if
+the bitmap-draft-mode parameter is set to #t, the result pict draws the word
+“bitmap failed”.
+
+(arrow size radians) → pict?
+  size : real?
+  radians : real?
+(arrowhead size radians) → pict?
+  size : real?
+  radians : real?
+Creates an arrow or arrowhead in the specific direction within a size by size
+pict. Points on the arrow may extend slightly beyond the bounding box.
+
+(pip-line dx dy size) → pict?
+  dx : real?
+  dy : real?
+  size : real?
+(pip-arrow-line dx dy size) → pict?
+  dx : real?
+  dy : real?
+  size : real?
+(pip-arrows-line dx dy size) → pict?
+  dx : real?
+  dy : real?
+  size : real?
+Creates a line (with some number of arrowheads) as a zero-sized pict suitable
+for use with pin-over. The 0-sized picture contains the starting point.
+
+The size is used for the arrowhead size. Even though pip-line creates no
+arrowheads, it accepts the size argument for consistency with the other
+functions.
+
+(pin-line    pict                             
+             src                              
+             find-src                         
+             dest                             
+             find-dest                        
+           [ #:start-angle start-angle        
+             #:end-angle end-angle            
+             #:start-pull start-pull          
+             #:end-pull end-pull              
+             #:line-width line-width          
+             #:color color                    
+             #:under? under?])           →   pict?
+  pict : pict?
+  src : pict-path?
+  find-src : (pict? pict-path? . -> . (values real? real?))
+  dest : pict-path?
+  find-dest : (pict? pict-path? . -> . (values real? real?))
+  start-angle : (or/c real? #f) = #f
+  end-angle : (or/c real? #f) = #f
+  start-pull : real? = 1/4
+  end-pull : real? = 1/4
+  line-width : (or/c #f real?) = #f
+  color : (or/c #f string? (is-a?/c color%)) = #f
+  under? : any/c = #f
+(pin-arrow-line    arrow-size                       
+                   pict                             
+                   src                              
+                   find-src                         
+                   dest                             
+                   find-dest                        
+                 [ #:start-angle start-angle        
+                   #:end-angle end-angle            
+                   #:start-pull start-pull          
+                   #:end-pull end-pull              
+                   #:line-width line-width          
+                   #:color color                    
+                   #:under? under?                  
+                   #:solid? solid?]                 
+                   #:hide-arrowhead? any/c)    →   pict?
+  arrow-size : real?
+  pict : pict?
+  src : pict-path?
+  find-src : (pict? pict-path? . -> . (values real? real?))
+  dest : pict-path?
+  find-dest : (pict? pict-path? . -> . (values real? real?))
+  start-angle : (or/c real? #f) = #f
+  end-angle : (or/c real? #f) = #f
+  start-pull : real? = 1/4
+  end-pull : real? = 1/4
+  line-width : (or/c #f real?) = #f
+  color : (or/c #f string? (is-a?/c color%)) = #f
+  under? : any/c = #f
+  solid? : any/c = #t
+  any/c : #f
+(pin-arrows-line    arrow-size                       
+                    pict                             
+                    src                              
+                    find-src                         
+                    dest                             
+                    find-dest                        
+                  [ #:start-angle start-angle        
+                    #:end-angle end-angle            
+                    #:start-pull start-pull          
+                    #:end-pull end-pull              
+                    #:line-width line-width          
+                    #:color color                    
+                    #:under? under?                  
+                    #:solid? solid?]                 
+                    #:hide-arrowhead? any/c)    →   pict?
+  arrow-size : real?
+  pict : pict?
+  src : pict-path?
+  find-src : (pict? pict-path? . -> . (values real? real?))
+  dest : pict-path?
+  find-dest : (pict? pict-path? . -> . (values real? real?))
+  start-angle : (or/c real? #f) = #f
+  end-angle : (or/c real? #f) = #f
+  start-pull : real? = 1/4
+  end-pull : real? = 1/4
+  line-width : (or/c #f real?) = #f
+  color : (or/c #f string? (is-a?/c color%)) = #f
+  under? : any/c = #f
+  solid? : any/c = #t
+  any/c : #f
+Adds a line or line-with-arrows onto pict, using one of the pict-finding
+functions (e.g., lt-find) to extract the source and destination of the line.
+
+If under? is true, then the line and arrows are added under the existing pict
+drawing, instead of on top. If solid? is false, then the arrowheads are hollow
+instead of filled.
+
+The start-angle, end-angle, start-pull, and end-pull arguments control the
+curve of the line:
+
+  • The start-angle and end-angle arguments specify the direction of curve at
+    its start and end positions; if either is #f, it defaults to the angle of a
+    straight line from the start position to end position.
+
+  • The start-pull and end-pull arguments specify a kind of momentum for the
+    starting and ending angles; larger values preserve the angle longer.
+
+When the hide-arrowhead? argument is a true value, then space for the arrowhead
+is left behind, but the arrowhead itself is not drawn.
+
+The defaults produce a straight line.
+
+text-style/c : contract?
+A contract that matches the second argument of text.
+
+(bitmap-draft-mode) → boolean?
+(bitmap-draft-mode on?) → void?
+  on? : any/c
+A parameter that determines whether bitmap loads/uses a bitmap.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

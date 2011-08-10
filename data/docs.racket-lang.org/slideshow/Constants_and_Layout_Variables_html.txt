@@ -1,0 +1,87 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 3  Making Slides
+3.1  Primary Slide Functions
+3.2  Slide Registration
+3.3  Viewer Control
+3.4  Constants and Layout Variables
+3.5  Configuration
+3.6  Pict-Staging Helper
+3.7  Slides to Picts
+On this page:
+gap-size
+bullet
+o-bullet
+client-w
+client-h
+full-page
+titleless-page
+margin
+title-h
+printing?
+condense?
+[...search manuals...]
+  top← prev  up  next → 
+
+3.4 Constants and Layout Variables
+
+gap-size : 24
+A width commonly used for layout.
+
+bullet : pict?
+A filled bullet used by default by item.
+
+o-bullet : pict?
+A hollow bullet used by default by subitem.
+
+client-w
+Produces the width of the display area, minus margins. The result of the form
+changes if the margin is adjusted via set-margin!.
+
+client-h
+Produces the height of the display area, minus margins, but including the title
+area). The result of the form changes if the margin is adjusted via set-margin!
+.
+
+full-page
+Produces an empty pict that is the same size as the client area, which is like
+(blank client-w client-h).
+
+titleless-page
+Produces an empty pict that is the same size as the client area minus the title
+area in 'top layout mode, which is like (blank client-w (- client-h title-h (*
+2 gap-size))).
+
+margin
+Produces a number that corresponds to the current margin, which surrounds every
+side of the slide. The client area for a slide corresponds to the display area
+(which is always 1024 by 768) minus this margin on each side. The default
+margin is 20.
+
+The margin can be adjusted via set-margin!.
+
+title-h
+Produces a number that corresponds to the height of a title created by titlet.
+
+If titlet is changed via the current-titlet parameter, the title height should
+be updated via set-title-h!.
+
+printing? : boolean?
+The value is #t if slides are being generated for printed output, #f for normal
+on-screen display. Printing mode is normally triggered via the --print or --ps
+command-line flag.
+
+condense? : boolean?
+The value is #t if slides are being generated in condensed mode, #f for normal
+mode. Condensed mode is normally triggered via the --condense command-line
+flag.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

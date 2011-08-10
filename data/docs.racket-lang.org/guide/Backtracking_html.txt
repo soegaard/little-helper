@@ -1,0 +1,88 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 9  Regular Expressions
+ 9.1  Writing Regexp Patterns
+ 9.2  Matching Regexp Patterns
+ 9.3  Basic Assertions
+ 9.4  Characters and Character Classes
+ 9.5  Quantifiers
+ 9.6  Clusters
+ 9.7  Alternation
+ 9.8  Backtracking
+ 9.9  Looking Ahead and Behind
+9.10  An Extended Example
+[...search manuals...]
+  top← prev  up  next → 
+
+9.8 Backtracking
+
+We’ve already seen that greedy quantifiers match the maximal number of times,
+but the overriding priority is that the overall match succeed. Consider
+
+    > (regexp-match #rx"a*a" "aaaa")
+    '("aaaa")
+
+
+The regexp consists of two subregexps: a* followed by a. The subregexp a*
+cannot be allowed to match all four a’s in the text string aaaa, even though *
+is a greedy quantifier. It may match only the first three, leaving the last one
+for the second subregexp. This ensures that the full regexp matches
+successfully.
+
+The regexp matcher accomplishes this via a process called backtracking. The
+matcher tentatively allows the greedy quantifier to match all four a’s, but
+then when it becomes clear that the overall match is in jeopardy, it backtracks
+to a less greedy match of three a’s. If even this fails, as in the call
+
+    > (regexp-match #rx"a*aa" "aaaa")
+    '("aaaa")
+
+
+the matcher backtracks even further. Overall failure is conceded only when all
+possible backtracking has been tried with no success.
+
+Backtracking is not restricted to greedy quantifiers. Nongreedy quantifiers
+match as few instances as possible, and progressively backtrack to more and
+more instances in order to attain an overall match. There is backtracking in
+alternation too, as the more rightward alternates are tried when locally
+successful leftward ones fail to yield an overall match.
+
+Sometimes it is efficient to disable backtracking. For example, we may wish to
+commit to a choice, or we know that trying alternatives is fruitless. A
+nonbacktracking regexp is enclosed in (?>...).
+
+    > (regexp-match #rx"(?>a+)." "aaaa")
+    #f
+
+
+In this call, the subregexp ?>a+ greedily matches all four a’s, and is denied
+the opportunity to backtrack. So, the overall match is denied. The effect of
+the regexp is therefore to match one or more a’s followed by something that is
+definitely non-a.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

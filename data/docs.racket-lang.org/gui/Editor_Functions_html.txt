@@ -1,0 +1,411 @@
+▼  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+On this page:
+add-editor-keymap-functions
+add-pasteboard-keymap-functions
+add-text-keymap-functions
+append-editor-font-menu-items
+append-editor-operation-menu-items
+current-text-keymap-initializer
+editor-set-x-selection-mode
+get-the-editor-data-class-list
+get-the-snip-class-list
+map-command-as-meta-key
+open-input-graphical-file
+open-input-text-editor
+open-output-text-editor
+read-editor-global-footer
+read-editor-global-header
+read-editor-version
+text-editor-load-handler
+the-editor-wordbreak-map
+the-style-list
+write-editor-global-footer
+write-editor-global-header
+write-editor-version
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Editor Functions
+
+(add-editor-keymap-functions keymap) → void?
+  keymap : (is-a?/c keymap%)
+Given a keymap% object, the keymap is loaded with mappable functions that apply
+to all editor<%> objects:
+
+  • "copy-clipboard"
+
+  • "copy-append-clipboard"
+
+  • "cut-clipboard"
+
+  • "cut-append-clipboard"
+
+  • "paste-clipboard"
+
+  • "paste-x-selection"
+
+  • "delete-selection"
+
+  • "clear-selection"
+
+  • "undo"
+
+  • "redo"
+
+  • "select-all"
+
+(add-pasteboard-keymap-functions keymap) → void?
+  keymap : (is-a?/c keymap%)
+Given a keymap% object, the table is loaded with mappable functions that apply
+to pasteboard% objects. Currently, there are no such functions.
+
+See also add-editor-keymap-functions.
+
+(add-text-keymap-functions keymap) → void?
+  keymap : (is-a?/c keymap%)
+Given a keymap% object, the table is loaded with functions that apply to all
+text% objects:
+
+  • "forward-character"
+
+  • "backward-character"
+
+  • "previous-line"
+
+  • "next-line"
+
+  • "previous-page"
+
+  • "next-page"
+
+  • "forward-word"
+
+  • "backward-word"
+
+  • "forward-select"
+
+  • "backward-select"
+
+  • "select-down"
+
+  • "select-up"
+
+  • "select-page-up"
+
+  • "select-page-down"
+
+  • "forward-select-word"
+
+  • "backward-select-word"
+
+  • "beginning-of-file"
+
+  • "end-of-file"
+
+  • "beginning-of-line"
+
+  • "end-of-line"
+
+  • "select-to-beginning-of-file"
+
+  • "select-to-end-of-file"
+
+  • "select-to-beginning-of-line"
+
+  • "select-to-end-of-line"
+
+  • "copy-clipboard"
+
+  • "copy-append-clipboard"
+
+  • "cut-clipboard"
+
+  • "cut-append-clipboard"
+
+  • "paste-clipboard"
+
+  • "paste-x-selection"
+
+  • "delete-selection"
+
+  • "delete-previous-character"
+
+  • "delete-next-character"
+
+  • "clear-selection"
+
+  • "delete-to-end-of-line"
+
+  • "delete-next-word"
+
+  • "delete-previous-word"
+
+  • "delete-line"
+
+  • "undo"
+
+  • "redo"
+
+See also add-editor-keymap-functions.
+
+(append-editor-font-menu-items menu) → void?
+  menu : (or/c (is-a?/c menu%) (is-a?/c popup-menu%))
+Appends menu items to a given menu (not a popup menu) to implement a standard
+set of font-manipulation operations, such as changing the font face or style.
+The callback for each menu item uses get-edit-target-object in top-level-window
+<%> (finding the frame by following a chain of parents until a frame is
+reached); if the result is an editor<%> object, change-style in text% or
+change-style in pasteboard% is called on the editor.
+
+(append-editor-operation-menu-items    menu                
+                                     [ text-only?])   →   void?
+  menu : (or/c (is-a?/c menu%) (is-a?/c popup-menu%))
+  text-only? : any/c = #t
+Appends menu items to a given menu (not a popup menu) to implement the standard
+editor operations, such as cut and paste. The callback for each menu item uses
+get-edit-target-object in top-level-window<%> (finding the frame by following a
+chain of parents until a frame is reached); if the result is an editor<%>
+object, do-edit-operation in editor<%> is called on the editor.
+
+If text-only? is #f, then menu items that insert non-text snips (such as Insert
+Image...) are appended to the menu.
+
+(current-text-keymap-initializer)
+ → ((is-a?/c keymap%) . -> . any/c)
+(current-text-keymap-initializer proc) → void?
+  proc : ((is-a?/c keymap%) . -> . any/c)
+Parameter that specifies a keymap-initialization procedure. This procedure is
+called to initialize the keymap of a text-field% object or a text% object
+created by graphical-read-eval-print-loop.
+
+The initializer takes a keymap object and returns nothing. The default
+initializer chains the given keymap to an internal keymap that implements
+standard text editor keyboard and mouse bindings for cut, copy, paste, undo,
+and select-all. The right mouse button is mapped to popup an edit menu when the
+button is released. On Unix, start-of-line (Ctl-A) and end-of-line (Ctl-E) are
+also mapped.
+
+(editor-set-x-selection-mode on) → void?
+  on : any/c
+On Unix, editor selections conform to the X11 Windows selection conventions. If
+on is #f, the behavior is switched exclusively to the clipboard-based
+convention (where copy must be explicitly requested before a paste).
+
+(get-the-editor-data-class-list)
+ → (is-a?/c editor-data-class-list<%>)
+Gets the editor data class list instance for the current eventspace.
+
+(get-the-snip-class-list) → (is-a?/c snip-class-list<%>)
+Gets the snip class list instance for the current eventspace.
+
+(map-command-as-meta-key on?) → void?
+  on? : any/c
+(map-command-as-meta-key) → boolean?
+Determines the interpretation of m: for a keymap% mapping on Mac OS X. See also
+map-function in keymap%.
+
+First case:
+
+If on? is #t, m: corresponds to the Command key. If on? is #f, then m:
+corresponds to no key on Mac OS X.
+
+Second case:
+
+Returns #t if m: corresponds to Command, #f otherwise.
+
+(open-input-graphical-file filename) → input-port?
+  filename : string?
+Opens filename (in 'binary mode) and checks whether it looks like a “graphical”
+file in editor format. If the file does not appear to be an editor file, the
+file port is returned with line counting enabled. Otherwise, the file is loaded
+into an editor, and the result port is created with open-input-text-editor.
+
+(open-input-text-editor                           
+     text-editor                                  
+   [ start-position                               
+     end-position                                 
+     snip-filter                                  
+     port-name                                    
+     expect-to-read-all?                          
+     #:lock-while-reading? lock-while-reading?])  
+ → input-port
+  text-editor : (is-a?/c text%)
+  start-position : exact-nonnegative-integer? = 0
+  end-position : (or/c exact-nonnegative-integer? 'end) = 'end
+  snip-filter : ((is-a?/c snip%) . -> . any/c) = (lambda (s) s)
+  port-name : any/c = text-editor
+  expect-to-read-all? : any/c = #f
+  lock-while-reading? : any/c = #f
+Creates an input port that draws its content from text-editor. The editor
+content between positions start-position and end-position is the content of the
+port. If end-position is 'end, the content runs until the end of the editor. If
+a snip that is not a string-snip% object spans start-position or end-position,
+the entire snip contributes to the port. If a string-snip% instance spans
+start-position, only the part of the snip after start-position contributes, and
+if a string-snip% object spans end-position, only the part before end-position
+contributes.
+
+An instance of string-snip% in text-editor generates a character sequence in
+the resulting port. All other kinds of snips are passed to snip-filter to
+obtain a “special” value for the port. If a snip is returned as the first
+result from snip-filter, and if the snip is an instance of readable-snip<%>,
+the snip generates a special value for the port through the read-special
+method. If snip-filter returns any other kind of snip, it is copied for the
+special result. Finally, a non-snip first result from snip-filter is used
+directly as the special result.
+
+The port-name argument is used for the input port’s name. The
+expect-to-read-all? argument is a performance hint; use #t if the entire port’s
+stream will be read.
+
+The result port must not be used if text-editor changes in any of the following
+ways: a snip is inserted (see after-insert), a snip is deleted (see
+after-delete), a snip is split (see after-split-snip), snips are merged (see
+after-merge-snips), or a snip changes its count (which is rare; see recounted).
+The get-revision-number method can be used to detect any of these changes.
+
+To help guard against such uses, if lock-while-reading? argument is a true
+value, then open-input-text-editor will lock the text-editor and call
+begin-edit-sequence before it returns and unlock it and call end-edit-sequence
+after it is safe to use the above methods. (In some cases, it will not lock the
+editor or put it in an edit sequence at all, if using those methods are always
+safe.)
+
+(open-output-text-editor    text-editor           
+                          [ start-position        
+                            special-filter        
+                            port-name])      →   output-port
+  text-editor : (is-a?/c text%)
+   start-position   :   (or/c exact-nonnegative-integer? (one/of 'end))
+                    =   'end
+  special-filter : (any/c . -> . any/c) = (lambda (x) x)
+  port-name : any/c = text-editor
+Creates an output port that delivers its content to text-editor. The content is
+written to text-editor starting at the position start-position, where 'end
+indicates that output should start at the text editor’s current end position.
+
+If special-filter is provided, it is applied to any value written to the port
+with write-special, and the result is inserted in its place. If a special value
+is a snip% object, it is inserted into the editor. Otherwise, the special value
+is displayed into the editor.
+
+If line counting is enabled for the resulting output port, then the port will
+report the line, offset from the line’s start, and position within the editor
+at which the port writes data.
+
+(read-editor-global-footer in) → boolean?
+  in : (is-a?/c editor-stream-in%)
+See read-editor-global-header. Call read-editor-global-footer even if
+read-editor-global-header returns #f.
+
+(read-editor-global-header in) → boolean?
+  in : (is-a?/c editor-stream-in%)
+Reads data from in to initialize for reading editors from the stream. The
+return value is #t if the read succeeds, or #f otherwise.
+
+One or more editors can be read from the stream by calling the editor’s
+read-from-file method. (The number of editors to be read must be known by the
+application beforehand.) When all editors are read, call
+read-editor-global-footer. Calls to read-editor-global-header and
+read-editor-global-footer must bracket any call to read-from-file, and only one
+stream at a time can be read using these methods or written using
+write-editor-global-header and write-editor-global-footer.
+
+When reading from streams that span Racket versions, use read-editor-version
+before this procedure.
+
+(read-editor-version    in                     
+                        in-base                
+                        parse-format?          
+                      [ raise-errors?])   →   boolean?
+  in : (is-a?/c editor-stream-in%)
+  in-base : (is-a?/c editor-stream-in-base%)
+  parse-format? : any/c
+  raise-errors? : any/c = #t
+Reads version information from in-base, where in-base is the base for in. The
+version information parsed from in-base is recorded in in for later
+version-sensitive parsing. The procedure result is true if the version
+information was read successfully and if the version is supported.
+
+If parse-format? is true, then in-base is checked for an initial "WXME" format
+indicator. Use #f when "WXME" has been consumed already by format-dispatching
+code.
+
+If raise-errors? is true, then an error in reading triggers an exception,
+instead of a #f result.
+
+(text-editor-load-handler  [ filename]                    
+                             expected-module-name)   →   any/c
+  filename : path = string
+  expected-module-name : (or/c symbol? #f)
+This procedure is a load handler for use with current-load.
+
+The handler recognizes Racket editor-format files (see File Format) and decodes
+them for loading. It is normally installed as GRacket starts (see Running
+Racket or GRacket).
+
+The handler recognizes editor files by the first twelve characters of the file:
+WXME01‹digit›‹digit› ## . Such a file is opened for loading by creating a text%
+object, loading the file into the object with insert-file, and then converting
+the editor content into a port with open-input-text-editor. After obtaining a
+port in this way, the content is read in essentially the same way as by the
+default Racket load handler. The difference is that the editor may contain
+instances of readable-snip<%>, which are “read” though the snips’ read-special
+method; see open-input-text-editor for details.
+
+the-editor-wordbreak-map : (is-a?/c editor-wordbreak-map%)
+See editor-wordbreak-map%.
+
+the-style-list : (is-a?/c style-list%)
+See style-list%.
+
+(write-editor-global-footer out) → boolean?
+  out : (is-a?/c editor-stream-out%)
+See write-editor-global-header. Call write-editor-global-footer even if
+write-editor-global-header returns #f.
+
+(write-editor-global-header out) → boolean?
+  out : (is-a?/c editor-stream-out%)
+Writes data to out, initializing it for writing editors to the stream. The
+return value is #t if the write succeeds, or #f otherwise.
+
+One or more editors can be written to the stream by calling the editor’s
+write-to-file method. When all editors are written, call
+write-editor-global-footer. Calls to write-editor-global-header and
+write-editor-global-footer must bracket any call to write-to-file, and only one
+stream at a time can be written using these methods or read using
+read-editor-global-header and read-editor-global-footer.
+
+To support streams that span Racket versions, use write-editor-version before
+this procedure.
+
+See also File Format.
+
+(write-editor-version out out-base) → boolean?
+  out : (is-a?/c editor-stream-out%)
+  out-base : (is-a?/c editor-stream-out-base%)
+Writes version information to out-base in preparation for writing editor
+information to the stream out.
+
+The out argument is currently not used, but out-base should be the base for
+out. In the future, out may record information about the version for later
+version-sensitive output.
+
+The result is #t if the write succeeded, #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

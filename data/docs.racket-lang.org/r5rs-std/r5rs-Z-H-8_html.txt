@@ -1,0 +1,145 @@
+[Go to first, previous, next page;   contents;   index]
+
+Chapter 5
+
+Program structure
+
+5.1  Programs
+
+A Scheme program consists of a sequence of expressions, definitions, and syntax
+definitions. Expressions are described in chapter 4; definitions and syntax
+definitions are the subject of the rest of the present chapter.
+
+Programs are typically stored in files or entered interactively to a running
+Scheme system, although other paradigms are possible; questions of user
+interface lie outside the scope of this report. (Indeed, Scheme would still be
+useful as a notation for expressing computational methods even in the absence
+of a mechanical implementation.)
+
+Definitions and syntax definitions occurring at the top level of a program can
+be interpreted declaratively. They cause bindings to be created in the top
+level environment or modify the value of existing top-level bindings.
+Expressions occurring at the top level of a program are interpreted
+imperatively; they are executed in order when the program is invoked or loaded,
+and typically perform some kind of initialization.
+
+At the top level of a program (begin <form[1]> ...) is equivalent to the
+sequence of expressions, definitions, and syntax definitions that form the body
+of the begin.
+
+5.2  Definitions
+
+Definitions are valid in some, but not all, contexts where expressions are
+allowed. They are valid only at the top level of a <program> and at the
+beginning of a <body>.
+
+A definition should have one of the following forms:
+
+  • (define <variable> <expression>)
+
+  • (define (<variable> <formals>) <body>)
+
+    <Formals> should be either a sequence of zero or more variables, or a
+    sequence of one or more variables followed by a space-delimited period and
+    another variable (as in a lambda expression). This form is equivalent to
+    (define <variable>
+      (lambda (<formals>) <body>)).
+
+  • (define (<variable> . <formal>) <body>)
+
+    <Formal> should be a single variable. This form is equivalent to (define 
+    <variable>
+      (lambda <formal> <body>)).
+
+5.2.1  Top level definitions
+
+At the top level of a program, a definition (define <variable> <expression>)
+
+has essentially the same effect as the assignment expression (set! <variable> 
+<expression>) if <variable> is bound. If <variable> is not bound, however, then
+the definition will bind <variable> to a new location before performing the
+assignment, whereas it would be an error to perform a set! on an unbound
+variable.
+
+(define add3
+  (lambda (x) (+ x 3)))
+(add3 3)                                    ===>  6
+(define first car)
+(first '(1 2))                              ===>  1
+
+Some implementations of Scheme use an initial environment in which all possible
+variables are bound to locations, most of which contain undefined values. Top
+level definitions in such an implementation are truly equivalent to
+assignments.
+
+5.2.2  Internal definitions
+
+Definitions may occur at the beginning of a <body> (that is, the body of a
+lambda, let, let*, letrec, let-syntax, or letrec-syntax expression or that of a
+definition of an appropriate form). Such definitions are known as internal
+definitions as opposed to the top level definitions described above. The
+variable defined by an internal definition is local to the <body>. That is,
+<variable> is bound rather than assigned, and the region of the binding is the
+entire <body>. For example,
+
+(let ((x 5))
+  (define foo (lambda (y) (bar x y)))
+  (define bar (lambda (a b) (+ (* a b) a)))
+  (foo (+ x 3)))                        ===>  45
+
+A <body> containing internal definitions can always be converted into a
+completely equivalent letrec expression. For example, the let expression in the
+above example is equivalent to
+
+(let ((x 5))
+  (letrec ((foo (lambda (y) (bar x y)))
+           (bar (lambda (a b) (+ (* a b) a))))
+    (foo (+ x 3))))
+
+Just as for the equivalent letrec expression, it must be possible to evaluate
+each <expression> of every internal definition in a <body> without assigning or
+referring to the value of any <variable> being defined.
+
+Wherever an internal definition may occur (begin <definition[1]> ...) is
+equivalent to the sequence of definitions that form the body of the begin.
+
+5.3  Syntax definitions
+
+Syntax definitions are valid only at the top level of a <program>. They have
+the following form:
+
+(define-syntax <keyword> <transformer spec>)
+
+<Keyword> is an identifier, and the <transformer spec> should be an instance of
+syntax-rules. The top-level syntactic environment is extended by binding the
+<keyword> to the specified transformer.
+
+There is no define-syntax analogue of internal definitions.
+
+Although macros may expand into definitions and syntax definitions in any
+context that permits them, it is an error for a definition or syntax definition
+to shadow a syntactic keyword whose meaning is needed to determine whether some
+form in the group of forms that contains the shadowing definition is in fact a
+definition, or, for internal definitions, is needed to determine the boundary
+between the group and the expressions that follow the group. For example, the
+following are errors:
+
+(define define 3)
+
+(begin (define begin list))
+
+(let-syntax
+  ((foo (syntax-rules ()
+          ((foo (proc args ...) body ...)
+           (define proc
+             (lambda (args ...)
+               body ...))))))
+  (let ((x 3))
+    (foo (plus x y) (+ x y))
+    (define foo x)
+    (plus foo x)))
+
+        
+
+[Go to first, previous, next page;   contents;   index]
+

@@ -1,0 +1,651 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+► 2  Automata: Compiling State Machines
+2.1  Machines
+2.2  Deterministic Finite Automata
+2.3  Non-Deterministic Finite Automata
+2.4  Non-Deterministic Finite Automata (with epsilon transitions)
+2.5  Regular Expressions
+On this page:
+2.1 Machines
+machine
+machine-accepting
+machine-accepts?
+machine-accepts?/ prefix-closed
+machine-null
+machine-epsilon
+machine-sigma*
+machine-complement
+machine-star
+machine-union
+machine-intersect
+machine-seq
+machine-seq*
+2.2 Deterministic Finite Automata
+dfa
+2.3 Non-Deterministic Finite Automata
+nfa
+2.4 Non-Deterministic Finite Automata (with epsilon transitions)
+epsilon
+nfa/ ep
+2.5 Regular Expressions
+re
+complement
+seq
+union
+star
+epsilon
+nullset
+dseq
+rec
+define-re-transformer
+2.5.1 Extensions
+opt
+plus
+rep
+difference
+intersection
+seq/ close
+2.5.2 Examples
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Automata: Compiling State Machines
+
+Jay McCarthy <jay@racket-lang.org>
+
+ (require unstable/automata)
+
+This package provides macros and functions for writing state machines over
+racket/match patterns (as opposed to concrete characters.)
+
+2.1 Machines
+
+ (require unstable/automata/machine)
+
+Each of the subsequent macros compile to instances of the machines provided by
+this module. This is a documented feature of the modules, so these functions
+should be used to, for example, determine if the machine is currently
+accepting.
+
+(struct machine (next))
+  next : (any/c . -> . machine?)
+An applicable structure for machines. When the structure is applied, the next
+field is used as the procedure.
+
+(struct machine-accepting machine (next))
+  next : (any/c . -> . machine?)
+A sub-structure of machine that is accepting.
+
+(machine-accepts? m i) → boolean?
+  m : machine?
+  i : (listof any/c)
+Returns #t if m ends in an accepting state after consuming every element of i.
+
+(machine-accepts?/prefix-closed m i) → boolean?
+  m : machine?
+  i : (listof any/c)
+Returns #t if m stays in an accepting state during the consumption of every
+element of i.
+
+machine-null : machine?
+A machine that is never accepting.
+
+machine-epsilon : machine?
+A machine that is initially accepting and never accepting afterwards.
+
+machine-sigma* : machine?
+A machine that is always accepting.
+
+(machine-complement m) → machine?
+  m : machine?
+A machine that inverts the acception criteria of m.
+
+(machine-star m) → machine?
+  m : machine?
+A machine that simulates the Kleene star of m. m may be invoked many times.
+
+(machine-union m0 m1) → machine?
+  m0 : machine?
+  m1 : machine?
+A machine that simulates the union of m0 and m1.
+
+(machine-intersect m0 m1) → machine?
+  m0 : machine?
+  m1 : machine?
+A machine that simulates the intersection of m0 and m1.
+
+(machine-seq m0 m1) → machine?
+  m0 : machine?
+  m1 : machine?
+A machine that simulates the sequencing of m0 and m1. m1 may be invoked many
+times.
+
+(machine-seq* m0 make-m1) → machine?
+  m0 : machine?
+  make-m1 : (-> machine?)
+A machine that simulates the sequencing of m0 and (make-m1). (make-m1) may be
+invoked many times.
+
+2.2 Deterministic Finite Automata
+
+ (require unstable/automata/dfa)
+
+This module provides a macro for deterministic finite automata.
+
+(dfa start
+     (end ...)
+     [state ([evt next-state]
+             ...)]
+     ...)
+ 
+       start   :   identifier?
+       end   :   identifier?
+       state   :   identifier?
+       next-state   :   identifier?
+
+A machine that starts in state start where each state behaves as specified in
+the rules. If a state is in (end ...), then it is constructed with
+machine-accepting. next-state need not be a state from this DFA.
+
+Examples:
+
+    (define M
+      (dfa s1 (s1)
+           [s1 ([0 s2]
+                [(? even?) s1])]
+           [s2 ([0 s1]
+                [(? even?) s2])]))
+    > (machine-accepts? M (list 2 0 4 0 2))
+    #t
+
+    > (machine-accepts? M (list 0 4 0 2 0))
+    #f
+
+    > (machine-accepts? M (list 2 0 2 2 0 8))
+    #t
+
+    > (machine-accepts? M (list 0 2 0 0 10 0))
+    #t
+
+    > (machine-accepts? M (list))
+    #t
+
+    > (machine-accepts? M (list 4 0))
+    #f
+
+
+
+2.3 Non-Deterministic Finite Automata
+
+ (require unstable/automata/nfa)
+
+This module provides a macro for non-deterministic finite automata.
+
+(nfa (start:id ...)
+     (end:id ...)
+     [state:id ([evt:expr (next-state:id ...)]
+                ...)]
+     ...)
+ 
+       start   :   identifier?
+       end   :   identifier?
+       state   :   identifier?
+       next-state   :   identifier?
+
+A machine that starts in state (set start ...) where each state behaves as
+specified in the rules. If a state is in (end ...), then the machine is
+accepting. next-state must be a state from this NFA.
+
+These machines are efficiently compiled to use the smallest possible bit-string
+as a set representation and unsafe numeric operations where appropriate for
+inspection and adjusting the sets.
+
+Examples:
+
+    (define M
+      (nfa (s1 s3) (s1 s3)
+           [s1 ([0 (s2)]
+                [1 (s1)])]
+           [s2 ([0 (s1)]
+                [1 (s2)])]
+           [s3 ([0 (s3)]
+                [1 (s4)])]
+           [s4 ([0 (s4)]
+                [1 (s3)])]))
+    > (machine-accepts? M (list 1 0 1 0 1))
+    #t
+
+    > (machine-accepts? M (list 0 1 0 1 0))
+    #t
+
+    > (machine-accepts? M (list 1 0 1 1 0 1))
+    #t
+
+    > (machine-accepts? M (list 0 1 0 0 1 0))
+    #t
+
+    > (machine-accepts? M (list))
+    #t
+
+    > (machine-accepts? M (list 1 0))
+    #f
+
+
+
+2.4 Non-Deterministic Finite Automata (with epsilon transitions)
+
+ (require unstable/automata/nfa-ep)
+
+This module provides a macro for non-deterministic finite automata with epsilon
+transitions.
+
+epsilon
+A binding for use in epsilon transitions.
+
+(nfa/ep (start:id ...)
+        (end:id ...)
+        [state:id ([epsilon (epsilon-state:id ...)]
+                   ...
+                   [evt:expr (next-state:id ...)]
+                   ...)]
+        ...)
+ 
+       start   :   identifier?
+       end   :   identifier?
+       state   :   identifier?
+       epsilon-state   :   identifier?
+       next-state   :   identifier?
+
+Extends nfa with epsilon transitions, which must be listed first for each
+state.
+
+Examples:
+
+    (define M
+      (nfa/ep (s0) (s1 s3)
+              [s0 ([epsilon (s1)]
+                   [epsilon (s3)])]
+              [s1 ([0 (s2)]
+                   [1 (s1)])]
+              [s2 ([0 (s1)]
+                   [1 (s2)])]
+              [s3 ([0 (s3)]
+                   [1 (s4)])]
+              [s4 ([0 (s4)]
+                   [1 (s3)])]))
+    > (machine-accepts? M (list 1 0 1 0 1))
+    #t
+
+    > (machine-accepts? M (list 0 1 0 1 0))
+    #t
+
+    > (machine-accepts? M (list 1 0 1 1 0 1))
+    #t
+
+    > (machine-accepts? M (list 0 1 0 0 1 0))
+    #t
+
+    > (machine-accepts? M (list))
+    #t
+
+    > (machine-accepts? M (list 1 0))
+    #f
+
+
+
+2.5 Regular Expressions
+
+ (require unstable/automata/re)
+
+This module provides a macro for regular expression compilation.
+
+(re re-pat)
+ 
+re-pat   =   (rec id re-pat)
+         |   ,expr
+         |   (complement re-pat)
+         |   (seq re-pat ...)
+         |   (union re-pat ...)
+         |   (star re-pat)
+         |   epsilon
+         |   nullset
+         |   re-transformer
+         |   (re-transformer . datum)
+         |   (dseq pat re-pat)
+         |   pat
+Compiles a regular expression over match patterns to a machine.
+
+The interpretation of the pattern language is mostly intuitive. The pattern
+language may be extended with define-re-transformer. dseq allows bindings of
+the match pattern to be used in the rest of the regular expression. (Thus, they
+are not really regular expressions.) unquote escapes to Racket to evaluate an
+expression that evaluates to a regular expression (this happens once, at
+compile time.) rec binds a Racket identifier to a delayed version of the inner
+expression; even if the expression is initially accepting, this delayed version
+is never accepting.
+
+The compiler will use an NFA, provided complement and dseq are not used.
+Otherwise, many NFAs connected with the machine simulation functions from
+unstable/automata/machine are used.
+
+complement
+seq
+union
+star
+epsilon
+nullset
+dseq
+rec
+Bindings for use in re.
+
+(define-re-transformer id expr)
+Binds id as an regular expression transformer used by the re macro. The
+expression should evaluate to a function that accepts a syntax object and
+returns a syntax object that uses the regular expression pattern language.
+
+2.5.1 Extensions
+
+ (require unstable/automata/re-ext)
+
+This module provides a few transformers that extend the syntax of regular
+expression patterns.
+
+(opt re-pat)
+Optionally matches re-pat.
+(plus re-pat)
+Matches one or more re-pat in sequence.
+(rep re-pat num)
+Matches re-pat in sequence num times, where num must be syntactically a number.
+(difference re-pat_0 re-pat_1)
+Matches everything that re-pat_0 does, except what re-pat_1 matches.
+(intersection re-pat_0 re-pat_1)
+Matches the intersection of re-pat_0 and re-pat_1.
+(seq/close re-pat ...)
+Matches the prefix closure of the sequence (seq re-pat ...).
+
+2.5.2 Examples
+
+Examples:
+
+    > (define-syntax-rule (test-re R (succ ...) (fail ...))
+        (let ([r (re R)])
+          (printf "Success: ~v => ~v\n" succ (machine-accepts? r succ))
+          ...
+          (printf "Failure: ~v => ~v\n" fail (machine-accepts? r fail))
+          ...))
+    > (test-re epsilon
+                [(list)]
+                [(list 0)])
+    Success: '() => #t
+
+    Failure: '(0) => #f
+
+    > (test-re nullset
+               []
+               [(list) (list 1)])
+    Failure: '() => #f
+
+    Failure: '(1) => #f
+
+    > (test-re "A"
+               [(list "A")]
+               [(list)
+                (list "B")])
+    Success: '("A") => #t
+
+    Failure: '() => #f
+
+    Failure: '("B") => #f
+
+    > (test-re (complement "A")
+               [(list)
+                (list "B")
+                (list "A" "A")]
+               [(list "A")])
+    Success: '() => #t
+
+    Success: '("B") => #t
+
+    Success: '("A" "A") => #t
+
+    Failure: '("A") => #f
+
+    > (test-re (union 0 1)
+               [(list 1)
+                (list 0)]
+               [(list)
+                (list 0 1)
+                (list 0 1 1)])
+    Success: '(1) => #t
+
+    Success: '(0) => #t
+
+    Failure: '() => #f
+
+    Failure: '(0 1) => #f
+
+    Failure: '(0 1 1) => #f
+
+    > (test-re (seq 0 1)
+               [(list 0 1)]
+               [(list)
+                (list 0)
+                (list 0 1 1)])
+    Success: '(0 1) => #t
+
+    Failure: '() => #f
+
+    Failure: '(0) => #f
+
+    Failure: '(0 1 1) => #f
+
+    > (test-re (star 0)
+               [(list)
+                (list 0)
+                (list 0 0)]
+               [(list 1)])
+    Success: '() => #t
+
+    Success: '(0) => #t
+
+    Success: '(0 0) => #t
+
+    Failure: '(1) => #f
+
+    > (test-re (opt "A")
+               [(list)
+                (list "A")]
+               [(list "B")])
+    Success: '() => #t
+
+    Success: '("A") => #t
+
+    Failure: '("B") => #f
+
+    > (define-re-transformer my-opt
+       (syntax-rules ()
+         [(_ pat)
+          (union epsilon pat)]))
+    > (test-re (my-opt "A")
+               [(list)
+                (list "A")]
+               [(list "B")])
+    Success: '() => #t
+
+    Success: '("A") => #t
+
+    Failure: '("B") => #f
+
+    > (test-re (plus "A")
+               [(list "A")
+                (list "A" "A")]
+               [(list)])
+    Success: '("A") => #t
+
+    Success: '("A" "A") => #t
+
+    Failure: '() => #f
+
+    > (test-re (rep "A" 3)
+               [(list "A" "A" "A")]
+               [(list)
+                (list "A")
+                (list "A" "A")])
+    Success: '("A" "A" "A") => #t
+
+    Failure: '() => #f
+
+    Failure: '("A") => #f
+
+    Failure: '("A" "A") => #f
+
+    > (test-re (difference (? even?) 2)
+               [(list 4)
+                (list 6)]
+               [(list 3)
+                (list 2)])
+    Success: '(4) => #t
+
+    Success: '(6) => #t
+
+    Failure: '(3) => #f
+
+    Failure: '(2) => #f
+
+    > (test-re (intersection (? even?) 2)
+               [(list 2)]
+               [(list 1)
+                (list 4)])
+    Success: '(2) => #t
+
+    Failure: '(1) => #f
+
+    Failure: '(4) => #f
+
+    > (test-re (complement (seq "A" (opt "B")))
+               [(list "A" "B" "C")]
+               [(list "A")
+                (list "A" "B")])
+    Success: '("A" "B" "C") => #t
+
+    Failure: '("A") => #f
+
+    Failure: '("A" "B") => #f
+
+    > (test-re (seq epsilon 1)
+               [(list 1)]
+               [(list 0)
+                (list)])
+    Success: '(1) => #t
+
+    Failure: '(0) => #f
+
+    Failure: '() => #f
+
+    > (test-re (seq 1 epsilon)
+               [(list 1)]
+               [(list 0)
+                (list)])
+    Success: '(1) => #t
+
+    Failure: '(0) => #f
+
+    Failure: '() => #f
+
+    > (test-re (seq epsilon
+                    (union (seq (star 1) (star (seq 0 (star 1) 0 (star 1))))
+                           (seq (star 0) (star (seq 1 (star 0) 1 (star 0)))))
+                    epsilon)
+               [(list 1 0 1 0 1)
+                (list 0 1 0 1 0)
+                (list 1 0 1 1 0 1)
+                (list 0 1 0 0 1 0)
+                (list)]
+               [(list 1 0)])
+    Success: '(1 0 1 0 1) => #t
+
+    Success: '(0 1 0 1 0) => #t
+
+    Success: '(1 0 1 1 0 1) => #t
+
+    Success: '(0 1 0 0 1 0) => #t
+
+    Success: '() => #t
+
+    Failure: '(1 0) => #f
+
+    > (test-re (star (complement 1))
+               [(list 0 2 3 4)
+                (list)
+                (list 2)
+                (list 234 5 9 1 9 0)
+                (list 1 0)
+                (list 0 1)]
+               [(list 1)])
+    Success: '(0 2 3 4) => #t
+
+    Success: '() => #t
+
+    Success: '(2) => #t
+
+    Success: '(234 5 9 1 9 0) => #t
+
+    Success: '(1 0) => #t
+
+    Success: '(0 1) => #t
+
+    Failure: '(1) => #f
+
+    > (test-re (dseq x (? (curry equal? x)))
+               [(list 0 0)
+                (list 1 1)]
+               [(list)
+                (list 1)
+                (list 1 0)])
+    Success: '(0 0) => #t
+
+    Success: '(1 1) => #t
+
+    Failure: '() => #f
+
+    Failure: '(1) => #f
+
+    Failure: '(1 0) => #f
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

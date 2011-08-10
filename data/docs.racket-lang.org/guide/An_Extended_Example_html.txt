@@ -1,0 +1,131 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 9  Regular Expressions
+ 9.1  Writing Regexp Patterns
+ 9.2  Matching Regexp Patterns
+ 9.3  Basic Assertions
+ 9.4  Characters and Character Classes
+ 9.5  Quantifiers
+ 9.6  Clusters
+ 9.7  Alternation
+ 9.8  Backtracking
+ 9.9  Looking Ahead and Behind
+9.10  An Extended Example
+[...search manuals...]
+  top← prev  up  next → 
+
+9.10 An Extended Example
+
+Here’s an extended example from Friedl’s Mastering Regular Expressions, page
+189, that covers many of the features described in this chapter. The problem is
+to fashion a regexp that will match any and only IP addresses or dotted quads:
+four numbers separated by three dots, with each number between 0 and 255.
+
+First, we define a subregexp n0-255 that matches 0 through 255:
+
+    > (define n0-255
+        (string-append
+         "(?:"
+         "\\d|"        ;  0 through 9
+         "\\d\\d|"     ;  00 through 99
+         "[01]\\d\\d|" ; 000 through 199
+         "2[0-4]\\d|"  ; 200 through 249
+         "25[0-5]"     ; 250 through 255
+         ")"))
+
+            Note that n0-255 lists prefixes as preferred alternates, which is
+            something we cautioned against in Alternation. However, since we
+            intend to anchor this subregexp explicitly to force an overall
+            match, the order of the alternates does not matter.
+
+The first two alternates simply get all single- and double-digit numbers. Since
+0-padding is allowed, we need to match both 1 and 01. We need to be careful
+when getting 3-digit numbers, since numbers above 255 must be excluded. So we
+fashion alternates to get 000 through 199, then 200 through 249, and finally
+250 through 255.
+
+An IP-address is a string that consists of four n0-255s with three dots
+separating them.
+
+    > (define ip-re1
+        (string-append
+         "^"        ; nothing before
+         n0-255     ; the first n0-255,
+         "(?:"      ; then the subpattern of
+         "\\."      ; a dot followed by
+         n0-255     ; an n0-255,
+         ")"        ; which is
+         "{3}"      ; repeated exactly 3 times
+         "$"))
+    ; with nothing following
+
+Let’s try it out:
+
+    > (regexp-match (pregexp ip-re1) "1.2.3.4")
+    '("1.2.3.4")
+
+    > (regexp-match (pregexp ip-re1) "55.155.255.265")
+    #f
+
+
+which is fine, except that we also have
+
+    > (regexp-match (pregexp ip-re1) "0.00.000.00")
+    '("0.00.000.00")
+
+
+All-zero sequences are not valid IP addresses! Lookahead to the rescue. Before
+starting to match ip-re1, we look ahead to ensure we don’t have all zeros. We
+could use positive lookahead to ensure there is a digit other than zero.
+
+    > (define ip-re
+        (pregexp
+         (string-append
+           "(?=.*[1-9])" ; ensure there's a non-0 digit
+           ip-re1)))
+
+Or we could use negative lookahead to ensure that what’s ahead isn’t composed
+of only zeros and dots.
+
+    > (define ip-re
+        (pregexp
+         (string-append
+           "(?![0.]*$)" ; not just zeros and dots
+                        ; (note: . is not metachar inside [...])
+           ip-re1)))
+
+The regexp ip-re will match all and only valid IP addresses.
+
+    > (regexp-match ip-re "1.2.3.4")
+    '("1.2.3.4")
+
+    > (regexp-match ip-re "0.0.0.0")
+    #f
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

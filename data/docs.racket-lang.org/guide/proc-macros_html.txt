@@ -1,0 +1,71 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 16  Macros
+16.1  Pattern-Based Macros
+16.2  General Macro Transformers
+▼ 16.2  General Macro Transformers
+16.2.1  Syntax Objects
+16.2.2  Mixing Patterns and Expressions: syntax-case
+16.2.3  with-syntax and generate-temporaries
+16.2.4  Compile and Run-Time Phases
+16.2.5  Syntax Taints
+[...search manuals...]
+  top← prev  up  next → 
+
+16.2 General Macro Transformers
+
+The define-syntax form creates a transformer binding for an identifier, which
+is a binding that can be used at compile time while expanding expressions to be
+evaluated at run time. The compile-time value associated with a transformer
+binding can be anything; if it is a procedure of one argument, then the binding
+is used as a macro, and the procedure is the macro transformer.
+
+The syntax-rules and syntax-id-rules forms are macros that expand to procedure
+forms. For example, if you evaluate a syntax-rules form directly (instead of
+placing on the right-hand of a define-syntax form), the result is a procedure:
+
+    > (syntax-rules () [(nothing) something])
+    #<procedure>
+
+
+Instead of using syntax-rules, you can write your own macro transformer
+procedure directly using lambda. The argument to the procedure is a values that
+represents the source form, and the result of the procedure must be a value
+that represents the replacement form.
+
+    16.2.1 Syntax Objects
+
+    16.2.2 Mixing Patterns and Expressions: syntax-case
+
+    16.2.3 with-syntax and generate-temporaries
+
+    16.2.4 Compile and Run-Time Phases
+
+    16.2.5 Syntax Taints
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

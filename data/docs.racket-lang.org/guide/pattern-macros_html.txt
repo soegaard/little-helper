@@ -1,0 +1,428 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 16  Macros
+16.1  Pattern-Based Macros
+16.2  General Macro Transformers
+► 16.1  Pattern-Based Macros
+16.1.1  define-syntax-rule
+16.1.2  Lexical Scope
+16.1.3  define-syntax and syntax-rules
+16.1.4  Matching Sequences
+16.1.5  Identifier Macros
+16.1.6  Macro-Generating Macros
+16.1.7  Extended Example: Call-by-Reference Functions
+On this page:
+16.1.1 define-syntax-rule
+16.1.2 Lexical Scope
+16.1.3 define-syntax and syntax-rules
+16.1.4 Matching Sequences
+16.1.5 Identifier Macros
+16.1.6 Macro-Generating Macros
+16.1.7 Extended Example: Call-by-Reference Functions
+[...search manuals...]
+  top← prev  up  next → 
+
+16.1 Pattern-Based Macros
+
+A pattern-based macro replaces any code that matches a pattern to an expansion
+that uses parts of the original syntax that match parts of the pattern.
+
+16.1.1 define-syntax-rule
+
+The simplest way to create a macro is to use define-syntax-rule:
+
+    (define-syntax-rule pattern template)
+
+As a running example, consider the swap macro, which swaps the values stored in
+two variables. It can be implemented using define-syntax-rule as follows:
+
+            The macro is “un-Rackety” in the sense that it involves side
+            effects on variables—but the point of macros is to let you add
+            syntactic forms that some other language designer might not
+            approve.
+
+    (define-syntax-rule (swap x y)
+      (let ([tmp x])
+        (set! x y)
+        (set! y tmp)))
+
+The define-syntax-rule form binds a macro that matches a single pattern. The
+pattern must always start with an open parenthesis followed by an identifier,
+which is swap in this case. After the initial identifier, other identifiers are
+macro pattern variables that can match anything in a use of the macro. Thus,
+this macro matches the form (swap form1 form2) for any form_1 and form_2.
+
+            Macro pattern variables similar to pattern variables for match. See
+            Pattern Matching.
+
+After the pattern in define-syntax-rule is the template. The template is used
+in place of a form that matches the pattern, except that each instance of a
+pattern variable in the template is replaced with the part of the macro use the
+pattern variable matched. For example, in
+
+    (swap first last)
+
+the pattern variable x matches first and y matches last, so that the expansion
+is
+
+    (let ([tmp first])
+      (set! first last)
+      (set! last tmp))
+
+16.1.2 Lexical Scope
+
+Suppose that we use the swap macro to swap variables named tmp and other:
+
+    (let ([tmp 5]
+          [other 6])
+      (swap tmp other)
+      (list tmp other))
+
+The result of the above expression should be (6 5). The naive expansion of this
+use of swap, however, is
+
+    (let ([tmp 5]
+          [other 6])
+      (let ([tmp tmp])
+        (set! tmp other)
+        (set! other tmp))
+      (list tmp other))
+
+whose result is (5 6). The problem is that the naive expansion confuses the tmp
+in the context where swap is used with the tmp that is in the macro template.
+
+Racket doesn’t produce the naive expansion for the above use of swap. Instead,
+it produces
+
+    (let ([tmp 5]
+          [other 6])
+      (let ([tmp_1 tmp])
+        (set! tmp other)
+        (set! other tmp_1))
+      (list tmp other))
+
+with the correct result in (6 5). Similarly, in the example
+
+    (let ([set! 5]
+          [other 6])
+      (swap set! other)
+      (list set! other))
+
+the expansion is
+
+    (let ([set!_1 5]
+          [other 6])
+      (let ([tmp_1 set!_1])
+        (set! set!_1 other)
+        (set! other tmp_1))
+      (list set!_1 other))
+
+so that the local set! binding doesn’t interfere with the assignments
+introduced by the macro template.
+
+In other words, Racket’s pattern-based macros automatically maintain lexical
+scope, so macro implementors can reason about variable reference in macros and
+macro uses in the same way as for functions and function calls.
+
+16.1.3 define-syntax and syntax-rules
+
+The define-syntax-rule form binds a macro that matches a single pattern, but
+Racket’s macro system supports transformers that match multiple patterns
+starting with the same identifier. To write such macros, the programmer much
+use the more general define-syntax form along with the syntax-rules transformer
+form:
+
+    (define-syntax id
+      (syntax-rules (literal-id ...)
+        [pattern template]
+        ...))
+
+            The define-syntax-rule form is itself a macro that expands into
+            define-syntax with a syntax-rules form that contains only one
+            pattern and template.
+
+For example, suppose we would like a rotate macro that generalizes swap to work
+on either two or three identifiers, so that
+
+    (let ([red 1] [green 2] [blue 3])
+      (rotate red green)      ; swaps
+      (rotate red green blue) ; rotates left
+      (list red green blue))
+
+produces (1 3 2). We can implement rotate using syntax-rules:
+
+    (define-syntax rotate
+      (syntax-rules ()
+        [(rotate a b) (swap a b)]
+        [(rotate a b c) (begin
+                         (swap a b)
+                         (swap b c))]))
+
+The expression (rotate red green) matches the first pattern in the syntax-rules
+form, so it expands to (swap red green). The expression (rotate a b c) matches
+the second pattern, so it expands to (begin (swap red green) (swap green
+blue)).
+
+16.1.4 Matching Sequences
+
+A better rotate macro would allow any number of identifiers, instead of just
+two or three. To match a use of rotate with any number of identifiers, we need
+a pattern form that has something like a Kleene star. In a Racket macro
+pattern, a star is written as ....
+
+To implement rotate with ..., we need a base case to handle a single
+identifier, and an inductive case to handle more than one identifier:
+
+    (define-syntax rotate
+      (syntax-rules ()
+        [(rotate a) (void)]
+        [(rotate a b c ...) (begin
+                              (swap a b)
+                              (rotate b c ...))]))
+
+When a pattern variable like c is followed by ... in a pattern, then it must be
+followed by ... in a template, too. The pattern variable effectively matches a
+sequence of zero or more forms, and it is replaced in the template by the same
+sequence.
+
+Both versions of rotate so far are a bit inefficient, since pairwise swapping
+keeps moving the value from the first variable into every variable in the
+sequence until it arrives at the last one. A more efficient rotate would move
+the first value directly to the last variable. We can use ... patterns to
+implement the more efficient variant using a helper macro:
+
+    (define-syntax rotate
+      (syntax-rules ()
+        [(rotate a c ...)
+         (shift-to (c ... a) (a c ...))]))
+     
+    (define-syntax shift-to
+      (syntax-rules ()
+        [(shift-to (from0 from ...) (to0 to ...))
+         (let ([tmp from0])
+           (set! to from) ...
+           (set! to0 tmp))]))
+
+In the shift-to macro, ... in the template follows (set! to from), which causes
+the (set! to from) expression to be duplicated as many times as necessary to
+use each identifier matched in the to and from sequences. (The number of to and
+from matches must be the same, otherwise the macro expansion fails with an
+error.)
+
+16.1.5 Identifier Macros
+
+Given our macro definitions, the swap or rotate identifiers must be used after
+an open parenthesis, otherwise a syntax error is reported:
+
+    > (+ swap 3)
+    eval:2:0: swap: bad syntax in: swap
+
+
+An identifier macro works in any expression. For example, we can define clock
+as an identifier macro that expands to (get-clock), so (+ clock 3) would expand
+to (+ (get-clock) 3). An identifier macro also cooperates with set!, and we can
+define clock so that (set! clock 3) expands to (put-clock! 3).
+
+The syntax-id-rules form is like syntax-rules, but it creates a transformer
+that acts as an identifier macro:
+
+    (define-syntax id
+      (syntax-id-rules (literal-id ...)
+        [pattern template]
+        ...))
+
+Unlike a syntax-rules form, the patterns are not required to start with an open
+parenthesis. Also, set! is typically used as a literal to match a use of set!
+in the pattern (as opposed to being a pattern variable.
+
+    (define-syntax clock
+      (syntax-id-rules (set!)
+        [(set! clock e) (put-clock! e)]
+        [(clock a ...) ((get-clock) a ...)]
+        [clock (get-clock)]))
+
+The (clock a ...) pattern is needed because, when an identifier macro is used
+after an open parenthesis, the macro transformer is given the whole form, like
+with a non-identifier macro. Put another way, the syntax-rules form is
+essentially a special case of the syntax-id-rules form with errors in the set!
+and lone-identifier cases.
+
+16.1.6 Macro-Generating Macros
+
+Suppose that we have many identifier like clock that we’d like to redirect to
+accessor and mutator functions like get-clock and put-clock!. We’d like to be
+able to just write
+
+    (define-get/put-id clock get-clock put-clock!)
+
+Naturally, we can implement define-get/put-id as a macro:
+
+    (define-syntax-rule (define-get/put-id id get put!)
+      (define-syntax id
+        (syntax-id-rules (set!)
+          [(set! id e) (put! e)]
+          [(id a (... ...)) ((get) a (... ...))]
+          [id (get)])))
+
+The define-get/put-id macro is a macro-generating macro. The only non-obvious
+part of its definition is the (... ...), which “quotes” ... so that it takes
+its usual role in the generated macro, instead of the generating macro.
+
+16.1.7 Extended Example: Call-by-Reference Functions
+
+We can use pattern-matching macros to add a form to Racket for defining
+first-order call-by-reference functions. When a call-by-reference function body
+mutates its formal argument, the mutation applies to variables that are
+supplied as actual arguments in a call to the function.
+
+For example, if define-cbr is like define except that it defines a
+call-by-reference function, then
+
+    (define-cbr (f a b)
+      (swap a b))
+     
+    (let ([x 1] [y 2])
+      (f x y)
+      (list x y))
+
+produces (2 1).
+
+We will implement call-by-reference functions by having function calls supply
+accessor and mutators for the arguments, instead of supplying argument values
+directly. In particular, for the function f above, we’ll generate
+
+    (define (do-f get-a get-b put-a! put-b!)
+      (define-get/put-id a get-a put-a!)
+      (define-get/put-id b get-b put-b!)
+      (swap a b))
+
+and redirect a function call (f x y) to
+
+    (do-f (lambda () x)
+          (lambda () y)
+          (lambda (v) (set! x v))
+          (lambda (v) (set! y v)))
+
+Clearly, then define-cbr is a macro-generating macro, which binds f to a macro
+that expands to a call of do-f. That is, (define-cbr (f a b) (swap ab)) needs
+to generate the definition
+
+    (define-syntax f
+      (syntax-rules ()
+        [(id actual ...)
+         (do-f (lambda () actual)
+               ...
+               (lambda (v)
+                 (set! actual v))
+               ...)]))
+
+At the same time, define-cbr needs to define do-f using the body of f, this
+second part is slightly more complex, so we defer most it to a define-for-cbr
+helper module, which lets us write define-cbr easily enough:
+
+    (define-syntax-rule (define-cbr (id arg ...) body)
+      (begin
+        (define-syntax id
+          (syntax-rules ()
+            [(id actual (... ...))
+             (do-f (lambda () actual)
+                   (... ...)
+                   (lambda (v)
+                     (set! actual v))
+                   (... ...))]))
+        (define-for-cbr do-f (arg ...)
+          () ; explained below...
+          body)))
+
+Our remaining task is to define define-for-cbr so that it converts
+
+    (define-for-cbr do-f (a b) () (swap a b))
+
+to the function definition do-f above. Most of the work is generating a
+define-get/put-id declaration for each argument, a ad b, and putting them
+before the body. Normally, that’s an easy task for ... in a pattern and
+template, but this time there’s a catch: we need to generate the names get-a
+and put-a! as well as get-b and put-b!, and the pattern language provides no
+way to synthesize identifiers based on existing identifiers.
+
+As it turns out, lexical scope gives us a way around this problem. The trick is
+to iterate expansions of define-for-cbr once for each argument in the function,
+and that’s why define-cbr starts with an apparently useless () after the
+argument list. We need to keep track of all the arguments seen so far and the
+get and put names generated for each, in addition to the arguments left to
+process. After we’ve processed all the identifiers, then we have all the names
+we need.
+
+Here is the definition of define-for-cbr:
+
+    (define-syntax define-for-cbr
+      (syntax-rules ()
+        [(define-for-cbr do-f (id0 id ...)
+           (gens ...) body)
+         (define-for-cbr do-f (id ...)
+           (gens ... (id0 get put)) body)]
+        [(define-for-cbr do-f ()
+           ((id get put) ...) body)
+         (define (do-f get ... put ...)
+           (define-get/put-id id get put) ...
+           body)]))
+
+Step-by-step, expansion proceeds as follows:
+
+    (define-for-cbr do-f (a b)
+      () (swap a b))
+    => (define-for-cbr do-f (b)
+         ([a get_1 put_1]) (swap a b))
+    => (define-for-cbr do-f ()
+         ([a get_1 put_1] [b get_2 put_2]) (swap a b))
+    => (define (do-f get_1 get_2 put_1 put_2)
+         (define-get/put-id a get_1 put_1)
+         (define-get/put-id b get_2 put_2)
+         (swap a b))
+
+The “subscripts” on get_1, get_2, put_1, and put_2 are inserted by the macro
+expander to preserve lexical scope, since the get generated by each iteration
+of define-for-cbr should not bind the get generated by a different iteration.
+In other words, we are essentially tricking the macro expander into generating
+fresh names for us, but the technique illustrates some of the surprising power
+of pattern-based macros with automatic lexical scope.
+
+The last expression eventually expands to just
+
+    (define (do-f get_1 get_2 put_1 put_2)
+      (let ([tmp (get_1)])
+        (put_1 (get_2))
+        (put_2 tmp)))
+
+which implements the call-by-name function f.
+
+To summarize, then, we can add call-by-reference functions to Racket with just
+three small pattern-based macros: define-cbr, define-for-cbr, and define-get/
+put-id.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,100 @@
+▼  Dynext: Running a C Compiler/ Linker
+1  Compilation
+2  Linking
+3  Filenames
+► 3  Filenames
+3.1  Signature
+3.2  Unit
+On this page:
+append-zo-suffix
+append-object-suffix
+append-c-suffix
+append-constant-pool-suffix
+append-extension-suffix
+extract-base-filename/ ss
+extract-base-filename/ c
+extract-base-filename/ kp
+extract-base-filename/ o
+extract-base-filename/ ext
+3.1 Signature
+dynext: file^
+3.2 Unit
+dynext: file@
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Filenames
+
+ (require dynext/file)
+
+(append-zo-suffix s) → path?
+  s : (or/c string? path?)
+Appends the ".zo" file suffix to s, returning a path. The existing suffix, if
+any, is preserved and converted as with path-add-suffix.
+
+(append-object-suffix s) → path?
+  s : path-string?
+Appends the platform-standard compiled object file suffix to s, returning a
+path.
+
+(append-c-suffix s) → path?
+  s : path-string?
+Appends the platform-standard C source-file suffix to s, returning a path.
+
+(append-constant-pool-suffix s) → path?
+  s : (or/c string? path?)
+Appends the constant-pool file suffix ".kp" to s, returning a path.
+
+(append-extension-suffix s) → path?
+  s : (or/c string? path?)
+Appends the platform-standard dynamic-extension file suffix to s, returning a
+path.
+
+(extract-base-filename/ss s [program]) → (or/c path? false/c)
+  s : path-string?
+  program : any/c = #f
+Strips the Racket file suffix from s and returns a stripped path. Unlike the
+other functions below, when program is not #f, then any suffix (including no
+suffix) is allowed. If s is not a Racket file and program is #f, #f is
+returned.
+
+(extract-base-filename/c s [program]) → (or/c path? false/c)
+  s : path-string?
+  program : any/c = #f
+Strips the Racket file suffix from s and returns a stripped path. If s is not a
+Racket file name and program is a symbol, and error is signaled. If s is not a
+Racket file and program is #f, #f is returned.
+
+(extract-base-filename/kp s [program]) → (or/c path? false/c)
+  s : path-string?
+  program : any/c = #f
+Same as extract-base-filename/c, but for constant-pool files.
+
+(extract-base-filename/o s [program]) → (or/c path? false/c)
+  s : path-string?
+  program : any/c = #f
+Same as extract-base-filename/c, but for compiled-object files.
+
+(extract-base-filename/ext s [program]) → (or/c path? false/c)
+  s : path-string?
+  program : any/c = #f
+Same as extract-base-filename/c, but for extension files.
+
+3.1 Signature
+
+ (require dynext/file-sig)
+
+dynext:file^ : signature
+
+Includes everything exported by the dynext/file module.
+
+3.2 Unit
+
+ (require dynext/file-unit)
+
+dynext:file@ : unit?
+Imports nothing, exports dynext:file^.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

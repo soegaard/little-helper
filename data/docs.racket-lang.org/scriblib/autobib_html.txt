@@ -1,0 +1,162 @@
+▼  Scriblib: Extra Scribble Libraries
+1  Examples Using the GUI Toolbox
+2  Figures
+3  Bibliographies
+4  Bib Te X Bibliographies
+5  Footnotes
+6  Conditional Content
+On this page:
+define-cite
+bib?
+make-bib
+in-bib
+proceedings-location
+journal-location
+book-location
+techrpt-location
+dissertation-location
+author-name
+authors
+org-author-name
+other-authors
+editor
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Bibliographies
+
+ (require scriblib/autobib)
+
+(define-cite ~cite-id citet-id generate-bibliography-id)
+Binds ~cite-id, citet-id, and generate-bibliography-id, which share state to
+accumulate and render citations.
+
+The function bound to ~cite-id produces a citation referring to one or more
+bibliography entries with a preceding non-breaking space, by default sorting
+the entries to match the bibliography order. It has the contract
+
+    (->* (bib?) (#:sort? any/c) #:rest (listof bib?) element?)
+
+The function bound to citet-id generates an element suitable for use as a noun—
+referring to a document or its author—for one or more bibliography entries
+which share an author. It has the contract
+
+    (->* (bib?) () #:rest (listof bib?) element?)
+
+The function bound to generate-bibliography-id generates the section for the
+bibliography. It has the contract
+
+    (->* () (#:tag string? #:sec-title string?) part?)
+
+The default value for the #:tag argument is "doc-bibliography" and for
+#:sec-title is "Bibliography".
+
+(bib? v) → boolean?
+  v : any/c
+Returns #t if v is a value produced by make-bib or in-bib, #f otherwise.
+
+(make-bib    #:title title              
+           [ #:author author            
+             #:is-book? is-book?        
+             #:location location        
+             #:date date                
+             #:url url])           →   bib?
+  title : any/c
+  author : any/c = #f
+  is-book? : any/c = #f
+  location : any/c = #f
+  date : any/c = #f
+  url : string? = #f
+Produces a value that represents a document to cite. Except for is-book? and
+url, the arguments are used as elements, except that #f means that the
+information is not supplied. Functions like proceedings-location, author-name,
+and authors help produce elements in a standard format.
+
+An element produced by a function like author-name tracks first, last names,
+and name suffixes separately, so that names can be ordered and rendered
+correctly. When a string is provided as an author name, the last non-empty
+sequence of alphabetic characters or - after a space is treated as the author
+name, and the rest is treated as the first name.
+
+(in-bib orig where) → bib?
+  orig : bib?
+  where : string?
+Extends a bib value so that the rendered citation is suffixed with where, which
+might be a page or chapter number.
+
+(proceedings-location    location                 
+                       [ #:pages pages            
+                         #:series series          
+                         #:volume volume])   →   element?
+  location : any/c
+  pages : (or (list/c any/c any/c) #f) = #f
+  series : any/c = #f
+  volume : any/c = #f
+Combines elements to generate an element that is suitable for describing a
+paper’s location within a conference or workshop proceedings.
+
+(journal-location    title                    
+                   [ #:pages pages            
+                     #:number number          
+                     #:volume volume])   →   element?
+  title : any/c
+  pages : (or (list/c any/c any/c) #f) = #f
+  number : any/c = #f
+  volume : any/c = #f
+Combines elements to generate an element that is suitable for describing a
+paper’s location within a journal.
+
+(book-location  [ #:edition edition              
+                  #:publisher publisher])   →   element?
+  edition : any/c = #f
+  publisher : any/c = #f
+Combines elements to generate an element that is suitable for describing a
+book’s location.
+
+(techrpt-location  [ #:institution institution]        
+                     #:number number)             →   element?
+  institution : edition = any/c
+  number : any/c
+Combines elements to generate an element that is suitable for describing a
+technical report’s location.
+
+(dissertation-location  [ #:institution institution        
+                          #:degree degree])           →   element?
+  institution : edition = any/c
+  degree : any/c = "PhD"
+Combines elements to generate an element that is suitable for describing a
+dissertation.
+
+(author-name first last [#:suffix suffix]) → element?
+  first : any/c
+  last : any/c
+  suffix : any/c = #f
+Combines elements to generate an element that is suitable for describing an
+author’s name, especially where the last name is not merely a sequence of ASCII
+alphabet letters or where the name has a suffix (such as “Jr.”).
+
+(authors name ...) → element?
+  name : any/c
+Combines multiple author elements into one, so that it is rendered and
+alphabetized appropriately. If a name is a string, it is parsed in the same way
+as by make-bib.
+
+(org-author-name name) → element?
+  name : any/c
+Converts an element for an organization name to one suitable for use as a
+bib-value author.
+
+(other-authors) → element?
+Generates an element that is suitable for use as a “others” author. When
+combined with another author element via authors, the one created by
+other-authors renders as “et al.”
+
+(editor name) → element?
+  name : name/c
+Takes an author-name element and create one that represents the editor of a
+collection. If a name is a string, it is parsed in the same way as by make-bib.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

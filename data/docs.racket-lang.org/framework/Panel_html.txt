@@ -1,0 +1,344 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+panel: single<%>
+active-child
+panel: single-mixin
+after-new-child
+container-size
+place-children
+panel: single-window<%>
+panel: single-window-mixin
+container-size
+panel: single%
+panel: single-pane%
+panel: dragable<%>
+after-percentage-change
+set-percentages
+get-percentages
+get-vertical?
+set-orientation
+panel: vertical-dragable<%>
+panel: horizontal-dragable<%>
+panel: dragable-mixin
+after-new-child
+on-subwindow-event
+place-children
+container-size
+panel: vertical-dragable-mixin
+get-vertical?
+panel: horizontal-dragable-mixin
+get-vertical?
+panel: vertical-dragable%
+panel: horizontal-dragable%
+panel: splitter<%>
+panel: splitter-mixin
+split-vertical
+split-horizontal
+collapse
+panel: dragable-container-size
+panel: dragable-place-children
+[...search manuals...]
+  top← prev  up  next → 
+
+23 Panel
+
+panel:single<%> : interface?
+  implements:  area-container<%>
+See panel:single-mixin%.
+
+
+    (send a-panel:single active-child child) → void?
+      child : (is-a?/c area<%>)
+    (send a-panel:single active-child) → (is-a?/c area<%>)
+    Sets the active child to be child
+
+    Returns the current active child.
+
+panel:single-mixin : (class? . -> . class?)
+  argument extends/implements:  area-container<%>
+  result implements:  panel:single<%>
+This mixin adds single panel functionality to an implementation of the
+area-container<%> interface.
+Single panels place all of the children in the center of the panel, and allow
+make one child to be visible at a time. The active-child method controls which
+panel is currently active.
+The show method is used to hide and show the children of a single panel.
+
+
+    (send a-panel:single after-new-child child) → void?
+      child : (is-a?/c subarea<%>)
+    Overrides after-new-child in area-container<%>.
+    Hides this child by calling (send child show #f), unless this is the first
+    child in which case it does nothing.
+
+    (send a-panel:single container-size)
+      →   exact-integer?   exact-integer?
+    Overrides container-size in area-container<%>.
+    Returns the maximum width of all the children and the maximum height of all
+    of the children.
+
+    (send a-panel:single place-children)
+     → (listof (list/c exact-integer? exact-integer? exact-integer? 
+    exact-integer?))
+    Overrides place-children in area-container<%>.
+    Returns the positions for single panels and panes.
+
+panel:single-window<%> : interface?
+  implements:  panel:single<%>
+               window<%>
+
+panel:single-window-mixin : (class? . -> . class?)
+  argument extends/implements:  panel:single<%>
+                                window<%>
+  result implements:  panel:single-window<%>
+
+
+    (send a-panel:single-window container-size info)
+      →   exact-integer?   exact-integer?
+      info : (listof (list/c exact-integer? exact-integer? boolean? boolean?))
+    Overrides container-size in area-container<%>.
+    Factors the border width into the size calculation.
+
+panel:single% : class?
+  superclass: (panel:single-window-mixin (panel:single-mixin panel%))
+
+
+panel:single-pane% : class?
+  superclass: (panel:single-mixin pane%)
+
+
+panel:dragable<%> : interface?
+  implements:  window<%>
+               area-container<%>
+Classes matching this interface implement a panel where the user can adjust the
+percentage of the space that each takes up. The user adjusts the size by
+clicking and dragging the empty space between the children.
+
+
+    (send a-panel:dragable after-percentage-change) → void?
+    This method is called when the user changes the percentage by dragging the
+    bar between the children, or when a new child is added to the frame, but
+    not when set-percentages is called.
+
+    Use get-percentages to find the current percentages.
+
+    (send a-panel:dragable set-percentages new-percentages) → void?
+      new-percentages : (listof number?)
+    Call this method to set the percentages that each window takes up of the
+    panel.
+
+    The argument, new-percentages must be a list of numbers that sums to 1.
+    It’s length must be equal to the number of children of the panel (see
+    get-children) and each percentage must correspond to a number of pixels
+    that is equal to or larger than the minimum with of the child, as reported
+    by min-width.
+
+    (send a-panel:dragable get-percentages) → (listof number?)
+    Return the current percentages of the children.
+
+    (send a-panel:dragable get-vertical?) → boolean?
+    This method controls the behavior of the other overridden methods in mixins
+    that implement this interface.
+
+    If it returns #t, the panel will be vertically aligned and if it returns #
+    f, they will be horizontally aligned.
+
+    (send a-panel:dragable set-orientation horizontal?) → void?
+      horizontal? : boolean?
+    Sets the orientation of the panel, switching it from behaving like a
+    panel:horizontal-dragable<%> and panel:vertical-dragable<%>.
+
+panel:vertical-dragable<%> : interface?
+  implements:  panel:dragable<%>
+A panel that implements panel:vertical-dragable<%>. It aligns its children
+vertically.
+
+panel:horizontal-dragable<%> : interface?
+  implements:  panel:dragable<%>
+A panel that implements panel:horizontal-dragable<%>. It aligns its children
+horizontally.
+
+panel:dragable-mixin : (class? . -> . class?)
+  argument extends/implements:  window<%>
+                                area-container<%>
+  result implements:  panel:dragable<%>
+This mixin adds the panel:dragable<%> functionality to a panel%.
+It is not useful unless the get-vertical? method is overridden.
+
+
+    (send a-panel:dragable after-new-child child) → void?
+      child : (is-a?/c subarea<%>)
+    Overrides after-new-child in area-container<%>.
+    Updates the number of percentages to make sure that it matches the number
+    of children and calls after-percentage-change.
+
+    (send a-panel:dragable on-subwindow-event   receiver        
+                                                event)     →   boolean?
+      receiver : (is-a?/c window<%>)
+      event : (is-a?/c mouse-event%)
+    Overrides on-subwindow-event in window<%>.
+    When the cursor is dragging the middle bar around, this method handles the
+    resizing of the two panes.
+
+    (send a-panel:dragable place-children   info  
+                                            w     
+                                            h)    
+     → (listof (list/c exact-integer? exact-integer? exact-integer? 
+    exact-integer?))
+      info : (listof (list/c exact-integer? exact-integer?))
+      w : exact-integer?
+      h : exact-integer?
+    Overrides place-children in area-container<%>.
+    Places the children vertically in the panel, based on the percentages
+    returned from get-percentages. Also leaves a little gap between each pair
+    of children.
+
+    (send a-panel:dragable container-size info)
+      →   exact-integer?   exact-integer?
+      info : (listof (list/c exact-integer? exact-integer? any/c any/c))
+    Overrides container-size in area-container<%>.
+    Computes the minimum size the panel would have to be in order to have the
+    current percentages (see get-percentages).
+
+panel:vertical-dragable-mixin : (class? . -> . class?)
+  argument extends/implements:  panel:dragable<%>
+  result implements:  panel:vertical-dragable<%>
+This mixin merely overrides the get-vertical? method of the
+panel:dragable-mixin to return #t.
+
+
+    (send a-panel:vertical-dragable get-vertical?) → boolean?
+    Overrides get-vertical? in panel:dragable<%>.
+    Returns #t.
+
+panel:horizontal-dragable-mixin : (class? . -> . class?)
+  argument extends/implements:  panel:dragable<%>
+  result implements:  panel:vertical-dragable<%>
+This mixin merely overrides the get-vertical? method of the
+panel:dragable-mixin to return #f.
+
+
+    (send a-panel:horizontal-dragable get-vertical?) → boolean?
+    Overrides get-vertical? in panel:dragable<%>.
+    Returns #f.
+
+panel:vertical-dragable% : class?
+  superclass: (panel:vertical-dragable-mixin (panel:dragable-mixin panel%))
+
+
+panel:horizontal-dragable% : class?
+  superclass: (panel:horizontal-dragable-mixin (panel:dragable-mixin panel%))
+
+
+panel:splitter<%> : interface?
+A panel that implements panel:splitter<%>. Children can be split horizonally or
+vertically.
+
+panel:splitter-mixin : (class? . -> . class?)
+  argument extends/implements:  area-container<%>
+                                panel:dragable<%>
+  result implements:  panel:splitter<%>
+This mixin allows panels to split their children either horizontally or
+vertically. Children that are split can be further split independant of any
+other splitting.
+
+
+    (send a-panel:splitter split-vertical   canvas  
+                                            maker)  
+     → (is-a?/c canvas<%>)
+      canvas : (is-a?/c canvas<%>)
+       maker   :   (-> (is-a?/c panel:splitter<%>)
+                       (is-a?/c canvas<%>))
+    Splits the canvas vertically by creating a new instance using maker. This
+    splitter object is passed as the argument to maker and should be used as
+    the parent field of the newly created canvas.
+
+    (send a-panel:splitter split-horizontal   canvas  
+                                              maker)  
+     → (is-a?/c canvas<%>)
+      canvas : (is-a?/c canvas<%>)
+       maker   :   (-> (is-a?/c panel:splitter<%>)
+                       (is-a?/c canvas<%>))
+    Similar to split-vertical but splits horizontally.
+
+    (send a-panel:splitter collapse canvas) → void
+      canvas : (is-a?/c canvas<%>)
+    Removes the given canvas from the splitter hierarchy and collapses any
+    split panes as necessary.
+
+(panel:dragable-container-size   container-info        
+                                 bar-thickness         
+                                 vertical?)       →   real?   real?
+  container-info : (listof (list/c real? real? boolean? boolean?))
+  bar-thickness : real?
+  vertical? : boolean?
+Returns the minimum width and height for a panel:dragable<%> object where
+container-info (see container-size for more details on that argument) is the
+children’s info, and bar-thickness and vertical? indicate the properties of the
+panel.
+
+This function is exported mostly for the test suite.
+(panel:dragable-place-children   container-info  
+                                 width           
+                                 height          
+                                 percentages     
+                                 bar-thickness   
+                                 vertical?)      
+      (listof (list/c (integer-in 0 10000)
+                      (integer-in 0 10000)
+  →                   (integer-in 0 10000)
+                      (integer-in 0 10000)))
+      (listof (list/c (integer-in 0 10000)
+                      (integer-in 0 10000)))
+  container-info : (listof (list/c real? real? boolean? boolean?))
+  width : real?
+  height : real?
+  percentages : (listof (between/c 0 1))
+  bar-thickness : real?
+  vertical? : boolean?
+Returns the geometry information for a dragable panel. The inputs are the
+container-info (see place-children for more info), the width and height of the
+window, the percentages for the spacing of the children, and a real and a
+boolean indicating the thickness of the bar between the child panels and
+whether or not this is a vertical panel, respectively.
+
+This function is exported mostly for the test suite.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

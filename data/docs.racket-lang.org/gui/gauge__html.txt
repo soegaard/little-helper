@@ -1,0 +1,208 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+get-range
+get-value
+set-range
+set-value
+Inherited methods:
+from control<%>
+command
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-focus
+on-move
+on-size
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+[...search manuals...]
+  top← prev  up  next → 
+
+gauge% : class?
+  superclass: object%
+
+  extends:  control<%>
+A gauge is a horizontal or vertical bar for displaying the output value of a
+bounded integer quantity. Each gauge has an adjustable range, and the gauge’s
+current value is always between 0 and its range, inclusive. Use set-value to
+set the value of the gauge.
+
+(new gauge%    [label label]                              
+               [range range]                              
+               [parent parent]                            
+             [ [style style]                              
+               [font font]                                
+               [enabled enabled]                          
+               [vert-margin vert-margin]                  
+               [horiz-margin horiz-margin]                
+               [min-width min-width]                      
+               [min-height min-height]                    
+               [stretchable-width stretchable-width]      
+               [stretchable-height stretchable-height]])  
+ → (is-a?/c gauge%)
+  label : (or/c label-string? false/c)
+  range : (integer-in 1 1000000)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+               (listof (one-of/c 'horizontal 'vertical
+   style   :                     'vertical-label 'horizontal-label
+                                 'deleted))
+           =   '(horizontal)
+  font : (is-a?/c font%) = normal-control-font
+  enabled : any/c = #t
+  vert-margin : (integer-in 0 1000) = 2
+  horiz-margin : (integer-in 0 1000) = 2
+  min-width : (integer-in 0 10000) = graphical-minimum-width
+  min-height : (integer-in 0 10000) = graphical-minimum-height
+  stretchable-width : any/c = (memq 'horizontal style)
+  stretchable-height : any/c = (memq 'vertical style)
+If label is a string, it is used as the gauge label; otherwise the gauge does
+not display a label.
+
+If & occurs in label, it is specially parsed; under Windows and X, the
+character following & is underlined in the displayed control to indicate a
+keyboard mnemonic. (Under Mac OS X, mnemonic underlines are not shown.) The
+mnemonic is meaningless for a gauge (as far as on-traverse-char in
+top-level-window<%> is concerned), but it is supported for consistency with
+other control types. A programmer may assign a meaning to the mnemonic (e.g.,
+by overriding on-traverse-char).
+
+The range argument is an integer specifying the maximum value of the gauge
+(inclusive). The minimum gauge value is always 0.
+
+The style list must include either 'horizontal, specifying a horizontal gauge,
+or 'vertical, specifying a vertical gauge. If style includes 'vertical-label,
+then the gauge is created with a label above the control; if style does not
+include 'vertical-label (and optionally includes 'horizontal-label), then the
+label is created to the left of the gauge. If style includes 'deleted, then the
+gauge is created as hidden, and it does not affect its parent’s geometry; the
+gauge can be made active later by calling parent’s add-child method.
+
+The font argument determines the font for the control. For information about
+the enabled argument, see window<%>. For information about the horiz-margin and
+vert-margin arguments, see subarea<%>. For information about the min-width,
+min-height, stretchable-width, and stretchable-height arguments, see area<%>.
+
+(send a-gauge get-range) → (integer-in 1 10000)
+Returns the range (maximum value) of the gauge.
+
+(send a-gauge get-value) → (integer-in 0 10000)
+Returns the gauge’s current value.
+
+(send a-gauge set-range range) → void?
+  range : (integer-in 1 10000)
+Sets the range (maximum value) of the gauge.
+
+(send a-gauge set-value pos) → void?
+  pos : (integer-in 0 10000)
+Sets the gauge’s current value. If the specified value is larger than the
+gauge’s range, an exn:fail:contract exception is raised.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

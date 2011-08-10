@@ -1,0 +1,90 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 10  Concurrency and Parallelism
+10.1  Threads
+10.2  Synchronization
+10.3  Thread-Local Storage
+10.4  Futures
+10.5  Places
+▼ 10.2  Synchronization
+10.2.1  Events
+10.2.2  Channels
+10.2.3  Semaphores
+10.2.4  Buffered Asynchronous Channels
+On this page:
+channel?
+make-channel
+channel-get
+channel-try-get
+channel-put
+channel-put-evt
+[...search manuals...]
+  top← prev  up  next → 
+
+10.2.2 Channels
+
+A channel both synchronizes a pair of threads and passes a value from one to
+the other. Channels are synchronous; both the sender and the receiver must
+block until the (atomic) transaction is complete. Multiple senders and
+receivers can access a channel at once, but a single sender and receiver is
+selected for each transaction.
+
+Channel synchronization is fair: if a thread is blocked on a channel and
+transaction opportunities for the channel occur infinitely often, then the
+thread eventually participates in a transaction.
+
+For buffered asynchronous channels, see Buffered Asynchronous Channels.
+
+(channel? v) → boolean?
+  v : any/c
+Returns #t if v is a channel, #f otherwise.
+
+(make-channel) → channel?
+Creates and returns a new channel. The channel can be used with channel-get,
+with channel-try-get, or as a synchronizable event (see Events) to receive a
+value through the channel. The channel can be used with channel-put or through
+the result of channel-put-evt to send a value through the channel.
+
+(channel-get ch) → any
+  ch : channel?
+Blocks until a sender is ready to provide a value through ch. The result is the
+sent value.
+
+(channel-try-get ch) → any
+  ch : channel?
+Receives and returns a value from ch if a sender is immediately ready,
+otherwise returns #f.
+
+(channel-put ch v) → void?
+  ch : channel?
+  v : any/c
+Blocks until a receiver is ready to accept the value v through ch.
+
+(channel-put-evt ch v) → evt?
+  ch : channel?
+  v : any/c
+Returns a fresh synchronizable event for use with sync. The event is ready when
+(channel-put ch v) would not block, and the event’s synchronization result is
+the event itself.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

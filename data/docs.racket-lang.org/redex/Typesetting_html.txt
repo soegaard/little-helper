@@ -1,0 +1,702 @@
+▼  Redex: Practical Semantics Engineering
+1  Patterns
+2  Terms
+3  Languages
+4  Reduction Relations
+5  Metafunctions and Relations
+6  Testing
+7  GUI
+8  Typesetting
+   Index
+► 8  Typesetting
+8.1  Picts & Post Script
+8.2  Customization
+8.3  Removing the Pink Background
+On this page:
+8.1 Picts & Post Script
+render-term
+term->pict
+render-language
+language->pict
+render-reduction-relation
+reduction-relation->pict
+render-metafunction
+render-metafunctions
+metafunction->pict
+metafunctions->pict
+render-relation
+relation->pict
+8.2 Customization
+render-language-nts
+extend-language-show-union
+render-reduction-relation-rules
+rule-pict-style
+reduction-rule-style/ c
+arrow-space
+label-space
+metafunction-pict-style
+delimit-ellipsis-arguments?
+linebreaks
+metafunction-cases
+label-style
+grammar-style
+paren-style
+literal-style
+metafunction-style
+non-terminal-style
+non-terminal-subscript-style
+non-terminal-superscript-style
+default-style
+label-font-size
+metafunction-font-size
+default-font-size
+reduction-relation-rule-separation
+curly-quotes-for-strings
+current-text
+arrow->pict
+set-arrow-pict!
+white-bracket-sizing
+horizontal-bar-spacing
+relation-clauses-combine
+8.3 Removing the Pink Background
+with-unquote-rewriter
+with-atomic-rewriter
+with-compound-rewriter
+lw
+build-lw
+to-lw
+to-lw/ stx
+render-lw
+lw->pict
+just-before
+just-after
+[...search manuals...]
+  top← prev  up  next → 
+
+8 Typesetting
+
+ (require redex/pict)
+
+The redex/pict library provides functions designed to automatically typeset
+grammars, reduction relations, and metafunction written with plt redex.
+
+Each grammar, reduction relation, and metafunction can be saved in a .ps file
+(as encapsulated postscript), or can be turned into a pict for viewing in the
+REPL or using with Slideshow (see Slideshow: Figure and Presentation Tools).
+
+8.1 Picts & PostScript
+
+This section documents two classes of operations, one for direct use of
+creating postscript figures for use in papers and for use in DrRacket to easily
+adjust the typesetting: render-term, render-language, render-reduction-relation
+, render-relation, render-metafunctions, and render-lw, and one for use in
+combination with other libraries that operate on picts term->pict, language->
+pict, reduction-relation->pict, metafunction->pict, and lw->pict. The primary
+difference between these functions is that the former list sets
+dc-for-text-size and the latter does not.
+
+(render-term lang term file) → (if file void? pict?)
+  lang : compiled-lang?
+  term : any/c
+  file : (or/c #f path-string?)
+Renders the term term. If file is #f, it produces a pict; if file is a path, it
+saves Encapsulated PostScript in the provided filename. See render-language for
+details on the construction of the pict.
+
+(term->pict lang term) → pict?
+  lang : compiled-lang?
+  term : any/c
+Produces a pict like render-term, but without adjusting dc-for-text-size.
+
+This function is primarily designed to be used with Slideshow or with other
+tools that combine picts together.
+
+(render-language lang [file #:nts nts]) → (if file void? pict?)
+  lang : compiled-lang?
+  file : (or/c false/c path-string?) = #f
+   nts   :   (or/c false/c (listof (or/c string? symbol?)))
+         =   (render-language-nts)
+Renders a language. If file is #f, it produces a pict; if file is a path, it
+saves Encapsulated PostScript in the provided filename. See render-language-nts
+for information on the nts argument.
+
+This function parameterizes dc-for-text-size to install a relevant dc: a
+bitmap-dc% or a post-script-dc%, depending on whether file is a path.
+
+See language->pict if you are using Slideshow or are otherwise setting
+dc-for-text-size.
+
+(language->pict lang [#:nts nts]) → pict?
+  lang : compiled-lang?
+   nts   :   (or/c false/c (listof (or/c string? symbol?)))
+         =   (render-language-nts)
+Produce a pict like render-language, but without adjusting dc-for-text-size.
+
+This function is primarily designed to be used with Slideshow or with other
+tools that combine picts together.
+
+(render-reduction-relation    rel              
+                            [ file             
+                              #:style style])  
+ → (if file void? pict?)
+  rel : reduction-relation?
+  file : (or/c false/c path-string?) = #f
+  style : reduction-rule-style/c = (rule-pict-style)
+Renders a reduction relation. If file is #f, it produces a pict; if file is a
+path, it saves Encapsulated PostScript in the provided filename. See
+rule-pict-style for information on the style argument.
+
+This function parameterizes dc-for-text-size to install a relevant dc: a
+bitmap-dc% or a post-script-dc%, depending on whether file is a path. See also
+reduction-relation->pict.
+
+The following forms of arrows can be typeset:
+
+    -->   -+>   ==>   ->   =>   ..>   >->   ~~>   ~>   :->   :–>   c->   –>>  
+    >–   –<   >>–   –<<
+
+(reduction-relation->pict r [#:style style]) → pict?
+  r : reduction-relation?
+  style : reduction-rule-style/c = (rule-pict-style)
+Produces a pict like render-reduction-relation, but without setting
+dc-for-text-size.
+
+This function is primarily designed to be used with Slideshow or with other
+tools that combine picts together.
+
+(render-metafunction metafunction-name)
+(render-metafunction metafunction-name filename)
+(render-metafunctions metafunction-name ...)
+(render-metafunctions metafunction-name ... #:file filename)
+If provided with one argument, render-metafunction produces a pict that renders
+properly in the definitions window in DrRacket. If given two arguments, it
+writes postscript into the file named by filename (which may be either a string
+or bytes).
+
+Similarly, render-metafunctions accepts multiple metafunctions and renders them
+together, lining up all of the clauses together.
+
+This function sets dc-for-text-size. See also metafunction->pict and
+metafunctions->pict.
+
+(metafunction->pict metafunction-name)
+This produces a pict, but without setting dc-for-text-size. It is suitable for
+use in Slideshow or other libraries that combine picts.
+
+(metafunctions->pict metafunction-name ...)
+Like metafunction->pict, this produces a pict, but without setting
+dc-for-text-size and is suitable for use in Slideshow or other libraries that
+combine picts. Like render-metafunctions, it accepts multiple metafunctions and
+renders them together.
+
+(render-relation relation-name)
+(render-relation relation-name filename)
+If provided with one argument, render-relation produces a pict that renders
+properly in the definitions window in DrRacket. If given two arguments, it
+writes postscript into the file named by filename (which may be either a string
+or bytes).
+
+This function sets dc-for-text-size. See also relation->pict.
+
+(relation->pict relation-name)
+This produces a pict, but without setting dc-for-text-size. It is suitable for
+use in Slideshow or other libraries that combine picts.
+
+8.2 Customization
+
+(render-language-nts) → (or/c false/c (listof symbol?))
+(render-language-nts nts) → void?
+  nts : (or/c false/c (listof symbol?))
+The value of this parameter controls which non-terminals render-language and
+language->pict render by default. If it is #f (the default), all non-terminals
+are rendered. If it is a list of symbols, only the listed symbols are rendered.
+
+See also language-nts.
+
+(extend-language-show-union) → boolean?
+(extend-language-show-union show?) → void?
+  show? : boolean?
+If this is #t, then a language constructed with extend-language is shown as if
+the language had been constructed directly with language. If it is #f, then
+only the last extension to the language is shown (with four-period ellipses,
+just like in the concrete syntax).
+
+Defaults to #f.
+
+Note that the #t variant can look a little bit strange if .... are used and the
+original version of the language has multi-line right-hand sides.
+
+(render-reduction-relation-rules)
+ → (or/c false/c (listof (or/c symbol? string? exact-nonnegative-integer?)))
+(render-reduction-relation-rules rules) → void?
+  rules : (or/c false/c (listof (or/c symbol? string? 
+exact-nonnegative-integer?)))
+This parameter controls which rules in a reduction relation will be rendered.
+The strings and symbols match the names of the rules and the integers match the
+position of the rule in the original definition.
+
+(rule-pict-style) → reduction-rule-style/c
+(rule-pict-style style) → void?
+  style : reduction-rule-style/c
+This parameter controls the style used by default for the reduction relation.
+It can be 'horizontal, where the left and right-hand sides of the reduction
+rule are beside each other or 'vertical, where the left and right-hand sides of
+the reduction rule are above each other. The 'compact-vertical style moves the
+reduction arrow to the second line and uses less space between lines. The
+'vertical-overlapping-side-conditions variant, the side-conditions don’t
+contribute to the width of the pict, but are just overlaid on the second line
+of each rule. The 'horizontal-left-align style is like the 'horizontal style,
+but the left-hand sides of the rules are aligned on the left, instead of on the
+right.
+
+reduction-rule-style/c : flat-contract?
+A contract equivalent to
+
+    (symbols 'vertical
+             'compact-vertical
+             'vertical-overlapping-side-conditions
+             'horizontal)
+
+(arrow-space) → natural-number/c
+(arrow-space space) → void?
+  space : natural-number/c
+This parameter controls the amount of extra horizontal space around the
+reduction relation arrow. Defaults to 0.
+
+(label-space) → natural-number/c
+(label-space space) → void?
+  space : natural-number/c
+This parameter controls the amount of extra space before the label on each
+rule, except in the 'vertical and 'vertical-overlapping-side-conditions modes,
+where it has no effect. Defaults to 0.
+
+(metafunction-pict-style)
+      (or/c 'left-right
+            'up-down
+            'left-right/vertical-side-conditions
+  →         'up-down/vertical-side-conditions
+            'left-right/compact-side-conditions
+            'up-down/compact-side-conditions
+            'left-right/beside-side-conditions)
+(metafunction-pict-style style) → void?
+               (or/c 'left-right
+                     'up-down
+                     'left-right/vertical-side-conditions
+   style   :         'up-down/vertical-side-conditions
+                     'left-right/compact-side-conditions
+                     'up-down/compact-side-conditions
+                     'left-right/beside-side-conditions)
+This parameter controls the style used for typesetting metafunctions. The
+'left-right style means that the results of calling the metafunction are
+displayed to the right of the arguments and the 'up-down style means that the
+results are displayed below the arguments.
+
+The 'left-right/vertical-side-conditions and 'up-down/vertical-side-conditions
+variants format side conditions each on a separate line, instead of all on the
+same line.
+
+The 'left-right/compact-side-conditions and 'up-down/compact-side-conditions
+variants move side conditions to separate lines to avoid making the rendered
+form wider than it would be otherwise.
+
+The 'left-right/beside-side-conditions variant is like 'left-right, except it
+puts the side-conditions on the same line, instead of on a new line below the
+case.
+
+(delimit-ellipsis-arguments?) → any/c
+(delimit-ellipsis-arguments? delimit?) → void?
+  delimit? : any/c
+This parameter controls the typesetting of metafunction definitions and
+applications. When it is non-#f (the default), commas precede ellipses that
+represent argument sequences; when it is #f no commas appear in those
+positions.
+
+(linebreaks) → (or/c #f (listof boolean?))
+(linebreaks breaks) → void?
+  breaks : (or/c #f (listof boolean?))
+This parameter controls which cases in the metafunction are rendered on two
+lines and which are rendered on one.
+
+If its value is a list, the length of the list must match the number of cases
+and each boolean indicates if that case has a linebreak or not.
+
+This influences the 'left/right styles only.
+
+(metafunction-cases)
+      (or/c #f (and/c (listof (and/c integer?
+  →                                  (or/c zero? positive?)))
+                      pair?))
+(metafunction-cases cases) → void?
+               (or/c #f (and/c (listof (and/c integer?
+   cases   :                                  (or/c zero? positive?)))
+                               pair?))
+This parameter controls which cases in a metafunction are rendered. If it is #f
+(the default), then all of the cases appear. If it is a list of numbers, then
+only the selected cases appear (counting from 0).
+
+(label-style) → text-style/c
+(label-style style) → void?
+  style : text-style/c
+(grammar-style) → text-style/c
+(grammar-style style) → void?
+  style : text-style/c
+(paren-style) → text-style/c
+(paren-style style) → void?
+  style : text-style/c
+(literal-style) → text-style/c
+(literal-style style) → void?
+  style : text-style/c
+(metafunction-style) → text-style/c
+(metafunction-style style) → void?
+  style : text-style/c
+(non-terminal-style) → text-style/c
+(non-terminal-style style) → void?
+  style : text-style/c
+(non-terminal-subscript-style) → text-style/c
+(non-terminal-subscript-style style) → void?
+  style : text-style/c
+(non-terminal-superscript-style) → text-style/c
+(non-terminal-superscript-style style) → void?
+  style : text-style/c
+(default-style) → text-style/c
+(default-style style) → void?
+  style : text-style/c
+These parameters determine the font used for various text in the picts. See
+text in the texpict collection for documentation explaining text-style/c. One
+of the more useful things it can be is one of the symbols 'roman, 'swiss, or
+'modern, which are a serif, sans-serif, and monospaced font, respectively. (It
+can also encode style information, too.)
+
+The label-style is used for the reduction rule label names. The literal-style
+is used for names that aren’t non-terminals that appear in patterns. The
+metafunction-style is used for the names of metafunctions. The paren-style is
+used for the parentheses (including “[”, “]”, “{”, and “}”, as well as “(” and
+“)”), but not for the square brackets used for in-hole decompositions, which
+use the default-style. The grammar-style is used for the “::=” and “|” in
+grammars.
+
+The non-terminal-style parameter is used for the names of non-terminals. Two
+parameters style the text in the (optional) "underscore" component of a
+non-terminal reference. The first, non-terminal-subscript-style, applies to the
+segment between the underscore and the first caret (^) to follow it; the
+second, non-terminal-superscript-style, applies to the segment following that
+caret. For example, in the non-terminal reference x_y^z, x has style
+non-terminal-style, y has style non-terminal-subscript-style, and z has style
+non-terminal-superscript-style.
+
+The default-style is used for parenthesis, the dot in dotted lists, spaces, the
+"where" and "fresh" in side-conditions, and other places where the other
+parameters aren’t used.
+
+(label-font-size) → (and/c (between/c 1 255) integer?)
+(label-font-size size) → void?
+  size : (and/c (between/c 1 255) integer?)
+(metafunction-font-size) → (and/c (between/c 1 255) integer?)
+(metafunction-font-size size) → void?
+  size : (and/c (between/c 1 255) integer?)
+(default-font-size) → (and/c (between/c 1 255) integer?)
+(default-font-size size) → void?
+  size : (and/c (between/c 1 255) integer?)
+These parameters control the various font sizes. The default-font-size is used
+for all of the font sizes except labels and metafunctions.
+
+(reduction-relation-rule-separation)
+ → (parameter/c (and/c integer? positive? exact?))
+(reduction-relation-rule-separation sep) → void?
+  sep : (parameter/c (and/c integer? positive? exact?))
+Controls the amount of space between clauses in a reduction relation. Defaults
+to 4.
+
+(curly-quotes-for-strings) → boolean?
+(curly-quotes-for-strings on?) → void?
+  on? : boolean?
+Controls if the open and close quotes for strings are turned into “ and ” or
+are left as merely ".
+
+Defaults to #t.
+
+(current-text) → (-> string? text-style/c number? pict?)
+(current-text proc) → void?
+  proc : (-> string? text-style/c number? pict?)
+This parameter’s function is called whenever Redex typesets some part of a
+grammar, reduction relation, or metafunction. It defaults to slideshow’s text
+function.
+
+(arrow->pict arrow) → pict?
+  arrow : symbol?
+Returns the pict corresponding to arrow.
+
+(set-arrow-pict! arrow proc) → void?
+  arrow : symbol?
+  proc : (-> pict?)
+This functions sets the pict for a given reduction-relation symbol. When
+typesetting a reduction relation that uses the symbol, the thunk will be
+invoked to get a pict to render it. The thunk may be invoked multiple times
+when rendering a single reduction relation.
+
+(white-bracket-sizing)
+ → (-> string? number? (values number? number? number? number?))
+(white-bracket-sizing proc) → void?
+  proc : (-> string? number? (values number? number? number? number?))
+This parameter is used when typesetting metafunctions to determine how to
+create the 〚〛 characters. Rather than using those characters directly (since
+glyphs tend not to be available in PostScript fonts), they are created by
+combining two ‘[’ characters or two ‘]’ characters together.
+
+The procedure accepts a string that is either "[" or "]", and returns four
+numbers. The first two numbers determine the offset (from the left and from the
+right respectively) for the second square bracket, and the second two two
+numbers determine the extra space added (to the left and to the right
+respectively).
+
+The default value of the parameter is:
+
+    (λ (str size)
+      (let ([inset-amt (floor/even (max 4 (* size 1/2)))])
+        (cond
+          [(equal? str "[")
+           (values inset-amt
+                   0
+                   0
+                   (/ inset-amt 2))]
+          [else
+           (values 0
+                   inset-amt
+                   (/ inset-amt 2)
+                   0)])))
+
+where floor/even returns the nearest even number below its argument. This means
+that for sizes 9, 10, and 11, inset-amt will be 4, and for 12, 13, 14, and 15,
+inset-amt will be 6.
+
+(horizontal-bar-spacing)
+ → (parameter/c exact-nonnegative-integer?)
+(horizontal-bar-spacing space) → void?
+  space : (parameter/c exact-nonnegative-integer?)
+Controls the amount of space around the horizontal bar when rendering a
+relation (that was created by define-relation). Defaults to 4.
+(relation-clauses-combine)
+ → (parameter/c (-> (listof pict?) pict?))
+(relation-clauses-combine combine) → void?
+  combine : (parameter/c (-> (listof pict?) pict?))
+combine is called with the list of picts that are obtained by rendering a
+relation; it should put them together into a single pict. It defaults to (λ (l)
+(apply vc-append 20 l))
+
+8.3 Removing the Pink Background
+
+When reduction rules, a metafunction, or a grammar contains unquoted Racket
+code or side-conditions, they are rendered with a pink background as a guide to
+help find them and provide alternative typesettings for them. In general, a
+good goal for a PLT Redex program that you intend to typeset is to only include
+such things when they correspond to standard mathematical operations, and the
+Racket code is an implementation of those operations.
+
+To replace the pink code, use:
+
+(with-unquote-rewriter proc expression)
+It installs proc the current unqoute rewriter and evaluates expression. If that
+expression computes any picts, the unquote rewriter specified is used to remap
+them.
+
+The proc should be a function of one argument. It receives a lw struct as an
+argument and should return another lw that contains a rewritten version of the
+code.
+
+(with-atomic-rewriter name-symbol
+                      string-or-thunk-returning-pict
+                      expression)
+This extends the current set of atomic-rewriters with one new one that rewrites
+the value of name-symbol to string-or-pict-returning-thunk (applied, in the
+case of a thunk), during the evaluation of expression.
+
+name-symbol is expected to evaluate to a symbol. The value of
+string-or-thunk-returning-pict is used whever the symbol appears in a pattern.
+
+(with-compound-rewriter name-symbol
+                        proc
+                        expression)
+This extends the current set of compound-rewriters with one new one that
+rewrites the value of name-symbol via proc, during the evaluation of
+expression.
+
+name-symbol is expected to evaluate to a symbol. The value of proc is called
+with a (listof lw), and is expected to return a new (listof (or/c lw? string?
+pict?)), rewritten appropriately.
+
+The list passed to the rewriter corresponds to the lw for the sequence that has
+name-symbol’s value at its head.
+
+The result list is constrained to have at most 2 adjacent non-lws. That list is
+then transformed by adding lw structs for each of the non-lws in the list (see
+the description of lw below for an explanation of logical-space):
+
+  • If there are two adjacent lws, then the logical space between them is
+    filled with whitespace.
+
+  • If there is a pair of lws with just a single non-lw between them, a lw will
+    be created (containing the non-lw) that uses all of the available logical
+    space between the lws.
+
+  • If there are two adjacent non-lws between two lws, the first non-lw is
+    rendered right after the first lw with a logical space of zero, and the
+    second is rendered right before the last lw also with a logical space of
+    zero, and the logical space between the two lws is absorbed by a new lw
+    that renders using no actual space in the typeset version.
+
+(struct   lw  ( e
+                line
+                line-span
+                column
+                column-span
+                unq?
+                metafunction?)
+          #:constructor-name make-lw
+          #:mutable)
+           (or/c string?
+   e   :         symbol?
+                 pict?
+                 (listof (or/c (symbols 'spring) lw?)))
+  line : exact-positive-integer?
+  line-span : exact-positive-integer?
+  column : exact-positive-integer?
+  column-span : exact-positive-integer?
+  unq? : boolean?
+  metafunction? : boolean?
+The lw data structure corresponds represents a pattern or a Racket expression
+that is to be typeset. The functions listed above construct lw structs, select
+fields out of them, and recognize them. The lw binding can be used with
+copy-struct.
+
+The values of the unq? and metafunction? fields, respectively, indicate whether
+the lw represents an unquoted expression or a metafunction application. See
+to-lw for the meanings of the other fields.
+
+(build-lw e line line-span column column-span) → lw?
+           (or/c string?
+   e   :         symbol?
+                 pict?
+                 (listof (or/c (symbols 'spring) lw?)))
+  line : exact-positive-integer?
+  line-span : exact-positive-integer?
+  column : exact-positive-integer?
+  column-span : exact-positive-integer?
+Like make-lw but specialized for constructing lws that do not represent
+unquoted expressions or metafunction applications.
+
+(to-lw arg)
+This form turns its argument into lw structs that contain all of the spacing
+information just as it would appear when being used to typeset.
+
+Each sub-expression corresponds to its own lw, and the element indicates what
+kind of subexpression it is. If the element is a list, then the lw corresponds
+to a parenthesized sequence, and the list contains a lw for the open paren, one
+lw for each component of the sequence and then a lw for the close parenthesis.
+In the case of a dotted list, there will also be a lw in the third-to-last
+position for the dot.
+
+For example, this expression:
+
+    (a)
+
+becomes this lw (assuming the above expression appears as the first thing in
+the file):
+
+    (build-lw (list (build-lw "(" 0 0 0 1)
+                             (build-lw 'a 0 0 1 1)
+                             (build-lw ")" 0 0 2 1))
+                       0 0 0 3)
+
+If there is some whitespace in the sequence, like this one:
+
+    (a b)
+
+then there is no lw that corresponds to that whitespace; instead there is a
+logical gap between the lws.
+
+    (build-lw (list (build-lw "(" 0 0 0 1)
+                    (build-lw 'a 0 0 1 1)
+                    (build-lw 'b 0 0 3 1)
+                    (build-lw ")" 0 0 4 1))
+              0 0 0 5)
+
+In general, identifiers are represented with symbols and parenthesis are
+represented with strings and picts can be inserted to render arbitrary
+pictures.
+
+The line, line-span, column, and column-span correspond to the logical spacing
+for the redex program, not the actual spacing that will be used when they are
+rendered. The logical spacing is only used when determining where to place
+typeset portions of the program. In the absence of any rewriters, these numbers
+correspond to the line and column numbers in the original program.
+
+The line and column are absolute numbers from the beginning of the file
+containing the expression. The column number is not necessarily the column of
+the open parenthesis in a sequence – it is the leftmost column that is occupied
+by anything in the sequence. The line-span is the number of lines, and the
+column span is the number of columns on the last line (not the total width).
+
+When there are multiple lines, lines are aligned based on the logical space
+(ie, the line/column & line-span/column-span) fields of the lws. As an example,
+if this is the original pattern:
+
+    (all good boys
+         deserve fudge)
+
+then the leftmost edges of the words "good" and "deserve" will be lined up
+underneath each other, but the relative positions of "boys" and "fudge" will be
+determined by the natural size of the words as they rendered in the appropriate
+font.
+
+When 'spring appears in the list in the e field of a lw struct, then it absorbs
+all of the space around it. It is also used by to-lw when constructing the
+picts for unquoted strings. For example, this expression
+
+    ,x
+
+corresponds to these structs:
+
+    (build-lw (list (build-lw "" 1 0 9 0)
+                    'spring
+                    (build-lw x 1 0 10 1))
+              1 0 9 2)
+
+and the 'spring causes there to be no space between the empty string and the x
+in the typeset output.
+
+(to-lw/stx stx) → lw?
+  stx : syntax?
+This is the runtime variant on to-lw; it accepts a syntax object and returns
+the corresponding lw structs. It only uses the location information in the
+syntax object, so metafunctions will not be rendered properly.
+
+(render-lw language/nts lw) → pict?
+  language/nts : (or/c (listof symbol?) compiled-lang?)
+  lw : lw?
+Produces a pict that corresponds to the lw object argument, using language/nts
+to determine which of the identifiers in the lw argument are non-terminals.
+
+This function sets dc-for-text-size. See also lw->pict.
+
+(lw->pict language/ntw lw) → pict?
+  language/ntw : (or/c (listof symbol?) compiled-lang?)
+  lw : lw?
+Produces a pict that corresponds to the lw object argument, using language/nts
+to determine which of the identifiers in the lw argument are non-terminals.
+
+This does not set the dc-for-text-size parameter. See also render-lw.
+
+(just-before stuff lw) → lw?
+  stuff : (or/c pict? string? symbol?)
+  lw : lw?
+(just-after stuff lw) → lw?
+  stuff : (or/c pict? string? symbol?)
+  lw : lw?
+These two helper functions build new lws whose contents are the first argument,
+and whose line and column are based on the second argument, making the new loc
+wrapper be either just before or just after that argument. The line-span and
+column-span of the new lw is always zero.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

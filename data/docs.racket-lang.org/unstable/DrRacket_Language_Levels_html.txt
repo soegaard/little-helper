@@ -1,0 +1,165 @@
+►  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+▼ 32  GUI libraries
+32.1  Dr Racket Language Levels
+32.2  Notify-boxes
+32.3  Preferences
+32.4  Slideshow Presentations
+32.5  Progressive Picts and Slides
+On this page:
+language-level@
+language-level^
+make-language-level
+simple-language-level%
+language-level-render-mixin
+language-level-capability-mixin
+language-level-no-executable-mixin
+language-level-eval-as-module-mixin
+language-level-macro-stepper-mixin
+language-level-check-expect-mixin
+language-level-metadata-mixin
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+32.1 DrRacket Language Levels
+
+Carl Eastlund <cce@racket-lang.org>
+
+ (require unstable/gui/language-level)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+language-level@ : unit?
+This unit imports drracket:tool^ and exports language-level^.
+
+language-level^ : signature
+
+
+    (make-language-level    name                   
+                            path                   
+                            mixin ...              
+                          [ #:number number        
+                            #:hierarchy hierarchy  
+                            #:summary summary      
+                            #:url url              
+                            #:reader reader])      
+     → (is-a?/c drracket:language:language<%>)
+      name : string?
+      path : module-path?
+      mixin : (-> class? class?)
+      number : integer? = ...
+      hierarchy : (listof (cons/c string? integer?)) = ...
+      summary : string? = name
+      url : (or/c string? #f) = #f
+       reader   :   (->* [] [any/c input-port?] (or/c syntax? eof-object?))
+                =   read-syntax
+    Constructs a language level as an instance of drracket:language:language<%>
+    with the given name based on the language defined by the module at path.
+    Applies (drracket:language:get-default-mixin) and the given mixins to
+    simple-language-level% to construct the class, and uses the optional
+    keyword arguments to fill in the language’s description and reader.
+
+                               (and/c (implementation?/c 
+                               drracket:language:language<%>)
+                                      (implementation?/c 
+    simple-language-level%  :  drracket:language:module-based-language<%>)
+                                      (implementation?/c 
+                               drracket:language:simple-module-based-language
+                               <%>))
+    Equal to (drracket:language:module-based-language->language-mixin (
+    drracket:language:simple-module-based-language->module-based-language-mixin
+    drracket:language:simple-module-based-language%)).
+
+    (language-level-render-mixin   to-sexp      
+                                   show-void?)  
+     → (make-mixin-contract drracket:language:language<%>)
+      to-sexp : (-> any/c any/c)
+      show-void? : boolean?
+    Produces a mixin that overrides render-value/format to apply to-sexp to
+    each value before printing it, and to skip void? values
+    (pre-transformation) if show-void? is #f.
+
+    (language-level-capability-mixin dict)
+     → (make-mixin-contract drracket:language:language<%>)
+      dict : dict?
+    Produces a mixin that augments capability-value to look up each key in
+    dict, producing the corresponding value if the key is found and deferring
+    to inner otherwise.
+
+    language-level-no-executable-mixin : (make-mixin-contract 
+    drracket:language:language<%>)
+    Overrides create-executable to print an error message in a dialog box.
+
+                                            (make-mixin-contract drracket:language:language<%>
+    language-level-eval-as-module-mixin  :                       drracket:language:module-based-language
+                                            <%>)
+    Overrides front-end/complete-program to wrap terms from the definition in a
+    module based on the language level’s definition module. This duplicates the
+    behavior of the HtDP teaching languages, for instance.
+
+    language-level-macro-stepper-mixin : (make-mixin-contract 
+    drracket:language:language<%>)
+    This mixin enables the macro stepper for its language level.
+
+    language-level-check-expect-mixin : (make-mixin-contract 
+    drracket:language:language<%>)
+    This mixin overrides on-execute to set up the check-expect test engine to a
+    language level similarly to the HtDP teaching languages.
+
+    (language-level-metadata-mixin   reader-module    
+                                     meta-lines       
+                                     meta->settings   
+                                     settings->meta)  
+     → (make-mixin-contract drracket:language:language<%>)
+      reader-module : module-path?
+      meta-lines : exact-nonnegative-integer?
+      meta->settings : (-> string? any/c any/c)
+      settings->meta : (-> symbol? any/c string?)
+    This mixin constructs a language level that stores metadata in saved files
+    allowing Drracket to automatically switch back to this language level upon
+    opening them. It overrides get-reader-module, get-metadata, metadata->
+    settings, and get-metadata-lines.
+
+    The resulting language level uses the reader from reader-module, and is
+    recognized in files that start with a reader directive for that module path
+    within the first meta-lines lines. Metadata about the language’s settings
+    is marshalled between a string and a usable value (based on a default
+    value) by meta->settings, and between a usable value for a current module
+    (with a symbolic name) by settings->meta.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

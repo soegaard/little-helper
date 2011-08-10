@@ -1,0 +1,77 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 6  Editor Classes
+ 6.1  editor<%>
+ 6.2  editor-admin%
+ 6.3  editor-canvas%
+ 6.4  editor-data%
+ 6.5  editor-data-class%
+ 6.6  editor-data-class-list<%>
+ 6.7  editor-snip-editor-admin<%>
+ 6.8  editor-snip%
+ 6.9  editor-stream-in%
+6.10  editor-stream-in-base%
+6.11  editor-stream-in-bytes-base%
+6.12  editor-stream-out%
+6.13  editor-stream-out-base%
+6.14  editor-stream-out-bytes-base%
+6.15  editor-wordbreak-map%
+6.16  keymap%
+6.17  pasteboard%
+6.18  text%
+On this page:
+add
+find
+find-position
+nth
+number
+[...search manuals...]
+  top← prev  up  next → 
+
+editor-data-class-list<%> : interface?
+Each eventspace has an instance of editor-data-class-list<%>, obtained with (
+get-the-editor-data-class-list). New instances cannot be created directly. This
+list keeps a list of editor data classes; this list is needed for loading snips
+from a file. See also Editor Data.
+
+(send an-editor-data-class-list add snipclass) → void?
+  snipclass : (is-a?/c editor-data-class%)
+Adds a snip data class to the list. If a class with the same name already
+exists in the list, this one will not be added.
+
+(send an-editor-data-class-list find name)
+ → (or/c (is-a?/c snip-class%) false/c)
+  name : string?
+Finds a snip data class from the list with the given name, returning #f if none
+can be found.
+
+(send an-editor-data-class-list find-position class)
+ → exact-nonnegative-integer?
+  class : (is-a?/c editor-data-class%)
+Returns an index into the list for the specified class.
+
+(send an-editor-data-class-list nth n)
+ → (or/c (is-a?/c editor-data-class%) false/c)
+  n : exact-nonnegative-integer?
+Returns the nth class in the list (counting from 0), returning #f if the list
+has n or less classes.
+
+(send an-editor-data-class-list number)
+ → exact-nonnegative-integer?
+Returns the number of editor data classes in the list.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

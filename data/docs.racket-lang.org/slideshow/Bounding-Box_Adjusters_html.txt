@@ -1,0 +1,101 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 2  Making Pictures
+2.1  Pict Datatype
+2.2  Basic Pict Constructors
+2.3  Pict Combiners
+2.4  Pict Drawing Adjusters
+2.5  Bounding-Box Adjusters
+2.6  Pict Finders
+2.7  More Pict Constructors
+2.8  Miscellaneous
+2.9  Rendering
+On this page:
+inset
+clip-descent
+lift-above-baseline
+drop-below-ascent
+baseless
+refocus
+panorama
+use-last
+use-last*
+[...search manuals...]
+  top← prev  up  next → 
+
+2.5 Bounding-Box Adjusters
+
+(inset pict amt) → pict?
+  pict : pict?
+  amt : real?
+(inset pict h-amt v-amt) → pict?
+  pict : pict?
+  h-amt : real?
+  v-amt : real?
+(inset pict l-amt t-amt r-amt b-amt) → pict?
+  pict : pict?
+  l-amt : real?
+  t-amt : real?
+  r-amt : real?
+  b-amt : real?
+Extends pict’s bounding box by adding the given amounts to the corresponding
+sides; ascent and descent are extended, too.
+
+(clip-descent pict) → pict?
+  pict : pict?
+Truncates pict’s bounding box by removing the descent part.
+
+(lift-above-baseline pict amt) → pict?
+  pict : pict?
+  amt : real?
+Lifts pict relative to its baseline, extending the bounding-box height if
+necessary.
+
+(drop-below-ascent pict amt) → pict?
+  pict : pict?
+  amt : real?
+Drops pict relative to its ascent line, extending the bounding-box height if
+necessary.
+
+(baseless pict) → pict?
+  pict : pict?
+Makes the descent 0 and the ascent the same as the height.
+
+(refocus pict sub-pict) → pict?
+  pict : pict?
+  sub-pict : pict?
+Assuming that sub-pict can be found within pict, shifts the overall bounding
+box to that of sub-pict (but preserving all the drawing of pict). The last
+element, as reported by pict-last is also set to (or (pict-last sub-pict)
+sub-pict).
+
+(panorama pict) → pict?
+  pict : pict?
+Shifts the given pict’s bounding box to enclose the bounding boxes of all
+sub-picts (even laundered picts).
+
+(use-last pict sub-pict) → pict?
+  pict : pict?
+  sub-pict : pict-path?
+Returns a pict like pict, but with the last element (as reported by pict-last)
+set to sub-pict. The sub-pict must exist as a sub-pict (or path of sub-picts)
+within pict.
+
+(use-last* pict sub-pict) → pict?
+  pict : pict?
+  sub-pict : pict-path?
+Propagates the last element of sub-pict to pict.
+
+That is, use-last* is like use-last, but the last element of sub-pict is used
+as the new last element for pict, instead of sub-pict itself—unless (pict-last
+sub-pict) is #f, in which case sub-pict is used as the last element of pict.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

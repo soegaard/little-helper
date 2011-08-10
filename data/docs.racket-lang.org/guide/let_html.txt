@@ -1,0 +1,281 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 4  Expressions and Definitions
+ 4.1  Notation
+ 4.2  Identifiers and Binding
+ 4.3  Function Calls (Procedure Applications)
+ 4.4  Functions (Procedures): lambda
+ 4.5  Definitions: define
+ 4.6  Local Binding
+ 4.7  Conditionals
+ 4.8  Sequencing
+ 4.9  Assignment: set!
+4.10  Quoting: quote and ’
+4.11  Quasiquoting: quasiquote and `
+4.12  Simple Dispatch: case
+4.13  Dynamic Binding: parameterize
+► 4.6  Local Binding
+4.6.1  Parallel Binding: let
+4.6.2  Sequential Binding: let*
+4.6.3  Recursive Binding: letrec
+4.6.4  Named let
+4.6.5  Multiple Values: let-values, let*-values, letrec-values
+On this page:
+4.6.1 Parallel Binding: let
+4.6.2 Sequential Binding: let*
+4.6.3 Recursive Binding: letrec
+4.6.4 Named let
+4.6.5 Multiple Values: let-values, let*-values, letrec-values
+[...search manuals...]
+  top← prev  up  next → 
+
+4.6 Local Binding
+
+Although internal defines can be used for local binding, Racket provides three
+forms that give the programmer more control over bindings: let, let*, and
+letrec.
+
+4.6.1 Parallel Binding: let
+
+            +Local Binding: let, let*, letrec, ... in The Racket Reference also
+            documents let.
+
+A let form binds a set of identifiers, each to the result of some expression,
+for use in the let body:
+
+    (let ([id expr] ...) body ...+)
+
+The ids are bound “in parallel.” That is, no id is bound in the right-hand side
+expr for any id, but all are available in the body. The ids must be different
+from each other.
+
+Examples:
+
+    > (let ([me "Bob"])
+        me)
+    "Bob"
+
+    > (let ([me "Bob"]
+            [myself "Robert"]
+            [I "Bobby"])
+        (list me myself I))
+    '("Bob" "Robert" "Bobby")
+
+    > (let ([me "Bob"]
+            [me "Robert"])
+        me)
+    eval:3:0: let: duplicate identifier at: me in: (let ((me
+
+    "Bob") (me "Robert")) me)
+
+
+
+The fact that an id’s expr does not see its own binding is often useful for
+wrappers that must refer back to the old value:
+
+    > (let ([+ (lambda (x y)
+                 (if (string? x)
+                     (string-append x y)
+                     (+ x y)))]) ; use original +
+        (list (+ 1 2)
+              (+ "see" "saw")))
+    '(3 "seesaw")
+
+
+Occasionally, the parallel nature of let bindings is convenient for swapping or
+rearranging a set of bindings:
+
+    > (let ([me "Tarzan"]
+            [you "Jane"])
+        (let ([me you]
+              [you me])
+          (list me you)))
+    '("Jane" "Tarzan")
+
+
+The characterization of let bindings as “parallel” is not meant to imply
+concurrent evaluation. The exprs are evaluated in order, even though the
+bindings are delayed until all exprs are evaluated.
+
+4.6.2 Sequential Binding: let*
+
+            +Local Binding: let, let*, letrec, ... in The Racket Reference also
+            documents let*.
+
+The syntax of let* is the same as let:
+
+    (let* ([id expr] ...) body ...+)
+
+The difference is that each id is available for use in later exprs, as well as
+in the body. Furthermore, the ids need not be distinct, and the most recent
+binding is the visible one.
+
+Examples:
+
+    > (let* ([x (list "Borroughs")]
+             [y (cons "Rice" x)]
+             [z (cons "Edgar" y)])
+        (list x y z))
+    '(("Borroughs") ("Rice" "Borroughs") ("Edgar" "Rice" "Borroughs"))
+
+    > (let* ([name (list "Borroughs")]
+             [name (cons "Rice" name)]
+             [name (cons "Edgar" name)])
+        name)
+    '("Edgar" "Rice" "Borroughs")
+
+
+
+In other words, a let* form is equivalent to nested let forms, each with a
+single binding:
+
+    > (let ([name (list "Borroughs")])
+        (let ([name (cons "Rice" name)])
+          (let ([name (cons "Edgar" name)])
+            name)))
+    '("Edgar" "Rice" "Borroughs")
+
+
+4.6.3 Recursive Binding: letrec
+
+            +Local Binding: let, let*, letrec, ... in The Racket Reference also
+            documents letrec.
+
+The syntax of letrec is also the same as let:
+
+    (letrec ([id expr] ...) body ...+)
+
+While let makes its bindings available only in the bodys, and let* makes its
+bindings available to any later binding expr, letrec makes its bindings
+available to all other exprs—even earlier ones. In other words, letrec bindings
+are recursive.
+
+The exprs in a letrec form are most often lambda forms for recursive and
+mutually recursive functions:
+
+    > (letrec ([swing
+                (lambda (t)
+                  (if (eq? (car t) 'tarzan)
+                      (cons 'vine
+                            (cons 'tarzan (cddr t)))
+                      (cons (car t)
+                            (swing (cdr t)))))])
+        (swing '(vine tarzan vine vine)))
+    '(vine vine tarzan vine)
+
+
+    > (letrec ([tarzan-in-tree?
+                (lambda (name path)
+                  (or (equal? name "tarzan")
+                      (and (directory-exists? path)
+                           (tarzan-in-directory? path))))]
+               [tarzan-in-directory?
+                (lambda (dir)
+                  (ormap (lambda (elem)
+                           (tarzan-in-tree? (path-element->string elem)
+                                            (build-path dir elem)))
+                         (directory-list dir)))])
+        (tarzan-in-tree? "tmp" (find-system-path 'temp-dir)))
+    #f
+
+
+While the exprs of a letrec form are typically lambda expressions, they can be
+any expression. The expressions are evaluated in order, and after each value is
+obtained, it is immediately associated with its corresponding id. If an id is
+referenced before its value is ready, the result is #<undefined>, as just as
+for internal definitions.
+
+    > (letrec ([quicksand quicksand])
+        quicksand)
+    #<undefined>
+
+
+4.6.4 Named let
+
+A named let is an iteration and recursion form. It uses the same syntactic
+keyword let as for local binding, but an identifier after the let (instead of
+an immediate open parenthesis) triggers a different parsing.
+
+    (let _proc-id ([_arg-id _init-expr] ...)
+      _body ...+)
+
+A named let form is equivalent to
+
+    (letrec ([proc-id (lambda (arg-id ...)
+                         body ...+)])
+      (proc-id init-expr ...))
+
+That is, a named let binds a function identifier that is visible only in the
+function’s body, and it implicitly calls the function with the values of some
+initial expressions.
+
+Examples:
+
+    (define (duplicate pos lst)
+      (let dup ([i 0]
+                [lst lst])
+       (cond
+        [(= i pos) (cons (car lst) lst)]
+        [else (cons (car lst) (dup (+ i 1) (cdr lst)))])))
+    > (duplicate 1 (list "apple" "cheese burger!" "banana"))
+    '("apple" "cheese burger!" "cheese burger!" "banana")
+
+
+
+4.6.5 Multiple Values: let-values, let*-values, letrec-values
+
+            +Local Binding: let, let*, letrec, ... in The Racket Reference also
+            documents multiple-value binding forms.
+
+In the same way that define-values binds multiple results in a definition (see
+Multiple Values and define-values), let-values, let*-values, and letrec-values
+bind multiple results locally.
+
+    (let-values ([(id ...) expr] ...)
+      body ...+)
+
+    (let*-values ([(id ...) expr] ...)
+      body ...+)
+
+    (letrec-values ([(id ...) expr] ...)
+      body ...+)
+
+Each expr must produce as many values as corresponding ids. The binding rules
+are the same for the forms without -values forms: the ids of let-values are
+bound only in the bodys, the ids of let*-valuess are bound in exprs of later
+clauses, and the ids of letrec-values are bound for all exprs.
+
+Example:
+
+    > (let-values ([(q r) (quotient/remainder 14 3)])
+        (list q r))
+    '(4 2)
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

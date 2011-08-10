@@ -1,0 +1,1144 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+► 2.2  Importing and Exporting: require and provide
+2.2.1  Additional require Forms
+2.2.2  Additional provide Forms
+On this page:
+require
+only-in
+except-in
+prefix-in
+rename-in
+combine-in
+only-meta-in
+lib
+file
+planet
+local-require
+provide
+all-defined-out
+all-from-out
+rename-out
+except-out
+prefix-out
+struct-out
+combine-out
+protect-out
+for-meta
+for-syntax
+for-template
+for-label
+#%require
+#%provide
+2.2.1 Additional require Forms
+matching-identifiers-in
+subtract-in
+filtered-in
+path-up
+multi-in
+2.2.2 Additional provide Forms
+matching-identifiers-out
+filtered-out
+[...search manuals...]
+  top← prev  up  next → 
+
+2.2 Importing and Exporting: require and provide
+
+            +Imports: require in The Racket Guide introduces require.
+
+(require require-spec ...)
+ 
+    require-spec   =   module-path
+                   |   (only-in require-spec id-maybe-renamed ...)
+                   |   (except-in require-spec id ...)
+                   |   (prefix-in prefix-id require-spec)
+                   |   (rename-in require-spec [orig-id bind-id] ...)
+                   |   (combine-in require-spec ...)
+                   |   (only-meta-in phase-level require-spec ...)
+                   |   (for-syntax require-spec ...)
+                   |   (for-template require-spec ...)
+                   |   (for-label require-spec ...)
+                   |   (for-meta phase-level require-spec ...)
+                   |   derived-require-spec
+                        
+     module-path   =   (quote id)
+                   |   rel-string
+                   |   (lib rel-string ...+)
+                   |   id
+                   |   (file string)
+                   |   (planet id)
+                   |   (planet string)
+                   |   (planet rel-string
+                               (user-string pkg-string vers)
+                               rel-string ...)
+                        
+id-maybe-renamed   =   id
+                   |   [orig-id bind-id]
+                        
+     phase-level   =   exact-integer
+                   |   #f
+                        
+            vers   =  
+                   |   nat
+                   |   nat minor-vers
+                        
+      minor-vers   =   nat
+                   |   (nat nat)
+                   |   (= nat)
+                   |   (+ nat)
+                   |   (- nat)
+In a top-level context, require instantiates modules (see Modules and
+Module-Level Variables). In a top-level context or module context, expansion of
+require visits modules (see Module Phases and Visits). In both contexts and
+both evaluation and expansion, require introduces bindings into a namespace or
+a module (see Introducing Bindings). A require form in a expression context or
+internal-definition context is a syntax error.
+
+A require-spec designates a particular set of identifiers to be bound in the
+importing context. Each identifier is mapped to a particular export of a
+particular module; the identifier to bind may be different from the symbolic
+name of the originally exported identifier. Each identifier also binds at a
+particular phase level.
+
+The syntax of require-spec can be extended via define-require-syntax, and when
+multiple require-specs are specified in a require, the bindings of each
+require-spec are visible for expanding later require-specs. The pre-defined
+forms (as exported by racket/base) are as follows:
+
+    module-path
+
+    Imports all exported bindings from the named module, using the export
+    identifiers as the local identifiers. (See below for information on
+    module-path.) The lexical context of the module-path form determines the
+    context of the introduced identifiers.
+
+    (only-in require-spec id-maybe-renamed ...)
+    Like require-spec, but constrained to those exports for which the
+    identifiers to bind match id-maybe-renamed: as id or as orig-id in [orig-id
+    bind-id]. If the id or orig-id of any id-maybe-renamed is not in the set
+    that require-spec describes, a syntax error is reported.
+
+    Examples:
+
+        > (require (only-in racket/tcp
+                            tcp-listen
+                            [tcp-accept my-accept]))
+        > tcp-listen
+        #<procedure:tcp-listen>
+
+        > my-accept
+        #<procedure:tcp-accept>
+
+        > tcp-accept
+        reference to undefined identifier: tcp-accept
+
+
+
+    (except-in require-spec id ...)
+    Like require-spec, but omitting those imports for which ids are the
+    identifiers to bind; if any id is not in the set that require-spec
+    describes, a syntax error is reported.
+
+    Examples:
+
+        > (require (except-in racket/tcp
+                              tcp-listen))
+        > tcp-accept
+        #<procedure:tcp-accept>
+
+        > tcp-listen
+        reference to undefined identifier: tcp-listen
+
+
+
+    (prefix-in prefix-id require-spec)
+    Like require-spec, but adjusting each identifier to be bound by prefixing
+    it with prefix-id. The lexical context of the prefix-id is ignored, and
+    instead preserved from the identifiers before prefixing.
+
+    Examples:
+
+        > (require (prefix-in tcp: racket/tcp))
+        > tcp:tcp-accept
+        #<procedure:tcp-accept>
+
+        > tcp:tcp-listen
+        #<procedure:tcp-listen>
+
+
+
+    (rename-in require-spec [orig-id bind-id] ...)
+    Like require-spec, but replacing the identifier to bind orig-id with
+    bind-id; if any orig-id is not in the set that require-spec describes, a
+    syntax error is reported.
+
+    Examples:
+
+        > (require (rename-in racket/tcp
+                              (tcp-accept accept)
+                              (tcp-listen listen)))
+        > accept
+        #<procedure:tcp-accept>
+
+        > listen
+        #<procedure:tcp-listen>
+
+
+
+    (combine-in require-spec ...)
+    The union of the require-specs.
+
+    Examples:
+
+        > (require (combine-in (only-in racket/tcp tcp-accept)
+                               (only-in racket/tcp tcp-listen)))
+        > tcp-accept
+        #<procedure:tcp-accept>
+
+        > tcp-listen
+        #<procedure:tcp-listen>
+
+
+
+    (only-meta-in phase-level require-spec ...)
+    Like the combination of require-specs, but removing any binding that is not
+    for phase-level, where #f for phase-level corresponds to the label phase
+    level.
+
+    The following example imports bindings only at phase level 1, the transform
+    phase:
+
+        > (module nest racket
+            (provide (for-syntax meta-eggs)
+                     (for-meta 1 meta-chicks)
+                     num-eggs)
+            (define-for-syntax meta-eggs 2)
+            (define-for-syntax meta-chicks 3)
+            (define num-eggs 2))
+        > (require (only-meta-in 1 'nest))
+        > (define-syntax (desc stx)
+            (printf "~s ~s\n" meta-eggs meta-chicks)
+            #'(void))
+        > (desc)
+        2 3
+
+        > num-eggs
+        reference to undefined identifier: num-eggs
+
+
+    The following example imports only bindings at phase level 0, the normal
+    phase.
+
+        > (require (only-meta-in 0 'nest))
+        > num-eggs
+        2
+
+
+    (for-meta phase-level require-spec ...)
+
+    Like the combination of require-specs, but the binding specified by each
+    require-spec is shifted by phase-level. The label phase level corresponds
+    to #f, and a shifting combination that involves #f produces #f.
+
+    Examples:
+
+        > (module nest racket
+            (provide num-eggs)
+            (define num-eggs 2))
+        > (require (for-meta 0 'nest))
+        > num-eggs
+        2
+
+        > (require (for-meta 1 'nest))
+        > (define-syntax (roost stx)
+            (datum->syntax stx num-eggs))
+        > (roost)
+        2
+
+
+
+    (for-syntax require-spec ...)
+
+    Same as (for-meta 1 require-spec ...).
+
+    (for-template require-spec ...)
+
+    Same as (for-meta -1 require-spec ...).
+
+    (for-label require-spec ...)
+
+    Same as (for-meta #f require-spec ...).
+
+    derived-require-spec
+
+    See define-require-syntax for information on expanding the set of
+    require-spec forms.
+
+            +Module Paths in The Racket Guide introduces module paths.
+
+A module-path identifies a module, either through a concrete name in the form
+of an identifier, or through an indirect name that can trigger automatic
+loading of the module declaration. Except for the id case below, the actual
+resolution is up to the current module name resolver (see
+current-module-name-resolver), and the description below corresponds to the
+default module name resolver.
+
+    (quote id)
+
+    Refers to a module previously declared interactively with the name id.
+
+    Examples:
+
+        ; a module declared interactively as test:
+        > (require 'test)
+
+
+    rel-string
+
+    A path relative to the containing source (as determined by
+    current-load-relative-directory or current-directory). Regardless of the
+    current platform, rel-string is always parsed as a Unix-format relative
+    path: / is the path delimiter (multiple adjacent /s are treated as a single
+    delimiter), .. accesses the parent directory, and . accesses the current
+    directory. The path cannot be empty or contain a leading or trailing slash,
+    path elements before than the last one cannot include a file suffix (i.e.,
+    a . in an element other than . or ..), and the only allowed characters are
+    ASCII letters, ASCII digits, -, +, _, ., /, and %. Furthermore, a % is
+    allowed only when followed by two lowercase hexadecimal digits, and the
+    digits must form a number that is not the ASCII value of a letter, digit,
+    -, +, or _.
+
+                The % provision is intended to support a one-to-one encoding of
+                arbitrary strings as path elements (after UTF-8 encoding). Such
+                encodings are not decoded to arrive at a filename, but instead
+                preserved in the file access.
+
+    If rel-string ends with a ".ss" suffix, it is converted to a ".rkt" suffix.
+    The compiled-load handler may reverse that conversion if a ".rkt" file does
+    not exist and a ".ss" exists.
+
+    Examples:
+
+        ; a module named "x.rkt" in the same
+        ; directory as the enclosing module's file:
+        > (require "x.rkt")
+        ; a module named "x.rkt" in the parent directory
+        ; of the enclosing module file's directory:
+        > (require "../x.rkt")
+
+
+    (lib rel-string ...+)
+    A path to a module installed into a collection (see Libraries and
+    Collections). The rel-strings in lib are constrained similar to the plain
+    rel-string case, with the additional constraint that a rel-string cannot
+    contain . or .. directory indicators.
+
+    The specific interpretation of the path depends on the number and shape of
+    the rel-strings:
+
+      □ If a single rel-string is provided, and if it consists of a single
+        element (i.e., no /) with no file suffix (i.e., no .), then rel-string
+        names a collection, and "main.rkt" is the library file name.
+
+        Examples:
+
+            ; the main swindle library:
+            > (require (lib "swindle"))
+            ; the same:
+            > (require (lib "swindle/main.rkt"))
+
+      □ If a single rel-string is provided, and if it consists of multiple /
+        -separated elements, then each element up to the last names a
+        collection, subcollection, etc., and the last element names a file. If
+        the last element has no file suffix, ".rkt" is added, while a ".ss"
+        suffix is converted to ".rkt".
+
+        Examples:
+
+            ; "turbo.rkt" from the "swindle" collection:
+            > (require (lib "swindle/turbo"))
+            ; the same:
+            > (require (lib "swindle/turbo.rkt"))
+            ; the same:
+            > (require (lib "swindle/turbo.ss"))
+
+      □ If a single rel-string is provided, and if it consists of a single
+        element with a file suffix (i.e, with a .), then rel-string names a
+        file within the "mzlib" collection. A ".ss" suffix is converted to
+        ".rkt". (This convention is for compatibility with older version of
+        Racket.)
+
+        Examples:
+
+            ; "tar.rkt" module from the "mzlib" collection:
+            > (require (lib "tar.ss"))
+
+      □ Otherwise, when multiple rel-strings are provided, the first rel-string
+        is effectively moved after the others, and all rel-strings are appended
+        with / separators. The resulting path names a collection, then
+        subcollection, etc., ending with a file name. No suffix is added
+        automatically, but a ".ss" suffix is converted to ".rkt". (This
+        convention is for compatibility with older version of Racket.)
+
+        Examples:
+
+            ; "tar.rkt" module from the "mzlib" collection:
+            > (require (lib "tar.ss" "mzlib"))
+
+
+    id
+
+    A shorthand for a lib form with a single rel-string whose characters are
+    the same as in the symbolic form of id. In addition to the constraints of a
+    lib rel-string, id must not contain ..
+
+    Example:
+
+        > (require racket/tcp)
+
+
+    (file string)
+    Similar to the plain rel-string case, but string is a path—possibly
+    absolute—using the current platform’s path conventions and expand-user-path
+    . A ".ss" suffix is converted to ".rkt".
+
+    Example:
+
+        > (require (file "~/tmp/x.rkt"))
+
+
+    (planet id)
+    (planet string)
+    (planet rel-string (user-string pkg-string vers)
+            rel-string ...)
+    Specifies a library available via the PLaneT server.
+
+    The first form is a shorthand for the last one, where the id’s character
+    sequence must match the following ‹spec› grammar:
+
+      ‹spec›     ::=  ‹owner› / ‹pkg› ‹lib›
+
+      ‹owner›    ::=  ‹elem›
+
+      ‹pkg›      ::=  ‹elem›  |  ‹elem› : ‹version›
+
+      ‹version›  ::=  ‹int›  |  ‹int› : ‹minor›
+
+      ‹minor›    ::=  ‹int›  |  <= ‹int›  |  >= ‹int›  |  = ‹int›
+
+                  |   ‹int› - ‹int›
+
+      ‹lib›      ::=  ‹empty›  |  / ‹path›
+
+      ‹path›     ::=  ‹elem›  |  ‹elem› / ‹path›
+
+
+    and where an ‹elem› is a non-empty sequence of characters that are ASCII
+    letters, ASCII digits, -, +, _, or % followed by lowercase hexadecimal
+    digits (that do not encode one of the other allowed characters), and an
+    ‹int› is a non-empty sequence of ASCII digits. As this shorthand is
+    expended, a ".plt" extension is added to ‹pkg›, and a ".rkt" extension is
+    added to ‹path›; if no ‹path› is included, "main.rkt" is used in the
+    expansion.
+
+    A (planet string) form is like a (planet id) form with the identifier
+    converted to a string, except that the string can optionally end with a
+    file extension (i.e., a .) for a ‹path›. A ".ss" file extension is
+    converted to ".rkt".
+
+    In the more general last form of a planet module path, the rel-strings are
+    similar to the lib form, except that the (user-string pkg-string vers)
+    names a PLaneT-based package instead of a collection. A version
+    specification can include an optional major and minor version, where the
+    minor version can be a specific number or a constraint: (nat nat) specifies
+    an inclusive range, (= nat) specifies an exact match, (+ nat) specifies a
+    minimum version and is equivalent to just nat, and (- nat) specifies a
+    maximum version. The =, +, and - identifiers in a minor-version constraint
+    are recognized symbolically.
+
+    Examples:
+
+        ; "main.rkt" in package "farm" by "mcdonald":
+        > (require (planet mcdonald/farm))
+        ; "main.rkt" in version >= 2.0 of "farm" by "mcdonald":
+        > (require (planet mcdonald/farm:2))
+        ; "main.rkt" in version >= 2.5 of "farm" by "mcdonald":
+        > (require (planet mcdonald/farm:2:5))
+        ; "duck.rkt" in version >= 2.5 of "farm" by "mcdonald":
+        > (require (planet mcdonald/farm:2:5/duck))
+
+
+No identifier can be bound multiple times in a given phase level by an import,
+unless all of the bindings refer to the same original definition in the same
+module. In a module context, an identifier can be either imported or defined
+for a given phase level, but not both.
+
+(local-require require-spec ...)
+Like require, but for use in a internal-definition context to import just into
+the local context. Only bindings from phase level 0 are imported.
+
+            +Exports: provide in The Racket Guide introduces provide.
+
+(provide provide-spec ...)
+ 
+provide-spec   =   id
+               |   (all-defined-out)
+               |   (all-from-out module-path ...)
+               |   (rename-out [orig-id export-id] ...)
+               |   (except-out provide-spec provide-spec ...)
+               |   (prefix-out prefix-id provide-spec)
+               |   (struct-out id)
+               |   (combine-out provide-spec ...)
+               |   (protect-out provide-spec ...)
+               |   (for-meta phase-level provide-spec ...)
+               |   (for-syntax provide-spec ...)
+               |   (for-template provide-spec ...)
+               |   (for-label provide-spec ...)
+               |   derived-provide-spec
+                    
+ phase-level   =   exact-integer
+               |   #f
+Declares exports from a module. A provide form must appear in a module context
+or a module-begin context.
+
+A provide-spec indicates one or more bindings to provide. For each exported
+binding, the external name is a symbol that can be different from the symbolic
+form of the identifier that is bound within the module. Also, each export is
+drawn from a particular phase level and exported at the same phase level.
+
+The syntax of provide-spec can be extended via define-provide-syntax, but the
+pre-defined forms are as follows.
+
+    id
+
+    Exports id, which must be bound within the module (i.e., either defined or
+    imported) at the relevant phase level. The symbolic form of id is used as
+    the external name, and the symbolic form of the defined or imported
+    identifier must match (otherwise, the external name could be ambiguous).
+
+    Examples:
+
+        > (module nest racket
+            (provide num-eggs)
+            (define num-eggs 2))
+        > (require 'nest)
+        > num-eggs
+        2
+
+
+
+    If id has a transformer binding to a rename transformer, then the
+    transformer affects the exported binding. See make-rename-transformer for
+    more information.
+
+    (all-defined-out)
+    Exports all identifiers that are defined at phase level 0 or phase level 1
+    within the exporting module, and that have the same lexical context as the
+    (all-defined-out) form, excluding bindings to rename transformers where the
+    target identifier has the 'not-provide-all-defined syntax property. The
+    external name for each identifier is the symbolic form of the identifier.
+    Only identifiers accessible from the lexical context of the (
+    all-defined-out) form are included; that is, macro-introduced imports are
+    not re-exported, unless the (all-defined-out) form was introduced at the
+    same time.
+
+    Examples:
+
+        > (module nest racket
+            (provide (all-defined-out))
+            (define num-eggs 2))
+        > (require 'nest)
+        > num-eggs
+        2
+
+
+
+    (all-from-out module-path ...)
+    Exports all identifiers that are imported into the exporting module using a
+    require-spec built on each module-path (see Importing and Exporting:
+    require and provide) with no phase-level shift. The symbolic name for
+    export is derived from the name that is bound within the module, as opposed
+    to the symbolic name of the export from each module-path. Only identifiers
+    accessible from the lexical context of the module-path are included; that
+    is, macro-introduced imports are not re-exported, unless the module-path
+    was introduced at the same time.
+
+    Examples:
+
+        > (module nest racket
+            (provide num-eggs)
+            (define num-eggs 2))
+        > (module hen-house racket
+            (require 'nest)
+            (provide (all-from-out 'nest)))
+        > (require 'hen-house)
+        > num-eggs
+        2
+
+
+
+    (rename-out [orig-id export-id] ...)
+    Exports each orig-id, which must be bound within the module at phase level
+    0. The symbolic name for each export is export-id instead orig-d.
+
+    Examples:
+
+        > (module nest racket
+            (provide (rename-out [count num-eggs]))
+            (define count 2))
+        > (require 'nest)
+        > num-eggs
+        2
+
+        > count
+        reference to undefined identifier: count
+
+
+
+    (except-out provide-spec provide-spec ...)
+    Like the first provide-spec, but omitting the bindings listed in each
+    subsequent provide-spec. If one of the latter bindings is not included in
+    the initial provide-spec, a syntax error is reported. The symbolic export
+    name information in the latter provide-specs is ignored; only the bindings
+    are used.
+
+    Examples:
+
+        > (module nest racket
+            (provide (except-out (all-defined-out)
+                                 num-chicks))
+            (define num-eggs 2)
+            (define num-chicks 3))
+        > (require 'nest)
+        > num-eggs
+        2
+
+        > num-chicks
+        reference to undefined identifier: num-chicks
+
+
+
+    (prefix-out prefix-id provide-spec)
+    Like provide-spec, but with each symbolic export name from provide-spec
+    prefixed with prefix-id.
+
+    Examples:
+
+        > (module nest racket
+            (provide (prefix-out chicken: num-eggs))
+            (define num-eggs 2))
+        > (require 'nest)
+        > chicken:num-eggs
+        2
+
+
+
+    (struct-out id)
+    Exports the bindings associated with a structure type id. Typically, id is
+    bound with (struct id ....); more generally, id must have a transformer
+    binding of structure-type information at phase level 0; see Structure Type
+    Transformer Binding. Furthermore, for each identifier mentioned in the
+    structure-type information, the enclosing module must define or import one
+    identifier that is free-identifier=?. If the structure-type information
+    includes a super-type identifier, and if the identifier has a transformer
+    binding of structure-type information, the accessor and mutator bindings of
+    the super-type are not included by struct-out for export.
+
+    Examples:
+
+        > (module nest racket
+            (provide (struct-out egg))
+            (struct egg (color wt)))
+        > (require 'nest)
+        > (egg-color (egg 'blue 10))
+        'blue
+
+
+
+    (combine-out provide-spec ...)
+    The union of the provide-specs.
+
+    Examples:
+
+        > (module nest racket
+            (provide (combine-out num-eggs num-chicks))
+            (define num-eggs 2)
+            (define num-chicks 1))
+        > (require 'nest)
+        > num-eggs
+        2
+
+        > num-chicks
+        1
+
+
+
+    (protect-out provide-spec ...)
+    Like the union of the provide-specs, except that the exports are protected;
+    requiring modules may refer to these bindings, but may not extract these
+    bindings from macro expansions or access them via eval without access
+    privileges. For more details, see Code Inspectors. The provide-spec must
+    specify only bindings that are defined within the exporting module.
+
+    Examples:
+
+        > (module nest racket
+            (provide num-eggs (protect-out num-chicks))
+            (define num-eggs 2)
+            (define num-chicks 3))
+        > (define weak-inspector (make-inspector (current-code-inspector)))
+        > (define (weak-eval x)
+            (parameterize ([current-code-inspector weak-inspector])
+              (eval x)))
+        > (require 'nest)
+        > (list num-eggs num-chicks)
+        '(2 3)
+
+        > (weak-eval 'num-eggs)
+        2
+
+        > (weak-eval 'num-chicks)
+        3
+
+
+
+    (for-meta phase-level provide-spec ...)
+
+    Like the union of the provide-specs, but adjusted to apply to phase level
+    specified by phase-level (where #f corresponds to the label phase level).
+    In particular, an id or rename-out form as a provide-spec refers to a
+    binding at phase-level, an all-defined-out exports only phase-level
+    definitions, and an all-from-out exports bindings imported with a shift by
+    phase-level.
+
+    Examples:
+
+        > (module nest racket
+            (define-for-syntax eggs 2)
+            (define chickens 3)
+            (provide (for-syntax eggs)
+                     chickens))
+        > (require 'nest)
+        > (define-syntax (test-eggs stx)
+            (printf "Eggs are ~a\n" eggs)
+            #'0)
+        > (test-eggs)
+        Eggs are 2
+
+        0
+
+        > chickens
+        3
+
+        > (module broken-nest racket
+            (define eggs 2)
+            (define chickens 3)
+            (provide (for-syntax eggs)
+                     chickens))
+        eval:7:0: module: provided identifier not defined or
+
+        imported at: eggs in: (#%module-begin
+
+        (printing-module-begin (define eggs 2))
+
+        (printing-module-begin (define chickens 3))
+
+        (printing-module-begin (provide (for-syntax eggs)
+
+        chickens)))
+
+        > (module nest2 racket
+           (define-for-syntax eggs 2)
+           (provide (for-syntax eggs)))
+        > (require (for-meta 2 racket/base)
+                   (for-syntax 'nest2))
+        > (define-syntax (test stx)
+           (define-syntax (show-eggs stx)
+            (printf "Eggs are ~a\n" eggs)
+            #'0)
+           (begin
+            (show-eggs)
+            #'0))
+        Eggs are 2
+
+        > (test)
+        0
+
+
+
+    (for-syntax provide-spec ...)
+
+    Same as (for-meta 1 provide-spec ...).
+
+    (for-template provide-spec ...)
+
+    Same as (for-meta -1 provide-spec ...).
+
+    (for-label provide-spec ...)
+
+    Same as (for-meta #f provide-spec ...).
+
+    derived-provide-spec
+
+    See define-provide-syntax for information on expanding the set of
+    provide-spec forms.
+
+Each export specified within a module must have a distinct symbolic export
+name, though the same binding can be specified with the multiple symbolic
+names.
+
+(for-meta phase-level require-spec ...)
+See require and provide.
+(for-syntax require-spec ...)
+See require and provide.
+(for-template require-spec ...)
+See require and provide.
+(for-label require-spec ...)
+See require and provide.
+
+(#%require raw-require-spec ...)
+ 
+raw-require-spec   =   phaseless-spec
+                   |   (for-meta phase-level phaseless-spec ...)
+                   |   (for-syntax phaseless-spec ...)
+                   |   (for-template phaseless-spec ...)
+                   |   (for-label phaseless-spec ...)
+                   |   (just-meta phase-level raw-require-spec ...)
+                        
+     phase-level   =   exact-integer
+                   |   #f
+                        
+  phaseless-spec   =   raw-module-path
+                   |   (only raw-module-path id ...)
+                   |   (prefix prefix-id raw-module-path)
+                   |   (all-except raw-module-path id ...)
+                   |   (prefix-all-except prefix-id
+                                          raw-module-path id ...)
+                   |   (rename raw-module-path local-id exported-id)
+                        
+ raw-module-path   =   (quote id)
+                   |   rel-string
+                   |   (lib rel-string ...)
+                   |   id
+                   |   (file string)
+                   |   (planet rel-string
+                               (user-string pkg-string vers ...))
+The primitive import form, to which require expands. A raw-require-spec is
+similar to a require-spec in a require form, except that the syntax is more
+constrained, not composable, and not extensible. Also, sub-form names like
+for-syntax and lib are recognized symbolically, instead of via bindings.
+Although not formalized in the grammar above, a just-meta form cannot appear
+within a just-meta form.
+
+Each raw-require-spec corresponds to the obvious require-spec, but the rename
+sub-form has the identifiers in reverse order compared to rename-in.
+
+For most raw-require-specs, the lexical context of the raw-require-spec
+determines the context of introduced identifiers. The exception is the rename
+sub-form, where the lexical context of the local-id is preserved.
+
+(#%provide raw-provide-spec ...)
+ 
+raw-provide-spec   =   phaseless-spec
+                   |   (for-meta phase-level phaseless-spec)
+                   |   (for-syntax phaseless-spec)
+                   |   (for-label phaseless-spec)
+                   |   (protect raw-provide-spec)
+                        
+     phase-level   =   exact-integer
+                   |   #f
+                        
+  phaseless-spec   =   id
+                   |   (rename local-id export-id)
+                   |   (struct struct-id (field-id ...))
+                   |   (all-from raw-module-path)
+                   |   (all-from-except raw-module-path id ...)
+                   |   (all-defined)
+                   |   (all-defined-except id ...)
+                   |   (prefix-all-defined prefix-id)
+                   |   (prefix-all-defined-except prefix-id id ...)
+                   |   (protect phaseless-spec ...)
+                   |   (expand (id . datum))
+The primitive export form, to which provide expands. A raw-module-path is as
+for #%require. A protect sub-form cannot appear within a protect sub-form.
+
+Like #%require, the sub-form keywords for #%provide are recognized
+symbolically, and nearly every raw-provide-spec has an obvious equivalent
+provide-spec via provide, with the exception of the struct and expand
+sub-forms.
+
+A (struct struct-id (field-id ...)) sub-form expands to struct-id,
+make-struct-id, struct:struct-id, struct-id?, struct-id-field-id for each
+field-id, and set-struct-id-field-id! for each field-id. The lexical context of
+the struct-id is used for all generated identifiers.
+
+Unlike #%require, the #%provide form is macro-extensible via an explicit expand
+sub-form; the (id . datum) part is locally expanded as an expression (even
+though it is not actually an expression), stopping when a begin form is
+produced; if the expansion result is (begin raw-provide-spec ...), it is
+spliced in place of the expand form, otherwise a syntax error is reported. The
+expand sub-form is not normally used directly; it provides a hook for
+implementing provide and provide transformers.
+
+The all-from and all-from-except forms re-export only identifiers that are
+accessible in lexical context of the all-from or all-from-except form itself.
+That is, macro-introduced imports are not re-exported, unless the all-from or
+all-from-except form was introduced at the same time. Similarly, all-defined
+and its variants export only definitions accessible from the lexical context of
+the phaseless-spec form.
+
+2.2.1 Additional require Forms
+
+ (require racket/require)
+The bindings documented in this section are provided by the racket/require
+library, not racket/base or racket.
+
+The following forms support more complex selection and manipulation of sets of
+imported identifiers.
+
+(matching-identifiers-in regexp require-spec)
+Like require-spec, but including only imports whose names match regexp. The
+regexp must be a literal regular expression (see Regular Expressions).
+
+Examples:
+
+    > (module zoo racket/base
+        (provide tunafish swordfish blowfish
+                 monkey lizard ant)
+        (define tunafish 1)
+        (define swordfish 2)
+        (define blowfish 3)
+        (define monkey 4)
+        (define lizard 5)
+        (define ant 6))
+    > (require racket/require)
+    > (require (matching-identifiers-in #rx"\\w*fish" 'zoo))
+    > tunafish
+    1
+
+    > swordfish
+    2
+
+    > blowfish
+    3
+
+    > monkey
+    reference to undefined identifier: monkey
+
+
+
+(subtract-in require-spec subtracted-spec ...)
+Like require-spec, but omitting those imports that would be imported by one of
+the subtracted-specs.
+
+Examples:
+
+    > (module earth racket
+        (provide land sea air)
+        (define land 1)
+        (define sea 2)
+        (define air 3))
+    > (module mars racket
+        (provide aliens)
+        (define aliens 4))
+    > (module solar-system racket
+        (require 'earth 'mars)
+        (provide (all-from-out 'earth)
+                 (all-from-out 'mars)))
+    > (require racket/require)
+    > (require (subtract-in 'solar-system 'earth))
+    > land
+    reference to undefined identifier: land
+
+    > aliens
+    4
+
+
+
+(filtered-in proc-expr require-spec)
+Applies an arbitrary transformation on the import names (as strings) of
+require-spec. The proc-expr must evaluate at expansion time to a
+single-argument procedure, which is applied on each of the names from
+require-spec. For each name, the procedure must return either a string for the
+import’s new name or #f to exclude the import.
+
+For example,
+
+    (require (filtered-in
+              (lambda (name)
+                (and (regexp-match? #rx"^[a-z-]+$" name)
+                     (regexp-replace #rx"-" (string-titlecase name) "")))
+              racket/base))
+
+imports only bindings from racket/base that match the pattern #rx"^[a-z-]+$",
+and it converts the names to “camel case.”
+
+(path-up rel-string ...)
+Specifies paths to modules named by the rel-strings similar to using the
+rel-strings directly, except that if a required module file is not found
+relative to the enclosing source, it is searched for in the parent directory,
+and then in the grand-parent directory, etc., all the way to the root
+directory. The discovered path relative to the enclosing source becomes part of
+the expanded form.
+
+This form is useful in setting up a “project environment.” For example, using
+the following "config.rkt" file in the root directory of your project:
+
+    #lang racket/base
+    (require racket/require-syntax
+             (for-syntax "utils/in-here.rkt"))
+     
+    (provide utils-in)
+    (define-require-syntax utils-in in-here-transformer)
+
+and using "utils/in-here.rkt" under the same root directory:
+
+    #lang racket/base
+    (require racket/runtime-path)
+    (provide in-here-transformer)
+    (define-runtime-path here ".")
+    (define (in-here-transformer stx)
+      (syntax-case stx ()
+        [(_ sym)
+         (identifier? #'sym)
+         (let ([path (build-path here (format "~a.rkt" (syntax-e #'sym)))])
+           (datum->syntax stx `(file ,(path->string path)) stx))]))
+
+then path-up works for any other module under the project directory to find
+"config.rkt":
+
+    (require racket/require
+             (path-up "config.rkt")
+             (utils-in foo))
+
+Note that the order of requires in the example is important, as each of the
+first two bind the identifier used in the following.
+
+An alternative in this scenario is to use path-up directly to find the utility
+module:
+
+    (require racket/require
+             (path-up "utils/foo.rkt"))
+
+but then sub-directories that are called "utils" override the one in the
+project’s root. In other words, the previous method requires only a single
+unique name.
+
+(multi-in subs ...+)
+ 
+    subs   =   sub-path
+           |   (sub-path ...)
+                
+sub-path   =   rel-string
+           |   id
+Specifies multiple files to be required from a hierarchy of directories or
+collections. The set of required module paths is computed as the cartesian
+product of the subs groups, where each sub-path is combined with other
+sub-paths in order using a / separator. A sub-path as a subs is equivalent to
+(sub-path). All sub-paths in a given multi-in form must be either strings or
+identifiers.
+
+Examples:
+
+    (require (multi-in racket (dict list)))
+
+   is equivalent to  (require racket/dict racket/list)
+
+ 
+
+    (require (multi-in "math" "matrix" "utils.rkt"))
+
+   is equivalent to  (require "math/matrix/utils.rkt")
+
+ 
+
+    (require (multi-in "utils" ("math.rkt" "matrix.rkt")))
+
+   is equivalent to  (require "utils/math.rkt" "utils/matrix.rkt")
+
+ 
+
+    (require (multi-in ("math" "matrix") "utils.rkt"))
+
+   is equivalent to  (require "math/utils.rkt" "matrix/utils.rkt")
+
+ 
+
+    (require (multi-in ("math" "matrix") ("utils.rkt" "helpers.rkt")))
+
+   is equivalent to  (require "math/utils.rkt" "math/helpers.rkt"
+                              "matrix/utils.rkt" "matrix/helpers.rkt")
+
+2.2.2 Additional provide Forms
+
+ (require racket/provide)
+The bindings documented in this section are provided by the racket/provide
+library, not racket/base or racket.
+
+(matching-identifiers-out regexp provide-spec)
+Like provide-spec, but including only exports of bindings with an external name
+that matches regexp. The regexp must be a literal regular expression (see
+Regular Expressions).
+
+(filtered-out proc-expr provide-spec)
+Analogous to filtered-in, but for filtering and renaming exports.
+
+For example,
+
+    (provide (filtered-out
+              (lambda (name)
+                (and (regexp-match? #rx"^[a-z-]+$" name)
+                     (regexp-replace
+                      #rx"-" (string-titlecase name) "")))
+              (all-defined-out)))
+
+exports only bindings that match the pattern #rx"^[a-z-]+$", and it converts
+the names to “camel case.”
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

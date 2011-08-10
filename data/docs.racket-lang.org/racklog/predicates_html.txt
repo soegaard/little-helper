@@ -1,0 +1,248 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+► 2  Predicates
+2.1  Predicates Introducing Facts
+2.2  Predicates with Rules
+2.3  Solving Goals
+2.4  Asserting Extra Clauses
+2.5  Local Variables
+On this page:
+2.1 Predicates Introducing Facts
+2.2 Predicates with Rules
+2.3 Solving Goals
+2.4 Asserting Extra Clauses
+2.5 Local Variables
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Predicates
+
+More interesting goals are created by applying a special kind of Racklog object
+called a predicate (or relation) to other Racklog objects. Racklog comes with
+some primitive predicates, such as the arithmetic operators %=:= and %<,
+standing for arithmetic “equal” and “less than” respectively. For example, the
+following are some goals involving these predicates:
+
+    > (%which () (%=:= 1 1))
+    '()
+
+    > (%which () (%< 1 2))
+    '()
+
+    > (%which () (%=:= 1 2))
+    #f
+
+    > (%which () (%< 1 1))
+    #f
+
+
+Other arithmetic predicates are %> (“greater than”), %<= (“less than or
+equal”), %>= (“greater than or equal”), and %=/= (“not equal”).
+
+Racklog predicates are not to be confused with conventional Racket predicates
+(such as < and =). Racklog predicates, when applied to arguments, produce goals
+that may either succeed or fail. Racket predicates, when applied to arguments,
+yield a boolean value. Henceforth, we will use the term “predicate” to mean
+Racklog predicates. Conventional predicates will be explicitly called “Racket
+predicates”.
+
+2.1 Predicates Introducing Facts
+
+Users can create their own predicates using the Racklog form %rel. For example,
+let’s define the predicate %knows:
+
+    (define %knows
+      (%rel ()
+        [('Odysseus 'TeX)]
+        [('Odysseus 'Racket)]
+        [('Odysseus 'Prolog)]
+        [('Odysseus 'Penelope)]
+        [('Penelope 'TeX)]
+        [('Penelope 'Prolog)]
+        [('Penelope 'Odysseus)]
+        [('Telemachus 'TeX)]
+        [('Telemachus 'calculus)]))
+
+The expression has the expected meaning. Each clause in the %rel establishes a
+fact: Odysseus knows TeX, Telemachus knows calculus, &c. In general, if we
+apply the predicate to the arguments in any one of its clauses, we will get a
+successful goal. Thus, since %knows has a clause that reads [('Odysseus 'TeX)],
+the goal (%knows 'Odysseus 'TeX) will be true.
+
+We can now get answers for the following types of queries:
+
+    > (%which ()
+        (%knows 'Odysseus 'TeX))
+    '()
+
+    > (%which ()
+        (%knows 'Telemachus 'Racket))
+    #f
+
+
+2.2 Predicates with Rules
+
+Predicates can be more complicated than the above bald recitation of facts. The
+predicate clauses can be rules, eg,
+
+    (define %computer-literate
+      (%rel (person)
+        [(person)
+          (%knows person 'TeX)
+          (%knows person 'Racket)]
+        [(person)
+          (%knows person 'TeX)
+          (%knows person 'Prolog)]))
+
+This defines the predicate %computer-literate in terms of the predicate %knows.
+In effect, a person is defined as computer-literate if they know TeX and
+Racket, or TeX and Prolog.
+
+Note that this use of %rel employs a local logic variable called person. In
+general, a %rel-expression can have a list of symbols as its second subform.
+These name new logic variables that can be used within the body of the %rel.
+
+The following query can now be answered:
+
+    > (%which ()
+        (%computer-literate 'Penelope))
+    '()
+
+
+Since Penelope knows TeX and Prolog, she is computer-literate.
+
+2.3 Solving Goals
+
+The above queries are yes/no questions. Racklog programming allows more: We can
+formulate a goal with uninstantiated logic variables and then ask the querying
+process to provide, if possible, values for these variables that cause the goal
+to succeed. For instance, the query:
+
+    > (%which (what)
+        (%knows 'Odysseus what))
+    '((what . TeX))
+
+
+asks for an instantiation of the logic variable what that satisfies the goal
+(%knows 'Odysseus what). In other words, we are asking, “What does Odysseus
+know?”
+
+Note that this use of %which — like %rel in the definition of
+%computer-literate — uses a local logic variable, what. In general, the second
+subform of %which can be a list of local logic variables. The %which-query
+returns an answer that is a list of bindings, one for each logic variable
+mentioned in its second subform. Thus,
+
+    > (%which (what)
+        (%knows 'Odysseus what))
+    '((what . TeX))
+
+
+But that is not all that wily Odysseus knows. Racklog provides a zero-argument
+procedure (“thunk”) called %more that retries the goal in the last %which-query
+for a different solution.
+
+    > (%more)
+    '((what . Racket))
+
+
+We can keep pumping for more solutions:
+
+    > (%more)
+    '((what . Prolog))
+
+    > (%more)
+    '((what . Penelope))
+
+    > (%more)
+    #f
+
+
+The final #f shows that there are no more solutions. This is because there are
+no more clauses in the %knows predicate that list Odysseus as knowing anything
+else.
+
+2.4 Asserting Extra Clauses
+
+We can add more clauses to a predicate after it has already been defined with a
+%rel. Racklog provides the %assert! form for this purpose. Eg,
+
+    (%assert! %knows ()
+      [('Odysseus 'archery)])
+
+tacks on a new clause at the end of the existing clauses of the %knows
+predicate. Now, the query:
+
+    > (%which (what)
+        (%knows 'Odysseus what))
+    '((what . TeX))
+
+
+gives TeX, Racket, Prolog, and Penelope, as before, but a subsequent (%more)
+yields a new result:
+
+    > (%more)
+    '((what . archery))
+
+
+The Racklog form %assert-after! is similar to %assert! but adds clauses before
+any of the current clauses.
+
+Both %assert! and %assert-after! assume that the variable they are adding to
+already names a predicate (presumably defined using %rel). In order to allow
+defining a predicate entirely through %assert!s, Racklog provides an empty
+predicate value %empty-rel. %empty-rel takes any number of arguments and always
+fails. A typical use of the %empty-rel and %assert! combination:
+
+    (define %parent %empty-rel)
+     
+    (%assert! %parent ()
+      [('Laertes 'Odysseus)])
+     
+    (%assert! %parent ()
+      [('Odysseus 'Telemachus)]
+      [('Penelope 'Telemachus)])
+
+(Racklog does not provide a predicate for retracting assertions, since we can
+keep track of older versions of predicates using conventional Racket features (
+let and set!).)
+
+2.5 Local Variables
+
+The local logic variables of %rel- and %which-expressions are in reality
+introduced by the Racklog syntactic form called %let. (%rel and %which are
+macros written using %let.)
+
+%let introduces new lexically scoped logic variables. Supposing, instead of
+
+    > (%which (what)
+        (%knows 'Odysseus what))
+    '((what . TeX))
+
+
+we had asked
+
+    > (%let (what)
+        (%which ()
+          (%knows 'Odysseus what)))
+    '()
+
+
+This query, too, succeeds five times, since Odysseus knows five things.
+However, %which emits bindings only for the local variables that it introduces.
+Thus, this query emits () five times before (%more) finally returns #f.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

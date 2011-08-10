@@ -1,0 +1,94 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 12  Base 64: Encoding and Decoding
+12.1  Functions
+12.2  Base64 Unit
+12.3  Base64 Signature
+On this page:
+12.1 Functions
+base64-encode
+base64-decode
+base64-encode-stream
+base64-decode-stream
+12.2 Base64 Unit
+base64@
+12.3 Base64 Signature
+base64^
+[...search manuals...]
+  top← prev  up  next → 
+
+12 Base 64: Encoding and Decoding
+
+ (require net/base64)
+The net/base64 library provides utilities for Base 64 (mime-standard) encoding
+and decoding.
+
+12.1 Functions
+
+(base64-encode bstr) → bytes?
+  bstr : bytes?
+Consumes a byte string and returns its Base 64 encoding as a new byte string.
+The returned string is broken into 72-byte lines separated by CRLF
+combinations, and always ends with a CRLF combination unless the input is
+empty.
+
+(base64-decode bstr) → bytes?
+  bstr : bytes?
+Consumes a byte string and returns its Base 64 decoding as a new byte string.
+
+(base64-encode-stream in out [newline-bstr]) → void?
+  in : input-port?
+  out : output-port?
+  newline-bstr : bytes? = #"\n"
+Reads bytes from in and writes the encoded result to out, breaking the output
+into 72-character lines separated by newline-bstr, and ending with newline-bstr
+unless the input stream is empty. Note that the default newline-bstr is just #"
+\n", not #"\r\n". The procedure returns when it encounters an end-of-file from
+in.
+
+(base64-decode-stream in out) → void?
+  in : input-port?
+  out : output-port?
+Reads a Base 64 encoding from in and writes the decoded result to out. The
+procedure returns when it encounters an end-of-file or Base 64 terminator =
+from in.
+
+12.2 Base64 Unit
+
+ (require net/base64-unit)
+
+base64@ : unit?
+Imports nothing, exports base64^.
+
+12.3 Base64 Signature
+
+ (require net/base64-sig)
+
+base64^ : signature
+
+Includes everything exported by the net/base64 module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

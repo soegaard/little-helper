@@ -1,0 +1,473 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+scheme: sexp-snip<%>
+get-saved-snips
+scheme: sexp-snip%
+get-text
+copy
+write
+draw
+get-extent
+scheme: text<%>
+get-limit
+balance-parens
+tabify-on-return?
+tabify
+tabify-selection
+tabify-all
+insert-return
+box-comment-out-selection
+comment-out-selection
+uncomment-selection
+get-forward-sexp
+remove-sexp
+forward-sexp
+flash-forward-sexp
+get-backward-sexp
+flash-backward-sexp
+backward-sexp
+find-up-sexp
+up-sexp
+find-down-sexp
+down-sexp
+remove-parens-forward
+select-forward-sexp
+select-backward-sexp
+select-up-sexp
+select-down-sexp
+transpose-sexp
+mark-matching-parenthesis
+get-tab-size
+set-tab-size
+introduce-let-ans
+move-sexp-out
+scheme: text-mixin
+get-word-at
+get-start-of-line
+scheme: text-mode<%>
+scheme: text-mode-mixin
+on-disable-surrogate
+on-enable-surrogate
+scheme: set-mode-mixin
+scheme: text%
+scheme: text-mode%
+scheme: text-balanced?
+scheme: add-preferences-panel
+scheme: get-keymap
+scheme: add-coloring-preferences-panel
+scheme: get-color-prefs-table
+scheme: get-white-on-black-color-prefs-table
+scheme: short-sym->pref-name
+scheme: short-sym->style-name
+scheme: get-wordbreak-map
+scheme: init-wordbreak-map
+scheme: setup-keymap
+[...search manuals...]
+  top← prev  up  next → 
+
+28 Racket
+
+scheme:sexp-snip<%> : interface?
+
+
+    (send a-scheme:sexp-snip get-saved-snips)
+     → (listof (is-a?/c snip%))
+    This returns the list of snips hidden by the sexp snip.
+
+scheme:sexp-snip% : class?
+  superclass: snip%
+
+  extends:  scheme:sexp-snip<%>
+            readable-snip<%>
+
+
+    (send a-scheme:sexp-snip get-text    offset              
+                                         num                 
+                                       [ flattened?])   →   string?
+      offset : number?
+      num : number?
+      flattened? : boolean? = #f
+    Overrides get-text in snip%.
+    Returns the concatenation of the text for all of the hidden snips.
+    (send a-scheme:sexp-snip copy) → (is-a?/c scheme:sexp-snip%)
+    Overrides copy in snip%.
+    Returns a copy of this snip that includes the hidden snips.
+    (send a-scheme:sexp-snip write stream-out) → void?
+      stream-out : (is-a?/c editor-stream-out%)
+    Overrides write in snip%.
+    Saves the embedded snips
+    (send a-scheme:sexp-snip draw   dc                 
+                                    x                  
+                                    y                  
+                                    left               
+                                    top                
+                                    right              
+                                    bottom             
+                                    dx                 
+                                    dy                 
+                                    draw-caret)   →   void?
+      dc : dc<%>
+      x : real?
+      y : real?
+      left : real?
+      top : real?
+      right : real?
+      bottom : real?
+      dx : real?
+      dy : real?
+      draw-caret : symbol?
+    Overrides draw in snip%.
+    Draws brackets with a centered ellipses between them.
+    (send a-scheme:sexp-snip get-extent    dc              
+                                           x               
+                                           y               
+                                         [ w               
+                                           h               
+                                           descent         
+                                           space           
+                                           lspace          
+                                           rspace])   →   void?
+      dc : (is-a?/c dc<%>)
+      x : real?
+      y : real?
+      w : (or/c (box/c (and/c real? (not/c negative?))) #f) = #f
+      h : (or/c (box/c (and/c real? (not/c negative?))) #f) = #f
+       descent   :   (or/c (box/c (and/c real? (not/c negative?))) #f)
+                 =   #f
+      space : (or/c (box/c (and/c real? (not/c negative?))) #f) = #f
+       lspace   :   (or/c (box/c (and/c real? (not/c negative?))) #f)
+                =   #f
+       rspace   :   (or/c (box/c (and/c real? (not/c negative?))) #f)
+                =   #f
+    Overrides get-extent in snip%.
+    Returns a size corresponding to what this snip draws.
+
+scheme:text<%> : interface?
+  implements:  text:basic<%>
+               mode:host-text<%>
+               color:text<%>
+Texts matching this interface support Racket mode operations.
+
+
+    (send a-scheme:text get-limit start) → exact-integer?
+      start : exact-integer?
+    Returns a limit for backward-matching parenthesis starting at position
+    start.
+
+    (send a-scheme:text balance-parens key-event) → void?
+      key-event : (is-a?/c key-event%)
+    This function is called when the user types a close parenthesis in the
+    text%. If the close parenthesis that the user inserted does not match the
+    corresponding open parenthesis and the 'framework:fixup-parens preference
+    is #t (see preferences:get) the correct closing parenthesis is inserted. If
+    the 'framework:paren-match preference is #t (see preferences:get) the
+    matching open parenthesis is flashed.
+
+    (send a-scheme:text tabify-on-return?) → boolean?
+    The result of this method is used to determine if the return key
+    automatically tabs over to the correct position.
+
+    Override it to change its behavior.
+
+    (send a-scheme:text tabify [start-pos]) → void?
+      start-pos : exact-integer? = (send this get-start-position)
+    Tabs the line containing by start-pos
+
+    (send a-scheme:text tabify-selection  [ start        
+                                            end])   →   void?
+      start : exact-integer? = (send this get-start-position)
+      end : exact-integer? = (send this get-end-position)
+    Sets the tabbing for the lines containing positions start through end.
+
+    (send a-scheme:text tabify-all) → void?
+    Tabs all lines.
+
+    (send a-scheme:text insert-return) → void?
+    Inserts a newline into the buffer. If tabify-on-return? returns #t, this
+    will tabify the new line.
+
+    (send a-scheme:text box-comment-out-selection   start-pos  
+                                                    end-pos)   
+     → void?
+      start-pos : (or/c (symbols 'start) exact-integer?)
+      end-pos : (or/c (symbols 'end) exact-integer?)
+    This method comments out a selection in the text by putting it into a
+    comment box.
+
+    Removes the region from start-pos to end-pos from the editor and inserts a
+    comment box with that region of text inserted into the box.
+
+    If start-pos is 'start, the starting point of the selection is used. If
+    end-pos is 'end, the ending point of the selection is used.
+
+    (send a-scheme:text comment-out-selection   start        
+                                                end)    →   void?
+      start : exact-integer?
+      end : exact-integer?
+    Comments the lines containing positions start through end by inserting a
+    semi-colon at the front of each line.
+
+    (send a-scheme:text uncomment-selection   start        
+                                              end)    →   void?
+      start : exact-integer?
+      end : exact-integer?
+    Uncomments the lines containing positions start through end.
+
+    (send a-scheme:text get-forward-sexp start)
+     → (or/c #f exact-integer?)
+      start : exact-integer?
+    Returns the position of the end of next S-expression after position start,
+    or #f if there is no appropriate answer.
+
+    (send a-scheme:text remove-sexp start) → void?
+      start : exact-integer?
+    Forward-deletes the S-expression starting after the position start.
+
+    (send a-scheme:text forward-sexp start) → void?
+      start : exact-integer?
+    Moves forward over the S-expression starting at position start.
+
+    (send a-scheme:text flash-forward-sexp start-pos) → void?
+      start-pos : exact-integer?
+    Flashes the parenthesis that closes the sexpression at start-pos.
+
+    (send a-scheme:text get-backward-sexp start)
+     → (or/c exact-integer? #f)
+      start : exact-integer?
+    Returns the position of the start of the S-expression before or containing
+    start, or #f if there is no appropriate answer.
+
+    (send a-scheme:text flash-backward-sexp start-pos) → void?
+      start-pos : exact-integer?
+    Flashes the parenthesis that opens the sexpression at start-pos.
+
+    (send a-scheme:text backward-sexp start-pos) → void?
+      start-pos : exact-integer?
+    Move the caret backwards one sexpression
+
+    Moves the caret to the beginning of the sexpression that ends at start-pos.
+
+    (send a-scheme:text find-up-sexp start-pos)
+     → (or/c #f exact-integer?)
+      start-pos : exact-integer?
+    Returns the position of the beginning of the next sexpression outside the
+    sexpression that contains start-pos. If there is no such sexpression, it
+    returns #f.
+
+    (send a-scheme:text up-sexp start) → void?
+      start : exact-integer?
+    Moves backward out of the S-expression containing the position start.
+
+    (send a-scheme:text find-down-sexp start-pos)
+     → (or/c #f exact-integer?)
+      start-pos : exact-integer?
+    Returns the position of the beginning of the next sexpression inside the
+    sexpression that contains start-pos. If there is no such sexpression, it
+    returns #f.
+
+    (send a-scheme:text down-sexp start) → void?
+      start : exact-integer?
+    Moves forward into the next S-expression after the position start.
+
+    (send a-scheme:text remove-parens-forward start) → void?
+      start : exact-integer?
+    Removes the parentheses from the S-expression starting after the position
+    start.
+
+    (send a-scheme:text select-forward-sexp) → void?
+    Selects the next S-expression, starting at the start of the current
+    selection.
+
+    (send a-scheme:text select-backward-sexp) → void?
+    Selects the previous S-expression, starting at the start of the current
+    selection.
+
+    (send a-scheme:text select-up-sexp) → void?
+    Selects the region to the enclosing S-expression, starting at the start of
+    the current selection.
+
+    (send a-scheme:text select-down-sexp) → void?
+    Selects the region to the next contained S-expression, starting at the
+    start of the current selection.
+
+    (send a-scheme:text transpose-sexp start) → void?
+      start : exact-integer?
+    Swaps the S-expression beginning before the position start with the next
+    S-expression following start.
+
+    (send a-scheme:text mark-matching-parenthesis pos) → void?
+      pos : exact-positive-integer?
+    If the paren after pos is matched, this method highlights it and its
+    matching counterpart in dark green.
+
+    (send a-scheme:text get-tab-size) → exact-integer?
+    This method returns the current size of the tabs for scheme mode. See also
+    set-tab-size.
+
+    (send a-scheme:text set-tab-size new-size) → void?
+      new-size : exact-integer?
+    This method sets the tab size for this text.
+
+    (send a-scheme:text introduce-let-ans start-pos) → void?
+      start-pos : exact-integer?
+    Adds a let around the current s-expression and a printf into the body of
+    the let.
+
+    (send a-scheme:text move-sexp-out start-pos) → void?
+      start-pos : exact-integer?
+    Replaces the sexpression surrounding the insertion point with the
+    sexpression following the insertion point.
+
+scheme:text-mixin : (class? . -> . class?)
+  argument extends/implements:  text:basic<%>
+                                mode:host-text<%>
+                                color:text<%>
+                                text:autocomplete<%>
+  result implements:  scheme:text<%>
+This mixin adds functionality for editing Racket files.
+The result of this mixin uses the same initialization arguments as the mixin’s
+argument.
+
+
+    (send a-scheme:text get-word-at pos) → string?
+      pos : exact-positive-integer?
+    Overrides get-word-at in text:autocomplete<%>.
+    Returns the word just before pos, which is then used as the prefix for
+    auto-completion.
+
+    (send a-scheme:text get-start-of-line pos)
+     → exact-nonnegative-integer?
+      pos : exact-nonnegative-integer?
+    Overrides get-start-of-line in text:basic<%>.
+    Returns the first non-whitespace character in the paragraph containing pos,
+    unless the position is already there, in which case it returns the first
+    position of the paragraph.
+
+scheme:text-mode<%> : interface?
+The result of scheme:text-mode-mixin implements this interface.
+
+scheme:text-mode-mixin : (class? . -> . class?)
+  argument extends/implements:  color:text-mode<%>
+                                mode:surrogate-text<%>
+  result implements:  scheme:text-mode<%>
+This mixin adds Racket mode functionality to the mode that it is mixed into.
+The resulting mode assumes that it is only set to an editor that is the result
+of scheme:text-mixin.
+
+
+    (send a-scheme:text-mode on-disable-surrogate) → void?
+    Overrides on-disable-surrogate in mode:surrogate-text<%>.
+    Removes the scheme keymap (see also scheme:get-keymap) and disables any
+    parenthesis highlighting in the host editor.
+
+    (send a-scheme:text-mode on-enable-surrogate) → void?
+    Overrides on-enable-surrogate in mode:surrogate-text<%>.
+    Adds the scheme keymap (see also scheme:get-keymap) and enables a
+    parenthesis highlighting in the host editor.
+
+scheme:set-mode-mixin : (class? . -> . class?)
+  argument extends/implements:  scheme:text<%>
+                                mode:host-text<%>
+This mixin creates a new instance of scheme:text-mode% and installs it, by
+calling its own set-surrogate method with the object.
+
+scheme:text% : class?
+  superclass: (scheme:set-mode-mixin (scheme:text-mixin   (
+text:autocomplete-mixin (mode:host-text-mixin color:text%))))
+
+
+scheme:text-mode% : class?
+  superclass: (scheme:text-mode-mixin color:text-mode%)
+
+
+(scheme:text-balanced? text [start end]) → boolean?
+  text : (is-a?/c text%)
+  start : number? = 0
+  end : (or/c false/c number?) = #f
+Determines if the range in the editor from start to end in text has at least
+one complete s-expression and there are no incomplete s-expressions. If end is
+#f, it defaults to the last position of the text. The designation “complete” is
+defined to be something that does not cause read to raise a exn:fail:read:eof?
+exception, so there may be all kinds of strange read-level (not to speak of
+parse level) errors in the expressions.
+
+The implementation of this function creates a port with open-input-text-editor
+and then uses read to parse the range of the buffer.
+(scheme:add-preferences-panel) → void?
+Adds a tabbing preferences panel to the preferences dialog.
+(scheme:get-keymap) → (is-a?/c keymap%)
+Returns a keymap with binding suitable for Racket.
+(scheme:add-coloring-preferences-panel) → any
+Installs the “Racket” preferences panel in the “Syntax Coloring” section.
+(scheme:get-color-prefs-table)
+ → (listof (list/c symbol? (is-a?/c color%)))
+Returns a table mapping from symbols (naming the categories that the online
+colorer uses for Racket mode coloring) to their colors.
+
+These symbols are suitable for input to scheme:short-sym->pref-name and
+scheme:short-sym->style-name.
+
+See also scheme:get-white-on-black-color-prefs-table.
+(scheme:get-white-on-black-color-prefs-table)
+ → (listof (list/c symbol? (is-a?/c color%)))
+Returns a table mapping from symbols (naming the categories that the online
+colorer uses for Racket mode coloring) to their colors when the user chooses
+the white-on-black mode in the preferences dialog.
+
+See also scheme:get-color-prefs-table.
+(scheme:short-sym->pref-name short-sym) → symbol?
+  short-sym : symbol?
+Builds the symbol naming the preference from one of the symbols in the table
+returned by scheme:get-color-prefs-table.
+(scheme:short-sym->style-name short-sym) → string?
+  short-sym : symbol?
+Builds the symbol naming the editor style from one of the symbols in the table
+returned by scheme:get-color-prefs-table. This style is a named style in the
+style list returned by editor:get-standard-style-list.
+(scheme:get-wordbreak-map) → (is-a?/c editor-wordbreak-map%)
+This method returns a editor-wordbreak-map% that is suitable for Racket.
+(scheme:init-wordbreak-map key) → void?
+  key : (is-a?/c keymap%)
+Initializes the workdbreak map for keymap.
+(scheme:setup-keymap keymap) → void?
+  keymap : (is-a?/c keymap%)
+Initializes keymap with Racket-mode keybindings.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

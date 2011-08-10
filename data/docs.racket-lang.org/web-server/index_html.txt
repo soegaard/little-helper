@@ -1,0 +1,208 @@
+▼  Web Applications in Racket
+1  Running Web Servlets
+2  Stateful Servlets
+3  Stateless Servlets
+4  HTTP: Hypertext Transfer Protocol
+5  URL-Based Dispatch
+6  Formlets: Functional Form Abstraction
+7  Templates: Separation of View
+8  Page: Short-hand for Common Patterns
+9  Troubleshooting and Tips
+   Index
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+Web Applications in Racket
+
+Jay McCarthy
+
+This manual describes the Racket libraries for building Web applications.
+
+Running Web Servlets describes how to run the servlets you’ve written.
+
+Stateful Servlets and Stateless Servlets describe two ways to write Web
+applications. Stateful Servlets use the entire Racket language, but their
+continuations are stored in the Web server’s memory. Stateless Servlets use a
+slightly restricted Racket language, but their continuation can be stored by
+the Web client or on a Web server’s disk. If you can, you want to use Stateless
+Servlets for the improved scalability.
+
+The HTTP: Hypertext Transfer Protocol section describes the common library
+function for manipulating HTTP requests and creating HTTP responses. In
+particular, this section covers cookies, authentication, and request bindings.
+
+The final four sections (URL-Based Dispatch, Formlets: Functional Form
+Abstraction, Templates: Separation of View, and Page: Short-hand for Common
+Patterns) cover utility libraries that ease the creation of typical Web
+applications.
+
+This manual closes with a frequently asked questions section: Troubleshooting
+and Tips.
+
+    1 Running Web Servlets
+
+      1.1 Instant Servlets
+
+      1.2 Simple Single Servlet Servers
+
+        1.2.1 Examples
+
+          1.2.1.1 Stateless Servlets
+
+        1.2.2 Full API
+
+      1.3 Command-line Tools
+
+    2 Stateful Servlets
+
+      2.1 Example
+
+      2.2 Responses
+
+      2.3 Web Interaction
+
+      2.4 Web Cells
+
+      2.5 Continuation Managers
+
+        2.5.1 General
+
+        2.5.2 No Continuations
+
+        2.5.3 Timeouts
+
+        2.5.4 LRU
+
+    3 Stateless Servlets
+
+      3.1 Example
+
+      3.2 Usage Considerations
+
+      3.3 Serializable Continuations
+
+      3.4 Native Interfaces
+
+      3.5 Stateless Web Interaction
+
+      3.6 Stateless Web Cells
+
+      3.7 File Boxes
+
+      3.8 Stateless Web Parameters
+
+      3.9 Soft State
+
+      3.10 Stuffers
+
+        3.10.1 Basic Combinators
+
+        3.10.2 Serialization
+
+        3.10.3 Base64 Encoding
+
+        3.10.4 GZip Compression
+
+        3.10.5 Key/Value Storage
+
+        3.10.6 Hash-addressed Storage
+
+        3.10.7 HMAC-SHA1 Signing
+
+        3.10.8 Helpers
+
+    4 HTTP: Hypertext Transfer Protocol
+
+      4.1 Requests
+
+      4.2 Bindings
+
+      4.3 Responses
+
+      4.4 Placing Cookies
+
+      4.5 Extracting Cookies
+
+      4.6 Redirect
+
+      4.7 Basic Authentication
+
+      4.8 Digest Authentication
+
+      4.9 X-expression Support
+
+    5 URL-Based Dispatch
+
+      5.1 Using web-server/dispatch
+
+      5.2 API Reference
+
+      5.3 Imperative Dispatch Containers
+
+      5.4 Built-in URL patterns
+
+      5.5 Extending web-server/dispatch
+
+    6 Formlets: Functional Form Abstraction
+
+      6.1 Basic Formlet Usage
+
+      6.2 Static Syntactic Shorthand
+
+      6.3 Dynamic Syntactic Shorthand
+
+      6.4 Functional Usage
+
+      6.5 Predefined Formlets
+
+      6.6 Utilities
+
+    7 Templates: Separation of View
+
+      7.1 Static
+
+      7.2 Dynamic
+
+      7.3 Gotchas
+
+      7.4 HTTP Responses
+
+      7.5 API Details
+
+      7.6 Conversion Example
+
+    8 Page: Short-hand for Common Patterns
+
+    9 Troubleshooting and Tips
+
+      9.1 Why is my servlet failing with a can-be-response? contract violation
+after updating Racket?
+
+      9.2 Why are my templates not updating on the server when I change the
+file on disk?
+
+      9.3 Why are templates compiled into programs?
+
+      9.4 Why are my stateful servlets not updating on the server when I change
+the file on disk?
+
+      9.5 After refreshing my stateful servlet, old captured continuations
+don’t change or old global effects are gone. Why?
+
+      9.6 How are stateless servlets different from stateful servlets vis a vis
+refreshing?
+
+      9.7 What special considerations are there for security with the Web
+Server?
+
+      9.8 My browser displays my page strangely: my CSS is ignored, sections
+are missing, etc.
+
+      9.9 How do I use templates “dynamically"?
+
+    Index
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

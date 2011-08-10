@@ -1,0 +1,258 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+On this page:
+<board->graph>
+<board->graph-tests>
+<neighbors-tests>
+<neighbors-tests>2
+<neighbors-tests>3
+<neighbors>
+<neighbors-blocked/boundary>
+<adjacent-tests>
+<adjacent>
+<on-boundary?>
+<in-bounds?>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18.4 Board to Graph
+
+As far as the build-bfs-table function goes, all of the information specific to
+Chat Noir is encoded in the neighbors function. It accepts a world and returns
+a function that computes the neighbors of the boundary and of nodes. This
+section describes how it is implemented.
+
+<board->graph> ::=
+
+    <neighbors>
+    <neighbors-blocked/boundary>
+    <adjacent>
+    <in-bounds?>
+    <on-boundary?>
+
+<board->graph-tests> ::=
+
+    <on-boundary?-tests>
+    <in-bounds?-tests>
+    <adjacent-tests>
+    <neighbors-tests>
+
+The neighbors functions accepts a world and then returns a function that
+computes the neighbors of a posn and of the 'boundary.
+
+For example, (make-posn 1 0) has four neighbors:
+
+<neighbors-tests> ::=
+
+    (test ((neighbors (empty-world 7)) (make-posn 1 0))
+          (list 'boundary
+                (make-posn 2 0)
+                (make-posn 0 1)
+                (make-posn 1 1)))
+
+and (make-posn 0 1) has four neighbors:
+
+<neighbors-tests> ::=
+
+    (test ((neighbors (empty-world 7)) (make-posn 0 1))
+          (list 'boundary
+                (make-posn 1 0)
+                (make-posn 1 1)
+                (make-posn 0 2)
+                (make-posn 1 2)))
+
+as you can see in the earlier pictures of the 7x7 empty board. Also, there are
+6 neighbors of the boundary in the 3x3 board:
+
+<neighbors-tests> ::=
+
+    (test ((neighbors (empty-world 3)) 'boundary)
+          (list (make-posn 0 1)
+                (make-posn 1 0)
+                (make-posn 1 2)
+                (make-posn 2 0)
+                (make-posn 2 1)
+                (make-posn 2 2)))
+
+This is the neighbors function. After it accepts the world, it builds a list of
+the blocked cells in the world and a list of the cells that are on the boundary
+(and not blocked). Then it returns a function that is specialized to those
+values.
+
+<neighbors> ::=
+
+    (define/contract (neighbors w)
+      (-> world?
+          (-> (or/c 'boundary posn?)
+              (listof (or/c 'boundary posn?))))
+      (define blocked
+        (map cell-p
+             (filter (lambda (c)
+                       (or (cell-blocked? c)
+                           (equal? (cell-p c) (world-mouse-posn w))))
+                     (world-board w))))
+      (define boundary-cells
+        (filter (lambda (p)
+                  (and (not (member p blocked))
+                       (on-boundary? p (world-size w))))
+                (map cell-p (world-board w))))
+      (λ (p)
+        (neighbors-blocked/boundary blocked
+                                    boundary-cells
+                                    (world-size w)
+                                    p)))
+
+The neighbors-blocked/boundary function is given next. If p is blocked, it
+returns the empty list. If it is on the boundary, the function simply returns
+boundary-cells. Otherwise, neighbors-blocked/boundary calls adjacent to compute
+the posns that are adjacent to p, filtering out the blocked posns and binds
+that to adjacent-posns. It then filters out the posns that would be outside of
+the board. If those two lists are the same, then p is not on the boundary, so
+we just return in-bounds. If the lists are different, then we know that p must
+have been on the boundary, so we add 'boundary to the result list.
+
+<neighbors-blocked/boundary> ::=
+
+    (define/contract (neighbors-blocked/boundary blocked
+                                                 boundary-cells
+                                                 size
+                                                 p)
+      (-> (listof posn?)
+          (listof posn?)
+          natural-number/c
+          (or/c 'boundary posn?)
+          (listof (or/c 'boundary posn?)))
+     
+      (cond
+        [(member p blocked)
+         '()]
+        [(equal? p 'boundary)
+         boundary-cells]
+        [else
+         (let* ([x (posn-x p)]
+                [adjacent-posns
+                 (filter (λ (x) (not (member x blocked)))
+                         (adjacent p))]
+                [in-bounds
+                 (filter (λ (x) (in-bounds? x size))
+                         adjacent-posns)])
+           (cond
+             [(equal? in-bounds adjacent-posns)
+              in-bounds]
+             [else
+              (cons 'boundary in-bounds)]))]))
+
+There are the three functions that build the basic graph structure from a board
+as used by neighbors.
+
+The first function is adjacent. It consumes a posn and returns six posns that
+indicate what the neighbors are, without consideration of the size of the board
+(or the missing corner pieces).
+
+For example, these are the posns that are adjacent to (make-posn 0 1); note
+that the first and the third are not on the board and do not show up in
+neighbors function example above.
+
+<adjacent-tests> ::=
+
+    (test (adjacent (make-posn 0 1))
+          (list (make-posn 0 0)
+                (make-posn 1 0)
+                (make-posn -1 1)
+                (make-posn 1 1)
+                (make-posn 0 2)
+                (make-posn 1 2)))
+
+The adjacent function has two main cases; first when the y coordinate of the
+posn is even and second when it is odd. In each case, it is just a matter of
+looking at the board and calculating coordinate offsets.
+
+<adjacent> ::=
+
+    (define/contract (adjacent p)
+      (-> posn?
+          (and/c (listof posn?)
+                 (lambda (l) (= 6 (length l)))))
+      (let ([x (posn-x p)]
+            [y (posn-y p)])
+        (cond
+          [(even? y)
+           (list (make-posn (- x 1) (- y 1))
+                 (make-posn x (- y 1))
+                 (make-posn (- x 1) y)
+                 (make-posn (+ x 1) y)
+                 (make-posn (- x 1) (+ y 1))
+                 (make-posn x (+ y 1)))]
+          [else
+           (list (make-posn x (- y 1))
+                 (make-posn (+ x 1) (- y 1))
+                 (make-posn (- x 1) y)
+                 (make-posn (+ x 1) y)
+                 (make-posn x (+ y 1))
+                 (make-posn (+ x 1) (+ y 1)))])))
+
+The on-boundary? function returns #t when the posn would be on the boundary of
+a board of size board-size. Note that this function does not have to special
+case the missing posns from the corners.
+
+<on-boundary?> ::=
+
+    (define/contract (on-boundary? p board-size)
+      (-> posn? natural-number/c
+          boolean?)
+      (or (= (posn-x p) 0)
+          (= (posn-y p) 0)
+          (= (posn-x p) (- board-size 1))
+          (= (posn-y p) (- board-size 1))))
+
+The in-bounds? function returns #t when the posn is actually on the board,
+meaning that the coordinates of the posn are within the board’s size, and that
+the posn is not one of the two corners that have been removed.
+
+<in-bounds?> ::=
+
+    (define/contract (in-bounds? p board-size)
+      (-> posn? natural-number/c
+          boolean?)
+      (and (<= 0 (posn-x p) (- board-size 1))
+           (<= 0 (posn-y p) (- board-size 1))
+           (not (equal? p (make-posn 0 0)))
+           (not (equal? p (make-posn 0 (- board-size 1))))))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

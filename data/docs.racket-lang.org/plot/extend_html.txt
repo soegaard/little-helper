@@ -1,0 +1,220 @@
+▼  PLo T: Graph Plotting
+1  Quick Start
+2  Plotting
+3  Customizing Plots
+On this page:
+sample-size
+scale-vectors
+x-values
+normalize-vector
+normalize-vectors
+make-column
+xy-list
+zgrid
+plot-view%
+get-x-min
+get-y-min
+get-x-max
+get-y-max
+set-line-color
+set-line-width
+2d-view%
+set-labels
+plot-vector
+plot-vectors
+plot-points
+plot-line
+plot-contours
+plot-shades
+3d-view%
+plot-surface
+plot-line
+get-z-min
+get-z-max
+get-alt
+get-az
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Customizing Plots
+
+ (require plot/extend)
+
+The plot/extend module allows you to create your own constructors, further
+customize the appearance of the plot windows, and in general extend the
+package.
+
+(sample-size sample-count x-min x-max) → real?
+  sample-count : exact-positive-integer?
+  x-min : number
+  x-max : number
+Given sample-count, x-min, and x-max, returns the size of each sample.
+
+(scale-vectors   vecs                  
+                 x-sample-size         
+                 y-sample-size)   →   (listof vector?)
+  vecs : (listof vector?)
+  x-sample-size : real?
+  y-sample-size : real?
+Scales vectors, causing them to fit in their boxes.
+
+(x-values sample-count x-min x-max) → (listof real?)
+  sample-count : exact-positive-integer?
+  x-min : number
+  x-max : number
+Given samples, x-min, and x-max, returns a list of xs spread across the range.
+
+(normalize-vector   vec                   
+                    x-sample-size         
+                    y-sample-size)   →   vector?
+  vec : vector?
+  x-sample-size : real?
+  y-sample-size : real?
+Normalizes vec based on x-sample-size and y-sample-size.
+
+(normalize-vectors   vecs                  
+                     x-sample-size         
+                     y-sample-size)   →   (listof vector?)
+  vecs : (listof vector?)
+  x-sample-size : real?
+  y-sample-size : real?
+Normalizes vecs based on x-sample-size and y-sample-size.
+
+(make-column x ys) → (listof (vector/c real? real?))
+  x : real?
+  ys : (listof real?)
+Given an x and a list of ys, produces a list of points pairing the x with each
+of the ys.
+
+(xy-list sample-count x-min x-max y-min y-max)
+ → (listof (listof (vector/c real? real?)))
+  sample-count : exact-positive-integer?
+  x-min : real?
+  x-max : real?
+  y-min : real?
+  y-max : real?
+Makes a list of all the positions on the graph.
+
+(zgrid f xs ys) → (listof (listof real?))
+  f : (real? real? . -> . real?)
+  xs : (listof real?)
+  ys : (listof real?)
+Given a function that consumes x and y to produce z, a list of xs, and a list
+of ys, produces a list of z column values.
+
+plot-view% : class?
+  superclass: image-snip%
+
+
+
+    (send a-plot-view get-x-min) → real?
+    Returns the minimum plottable x coordinate.
+
+    (send a-plot-view get-y-min) → real?
+    Returns the minimum plottable y coordinate.
+
+    (send a-plot-view get-x-max) → real?
+    Returns the maximum plottable x coordinate.
+
+    (send a-plot-view get-y-max) → real?
+    Returns the maximum plottable y coordinate.
+
+    (send a-plot-view set-line-color color) → void?
+      color : plot-color?
+    Sets the drawing color.
+
+    (send a-plot-view set-line-width width) → void?
+      width : real?
+    Sets the drawing line width.
+
+2d-view% : class?
+  superclass: plot-view%
+
+Provides an interface to drawing 2-D plots. An instance of 2d-view% is created
+by plot, and the following methods can be used to adjust it.
+
+
+    (send a-2d-view set-labels   x-label        
+                                 y-label        
+                                 title)    →   void?
+      x-label : string?
+      y-label : string?
+      title : string?
+    Sets the axis labels and title.
+
+    (send a-2d-view plot-vector head tail) → void?
+      head : (vector/c real? real?)
+      tail : (vector/c real? real?)
+    Plots a single vector.
+
+    (send a-2d-view plot-vectors vecs) → void?
+       vecs   :   (listof (list/c (vector/c real? real?)
+                                  (vector/c real? real?)))
+    Plots a set of vectors.
+
+    (send a-2d-view plot-points points sym) → void?
+      points : (listof (vector/c real? real?))
+      sym : (or/c character? integer? symbol?)
+    Plots points using a specified symbol. See points for possible values for
+    sym
+
+    (send a-2d-view plot-line points) → void?
+      points : (listof (vector/c real? real?))
+    Plots a line given a set of points.
+
+    (send a-2d-view plot-contours   grid           
+                                    xs             
+                                    ys             
+                                    levels)   →   void?
+      grid : (listof (listof real?))
+      xs : (listof real?)
+      ys : (listof real?)
+      levels : (listof real?)
+    Plots a grid representing a 3-D function using contours to distinguish
+    levels.
+
+    (send a-2d-view plot-shades   grid           
+                                  xs             
+                                  ys             
+                                  levels)   →   void?
+      grid : (listof (listof real?))
+      xs : (listof real?)
+      ys : (listof real?)
+      levels : (listof real?)
+    Plots a grid representing a 3-D function using shades to show levels.
+
+3d-view% : class?
+  superclass: plot-view%
+
+Provides an interface to drawing 3-D plots. An instance of 3d-view% is created
+by plot3d, and the following methods can be used to adjust it.
+
+
+    (send a-3d-view plot-surface xs ys zs) → void?
+      xs : (listof real?)
+      ys : (listof real?)
+      zs : (listof real?)
+    Plots a grid representing a 3d function in a 3d box, showing only the top
+    of the surface.
+
+    (send a-3d-view plot-line xs ys zs) → void?
+      xs : (listof real?)
+      ys : (listof real?)
+      zs : (listof real?)
+    Plots a line in 3-D space.
+
+    (send a-3d-view get-z-min) → real?
+    Returns the minimum plottable z coordinate.
+
+    (send a-3d-view get-z-max) → real?
+    Returns the maximum plottable z coordinate.
+
+    (send a-3d-view get-alt) → real?
+    Returns the altitude (in degrees) from which the 3-D box is viewed.
+
+    (send a-3d-view get-az) → real?
+    Returns the azimuthal angle.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

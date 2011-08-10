@@ -1,0 +1,44 @@
+►  Myster X: Using Windows COM Objects in Racket
+1  Overview
+2  COM
+3  Active X and DHTML
+4  Version
+   Index
+► 3  Active X and DHTML
+3.1  Browsers
+3.2  Documents
+3.3  HTML Events
+3.4  HTML and Dynamic HTML
+▼ 3.4  HTML and Dynamic HTML
+3.4.1  HTML Elements
+3.4.2  Generating Active X HTML
+3.4.3  CSS
+3.4.4  Colors
+On this page:
+coclass->html
+progid->html
+[...search manuals...]
+  top← prev  up  next → 
+
+3.4.2 Generating ActiveX HTML
+
+(coclass->html name width height [size]) → string?
+  name : string?
+  width : exact-integer?
+  height : exact-integer?
+  size : (one-of/c 'pixels 'percent) = 'pixels
+(progid->html name width height [size]) → string?
+  name : string?
+  width : exact-integer?
+  height : exact-integer?
+  size : (one-of/c 'pixels 'percent) = 'pixels
+Returns a string containing HTML which when inserted into a document loads the
+COM object with the COM class or ProgID given by name. This procedure is
+suitable for placing ActiveX controls within complex HTML. The optional size
+argument gives an interpretation for the width and height arguments; by
+default, size is 'pixels, but may also be 'percent, indicating that the width
+and height are a fixed percentage of the document window size.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

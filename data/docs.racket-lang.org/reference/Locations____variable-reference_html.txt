@@ -1,0 +1,71 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 2  Syntactic Forms
+ 2.1  Modules: module, ...
+ 2.2  Importing and Exporting: require and provide
+ 2.3  Literals: quote and #%datum
+ 2.4  Expression Wrapper: #%expression
+ 2.5  Variable References and #%top
+ 2.6  Locations: #%variable-reference
+ 2.7  Procedure Applications and #%app
+ 2.8  Procedure Expressions: lambda and case-lambda
+ 2.9  Local Binding: let, let*, letrec, ...
+2.10  Local Definitions: local
+2.11  Constructing Graphs: shared
+2.12  Conditionals: if, cond, and, and or
+2.13  Dispatch: case
+2.14  Definitions: define, define-syntax, ...
+2.15  Sequencing: begin, begin0, and begin-for-syntax
+2.16  Guarded Evaluation: when and unless
+2.17  Assignment: set! and set!-values
+2.18  Iterations and Comprehensions: for, for/ list, ...
+2.19  Continuation Marks: with-continuation-mark
+2.20  Quasiquoting: quasiquote, unquote, and unquote-splicing
+2.21  Syntax Quoting: quote-syntax
+2.22  Interaction Wrapper: #%top-interaction
+2.23  Limiting Scope: define-package, open-package, ...
+2.24  Blocks: block
+2.25  Internal-Definition Limiting: #%stratified-body
+On this page:
+#%variable-reference
+[...search manuals...]
+  top← prev  up  next → 
+
+2.6 Locations: #%variable-reference
+
+(#%variable-reference id)
+(#%variable-reference (#%top . id))
+(#%variable-reference)
+Produces an opaque variable reference value representing the location of id,
+which must be bound as a top-level variable or module-level variable. If no id
+is supplied, the resulting value refers to an “anonymous” variable defined
+within the enclosing context (i.e., within the enclosing module, or at the top
+level if the form is not inside a module).
+
+A variable reference can be used with variable-reference->empty-namespace,
+variable-reference->resolved-module-path, and variable-reference->namespace,
+but facilities like define-namespace-anchor and namespace-anchor->namespace
+wrap those to provide a clearer interface. A variable reference is also useful
+to low-level extensions; see Inside: Racket C API.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

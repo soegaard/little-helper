@@ -1,0 +1,137 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 10  Concurrency and Parallelism
+10.1  Threads
+10.2  Synchronization
+10.3  Thread-Local Storage
+10.4  Futures
+10.5  Places
+▼ 10.2  Synchronization
+10.2.1  Events
+10.2.2  Channels
+10.2.3  Semaphores
+10.2.4  Buffered Asynchronous Channels
+On this page:
+async-channel?
+make-async-channel
+async-channel-get
+async-channel-try-get
+async-channel-put
+async-channel-put-evt
+[...search manuals...]
+  top← prev  up  next → 
+
+10.2.4 Buffered Asynchronous Channels
+
+ (require racket/async-channel)
+The bindings documented in this section are provided by the racket/
+async-channel library, not racket/base or racket.
+
+            +See also Thread Mailboxes.
+
+(async-channel? v) → boolean?
+  v : any/c
+Returns #t if v is an asynchronous channel, #f otherwise.
+
+(make-async-channel [limit]) → async-channel?
+  limit : (or/c exact-positive-integer? #f) = #f
+Returns an asynchronous channel with a buffer limit of limit items. A get
+operation blocks when the channel is empty, and a put operation blocks when the
+channel has limit items already. If limit is #f, the channel buffer has no
+limit (so a put never blocks).
+
+The asynchronous channel value can be used directly with sync. The channel
+blocks until async-channel-get would return a value, and the unblock result is
+the received value.
+
+(async-channel-get ach) → any/c
+  ach : async-channel?
+Blocks until at least one value is available in ach, and then returns the first
+of the values that were put into async-channel.
+
+(async-channel-try-get ach) → any/c
+  ach : async-channel?
+If at least one value is immediately available in ach, returns the first of the
+values that were put into ach. If async-channel is empty, the result is #f.
+
+(async-channel-put ach v) → void?
+  ach : async-channel?
+  v : any/c
+Puts v into ach, blocking if ach’s buffer is full until space is available.
+
+(async-channel-put-evt ach v) → evt?
+  ach : async-channel?
+  v : any/c
+Returns a synchronizable event that is blocked while (async-channel-put ach v)
+would block. The unblock result is the event itself. See also sync.
+
+Examples:
+
+    (define (server input-channel output-channel)
+      (thread (lambda ()
+                (define (get)
+                  (async-channel-get input-channel))
+                (define (put x)
+                  (async-channel-put output-channel x))
+                (define (do-large-computation)
+                  (sqrt 9))
+                (let loop ([data (get)])
+                  (case data
+                    [(quit) (void)]
+                    [(add) (begin
+                             (put (+ 1 (get)))
+                             (loop (get)))]
+                    [(long) (begin
+                              (put (do-large-computation))
+                              (loop (get)))])))))
+    (define to-server (make-async-channel))
+    (define from-server (make-async-channel))
+    > (server to-server from-server)
+    #<thread>
+
+    > (async-channel? to-server)
+    #t
+
+    > (printf "Adding 1 to 4\n")
+    Adding 1 to 4
+
+    > (async-channel-put to-server 'add)
+    > (async-channel-put to-server 4)
+    > (printf "Result is ~a\n" (async-channel-get from-server))
+    Result is 5
+
+    > (printf "Ask server to do a long computation\n")
+    Ask server to do a long computation
+
+    > (async-channel-put to-server 'long)
+    > (printf "I can do other stuff\n")
+    I can do other stuff
+
+    > (printf "Ok, computation from server is ~a\n"
+              (async-channel-get from-server))
+    Ok, computation from server is 3
+
+    > (async-channel-put to-server 'quit)
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

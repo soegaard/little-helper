@@ -1,0 +1,375 @@
+►  Dr Racket: The Racket Programming Environment
+1  Interface Essentials
+2  Languages
+3  Interface Reference
+4  Extending Dr Racket
+   Index
+▼ 3  Interface Reference
+3.1  Menus
+3.2  Preferences
+3.3  Keyboard Shortcuts
+3.4  Dr Racket Files
+► 3.1  Menus
+3.1.1  File
+3.1.2  Edit
+3.1.3  View
+3.1.4  Language
+3.1.5  Racket
+3.1.6  Insert
+3.1.7  Windows
+3.1.8  Help
+On this page:
+3.1.1 File
+3.1.2 Edit
+3.1.3 View
+3.1.4 Language
+3.1.5 Racket
+3.1.6 Insert
+3.1.7 Windows
+3.1.8 Help
+[...search manuals...]
+  top← prev  up  next → 
+
+3.1 Menus
+
+3.1.1 File
+
+  • New : Creates a new DrRacket window.
+
+  • Open... : Opens a find-file dialog for choosing a file to load into a
+    definitions window.
+
+  • Open Recent : Lists recently opened files. Choosing one of them opens that
+    file for editing.
+
+  • Install PLT File... : Opens a dialog asking for the location of the ".plt"
+    file (either on the local disk or on the web) and installs the contents of
+    the file.
+
+  • Revert : Re-loads the file that is currently in the definitions window. All
+    changes since the file was last saved will be lost.
+
+  • Save Definitions : Saves the program in the definitions window. If the
+    program has never been saved before, a save-file dialog appears.
+
+  • Save Definitions As... : Opens a save-file dialog for choosing a
+    destination file to save the program in the definitions window. Subsequent
+    saves write to the newly-selected file.
+
+  • 
+    Save Other : Contains these sub-items
+      □ Save Definitions As Text... : Like Save Definitions As..., but the file
+        is saved in plain-text format (see Program Files). Subsequent saves
+        also write in plain-text format.
+
+      □ Save Interactions : Saves the contents of the interactions window to a
+        file. If the interaction constants have never been saved before, a
+        save-file dialog appears.
+
+      □ Save Interactions As... : Opens a save-file dialog for choosing a
+        destination file to save the contents of the interactions window.
+        Subsequent saves write to the newly-selected file.
+
+      □ Save Interactions As Text... : Like Save Interactions As..., but the
+        file is saved in plain-text format (see Program Files). Subsequent
+        saves are write in plain-text format.
+
+  • Log Definitions and Interactions... : Starts a running of log of the text
+    in the interactions and definitions windows, organized by executions. In a
+    directory of your choosing, DrRacket saves files with the names
+    "01-definitions", "01-interactions", "02-definitions", "02-interactions",
+    etc. as you interact with various programs.
+
+  • Print Definitions... : Opens a dialog for printing the current program in
+    the definitions window.
+
+  • Print Interactions... : Opens a dialog for printing the contents of the
+    interactions window.
+
+  • Search in Files... : Opens a dialog where you can specify the parameters of
+    a multi-file search. The results of the search are displayed in a separate
+    window.
+
+  • Close : Closes this DrRacket window. If this window is the only open
+    DrRacket window, then DrRacket quits, except on Mac OS X.
+
+  • {Quit or Exit} Exits DrRacket. (On Mac OS X, this menu item is in the Apple
+    menu.)
+
+3.1.2 Edit
+
+All Edit menu items operate on either the definitions or interactions window,
+depending on the location of the selection or blinking caret. Each window
+maintains its own Undo and Redo history.
+
+  • Undo : Reverses an editing action. Each window maintains a history of
+    actions, so multiple Undo operations can reverse multiple editing actions.
+
+  • Redo : Reverses an Undo action. Each window (and boxed-subwindow) maintains
+    its own history of Undo actions, so multiple Redo operations can reverse
+    multiple Undo actions.
+
+  • Cut : Copies the selected text to the clipboard and deletes it from the
+    window.
+
+  • Copy : Copies the selected text to the clipboard.
+
+  • Paste : Pastes the current clipboard contents into the window.
+
+  • Delete : or Clear : Deletes the selected text.
+
+  • Select All : Highlights the entire text of the buffer.
+
+  • Wrap Text : Toggles between wrapped text and unwrapped text in the window.
+
+  • Find... : Opens an interactive search window at the bottom of the frame and
+    moves the insertion point to the search string editor (or out of it, if the
+    insertion point is already there).
+
+    See also Searching.
+
+  • Find Again : Finds the next occurrence of the text in the search window.
+
+  • Find Again Backwards : Finds the next occurrence of the text in the search
+    window, but searching backwards.
+
+  • Replace & Find Again : Replaces the selection with the replace string (if
+    it matches the find string) and finds the next occurrence of the text that
+    was last searched for, looking forwards.
+
+  • Replace & Find Again Backwards : Replaces the selection with the replace
+    string (if it matches the find string) and finds the next occurrence of the
+    text that was last searched for, looking backwards.
+
+  • Replace All : Replaces all occurrences of the search string with the
+    replace string.
+
+  • Find Case Sensitive : Toggles between case-sensitive and case-insensitive
+    search.
+
+  • 
+    Keybindings :
+      □ Show Active Keybindings : Shows all of the keybindings available in the
+        current window.
+
+      □ Add User-defined Keybindings... : Choosing this menu item opens a file
+        dialog where you can select a file containing Racket-definitions of
+        keybindings. See Defining Custom Shortcuts for more information.
+
+  • Complete Word : Completes the word at the insertion point, using the
+    manuals as a source of completions.
+
+  • Preferences... : Opens the preferences dialog. See Preferences. (On Mac OS
+    X, this menu item is in the Apple menu.)
+
+3.1.3 View
+
+One each of the following show/hide pairs of menu items appears at any time.
+
+  • Show Definitions : Shows the definitions window.
+
+  • Hide Definitions : Hides the definitions window.
+
+  • Show Interactions : Shows interactions window.
+
+  • Hide Interactions : Hides interactions window.
+
+  • Show Program Contour : Shows a “20,000 foot” overview window along the edge
+    of the DrRacket window. Each pixel in this window corresponds to a letter
+    in the program text.
+
+  • Hide Program Contour : Hides the contour window.
+
+  • Show Module Browser : Shows the module DAG rooted at the currently opened
+    file in DrRacket.
+
+    See also The Module Browser.
+
+  • Hide Module Browser : Hides the module browser.
+
+    See also The Module Browser.
+
+  • 
+    Toolbar :
+      □ Toolbar on Left : Moves the tool bar (on the top of DrRacket’s window
+        by default) to the left-hand side, organized vertically.
+
+      □ Toolbar on Top : Moves the toolbar to the top of the DrRacket window.
+
+      □ Toolbar on Right : Moves the tool bar to the right-hand side, organized
+        vertically.
+
+      □ Toolbar Hidden : Hides the toolbar entirely.
+
+  • Show Log : Shows the current log messages.
+
+  • Hide Log : Hides the current log messages.
+
+  • Show Profile : Shows the current profiling report. This menu is useful only
+    if you have enabled profiling in the Choose Language... dialog’s Details
+    section. Profiling does not apply to all languages.
+
+  • Hide Profile : Hides any profiling information currently displayed in the
+    DrRacket window.
+
+  • Dock Test Report : Like the dock button on the test report window, this
+    causes all test report windows to merge with the appropriate DrRacket
+    window at the bottom of the frame.
+
+  • Undock Test Report : Like the undock button on the test report window, this
+    causes the test reports attached to appropriate DrRacket tabs to become
+    separate windows.
+
+  • Show Tracing : Shows a trace of functions called since the last time Run
+    was clicked. This menu is useful only if you have enabled tracing in the
+    Choose Language... dialog’s Details section. Profiling does not apply to
+    all languages.
+
+  • Hide Tracing : Hides the tracing display.
+
+  • Split : Splits the current window in half to allow for two different
+    portions of the current window to be visible simultaneously.
+
+  • Collapse : If the window has been split before, this menu item becomes
+    enabled, allowing you to collapse the split window.
+
+Note: whenever a program is run, the interactions window is made visible if it
+is hidden.
+
+3.1.4 Language
+
+  • Choose Language... : Opens a dialog for selecting the current evaluation
+    language. Click Run to make the language active in the interactions window.
+    See Choosing a Language for more information about the languages.
+
+  • Add Teachpack... : Opens a find-file dialog for choosing a teachpack to
+    extend the current language. Click Run to make the teachpack available in
+    the interactions windows. See Extending DrRacket for information on
+    creating teachpacks.
+
+  • Clear All Teachpacks : Clears all of the current teachpacks. Click Run to
+    clear the teachpack from the interactions window.
+
+In addition to the above items, a menu item for each teachpack that clears only
+the corresponding teachpack.
+
+3.1.5 Racket
+
+  • Run : Resets the interactions window and runs the program in the
+    definitions window.
+
+  • Break : Breaks the current evaluation.
+
+  • Kill : Terminates the current evaluation.
+
+  • Limit Memory... : Allow you to specify a limit on the amount of memory that
+    a program running in DrRacket is allowed to consume.
+
+  • Clear Error Highlight : Removes the red background that signals the source
+    location of an error. Also removes the highlighting for uncovered
+    (untested) portions of the program.
+
+  • Create Executable... : Creates a separate launcher for running your
+    program. See Creating Executables for more info.
+
+  • Module Browser... : Prompts for a file and then opens a window showing the
+    module DAG starting at the module in the selected file.
+
+    See also The Module Browser.
+
+  • Module Browser on file : Opens a separate window showing the module graph
+    rooted at the file currently being edited in DrRacket, but using the saved
+    file on the disk, instead of the version in DrRacket.
+
+    See also The Module Browser.
+
+  • Reindent : Indents the selected text according to the standard Racket
+    formatting conventions. (Pressing the Tab key has the same effect.)
+
+  • Reindent All : Indents all of the text in either the definitions or
+    interactions window, depending on the location of the selection or blinking
+    caret.
+
+  • Comment Out with Semicolons : Puts ; characters at each of the beginning of
+    each selected line of text.
+
+  • Comment Out with a Box : Boxes the selected text with a comment box.
+
+  • Uncomment : Removes all ; characters at the start of each selected line of
+    text or removes a comment box around the text. Uncommenting only removes a
+    ; if it appears at the start of a line and it only removes the first ; on
+    each line.
+
+  • Disable Tests : Stops tests written in the definitions window from
+    evaluating when the program is Run. Tests can be enabled using the Enable
+    Tests menu item. Disabling tests freezes the contents of any existing test
+    report window.
+
+  • Enable Tests : Allows tests written in the definitions window to evaluate
+    when the program is Run. Tests can be disabled using the Disable Tests menu
+    item.
+
+3.1.6 Insert
+
+  • Insert Comment Box : Inserts a box that is ignored by DrRacket; use it to
+    write comments for people who read your program.
+
+  • Insert Image... : Opens a find-file dialog for selecting an image file in
+    GIF, BMP, XBM, XPM, PNG, or JPG format. The image is treated as a value.
+
+  • Insert Fraction... : Opens a dialog for a mixed-notation fraction, and
+    inserts the given fraction into the current editor.
+
+  • Insert Large Letters... : Opens a dialog for a line of text, and inserts a
+    large version of the text (using semicolons and spaces).
+
+    Most of the dialog is self-explanatory: type in the top space to preview
+    the semicolons in the bottom area. The numbers in the font choice item show
+    the (relative) widths of the letter “w” in the given font to help you pick
+    out the more boldfaced fonts (which tend to look better).
+
+  • Insert λ : Inserts the symbol λ (as a Unicode character) into the program.
+    The λ symbol is normally bound the same as lambda.
+
+  • Insert XML Box : Inserts an XML; see XML Boxes and Racket Boxes for more
+    information.
+
+  • Insert Racket Box : Inserts a box to contain Racket code, typically used
+    inside an XML box; see XML Boxes and Racket Boxes.
+
+  • Insert Racket Splice Box : Inserts a box to contain Racket code, typically
+    used inside an XML box; see also XML Boxes and Racket Boxes.
+
+  • Insert Pict Box : Creates a box for generating a Slideshow picture. Inside
+    the pict box, insert and arrange Racket boxes that produce picture values.
+
+3.1.7 Windows
+
+  • Bring Frame to Front... : Opens a window that lists all of the opened
+    DrRacket frames. Selecting one of them brings the window to the front.
+
+  • Most Recent Window : Toggles between the currently focused window and the
+    one that most recently had the focus.
+
+Additionally, after the above menu items, this menu contains an entry for each
+window in DrRacket. Selecting a menu item brings the corresponding window to
+the front.
+
+3.1.8 Help
+
+  • Help Desk : Opens the Help Desk. This is the clearing house for all
+    documentation about DrRacket and its language.
+
+  • About DrRacket... : Shows the credits for DrRacket.
+
+  • Related Web Sites : Provides links to related web sites.
+
+  • Tool Web Sites : Provides links to web sites for installed tools.
+
+  • Interact with DrRacket in English : Changes DrRacket’s interface to use
+    English; the menu item appears only when the current language is not
+    English. Additional menu items switch DrRacket to other languages.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

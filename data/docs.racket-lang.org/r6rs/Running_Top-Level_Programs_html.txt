@@ -1,0 +1,71 @@
+▼  R6RS: Scheme
+1  Using R6RS with Dr Racket
+2  Running Top-Level Programs
+3  Installing Libraries
+4  R6RS Module Language
+5  Libraries and Collections
+6  Language Interoperability
+7  R6RS Conformance
+8  R6RS Libraries
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Running Top-Level Programs
+
+To run a top-level program, either:
+
+  • Use the plt-r6rs executable, supplying the file that contains the program
+    on the command line:
+
+      plt-r6rs ‹program-file›
+
+    Additional command-line arguments are propagated as command-line arguments
+    to the program (accessed via command-line).
+
+    To compile the file to bytecode (to speed future runs of the program), use
+    plt-r6rs with the --compile flag:
+
+      plt-r6rs --compile ‹program-file›
+
+    The bytecode file is written in a "compiled" sub-directory next to
+    ‹program-file›.
+
+    For example, if "hi.sps" contains
+
+        (import (rnrs))
+        (display "hello\n")
+
+    then
+
+      plt-r6rs hi.sps
+
+    prints “hello.”
+
+  • Prefix the program with #!r6rs, which counts as a comment from the R6RS
+    perspective, but is a synonym for #lang r6rs from the Racket perspective.
+    Such files can be run like any other Racket module, such as using racket:
+
+      racket ‹program-file›
+
+    or using DrRacket. The file can also be compiled to bytecode using raco
+    make:
+
+      raco make ‹program-file›
+
+    For example, if "hi.sps" contains
+
+        #!r6rs
+        (import (rnrs))
+        (display "hello\n")
+
+    then
+
+      racket hi.sps
+
+    prints “hello.” Similarly, opening "hi.sps" in DrRacket and clicking Run
+    prints “hello” within the DrRacket interactions window.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

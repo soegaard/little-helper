@@ -1,0 +1,187 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 4  Expressions and Definitions
+ 4.1  Notation
+ 4.2  Identifiers and Binding
+ 4.3  Function Calls (Procedure Applications)
+ 4.4  Functions (Procedures): lambda
+ 4.5  Definitions: define
+ 4.6  Local Binding
+ 4.7  Conditionals
+ 4.8  Sequencing
+ 4.9  Assignment: set!
+4.10  Quoting: quote and ’
+4.11  Quasiquoting: quasiquote and `
+4.12  Simple Dispatch: case
+4.13  Dynamic Binding: parameterize
+[...search manuals...]
+  top← prev  up  next → 
+
+4.13 Dynamic Binding: parameterize
+
+            +Parameters in The Racket Reference also documents parameterize.
+
+The parameterize form associates a new value with a parameter during the
+evaluation of body expressions:
+
+    (parameterize ([parameter-expr value-expr] ...)
+      body ...+)
+
+            The term “parameter” is sometimes used to refer to the arguments of
+            a function, but “parameter” in Racket has the more specific meaning
+            described here.
+
+For example, the error-print-width parameter controls how many characters of a
+value are printed in an error message:
+
+    > (parameterize ([error-print-width 5])
+        (car (expt 10 1024)))
+    car: expects argument of type <pair>; given 10...
+
+    > (parameterize ([error-print-width 10])
+        (car (expt 10 1024)))
+    car: expects argument of type <pair>; given 1000000...
+
+
+More generally, parameters implement a kind of dynamic binding. The
+make-parameter function takes any value and returns a new parameter that is
+initialized to the given value. Applying the parameter as a function returns
+its current value:
+
+    > (define location (make-parameter "here"))
+    > (location)
+    "here"
+
+
+In a parameterize form, each parameter-expr must produce a parameter. During
+the evaluation of the bodys, each specified parameter is given the result of
+the corresponding value-expr. When control leaves the parameterize form—either
+through a normal return, an exception, or some other escape—the parameter
+reverts to its earlier value:
+
+    > (parameterize ([location "there"])
+        (location))
+    "there"
+
+    > (location)
+    "here"
+
+    > (parameterize ([location "in a house"])
+        (list (location)
+              (parameterize ([location "with a mouse"])
+                (location))
+              (location)))
+    '("in a house" "with a mouse" "in a house")
+
+    > (parameterize ([location "in a box"])
+        (car (location)))
+    car: expects argument of type <pair>; given "in a box"
+
+    > (location)
+    "here"
+
+
+The parameterize form is not a binding form like let; each use of location
+above refers directly to the original definition. A parameterize form adjusts
+the value of a parameter during the whole time that the parameterize body is
+evaluated, even for uses of the parameter that are textually outside of the
+parameterize body:
+
+    > (define (would-you-could-you?)
+        (and (not (equal? (location) "here"))
+             (not (equal? (location) "there"))))
+    > (would-you-could-you?)
+    #f
+
+    > (parameterize ([location "on a bus"])
+        (would-you-could-you?))
+    #t
+
+
+If a use of a parameter is textually inside the body of a parameterize but not
+evaluated before the parameterize form produces a value, then the use does not
+see the value installed by the parameterize form:
+
+    > (let ([get (parameterize ([location "with a fox"])
+                   (lambda () (location)))])
+        (get))
+    "here"
+
+
+The current binding of a parameter can be adjusted imperatively by calling the
+parameter as a function with a value. If a parameterize has adjusted the value
+of the parameter, then directly applying the parameter procedure affects only
+the value associated with the active parameterize:
+
+    > (define (try-again! where)
+        (location where))
+    > (location)
+    "here"
+
+    > (parameterize ([location "on a train"])
+        (list (location)
+              (begin (try-again! "in a boat")
+                     (location))))
+    '("on a train" "in a boat")
+
+    > (location)
+    "here"
+
+
+Using parameterize is generally preferable to updating a parameter value
+imperatively—for much the same reasons that binding a fresh variable with let
+is preferable to using set! (see Assignment: set!).
+
+It may seem that variables and set! can solve many of the same problems that
+parameters solve. For example, lokation could be defined as a string, and set!
+could be used to adjust its value:
+
+    > (define lokation "here")
+    > (define (would-ya-could-ya?)
+        (and (not (equal? lokation "here"))
+             (not (equal? lokation "there"))))
+    > (set! lokation "on a bus")
+    > (would-ya-could-ya?)
+    #t
+
+
+Parameters, however, offer several crucial advantages over set!:
+
+  • The parameterize form helps automatically reset the value of a parameter
+    when control escapes due to an exception. Adding exception handlers and
+    other forms to rewind a set! is relatively tedious.
+
+  • Parameters work nicely with tail calls (see Tail Recursion). The last body
+    in a parameterize form is in tail position with respect to the parameterize
+    form.
+
+  • Parameters work properly with threads (see Threads). The parameterize form
+    adjusts the value of a parameter only for evaluation in the current thread,
+    which avoids race conditions with other threads.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,47 @@
+▼  The Typed Racket Reference
+ 1  Type Reference
+ 2  Special Form Reference
+ 3  Libraries Provided With Typed Racket
+ 4  Utilities
+ 5  Typed Racket Syntax Without Type Checking
+ 6  Typed Regions
+ 7  Optimization in Typed Racket
+ 8  Legacy Forms
+ 9  Compatibility Languages
+10  Experimental Features
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Libraries Provided With Typed Racket
+
+The typed/racket language corresponds to the racket language—that is, any
+identifier provided by racket, such as modulo is available by default in typed/
+racket.
+
+    #lang typed/racket
+    (modulo 12 2)
+
+The typed/racket/base language corresponds to the racket/base language.
+
+Some libraries have counterparts in the typed collection, which provide the
+same exports as the untyped versions. Such libraries include srfi/14, net/url,
+and many others.
+
+    #lang typed/racket
+    (require typed/srfi/14)
+    (char-set= (string->char-set "hello")
+               (string->char-set "olleh"))
+
+To participate in making more libraries available, please visit here.
+
+Other libraries can be used with Typed Racket via require/typed.
+
+    #lang typed/racket
+    (require/typed version/check
+                   [check-version (-> (U Symbol (Listof Any)))])
+    (check-version)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

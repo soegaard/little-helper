@@ -1,0 +1,72 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 1  Ht DP Teachpacks
+ 1.1  Manipulating Images: "image.ss"
+ 1.2  Simulations and Animations: "world.ss"
+ 1.3  Converting Temperatures: "convert.ss"
+ 1.4  Guessing Numbers: "guess.ss"
+ 1.5  Master Minding: "master.ss"
+ 1.6  Playing Master Mind: "master-play.ss"
+ 1.7  Simple Drawing: "draw.ss"
+ 1.8  Hangman: "hangman.ss"
+ 1.9  Playing Hangman: "hangman-play.ss"
+1.10  Managing Control Arrows: "arrow.ss"
+1.11  Manipulating Simple HTML Documents: "docs.ss"
+1.12  Working with Files and Directories: "dir.ss"
+1.13  Graphing Functions: "graphing.ss"
+1.14  Simple Graphical User Interfaces: "gui.ss"
+1.15  An Arrow GUI: "arrow-gui.ss"
+1.16  Controlling an Elevator: "elevator.ss"
+1.17  Lookup GUI: "lkup-gui.ss"
+1.18  Guess GUI: "guess-gui.ss"
+1.19  Queens: "show-queen.ss"
+1.20  Matrix Functions: "matrix.ss"
+On this page:
+guess-with-gui
+guess-with-gui-3
+guess-with-gui-list
+[...search manuals...]
+  top← prev  up  next → 
+
+1.4 Guessing Numbers: "guess.ss"
+
+ (require htdp/guess)
+
+The teachpack provides functions to play a guess-the-number game. Each function
+display a GUI in which a player can choose specific values for some number of
+digits and then check the guess. The more advanced functions ask students to
+implement more of the game.
+
+(guess-with-gui check-guess) → true
+  check-guess : (-> number? number? symbol?)
+The check-guess function consumes two numbers: guess, which is the user’s
+guess, and target, which is the randomly chosen number-to-be-guessed. The
+result is a symbol that reflects the relationship of the player’s guess to the
+target.
+
+(guess-with-gui-3 check-guess) → true
+  check-guess : (-> digit? digit? digit? number? symbol?)
+The check-guess function consumes three digits (digit0, digit1, digit2) and one
+number (target). The latter is the randomly chosen number-to-be-guessed; the
+three digits are the current guess. The result is a symbol that reflects the
+relationship of the player’s guess (the digits converted to a number) to the
+target.
+
+Note: digit0 is the least significant digit that the user chose and digit2 is
+the most significant one.
+
+(guess-with-gui-list check-guess) → true
+  check-guess : (-> (list-of digit?) number? symbol?)
+The check-guess function consumes a list of digits (digits) and a number
+(target). The former is a list that makes up the user’s guess, and the latter
+is the randomly chosen number-to-be-guessed. The result is a symbol that
+reflects the relationship of the player’s guess (the digits converted to a
+number) to the target.
+
+Note: the first item on digits is the least significant digit that the user
+chose, and the last one is the most significant digit.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

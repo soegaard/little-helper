@@ -1,0 +1,84 @@
+▼  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+On this page:
+world
+mouse-event-kind
+big-bang
+on-tick-event
+on-key-event
+on-mouse-event
+on-redraw
+end-of-time
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Animationen: "world.ss"
+
+Note: This is documentation for the "world.rkt" teachpack that goes with the
+German textbook Die Macht der Abstraktion.
+
+Dieses Teachpack ermo:glicht, kleine Animationen und Spiele zu programmieren.
+Es entha:lt alle Prozeduren aus dem image-Teachpack.
+
+world : signature
+Eine Welt (Name: world) ist die Repra:sentation des Zustands, der durch die
+Animation abgebildet wird.
+
+mouse-event-kind : signature
+(one-of "enter" "leave" "motion" "left-down" "left-up" "middle-down"
+"middle-up" "right-down" "right-up")
+
+Eine Mausereignis-Art (Name: mouse-event-kind) bezeichnet die Art eines
+Maus-Ereignisses:
+
+"enter" bedeutet, dass der Mauszeiger gerade in das Fenster hinein bewegt
+wurde. "leave" bedeutet, dass der Mauszeiger gerade aus dem Fenster heraus
+bewegt wurde. "motion" bedeutet, dass der Mauszeiger innerhalb des Fensters
+bewegt wurde. Die anderen Zeichenketten bedeuten, dass der entsprechende
+Mausknopf gedru:ckt oder losgelassen wurde.
+
+big-bang : (natural natural number world -> (one-of #t))
+Der Aufruf (big-bang w h n w) erzeugt eine Leinwand mit Breite w und Ho:he h,
+startet die Uhr, die alle n Sekunden tickt, und macht w zur ersten Welt.
+
+on-tick-event : ((world -> world) -> (one-of #t))
+Der Aufruf (on-tick-event tock) meldet tock als Prozedur an, die bei jedem
+Uhren-Tick aufgerufen wird, um aus der alten Welt eine neue zu machen.
+
+on-key-event : ((world string -> world) -> (one-of #t))
+Der Aufruf (on-key-event change) meldet change als Prozedur an, die bei jedem
+Tastendruck aufgerufen wird, um aus der alten Welt eine neue zu machen. Dabei
+wird als Argument eine Zeichenkette u:bergeben, welche die Taste darstellt,
+also "a" fu:r die A-Taste etc., sowie "up", "down", "left", und "right" fu:r
+die entsprechenden Pfeiltasten und "wheel-up" fu:r die Bewegung des Mausrads
+nach oben und "wheel-down" fu:r die Bewegung des Mausrads nach unten.
+
+on-mouse-event : ((world natural natural mouse-event-kind -> world) -> (one-of 
+#t))
+Der Aufruf (on-mouse-event change) meldet change als Prozedur an, die bei jedem
+Mausereignis aufgerufen wird, um aus der alten Welt eine neue zu machen. Die
+change-Prozedur wird als (change w x y k) aufgerufen. Dabei ist w die alte
+Welt, x und y die Koordinaten des Mauszeigers, und k die Art des
+Mausereignisses.
+
+on-redraw : ((world -> image) -> (one-of #t))
+Der Aufruf (world->image world->image) meldet die Prozedur world->image an, die
+aus einer Welt ein Bild macht, das auf der Leinwand dargestellt wird.
+
+end-of-time : (string -> world)
+Diese Prozedur ha:lt die Welt an und druckt ihr Argument in der REPL aus.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,118 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 5  Classes and Objects
+ 5.1  Creating Interfaces
+ 5.2  Creating Classes
+ 5.3  Creating Objects
+ 5.4  Field and Method Access
+ 5.5  Mixins
+ 5.6  Traits
+ 5.7  Object and Class Contracts
+ 5.8  Object Equality and Hashing
+ 5.9  Object Serialization
+5.10  Object Printing
+5.11  Object, Class, and Interface Utilities
+5.12  Surrogates
+On this page:
+make-object
+new
+instantiate
+super-make-object
+super-instantiate
+super-new
+[...search manuals...]
+  top← prev  up  next → 
+
+5.3 Creating Objects
+
+The make-object procedure creates a new object with by-position initialization
+arguments, the new form creates a new object with by-name initialization
+arguments, and the instantiate form creates a new object with both by-position
+and by-name initialization arguments.
+
+All fields in the newly created object are initially bound to the special #
+<undefined> value (see Void and Undefined). Initialization variables with
+default value expressions (and no provided value) are also initialized to #
+<undefined>. After argument values are assigned to initialization variables,
+expressions in field clauses, init-field clauses with no provided argument,
+init clauses with no provided argument, private field definitions, and other
+expressions are evaluated. Those expressions are evaluated as they appear in
+the class expression, from left to right.
+
+Sometime during the evaluation of the expressions, superclass-declared
+initializations must be evaluated once by using the super-make-object
+procedure, super-new form, or super-instantiate form.
+
+By-name initialization arguments to a class that have no matching
+initialization variable are implicitly added as by-name arguments to a
+super-make-object, super-new, or super-instantiate invocation, after the
+explicit arguments. If multiple initialization arguments are provided for the
+same name, the first (if any) is used, and the unused arguments are propagated
+to the superclass. (Note that converted by-position arguments are always placed
+before explicit by-name arguments.) The initialization procedure for the
+object% class accepts zero initialization arguments; if it receives any by-name
+initialization arguments, then exn:fail:object exception is raised.
+
+If the end of initialization is reached for any class in the hierarchy without
+invoking the superclass’s initialization, the exn:fail:object exception is
+raised. Also, if superclass initialization is invoked more than once, the
+exn:fail:object exception is raised.
+
+Fields inherited from a superclass are not initialized until the superclass’s
+initialization procedure is invoked. In contrast, all methods are available for
+an object as soon as the object is created; the overriding of methods is not
+affected by initialization (unlike objects in C++).
+
+(make-object class init-v ...) → object?
+  class : class?
+  init-v : any/c
+Creates an instance of class. The init-vs are passed as initialization
+arguments, bound to the initialization variables of class for the newly created
+object as described in Initialization Variables. If class is not a class, the
+exn:fail:contract exception is raised.
+
+(new class-expr (id by-name-expr) ...)
+Creates an instance of the value of class-expr (which must be a class), and the
+value of each by-name-expr is provided as a by-name argument for the
+corresponding id.
+
+(instantiate class-expr (by-pos-expr ...) (id by-name-expr) ...)
+Creates an instance of the value of class-expr (which must be a class), and the
+values of the by-pos-exprs are provided as by-position initialization
+arguments. In addition, the value of each by-name-expr is provided as a by-name
+argument for the corresponding id.
+
+super-make-object
+Produces a procedure that takes by-position arguments an invokes superclass
+initialization. See Creating Objects for more information.
+
+(super-instantiate (by-pos-expr ...) (id by-expr ...) ...)
+
+Invokes superclass initialization with the specified by-position and by-name
+arguments. See Creating Objects for more information.
+
+(super-new (id by-name-expr ...) ...)
+Invokes superclass initialization with the specified by-name arguments. See
+Creating Objects for more information.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

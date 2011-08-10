@@ -1,0 +1,218 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 7  Low-Level Scribble API
+ 7.1  Scribble Layers
+ 7.2  @ Reader Internals
+ 7.3  Structures And Processing
+ 7.4  Renderer
+ 7.5  Decoding Text
+ 7.6  Document Language
+ 7.7  Document Reader
+ 7.8  Cross-Reference Utilities
+ 7.9  Extending and Configuring Scribble Output
+7.10  Connecting to "racket"
+On this page:
+pre-content?
+pre-flow?
+pre-part?
+decode
+decode-part
+decode-flow
+decode-compound-paragraph
+decode-paragraph
+decode-content
+decode-elements
+decode-string
+whitespace?
+title-decl
+part-start
+part-index-decl
+part-collect-decl
+part-tag-decl
+splice
+clean-up-index-string
+[...search manuals...]
+  top← prev  up  next → 
+
+7.5 Decoding Text
+
+ (require scribble/decode)
+The scribble/decode library helps you write document content in a natural way—
+more like plain text, except for @ escapes. Roughly, it processes a stream of
+strings to produces instances of the scribble/struct datatypes (see
+Compatibility Structures And Processing).
+
+At the flow level, decoding recognizes a blank line as a paragraph separator.
+Blocks and paragraphs without blank lines in between are collected into a
+compound paragraph.
+
+At the content level, decoding makes just a few special text conversions:
+
+  • ---: converted to 'mdash
+
+  • --: converted to 'ndash
+
+  • ``: converted to 'ldquo, which is fancy open quotes: “
+
+  • '': converted to 'rdquo, which is fancy closing quotes: ”
+
+  • ': converted to 'rsquo, which is a fancy apostrophe: ’
+
+Some functions decode a sequence of pre-flow or pre-content arguments using
+decode-flow or decode-content, respectively. For example, the bold function
+accepts any number of pre-content arguments, so that in
+
+  @bold{``apple''}
+
+
+the ``apple'' argument is decoded to use fancy quotes, and then it is bolded.
+
+(pre-content? v) → boolean?
+  v : any/c
+Returns #t if v is a pre-content value: a string or other non-list content, a
+list of pre-content values, or a splice containing a list of pre-content
+values; otherwise returns #f.
+
+Pre-content is decoded into content by functions like decode-content and
+decode-paragraph.
+
+(pre-flow? v) → boolean?
+  v : any/c
+Returns #t if v is a pre-flow value: a string or other non-list content, a
+block, #<void>, a list of pre-flow values, or a splice containing a list of
+pre-flow values; otherwise returns #f.
+
+Pre-flow is decoded into a flow (i.e., a list of blocks) by functions like
+decode-flow.
+
+(pre-part? v) → boolean?
+  v : any/c
+Returns #t if v is a pre-part value: a string or other non-list content, a
+block, a part, a title-decl, a part-start, a part-index-decl, a
+part-collect-decl, a part-tag-decl, #<void>, a list of pre-part values, or a
+splice containing a list of pre-part values; otherwise returns #f.
+
+A pre-part sequence is decoded into a part by functions like decode and
+decode-part.
+
+(decode lst) → part?
+  lst : (listof pre-part?)
+Decodes a document, producing a part. In lst, lists and instances of splice are
+inlined into the list, and #<void>s are dropped. An instance of title-decl
+supplies the title for the part, plus tag, style and version information.
+Instances of part-index-decl (that precede any sub-part) add index entries that
+point to the section. Instances of part-collect-decl add elements to the part
+that are used only during the collect pass. Instances of part-tag-decl add
+hyperlink tags to the section title. Instances of part-start at level 0 trigger
+sub-part parsing. Instances of section trigger are used as-is as subsections,
+and instances of paragraph and other flow-element datatypes are used as-is in
+the enclosing flow.
+
+Portions of lst are within a part are decoded using decode-flow.
+
+(decode-part lst tags title depth) → part?
+  lst : (listof pre-part?)
+  tags : (listof string?)
+  title : (or/c #f list?)
+  depth : exact-nonnegative-integer?
+Like decode, but given a list of tag string for the part, a title (if #f, then
+a title-decl instance is used if found), and a depth for part-starts to trigger
+sub-part parsing.
+
+(decode-flow lst) → (listof block?)
+  lst : (listof pre-flow?)
+Decodes a flow. In lst, lists and instances of splice are inlined into the
+list. A sequence of two or more newlines separated only by whitespace is parsed
+as a compound-paragraph separator.
+
+Portions of lst are within a compound paragraph are decoded using
+decode-compound-paragraph.
+
+(decode-compound-paragraph lst) → block?
+  lst : (listof pre-flow?)
+Decodes a compound paragraph. In lst, lists and instances of splice are inlined
+into the list. Instances of paragraph and other block datatypes are used as-is
+in the result. If the compound paragraph contains a single block, the block is
+returned without a compound-paragraph wrapper.
+
+Portions of lst that are separated by blocks are decoded using decode-content.
+
+(decode-paragraph lst) → paragraph?
+  lst : (listof pre-content?)
+Decodes a paragraph using decode-content to decode lst as the paragraph’s
+content.
+
+(decode-content lst) → list?
+  lst : (listof pre-content?)
+Decodes content. Lists and splices in lst are flattened into the list. Plain
+strings are decoded; non-string, non-list content is included in the result
+as-is.
+
+(decode-elements lst) → list?
+  lst : (listof pre-content?)
+An alias for decode-content.
+
+(decode-string s) → (listof content?)
+  s : string?
+Decodes a single string to produce content.
+
+(whitespace? s) → boolean?
+  s : string?
+Returns #t if s contains only whitespace, #f otherwise.
+
+(struct   title-decl (tag-prefix tags version style content)
+          #:extra-constructor-name make-title-decl)
+  tag-prefix : (or/c #f string?)
+  tags : (listof string?)
+  version : (or/c string? #f)
+  style : any/c
+  content : content?
+See decode and decode-part. The tag-prefix and style fields are propagated to
+the resulting part.
+
+(struct   part-start (depth tag-prefix tags style title)
+          #:extra-constructor-name make-part-start)
+  depth : integer?
+  tag-prefix : (or/c #f string?)
+  tags : (listof string?)
+  style : any/c
+  title : content?
+Like title-decl, but for a sub-part. See decode and decode-part.
+
+(struct   part-index-decl (plain-seq entry-seq)
+          #:extra-constructor-name make-part-index-decl)
+  plain-seq : (listof string?)
+  entry-seq : list?
+See decode. The two fields are as for index-element.
+
+(struct   part-collect-decl (element)
+          #:extra-constructor-name make-part-collect-decl)
+  element : element?
+See decode.
+
+(struct   part-tag-decl (tag)
+          #:extra-constructor-name make-part-tag-decl)
+  tag : tag?
+See decode.
+
+(struct   splice (run)
+          #:extra-constructor-name make-splice)
+  run : list?
+See decode, decode-part, and decode-flow.
+
+(clean-up-index-string str) → string?
+  str : string?
+Trims leading and trailing whitespace, and converts non-empty sequences of
+whitespace to a single space character.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

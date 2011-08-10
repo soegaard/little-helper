@@ -1,0 +1,394 @@
+▼  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+Index
+
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+ 
+
+_?
+_bitmask
+_BOOL
+_bool
+_box
+_byte
+_bytes
+_bytes/eof
+_Class
+_cpointer
+_cpointer/null
+_cprocedure
+_cvector
+_double
+_double*
+_enum
+_f32vector
+_f64vector
+_file
+_file/guard
+_file/r
+_file/rw
+_fixint
+_fixnum
+_float
+_fpointer
+_fun
+_gcable
+_gcpointer
+_id
+_int
+_int16
+_int32
+_int64
+_int8
+_intptr
+_Ivar
+_list
+_list-struct
+_llong
+_long
+_objc_super
+_or-null
+_path
+_pointer
+_Protocol
+_ptr
+_racket
+_s16vector
+_s32vector
+_s64vector
+_s8vector
+_sbyte
+_scheme
+_SEL
+_short
+_sint
+_sint16
+_sint32
+_sint64
+_sint8
+_sintptr
+_sllong
+_slong
+_sshort
+_string
+_string*/latin-1
+_string*/locale
+_string*/utf-8
+_string/eof
+_string/latin-1
+_string/locale
+_string/ucs-4
+_string/utf-16
+_string/utf-8
+_sword
+_symbol
+_u16vector
+_u32vector
+_u64vector
+_u8vector
+_ubyte
+_ufixint
+_ufixnum
+_uint
+_uint16
+_uint32
+_uint64
+_uint8
+_uintptr
+_ullong
+_ulong
+_ushort
+_uword
+_vector
+_void
+_word
+Allocation and Finalization
+allocator
+'atomic
+Atomic Execution
+'atomic-interior
+C Struct Types
+C Types
+C types
+call-as-atomic
+call-as-nonatomic
+call-as-nonatomic-retry-point
+cast
+cblock->list
+cblock->vector
+class_addIvar
+class_addMethod
+compiler-sizeof
+cpointer-has-tag?
+cpointer-push-tag!
+cpointer-tag
+cpointer?
+ctype->layout
+ctype-alignof
+ctype-basetype
+ctype-c->scheme
+ctype-scheme->c
+ctype-sizeof
+ctype?
+Custom Function Types
+custom function types
+cvector
+cvector->list
+cvector-length
+cvector-ptr
+cvector-ref
+cvector-set!
+cvector-type
+cvector?
+deallocator
+default-_string-type
+define-c
+define-cpointer-type
+define-cstruct
+define-ffi-definer
+define-fun-syntax
+define-objc-class
+define-objc-mixin
+Defining Bindings
+Derived Utilities
+dynamically loaded libraries
+end-atomic
+end-breakable-atomic
+end-stubborn-change
+Enumerations and Masks
+errno
+'eternal
+f32vector
+f32vector->cpointer
+f32vector->list
+f32vector-length
+f32vector-ref
+f32vector-set!
+f32vector?
+f64vector
+f64vector->cpointer
+f64vector->list
+f64vector-length
+f64vector-ref
+f64vector-set!
+f64vector?
+'failok
+FFI
+FFI Types and Constants
+ffi-call
+ffi-callback
+ffi-callback?
+ffi-lib
+ffi-lib?
+ffi-obj
+ffi-obj-lib
+ffi-obj-name
+ffi-obj-ref
+ffi-obj?
+ffi/cvector
+ffi/file
+ffi/objc
+ffi/unsafe
+ffi/unsafe/alloc
+ffi/unsafe/atomic
+ffi/unsafe/cvector
+ffi/unsafe/define
+ffi/unsafe/objc
+ffi/unsafe/try-atomic
+ffi/vector
+ffi/winapi
+File Security-Guard Checks
+Fixed Auto-Converting String Types
+flvector->cpointer
+free
+free-immobile-cell
+Function Types
+function-ptr
+get-ffi-obj
+get-ivar
+GetLastError
+import-class
+import-protocol
+'interior
+Legacy Library
+list->cblock
+list->cvector
+list->f32vector
+list->f64vector
+list->s16vector
+list->s32vector
+list->s64vector
+list->s8vector
+list->u16vector
+list->u32vector
+list->u64vector
+list->u8vector
+Loading Foreign Libraries
+lookup-errno
+make-c-parameter
+make-cstruct-type
+make-ctype
+make-cvector
+make-cvector*
+make-f32vector
+make-f64vector
+make-not-available
+make-objc_super
+make-s16vector
+make-s32vector
+make-s64vector
+make-s8vector
+make-sized-byte-string
+make-u16vector
+make-u32vector
+make-u64vector
+make-u8vector
+malloc
+malloc-immobile-cell
+memcpy
+memmove
+Memory Management
+memset
+Miscellaneous Support
+NO
+'nonatomic
+Numeric Types
+objc-is-a?
+objc-unsafe!
+objc_allocateClassPair
+objc_getProtocol
+objc_lookUpClass
+objc_msgSend/typed
+objc_msgSendSuper/typed
+objc_registerClassPair
+object_getClass
+object_getInstanceVariable
+object_setInstanceVariable
+Objective-C FFI
+offset-ptr?
+Other Atomic Types
+Other String Types
+Overview
+Pointer Dereferencing
+Pointer Functions
+Pointer Types
+Primitive String Types
+provide-protected
+ptr-add
+ptr-add!
+ptr-equal?
+ptr-offset
+ptr-ref
+ptr-set!
+'raw
+Raw Runtime Functions
+regexp-replaces
+register-finalizer
+releaser
+retainer
+s16vector
+s16vector->cpointer
+s16vector->list
+s16vector-length
+s16vector-ref
+s16vector-set!
+s16vector?
+s32vector
+s32vector->cpointer
+s32vector->list
+s32vector-length
+s32vector-ref
+s32vector-set!
+s32vector?
+s64vector
+s64vector->cpointer
+s64vector->list
+s64vector-length
+s64vector-ref
+s64vector-set!
+s64vector?
+s8vector
+s8vector->cpointer
+s8vector->list
+s8vector-length
+s8vector-ref
+s8vector-set!
+s8vector?
+Safe C Vectors
+Safe Homogenous Vectors
+saved-errno
+security-guard-check-file
+sel_registerName
+selector
+self
+set-cpointer-tag!
+set-ffi-obj!
+set-ivar!
+set-ptr-offset!
+shared libraries
+shared objects
+Speculatively Atomic Execution
+start-atomic
+start-breakable-atomic
+String Types
+'stubborn
+super-tell
+Syntactic Forms and Procedures
+Tagged C Pointer Types
+tell
+tellv
+The Racket Foreign Interface
+try-atomic
+Type Constructors
+u16vector
+u16vector->cpointer
+u16vector->list
+u16vector-length
+u16vector-ref
+u16vector-set!
+u16vector?
+u32vector
+u32vector->cpointer
+u32vector->list
+u32vector-length
+u32vector-ref
+u32vector-set!
+u32vector?
+u64vector
+u64vector->cpointer
+u64vector->list
+u64vector-length
+u64vector-ref
+u64vector-set!
+u64vector?
+u8vector
+u8vector->cpointer
+u8vector->list
+u8vector-length
+u8vector-ref
+u8vector-set!
+u8vector?
+'uncollectable
+Unexported Primitive Functions
+Variable Auto-Converting String Type
+vector->cblock
+vector->cpointer
+win64?
+winapi
+Windows API Helpers
+YES
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

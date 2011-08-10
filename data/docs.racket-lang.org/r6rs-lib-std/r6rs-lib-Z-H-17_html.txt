@@ -1,0 +1,54 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 16
+
+eval
+
+The (rnrs eval (6)) library allows a program to create Scheme expressions as
+data at run time and evaluate them.
+
+(eval expression environment)    procedure 
+
+Evaluates expression in the specified environment and returns its value.
+Expression must be a syntactically valid Scheme expression represented as a
+datum value, and environment must be an environment, which can be created using
+the environment procedure described below.
+
+If the first argument to eval is determined not to be a syntactically correct
+expression, then eval must raise an exception with condition type &syntax.
+Specifically, if the first argument to eval is a definition or a splicing begin
+form containing a definition, it must raise an exception with condition type &
+syntax.
+
+(environment import-spec ...)    procedure 
+
+Import-spec must be a datum representing an <import spec> (see report
+section on “Library form”). The environment procedure returns an environment
+corresponding to import-spec.
+
+The bindings of the environment represented by the specifier are immutable: If
+eval is applied to an expression that is determined to contain an assignment to
+one of the variables of the environment, then eval must raise an exception with
+a condition type &assertion.
+
+(library (foo)
+  (export)
+  (import (rnrs))
+  (write
+    (eval ’(let ((x 3)) x)
+          (environment ’(rnrs))))) 
+  writes 3
+
+(library (foo)
+  (export)
+  (import (rnrs))
+  (write
+    (eval
+      ’(eval:car (eval:cons 2 4))
+      (environment
+        ’(prefix (only (rnrs) car cdr cons null?)
+                 eval:))))) 
+  writes 2
+
+                        [Go to first, previous, next page;   contents;   index]
+

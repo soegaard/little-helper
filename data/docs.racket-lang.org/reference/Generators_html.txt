@@ -1,0 +1,278 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+▼ 3.14  Sequences and Streams
+3.14.1  Sequences
+3.14.2  Streams
+3.14.3  Generators
+On this page:
+generator?
+generator
+yield
+infinite-generator
+in-generator
+generator-state
+sequence->generator
+sequence->repeated-generator
+[...search manuals...]
+  top← prev  up  next → 
+
+3.14.3 Generators
+
+A generator is a procedure that returns a sequence of values, incrementing the
+sequence each time that the generator is called. In particular, the generator
+form implements a generator by evaluating a body that calls yield to return
+values from the generator.
+
+ (require racket/generator)
+
+(generator? v) → boolean?
+  v : any/c
+Return #t if v is a generator, #f otherwise.
+
+(generator formals body ...+)
+Creates a generator, where formals is like the formals of case-lambda (i.e.,
+the kw-formals of lambda restricted to non-optional and non-keyword arguments).
+
+For the first call to a generator, the arguments are bound to the formals and
+evaluation of body starts. During the dynamic extent of body, the generator can
+return immediately using the yield function. A second call to the generator
+resumes at the yield call, producing the arguments of the second call as the
+results of the yield, and so on. The eventual results of body are supplied to
+an implicit final yield; after that final yield, calling the generator again
+returns the same values, but all such calls must provide 0 arguments to the
+generator.
+
+Examples:
+
+    > (define g (generator ()
+                  (let loop ([x '(a b c)])
+                    (if (null? x)
+                        0
+                        (begin
+                         (yield (car x))
+                         (loop (cdr x)))))))
+    > (g)
+    'a
+
+    > (g)
+    'b
+
+    > (g)
+    'c
+
+    > (g)
+    0
+
+    > (g)
+    0
+
+
+
+(yield v ...) → any
+  v : any/c
+Returns vs from a generator, saving the point of execution inside a generator
+(i.e., within the dynamic extent of a generator body) to be resumed by the next
+call to the generator. The results of yield are the arguments that are provided
+to the next call of the generator.
+
+When not in the dynamic extent of a generator, infinite-generator, or
+in-generator body, yield raises exn:fail after evaluating its exprs.
+
+Examples:
+
+    > (define my-generator (generator () (yield 1) (yield 2 3 4)))
+    > (my-generator)
+    1
+
+    > (my-generator)
+    2
+
+    3
+
+    4
+
+
+
+Examples:
+
+    > (define pass-values-generator
+        (generator ()
+          (let* ([from-user (yield 2)]
+                 [from-user-again (yield (add1 from-user))])
+            (yield from-user-again))))
+    > (pass-values-generator)
+    2
+
+    > (pass-values-generator 5)
+    6
+
+    > (pass-values-generator 12)
+    12
+
+
+
+(infinite-generator body ...+)
+Like generator, but repeats evaluation of the bodys when the last body
+completes without implicitly yielding.
+
+Examples:
+
+    > (define welcome
+        (infinite-generator
+          (yield 'hello)
+          (yield 'goodbye)))
+    > (welcome)
+    'hello
+
+    > (welcome)
+    'goodbye
+
+    > (welcome)
+    'hello
+
+    > (welcome)
+    'goodbye
+
+
+
+(in-generator body ...+)
+Produces a sequence that encapsulates the generator formed by (generator ()
+body ...+). The values produced by the generator form the elements of the
+sequence.
+
+Example:
+
+    > (for/list ([i (in-generator
+                      (let loop ([x '(a b c)])
+                        (when (not (null? x))
+                          (yield (car x))
+                          (loop (cdr x)))))])
+        i)
+    '(a b c)
+
+
+
+To use an existing generator as a sequence, use in-producer with a stop-value
+known for the generator.
+
+Examples:
+
+    > (define my-stop-value (gensym))
+    > (define my-generator (generator ()
+                             (let loop ([x '(a b c)])
+                               (if (null? x)
+                                   my-stop-value
+                                   (begin
+                                    (yield (car x))
+                                    (loop (cdr x)))))))
+    > (for/list ([i (in-producer my-generator my-stop-value)])
+        i)
+    '(a b c)
+
+
+
+(generator-state g) → symbol?
+  g : generator?
+Returns a symbol that describes the state of the generator.
+
+  • 'fresh — The generator has been freshly created and has not been called
+    yet.
+
+  • 'suspended — Control within the generator has been suspended due to a call
+    to yield. The generator can be called.
+
+  • 'running — The generator is currently executing.
+
+  • 'done — The generator has executed its entire body and will continue to
+    produce the same result as from the last call.
+
+Examples:
+
+    > (define my-generator (generator () (yield 1) (yield 2)))
+    > (generator-state my-generator)
+    'fresh
+
+    > (my-generator)
+    1
+
+    > (generator-state my-generator)
+    'suspended
+
+    > (my-generator)
+    2
+
+    > (generator-state my-generator)
+    'suspended
+
+    > (my-generator)
+    > (generator-state my-generator)
+    'done
+
+    > (define introspective-generator (generator () ((yield 1))))
+    > (introspective-generator)
+    1
+
+    > (introspective-generator
+       (lambda () (generator-state introspective-generator)))
+    'running
+
+    > (generator-state introspective-generator)
+    'done
+
+    > (introspective-generator)
+    'running
+
+
+
+(sequence->generator s) → (-> any)
+  s : sequence?
+Converts a sequence to a generator. The generator returns the next element of
+the sequence each time the generator is invoked, where each element of the
+sequence must be a single value. When the sequence ends, the generator returns
+#<void> as its final result.
+
+(sequence->repeated-generator s) → (-> any)
+  s : sequence?
+Like sequence->generator, but when s has no further values, the generator
+starts the sequence again (so that the generator never stops producing values).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

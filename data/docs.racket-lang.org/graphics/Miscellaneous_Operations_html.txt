@@ -1,0 +1,54 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+On this page:
+get-string-size
+viewport->snip
+viewport-dc
+viewport-buffer-dc
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Miscellaneous Operations
+
+((get-string-size viewport) str) → (list/c real? real?)
+  viewport : viewport?
+  str : string?
+Returns the size of str as drawn into viewport as a list of two numbers: width
+and height.
+
+(viewport->snip viewport) → (is-a?/c snip%)
+  viewport : viewport?
+
+Returns an object that can be inserted into an editor buffer to display the
+current image in the viewport. (Subsequent drawing to the viewport does not
+affect the snip’s image.)
+
+When snips are the results of computations in the interactions window, DrRacket
+shows the snip in the interactions window.}
+
+(viewport-dc viewport) → (is-a?/c dc<%>)
+  viewport : viewport?
+Returns an object for direct drawing into viewport’s on-screen representation
+(if any). Mirror all such drawing to the result of (viewport-buffer-dc
+viewport), too.
+
+(viewport-buffer-dc viewport) → (is-a?/c dc<%>)
+  viewport : viewport?
+Returns an object for direct drawing into viewport’s off-screen representation.
+Mirror all such drawing to the result of (viewport-dc viewport), too.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

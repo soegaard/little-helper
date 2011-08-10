@@ -1,0 +1,390 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 1  URLs and HTTP
+1.1  URL Structure
+1.2  URL Functions
+1.3  URL Unit
+1.4  URL Signature
+On this page:
+1.1 URL Structure
+url
+path/ param
+1.2 URL Functions
+string->url
+combine-url/ relative
+netscape/ string->url
+url->string
+path->url
+url->path
+file-url-path-convention-type
+get-pure-port
+head-pure-port
+delete-pure-port
+get-impure-port
+head-impure-port
+delete-impure-port
+post-pure-port
+put-pure-port
+post-impure-port
+put-impure-port
+display-pure-port
+purify-port
+call/ input-url
+current-proxy-servers
+current-https-protocol
+1.3 URL Unit
+url@
+1.4 URL Signature
+url^
+url+ scheme^
+[...search manuals...]
+  top← prev  up  next → 
+
+1 URLs and HTTP
+
+ (require net/url)
+The net/url library provides utilities to parse and manipulate URIs, as
+specified in RFC 2396 [RFC2396], and to use the HTTP protocol.
+
+To access the text of a document from the web, first obtain its URL as a
+string. Convert the address into a url structure using string->url. Then, open
+the document using get-pure-port or get-impure-port, depending on whether or
+not you wish to examine its MIME headers. At this point, you have a regular
+input port with which to process the document, as with any other file.
+
+Currently the only supported protocols are "http", "https", and sometimes
+"file".
+
+1.1 URL Structure
+
+ (require net/url-structs)
+The URL structure types are provided by the net/url-structs library, and
+re-exported by net/url.
+
+(struct   url    (  scheme
+                    user
+                    host
+                    port
+                    path-absolute?
+                    path
+                    query
+                    fragment)
+          #:extra-constructor-name make-url)
+  scheme : (or/c false/c string?)
+  user : (or/c false/c string?)
+  host : (or/c false/c string?)
+  port : (or/c false/c exact-nonnegative-integer?)
+  path-absolute? : boolean?
+  path : (listof path/param?)
+  query : (listof (cons/c symbol? (or/c false/c string?)))
+  fragment : (or/c false/c string?)
+The basic structure for all URLs, which is explained in RFC 3986 [RFC3986]. The
+following diagram illustrates the parts:
+
+  http://sky@www:801/cgi-bin/finger;xyz?name=shriram;host=nw#top
+
+  {-1}   {2} {3} {4}{---5---------} {6} {----7-------------} {8}
+
+  
+
+  1 = scheme, 2 = user, 3 = host, 4 = port,
+
+  5 = path (two elements),  6 = param (of second path element),
+
+  7 = query, 8 = fragment
+
+
+The strings inside the user, path, query, and fragment fields are represented
+directly as Racket strings, without URL-syntax-specific quoting. The procedures
+string->url and url->string translate encodings such as %20 into spaces and
+back again.
+
+By default, query associations are parsed with either ; or & as a separator,
+and they are generated with & as a separator. The current-alist-separator-mode
+parameter adjusts the behavior.
+
+An empty string at the end of the path list corresponds to a URL that ends in a
+slash. For example, the result of (string->url "http://racket-lang.org/a/") has
+a path field with strings "a" and "", while the result of (string->url "http://
+racket-lang.org/a") has a path field with only the string "a".
+
+When a "file" URL is represented by a url structure, the path field is mostly a
+list of path elements. For Unix paths, the root directory is not included in
+path; its presence or absence is implicit in the path-absolute? flag. For
+Windows paths, the first element typically represents a drive, but a UNC path
+is represented by a first element that is "" and then successive elements
+complete the drive components that are separated by / or \.
+
+(struct   path/param (path param)
+          #:extra-constructor-name make-path/param)
+  path : (or/c string? (one-of/c 'up 'same))
+  param : (listof string?)
+A pair that joins a path segment with its params in a URL.
+
+1.2 URL Functions
+
+An HTTP connection is created as a pure port or a impure port. A pure port is
+one from which the MIME headers have been removed, so that what remains is
+purely the first content fragment. An impure port is one that still has its
+MIME headers.
+
+(string->url str) → url?
+  str : string?
+Parses the URL specified by str into a url struct. The string->url procedure
+uses form-urlencoded->alist when parsing the query, so it is sensitive to the
+current-alist-separator-mode parameter for determining the association
+separator.
+
+If str starts with "file:", then the path is always parsed as an absolute path,
+and the parsing details depend on file-url-path-convention-type:
+
+  • 'unix : If "file:" is followed by // and a non-/, then the first element
+    after the // is parsed as a host (and maybe port); otherwise, the first
+    element starts the path, and the host is "".
+
+  • 'windows : If "file:" is followed by //, then the // is stripped; the
+    remainder parsed as a Windows path. The host is always "" and the port is
+    always #f.
+
+(combine-url/relative base relative) → url?
+  base : url?
+  relative : string?
+Given a base URL and a relative path, combines the two and returns a new URL as
+per the URL combination specification. They are combined according to the rules
+in RFC 3986 [RFC3986].
+
+This function does not raise any exceptions.
+
+(netscape/string->url str) → url?
+  str : string?
+Turns a string into a URL, applying (what appear to be) Netscape’s conventions
+on automatically specifying the scheme: a string starting with a slash gets the
+scheme "file", while all others get the scheme "http".
+
+(url->string URL) → string?
+  URL : url?
+Generates a string corresponding to the contents of a url struct. For a "file:"
+URL, the URL must not be relative, the result always starts file://, and the
+interpretation of the path depends on the value of
+file-url-path-convention-type:
+
+  • 'unix : Elements in URL are treated as path elements. Empty strings in the
+    path list are treated like 'same.
+
+  • 'windows : If the first element is "" then the next two elements define the
+    UNC root, and the rest of the elements are treated as path elements. Empty
+    strings in the path list are treated like 'same.
+
+The url->string procedure uses alist->form-urlencoded when formatting the
+query, so it is sensitive to the current-alist-separator-mode parameter for
+determining the association separator. The default is to separate associations
+with a &.
+
+(path->url path) → url?
+  path : (or/c path-string? path-for-some-system?)
+Converts a path to a url.
+
+(url->path URL [kind]) → path-for-some-system?
+  URL : url?
+   kind   :   (one-of/c 'unix 'windows)
+          =   (system-path-convention-type)
+Converts URL, which is assumed to be a "file" URL, to a path.
+
+(file-url-path-convention-type) → (one-of/c 'unix 'windows)
+(file-url-path-convention-type kind) → void?
+  kind : (one-of/c 'unix 'windows)
+Determines the default conversion to and from strings for "file" URLs. See
+string->url and url->string.
+
+(get-pure-port URL [header]) → input-port?
+  URL : url?
+  header : (listof string?) = null
+(head-pure-port URL [header]) → input-port?
+  URL : url?
+  header : (listof string?) = null
+(delete-pure-port URL [header]) → input-port?
+  URL : url?
+  header : (listof string?) = null
+Initiates a GET/HEAD/DELETE request for URL and returns a pure port
+corresponding to the body of the response. The optional list of strings can be
+used to send header lines to the server.
+
+The GET method is used to retrieve whatever information is identified by URL.
+
+The HEAD method is identical to GET, except the server must not return a
+message body. The meta-information returned in a response to a HEAD request
+should be identical to the information in a response to a GET request.
+
+The DELETE method is used to delete the entity identified by URL.
+
+Beware: By default, "https" scheme handling does not verify a server’s
+certificate (i.e., it’s equivalent of clicking through a browser’s warnings),
+so communication is safe, but the identity of the server is not verified. To
+validate the server’s certificate, set current-https-protocol to a context
+created with ssl-make-client-context, and enable certificate validation in the
+context with ssl-set-verify!.
+
+The "file" scheme for URLs is handled only by get-pure-port, which uses
+open-input-file, does not handle exceptions, and ignores the optional strings.
+
+(get-impure-port URL [header]) → input-port?
+  URL : url?
+  header : (listof string?) = null
+(head-impure-port URL [header]) → input-port?
+  URL : url?
+  header : (listof string?) = null
+(delete-impure-port URL [header]) → input-port?
+  URL : url?
+  header : (listof string?) = null
+Like get-pure-port, etc., but the resulting impure port contains both the
+returned headers and the body. The "file" URL scheme is not handled by these
+functions.
+
+(post-pure-port URL post [header]) → input-port?
+  URL : url?
+  post : bytes?
+  header : (listof string?) = null
+(put-pure-port URL post [header]) → input-port?
+  URL : url?
+  post : bytes?
+  header : (listof string?) = null
+Initiates a POST/PUT request for URL and sends the post byte string. The result
+is a pure port, which contains the body of the response is returned. The
+optional list of strings can be used to send header lines to the server.
+
+Beware: See get-pure-port for warnings about "https" certificate validation.
+
+(post-impure-port URL post [header]) → input-port?
+  URL : url?
+  post : bytes?
+  header : (listof string?) = null
+(put-impure-port URL post [header]) → input-port?
+  URL : url?
+  post : bytes?
+  header : (listof string?) = null
+Like post-pure-port and put-pure-port, but the resulting impure port contains
+both the returned headers and body.
+
+(display-pure-port in) → void?
+  in : input-port?
+Writes the output of a pure port, which is useful for debugging purposes.
+
+(purify-port in) → string?
+  in : input-port?
+Purifies a port, returning the MIME headers, plus a leading line for the form
+HTTP/‹vers› ‹code› ‹message›, where ‹vers› is something like 1.0 or 1.1, ‹code›
+is an exact integer for the response code, and ‹message› is arbitrary text
+without a return or newline.
+
+The net/head library provides procedures, such as extract-field for
+manipulating the header.
+
+Since web servers sometimes return mis-formatted replies, purify-port is
+liberal in what it accepts as a header. as a result, the result string may be
+ill formed, but it will either be the empty string, or it will be a string
+matching the following regexp:
+
+    #rx"^HTTP/.*?(\r\n\r\n|\n\n|\r\r)"
+
+(call/input-url URL connect handle) → any
+  URL : url?
+  connect : (url? . -> . input-port?)
+  handle : (input-port? . -> . any)
+(call/input-url URL connect handle header) → any
+  URL : url?
+  connect : (url? (listof string?) . -> . input-port?)
+  handle : (input-port? . -> . any)
+  header : (listof string?)
+Given a URL and a connect procedure like get-pure-port to convert the URL to an
+input port (either a pure port or impure port), calls the handle procedure on
+the port and closes the port on return. The result of the handle procedure is
+the result of call/input-url.
+
+When a header argument is supplied, it is passed along to the connect
+procedure.
+
+The connection is made in such a way that the port is closed before call/
+input-url returns, no matter how it returns. In particular, it is closed if
+handle raises an exception, or if the connection process is interruped by an
+asynchronous break exception.
+
+(current-proxy-servers)
+ → (listof (list/c string? string? (integer-in 0 65535)))
+(current-proxy-servers mapping) → void?
+  mapping : (listof (list/c string? string? (integer-in 0 65535)))
+A parameter that determines a mapping of proxy servers used for connections.
+Each mapping is a list of three elements:
+
+  • the URL scheme, such as "http";
+
+  • the proxy server address; and
+
+  • the proxy server port number.
+
+Currently, the only proxiable scheme is "http". The default mapping is the
+empty list (i.e., no proxies).
+
+(current-https-protocol) → (or/c ssl-client-context? symbol?)
+(current-https-protocol protocol) → void?
+  protocol : (or/c ssl-client-context? symbol?)
+A parameter that determines the connection mode for "https" connections; the
+parameter value is passed as the third argument to ssl-connect when creating an
+"https" connection. Set this parameter to validate a server’s certificates, for
+example, as described with get-pure-port.
+
+1.3 URL Unit
+
+ (require net/url-unit)
+
+url@ : unit?
+Imports tcp^, exports url+scheme^.
+
+The url+scheme^ signature contains current-connect-scheme, which url@ binds to
+a parameter. The parameter is set to the scheme of a URL when tcp-connect is
+called to create a connection. A tcp-connect variant linked to url@ can check
+this parameter to choose the connection mode; in particular, net/url supplies a
+tcp-connect that actually uses ssl-connect when (current-connect-scheme)
+produces "https".
+
+Note that net/url does not provide the current-connect-scheme parameter.
+
+1.4 URL Signature
+
+ (require net/url-sig)
+
+url^ : signature
+
+
+    Includes everything exported by the net/url module except
+    current-https-protocol. Note that the exports of net/url and the url^
+    signature do not include current-connect-scheme.
+
+url+scheme^ : signature
+
+
+    Adds current-connect-scheme to url^.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

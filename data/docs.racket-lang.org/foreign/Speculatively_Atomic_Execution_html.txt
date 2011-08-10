@@ -1,0 +1,74 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 5  Derived Utilities
+ 5.1  Safe Homogenous Vectors
+ 5.2  Safe C Vectors
+ 5.3  Tagged C Pointer Types
+ 5.4  Defining Bindings
+ 5.5  Allocation and Finalization
+ 5.6  Atomic Execution
+ 5.7  Speculatively Atomic Execution
+ 5.8  Objective-C FFI
+ 5.9  File Security-Guard Checks
+5.10  Windows API Helpers
+On this page:
+call-as-nonatomic-retry-point
+try-atomic
+[...search manuals...]
+  top← prev  up  next → 
+
+5.7 Speculatively Atomic Execution
+
+ (require ffi/unsafe/try-atomic)
+The ffi/unsafe/try-atomic supports atomic execution that can be suspended and
+resumed in non-atomic mode if it takes too long or if some external event
+causes the attempt to be abandoned.
+
+(call-as-nonatomic-retry-point thunk) → any
+  thunk : (-> any)
+Calls thunk in atomic mode (see start-atomic and end-atomic) while allowing
+thunk to use try-atomic. Any incomplete computations started with try-atomic
+are run non-atomically after thunk returns. The result of thunk is used as the
+result of call-as-nonatomic-retry-point.
+
+(try-atomic    thunk                                    
+               default-val                              
+             [ #:should-give-up? give-up-proc           
+               #:keep-in-order? keep-in-order?])   →   any
+  thunk : (-> any)
+  default-val : any/c
+  give-up-proc : (-> any/c) = run-200-milliseconds
+  keep-in-order? : any/c = #t
+Within the dynamic extent of a call-as-nonatomic-retry-point call, attempts to
+run thunk in the existing atomic mode. The give-up-proc procedure is called
+periodically to determine whether atomic mode should be abandoned; the default
+give-up-proc returns true after 200 milliseconds. If atomic mode is abandoned,
+the computation is suspended, and default-val is returned, instead. The
+computation is resumed later by the enclosing call-as-nonatomic-retry-point
+call.
+
+If keep-in-order? is true, then if try-atomic is called after an earlier
+computation was suspended for the same call-as-nonatomic-retry-point call, then
+thunk is immediately enqueued for completion by call-as-nonatomic-retry-point
+and default-val is returned.
+
+The give-up-proc callback is polled only at points where the level of
+atomic-mode nesting (see start-atomic, start-breakable-atomic, and
+call-as-atomic) is the same as at the point of calling try-atomic.
+
+If thunk aborts the current continuation using (default-continuation-prompt-tag
+), the abort is suspended the resumed by the enclosing
+call-as-nonatomic-retry-point. Escapes to the context of the call to thunk
+using any other prompt tag or continuation are blocked (using dynamic-wind) and
+simply return (void) from thunk.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

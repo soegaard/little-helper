@@ -1,0 +1,176 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 16  Macros
+16.1  Pattern-Based Macros
+16.2  General Macro Transformers
+▼ 16.2  General Macro Transformers
+16.2.1  Syntax Objects
+16.2.2  Mixing Patterns and Expressions: syntax-case
+16.2.3  with-syntax and generate-temporaries
+16.2.4  Compile and Run-Time Phases
+16.2.5  Syntax Taints
+[...search manuals...]
+  top← prev  up  next → 
+
+16.2.4 Compile and Run-Time Phases
+
+As sets of macros get more complicated, you might want to write your own helper
+functions, like generate-temporaries. For example, to provide good syntax-error
+messsage, swap, rotate, and define-cbr all should check that certain sub-forms
+in the source form are identifiers. We could use a check-ids to perform this
+checking everywhere:
+
+    (define-syntax (swap stx)
+      (syntax-case stx ()
+        [(swap x y) (begin
+                      (check-ids stx #'(x y))
+                      #'(let ([tmp x])
+                          (set! x y)
+                          (set! y tmp)))]))
+     
+    (define-syntax (rotate stx)
+      (syntax-case stx ()
+        [(rotate a c ...)
+         (begin
+          (check-ids stx #'(a c ...))
+          #'(shift-to (c ... a) (a c ...)))]))
+
+The check-ids function can use the syntax->list function to convert a
+syntax-object wrapping a list into a list of syntax objects:
+
+    (define (check-ids stx forms)
+      (for-each
+       (lambda (form)
+         (unless (identifier? form)
+           (raise-syntax-error #f
+                               "not an identifier"
+                               stx
+                               form)))
+       (syntax->list forms)))
+
+If you define swap and check-ids in this way, however, it doesn’t work:
+
+    > (let ([a 1] [b 2]) (swap a b))
+    reference to undefined identifier: check-ids
+
+
+The problem is that check-ids is defined as a run-time expression, but swap is
+trying to use it at compile time. In interactive mode, compile time and run
+time are interleaved, but they are not interleaved within the body of a module,
+and they are not interleaved or across modules that are compiled ahead-of-time.
+To help make all of these modes treat code consistently, Racket separates the
+binding spaces for different phases.
+
+To define a check-ids function that can be referenced at compile time, use
+define-for-syntax:
+
+    (define-for-syntax (check-ids stx forms)
+      (for-each
+       (lambda (form)
+         (unless (identifier? form)
+           (raise-syntax-error #f
+                               "not an identifier"
+                               stx
+                               form)))
+       (syntax->list forms)))
+
+With this for-syntax definition, then swap works:
+
+    > (let ([a 1] [b 2]) (swap a b) (list a b))
+    '(2 1)
+
+    > (swap a 1)
+    eval:7:0: swap: not an identifier at: 1 in: (swap a 1)
+
+
+When organizing a program into modules, you may want to put helper functions in
+one module to be used by macros that reside on other modules. In that case, you
+can write the helper function using define:
+
+        "utils.rkt"
+
+            #lang racket
+             
+            (provide check-ids)
+             
+            (define (check-ids stx forms)
+              (for-each
+               (lambda (form)
+                 (unless (identifier? form)
+                   (raise-syntax-error #f
+                                       "not an identifier"
+                                       stx
+                                       form)))
+               (syntax->list forms)))
+
+Then, in the module that implements macros, import the helper function using (
+require (for-syntax "utils.rkt")) instead of (require "utils.rkt"):
+
+    #lang racket
+     
+    (require (for-syntax "utils.rkt"))
+     
+    (define-syntax (swap stx)
+      (syntax-case stx ()
+        [(swap x y) (begin
+                      (check-ids stx #'(x y))
+                      #'(let ([tmp x])
+                          (set! x y)
+                          (set! y tmp)))]))
+
+Since modules are separately compiled and cannot have circular dependencies,
+the "utils.rkt" module’s run-time body can be compiled before the compiling the
+module that implements swap. Thus, the run-time definitions in "utils.rkt" can
+be used to implement swap, as long as they are explicitly shifted into compile
+time by (require (for-syntax ....)).
+
+The racket module provides syntax-case, generate-temporaries, lambda, if, and
+more for use in both the run-time and compile-time phases. That is why we can
+use syntax-case in the racket REPL both directly and in the right-hand side of
+a define-syntax form.
+
+The racket/base module, in contrast, exports those bindings only in the
+run-time phase. If you change the module above that defines swap so that it
+uses the racket/base language instead of racket, then it no longer works.
+Adding (require (for-syntax racket/base)) imports syntax-case and more into the
+compile-time phase, so that the module works again.
+
+Suppose that define-syntax is used to define a local macro in the right-hand
+side of a define-syntax form. In that case, the right-hand side of the inner
+define-syntax is in the meta-compile phase level, also known as phase level 2.
+To import syntax-case into that phase level, you would have to use (require (
+for-syntax (for-syntax racket/base))) or, equivalently, (require (for-meta 2
+racket/base)).
+
+Negative phase levels also exist. If a macro uses a helper function that is
+imported for-syntax, and if the helper function returns syntax-object constants
+generated by syntax, then identifiers in the syntax will need bindings at phase
+level -1, also known as the template phase level, to have any binding at the
+run-time phase level relative to the module that defines the macro.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,69 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 3  High-Level Scribble API
+3.1  Base Document Format
+3.2  Racket Manual Format
+3.3  SIGPLAN Paper Format
+3.4  JFP Paper Format
+3.5  LNCS Paper Format
+On this page:
+abstract
+include-abstract
+author
+author/ short
+affiliation
+affiliation-mark
+affiliation-sep
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+3.4 JFP Paper Format
+
+ #lang scribble/jfp
+The scribble/jfp language is like scribble/manual, but configured with Latex
+style defaults to use the "jfp.cls" class file that is included with Scribble.
+
+Latex output with scribble/jfp uses a main-document version supplied to title
+as the short-form document name (to be used in page headers).
+
+(abstract pre-content ...) → block?
+  pre-content : pre-content?
+Generates a nested flow for a paper abstract.
+
+(include-abstract module-path)
+Similar to include-section, but incorporates the document in the specified
+module as an abstract. The document must have no title or sub-parts.
+
+(author name ...) → block?
+  name : pre-content?
+A replacement for author from scribble/base.
+
+((author/short short-name ...) long-name ...) → block?
+  short-name : pre-content?
+  long-name : pre-content?
+Like author, but allows the short-form names (to be used in page headers) to be
+specified separately from the long-form name.
+
+(affiliation place ...) → element?
+  place : pre-content?
+(affiliation-mark mark ...) → element?
+  mark : pre-content?
+(affiliation-sep) → element?
+Use affiliation within author or the long-name part of author/short to specify
+affiliations after all authors. If different authors have different
+affiliations, use affiliation-mark with a number after each author, and then
+use affiliation-mark before each different affiliation within a single
+affiliation, using (affiliation-sep) to separate affiliations.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

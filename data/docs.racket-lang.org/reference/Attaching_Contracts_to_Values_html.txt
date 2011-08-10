@@ -1,0 +1,239 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Data-structure Contracts
+7.2  Function Contracts
+7.3  Parametric Contracts
+7.4  Lazy Data-structure Contracts
+7.5  Attaching Contracts to Values
+7.6  Building New Contract Combinators
+7.7  Contract Utilities
+7.8  Legacy Contracts
+► 7.5  Attaching Contracts to Values
+7.5.1  Nested Contract Boundaries
+7.5.2  Low-level Contract Boundaries
+On this page:
+provide/ contract
+7.5.1 Nested Contract Boundaries
+with-contract
+define/ contract
+define-struct/ contract
+current-contract-region
+7.5.2 Low-level Contract Boundaries
+contract
+[...search manuals...]
+  top← prev  up  next → 
+
+7.5 Attaching Contracts to Values
+
+(provide/contract p/c-item ...)
+ 
+        p/c-item   =   (struct id ((id contract-expr) ...))
+                   |   (struct (id identifier) ((id contract-expr) ...))
+                   |   (rename orig-id id contract-expr)
+                   |   (id contract-expr)
+                   |   #:∃ exists-variables
+                   |   #:exists exists-variables
+                        
+exists-variables   =   identifier
+                   |   (identifier ...)
+Can only appear at the top-level of a module. As with provide, each id is
+provided from the module. In addition, clients of the module must live up to
+the contract specified by contract-expr for each export.
+
+The provide/contract form treats modules as units of blame. The module that
+defines the provided variable is expected to meet the positive (co-variant)
+positions of the contract. Each module that imports the provided variable must
+obey the negative (contra-variant) positions of the contract.
+
+Only uses of the contracted variable outside the module are checked. Inside the
+module, no contract checking occurs.
+
+The rename form of a provide/contract exports the first variable (the internal
+name) with the name specified by the second variable (the external name).
+
+The struct form of a provide/contract clause provides a structure-type
+definition, and each field has a contract that dictates the contents of the
+fields. The structure-type definition must appear before the provide clause
+within the enclosing module. If the structure type has a parent, the second
+struct form (above) must be used, with the first name referring to the
+structure type to export and the second name referring to the parent structure
+type. Unlike a struct definition, however, all of the fields (and their
+contracts) must be listed. The contract on the fields that the sub-struct
+shares with its parent are only used in the contract for the sub-struct’s
+constructor, and the selector or mutators for the super-struct are not
+provided. The exported structure-type name always doubles as a constructor,
+even if the original structure-type name does not act as a constructor.
+
+The #:∃ and #:exists clauses define new abstract contracts. The variables are
+bound in the remainder of the provide/contract expression to new contracts that
+hide the values they accept and ensure that the exported functions are treated
+parametrically.
+
+The implementation of provide/contract attaches uses syntax-property to attach
+properties to the code it generates that records the syntax of the contracts in
+the fully expanded program. Specifically, the symbol 'provide/
+contract-original-contract is bound to vectors of two elements, the exported
+identifier and a syntax object for the expression that produces the contract
+controlling the export.
+
+7.5.1 Nested Contract Boundaries
+
+ (require racket/contract/region)
+
+(with-contract blame-id (wc-export ...) free-var-list ... body ...+)
+(with-contract blame-id results-spec free-var-list ... body ...+)
+ 
+    wc-export   =   (id contract-expr)
+                     
+  result-spec   =   #:result contract-expr
+                |   #:results (contract-expr ...)
+                     
+free-var-list   =   #:freevars ([id contract-expr] ...)
+                |   #:freevar id contract-expr
+Generates a local contract boundary.
+
+The first with-contract form cannot appear in expression position. All names
+defined within the first with-contract form are visible externally, but those
+names listed in the wc-export list are protected with the corresponding
+contract. The body of the form allows definition/expression interleaving if its
+context does.
+
+The second with-contract form must appear in expression position. The final
+body expression should return the same number of values as the number of
+contracts listed in the result-spec, and each returned value is contracted with
+its respective contract. The sequence of body forms is treated as for let.
+
+The blame-id is used for the positive positions of contracts paired with
+exported ids. Contracts broken within the with-contract body will use the
+blame-id for their negative position.
+
+If a free-var-list is given, then any uses of the free variables inside the
+body will be protected with contracts that blame the context of the
+with-contract form for the positive positions and the with-contract form for
+the negative ones.
+
+(define/contract id contract-expr free-var-list init-value-expr)
+(define/contract (head args) contract-expr free-var-list body ...+)
+Works like define, except that the contract contract-expr is attached to the
+bound value. For the definition of head and args, see define. For the
+definition of free-var-list, see with-contract.
+
+The define/contract form treats the individual definition as a contract region.
+The definition itself is responsible for positive (co-variant) positions of the
+contract, and references to id outside of the definition must meet the negative
+positions of the contract. Since the contract boundary is between the
+definition and the surrounding context, references to id inside the define/
+contract form are not checked.
+
+If a free-var-list is given, then any uses of the free variables inside the
+body will be protected with contracts that blame the context of the define/
+contract form for the positive positions and the define/contract form for the
+negative ones.
+
+(define-struct/contract struct-id ([field contract-expr] ...)
+                        struct-option ...)
+(define-struct/contract (struct-id super-struct-id)
+                        ([field contract-expr] ...)
+                        struct-option ...)
+Works like define-struct, except that the arguments to the constructor,
+accessors, and mutators are protected by contracts. For the definitions of
+field and struct-option, see define-struct.
+
+The define-struct/contract form only allows a subset of the struct-option
+keywords: #:mutable, #:transparent, #:auto-value, #:omit-define-syntaxes,
+#:property and #:omit-define-values.
+
+Examples:
+
+    > (define-struct/contract fish ([color number?]))
+    > (make-fish 5)
+    #<fish>
+
+    > (make-fish #f)
+    make-fish: contract violation, expected <number?>, given: #f
+
+      contract from (struct fish), blaming top-level
+
+      contract: (-> number? symbol? any)
+
+    > (define-struct/contract (salmon fish) ([ocean symbol?]))
+    > (make-salmon 5 'atlantic)
+    #<salmon>
+
+    > (make-salmon 5 #f)
+    make-salmon: contract violation, expected <symbol?>, given:
+
+    #f
+
+      contract from (struct salmon), blaming top-level
+
+      contract:
+
+        (-> any/c symbol? symbol? any)
+
+    > (make-salmon #f 'pacific)
+    make-fish: contract violation, expected <number?>, given: #f
+
+      contract from (struct fish), blaming top-level
+
+      contract: (-> number? symbol? any)
+
+
+
+current-contract-region
+Bound by define-syntax-parameter, this contains information about the current
+contract region, used by the above forms to determine the candidates for blame
+assignment.
+
+7.5.2 Low-level Contract Boundaries
+
+(contract contract-expr to-protect-expr
+          positive-blame-expr negative-blame-expr)
+(contract contract-expr to-protect-expr
+          positive-blame-expr negative-blame-expr
+          value-name-expr source-location-expr)
+The primitive mechanism for attaching a contract to a value. The purpose of
+contract is as a target for the expansion of some higher-level contract
+specifying form.
+
+The contract expression adds the contract specified by contract-expr to the
+value produced by to-protect-expr. The result of a contract expression is the
+result of the to-protect-expr expression, but with the contract specified by
+contract-expr enforced on to-protect-expr.
+
+The values of positive-blame-expr and negative-blame-expr indicate how to
+assign blame for positive and negative positions of the contract specified by
+contract-expr. They may be any value, and are formatted as by display for
+purposes of contract violation error messages.
+
+If specified, value-name-expr indicates a name for the protected value to be
+used in error messages. If not supplied, or if value-name-expr produces #f, no
+name is printed. Otherwise, it is also formatted as by display.
+
+If specified, source-location-expr indicates the source location reported by
+contract violations. The expession must produce a srcloc structure, syntax
+object, #f, or a list or vector in the format accepted by the third argument to
+datum->syntax.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

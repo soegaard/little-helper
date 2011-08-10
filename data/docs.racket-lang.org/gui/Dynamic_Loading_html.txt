@@ -1,0 +1,39 @@
+▼  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+On this page:
+gui-available?
+gui-dynamic-require
+[...search manuals...]
+  top← prev  up  next → 
+
+10 Dynamic Loading
+
+ (require racket/gui/dynamic)
+The racket/gui/dynamic library provides functions for dynamically accessing the
+racket/gui/base library, instead of directly requiring racket/gui or racket/gui
+/base.
+
+(gui-available?) → boolean?
+Returns #t if dynamic access to the GUI bindings is available. The bindings are
+available if racket/gui/base has been loaded, instantiated, and attached to the
+namespace in which racket/gui/dynamic was instantiated.
+
+(gui-dynamic-require sym) → any
+  sym : symbol?
+Like dynamic-require, but specifically to access exports of racket/gui/base.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

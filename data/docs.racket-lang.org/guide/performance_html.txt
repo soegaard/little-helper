@@ -1,0 +1,521 @@
+▼  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 18  Performance
+ 18.1  Performance in Dr Racket
+ 18.2  The Bytecode and Just-in-Time (JIT) Compilers
+ 18.3  Modules and Performance
+ 18.4  Function-Call Optimizations
+ 18.5  Mutation and Performance
+ 18.6  letrec Performance
+ 18.7  Fixnum and Flonum Optimizations
+ 18.8  Unchecked, Unsafe Operations
+ 18.9  Memory Management
+18.10  Parallelism with Futures
+On this page:
+18.1 Performance in Dr Racket
+18.2 The Bytecode and Just-in-Time (JIT) Compilers
+18.3 Modules and Performance
+18.4 Function-Call Optimizations
+18.5 Mutation and Performance
+18.6 letrec Performance
+18.7 Fixnum and Flonum Optimizations
+18.8 Unchecked, Unsafe Operations
+18.9 Memory Management
+18.10 Parallelism with Futures
+[...search manuals...]
+  top← prev  up  next → 
+
+18 Performance
+
+Alan Perlis famously quipped “Lisp programmers know the value of everything and
+the cost of nothing.” A Racket programmer knows, for example, that a lambda
+anywhere in a program produces a value that is closed over its lexical
+environment—but how much does allocating that value cost? While most
+programmers have a reasonable grasp of the cost of various operations and data
+structures at the machine level, the gap between the Racket language model and
+the underlying computing machinery can be quite large.
+
+In this chapter, we narrow the gap by explaining details of the Racket compiler
+and run-time system and how they affect the run-time and memory performance of
+Racket code.
+
+18.1 Performance in DrRacket
+
+By default, DrRacket instruments programs for debugging, and debugging
+instrumentation can significantly degrade performance for some programs. Even
+when debugging is disabled through the Choose Language... dialog’s Show Details
+panel, the Preserve stacktrace checkbox is clicked by default, which also
+affects performance. Disabling debugging and stacktrace preservation provides
+performance results that are more consistent with running in plain racket.
+
+Even so, DrRacket and programs developed within DrRacket use the same Racket
+virtual machine, so garbage collection times (see Memory Management) may be
+longer in DrRacket than when a program is run by itself, and DrRacket threads
+may impede execution of program threads. For the most reliable timing results
+for a program, run in plain racket instead of in the DrRacket development
+environment. Non-interactive mode should be used instead of the REPL to benefit
+from the module system. See Modules and Performance for details.
+
+18.2 The Bytecode and Just-in-Time (JIT) Compilers
+
+Every definition or expression to be evaluated by Racket is compiled to an
+internal bytecode format. In interactive mode, this compilation occurs
+automatically and on-the-fly. Tools like raco make and raco setup marshal
+compiled bytecode to a file, so that you do not have to compile from source
+every time that you run a program. (Most of the time required to compile a file
+is actually in macro expansion; generating bytecode from fully expanded code is
+relatively fast.) See Compilation and Configuration for more information on
+generating bytecode files.
+
+The bytecode compiler applies all standard optimizations, such as constant
+propagation, constant folding, inlining, and dead-code elimination. For
+example, in an environment where + has its usual binding, the expression (let
+([x 1] [y (lambda () 4)]) (+ 1 (y))) is compiled the same as the constant 5.
+
+On some platforms, bytecode is further compiled to native code via a 
+just-in-time or JIT compiler. The JIT compiler substantially speeds programs
+that execute tight loops, arithmetic on small integers, and arithmetic on
+inexact real numbers. Currently, JIT compilation is supported for x86, x86_64
+(a.k.a. AMD64), and 32-bit PowerPC processors. The JIT compiler can be disabled
+via the eval-jit-enabled parameter or the --no-jit/-j command-line flag for
+racket.
+
+The JIT compiler works incrementally as functions are applied, but the JIT
+compiler makes only limited use of run-time information when compiling
+procedures, since the code for a given module body or lambda abstraction is
+compiled only once. The JIT’s granularity of compilation is a single procedure
+body, not counting the bodies of any lexically nested procedures. The overhead
+for JIT compilation is normally so small that it is difficult to detect.
+
+18.3 Modules and Performance
+
+The module system aids optimization by helping to ensure that identifiers have
+the usual bindings. That is, the + provided by racket/base can be recognized by
+the compiler and inlined, which is especially important for JIT-compiled code.
+In contrast, in a traditional interactive Scheme system, the top-level +
+binding might be redefined, so the compiler cannot assume a fixed + binding
+(unless special flags or declarations are used to compensate for the lack of a
+module system).
+
+Even in the top-level environment, importing with require enables some inlining
+optimizations. Although a + definition at the top level might shadow an
+imported +, the shadowing definition applies only to expressions evaluated
+later.
+
+Within a module, inlining and constant-propagation optimizations take
+additional advantage of the fact that definitions within a module cannot be
+mutated when no set! is visible at compile time. Such optimizations are
+unavailable in the top-level environment. Although this optimization within
+modules is important for performance, it hinders some forms of interactive
+development and exploration. The compile-enforce-module-constants parameter
+disables the JIT compiler’s assumptions about module definitions when
+interactive exploration is more important. See Assignment and Redefinition for
+more information.
+
+Currently, the compiler does not attempt to inline or propagate constants
+across module boundaries, except for exports of the built-in modules (such as
+the one that originally provides +).
+
+The later section letrec Performance provides some additional caveats
+concerning inlining of module bindings.
+
+18.4 Function-Call Optimizations
+
+When the compiler detects a function call to an immediately visible function,
+it generates more efficient code than for a generic call, especially for tail
+calls. For example, given the program
+
+    (letrec ([odd (lambda (x)
+                    (if (zero? x)
+                        #f
+                        (even (sub1 x))))]
+             [even (lambda (x)
+                     (if (zero? x)
+                         #t
+                         (odd (sub1 x))))])
+      (odd 40000000))
+
+the compiler can detect the odd–even loop and produce code that runs much
+faster via loop unrolling and related optimizations.
+
+Within a module form, defined variables are lexically scoped like letrec
+bindings, and definitions within a module therefore permit call optimizations,
+so
+
+    (define (odd x) ....)
+    (define (even x) ....)
+
+within a module would perform the same as the letrec version.
+
+Primitive operations like pair?, car, and cdr are inlined at the machine-code
+level by the JIT compiler. See also the later section Fixnum and Flonum
+Optimizations for information about inlined arithmetic operations.
+
+18.5 Mutation and Performance
+
+Using set! to mutate a variable can lead to bad performance. For example, the
+microbenchmark
+
+    #lang racket/base
+     
+    (define (subtract-one x)
+      (set! x (sub1 x))
+      x)
+     
+    (time
+      (let loop ([n 4000000])
+        (if (zero? n)
+            'done
+            (loop (subtract-one n)))))
+
+runs much more slowly than the equivalent
+
+    #lang racket/base
+     
+    (define (subtract-one x)
+      (sub1 x))
+     
+    (time
+      (let loop ([n 4000000])
+        (if (zero? n)
+            'done
+            (loop (subtract-one n)))))
+
+In the first variant, a new location is allocated for x on every iteration,
+leading to poor performance. A more clever compiler could unravel the use of
+set! in the first example, but since mutation is discouraged (see Guidelines
+for Using Assignment), the compiler’s effort is spent elsewhere.
+
+More significantly, mutation can obscure bindings where inlining and
+constant-propagation might otherwise apply. For example, in
+
+    (let ([minus1 #f])
+      (set! minus1 sub1)
+      (let loop ([n 4000000])
+        (if (zero? n)
+            'done
+            (loop (minus1 n)))))
+
+the set! obscures the fact that minus1 is just another name for the built-in
+sub1.
+
+18.6 letrec Performance
+
+When letrec is used to bind only procedures and literals, then the compiler can
+treat the bindings in an optimal manner, compiling uses of the bindings
+efficiently. When other kinds of bindings are mixed with procedures, the
+compiler may be less able to determine the control flow.
+
+For example,
+
+    (letrec ([loop (lambda (x)
+                    (if (zero? x)
+                        'done
+                        (loop (next x))))]
+             [junk (display loop)]
+             [next (lambda (x) (sub1 x))])
+      (loop 40000000))
+
+likely compiles to less efficient code than
+
+    (letrec ([loop (lambda (x)
+                    (if (zero? x)
+                        'done
+                        (loop (next x))))]
+             [next (lambda (x) (sub1 x))])
+      (loop 40000000))
+
+In the first case, the compiler likely does not know that display does not call
+loop. If it did, then loop might refer to next before the binding is available.
+
+This caveat about letrec also applies to definitions of functions and constants
+as internal definitions or in modules. A definition sequence in a module body
+is analogous to a sequence of letrec bindings, and non-constant expressions in
+a module body can interfere with the optimization of references to later
+bindings.
+
+18.7 Fixnum and Flonum Optimizations
+
+A fixnum is a small exact integer. In this case, “small” depends on the
+platform. For a 32-bit machine, numbers that can be expressed in 30 bits plus a
+sign bit are represented as fixnums. On a 64-bit machine, 62 bits plus a sign
+bit are available.
+
+A flonum is used to represent any inexact real number. They correspond to
+64-bit IEEE floating-point numbers on all platforms.
+
+Inlined fixnum and flonum arithmetic operations are among the most important
+advantages of the JIT compiler. For example, when + is applied to two
+arguments, the generated machine code tests whether the two arguments are
+fixnums, and if so, it uses the machine’s instruction to add the numbers (and
+check for overflow). If the two numbers are not fixnums, then it checks whether
+whether both are flonums; in that case, the machine’s floating-point operations
+are used directly. For functions that take any number of arguments, such as +,
+inlining works for two or more arguments (except for -, whose one-argument case
+is also inlined) when the arguments are either all fixnums or all flonums.
+
+Flonums are typically boxed, which means that memory is allocated to hold every
+result of a flonum computation. Fortunately, the generational garbage collector
+(described later in Memory Management) makes allocation for short-lived results
+reasonably cheap. Fixnums, in contrast are never boxed, so they are typically
+cheap to use.
+
+            See Parallelism with Futures for an example use of flonum-specific
+            operations.
+
+The racket/flonum library provides flonum-specific operations, and combinations
+of flonum operations allow the JIT compiler to generate code that avoids boxing
+and unboxing intermediate results. Besides results within immediate
+combinations, flonum-specific results that are bound with let and consumed by a
+later flonum-specific operation are unboxed within temporary storage. Finally,
+the compiler can detect some flonum-valued loop accumulators and avoid boxing
+of the accumulator. The bytecode decompiler (see raco decompile: Decompiling
+Bytecode) annotates combinations where the JIT can avoid boxes with #%flonum, #
+%as-flonum, and #%from-flonum.
+
+            Unboxing of local bindings and accumualtors is not supported by the
+            JIT for PowerPC.
+
+The racket/unsafe/ops library provides unchecked fixnum- and flonum-specific
+operations. Unchecked flonum-specific operations allow unboxing, and sometimes
+they allow the compiler to reorder expressions to improve performance. See also
+Unchecked, Unsafe Operations, especially the warnings about unsafety.
+
+18.8 Unchecked, Unsafe Operations
+
+The racket/unsafe/ops library provides functions that are like other functions
+in racket/base, but they assume (instead of checking) that provided arguments
+are of the right type. For example, unsafe-vector-ref accesses an element from
+a vector without checking that its first argument is actually a vector and
+without checking that the given index is in bounds. For tight loops that use
+these functions, avoiding checks can sometimes speed the computation, though
+the benefits vary for different unchecked functions and different contexts.
+
+Beware that, as “unsafe” in the library and function names suggest, misusing
+the exports of racket/unsafe/ops can lead to crashes or memory corruption.
+
+18.9 Memory Management
+
+The Racket implementation is available in two variants: 3m and CGC. The 3m
+variant uses a modern, generational garbage collector that makes allocation
+relatively cheap for short-lived objects. The CGC variant uses a conservative
+garbage collector which facilitates interaction with C code at the expense of
+both precision and speed for Racket memory management. The 3m variant is the
+standard one.
+
+Although memory allocation is reasonably cheap, avoiding allocation altogether
+is normally faster. One particular place where allocation can be avoided
+sometimes is in closures, which are the run-time representation of functions
+that contain free variables. For example,
+
+    (let loop ([n 40000000] [prev-thunk (lambda () #f)])
+      (if (zero? n)
+          (prev-thunk)
+          (loop (sub1 n)
+                (lambda () n))))
+
+allocates a closure on every iteration, since (lambda () n) effectively saves
+n.
+
+The compiler can eliminate many closures automatically. For example, in
+
+    (let loop ([n 40000000] [prev-val #f])
+      (let ([prev-thunk (lambda () n)])
+        (if (zero? n)
+            prev-val
+            (loop (sub1 n) (prev-thunk)))))
+
+no closure is ever allocated for prev-thunk, because its only application is
+visible, and so it is inlined. Similarly, in
+
+    (let n-loop ([n 400000])
+      (if (zero? n)
+          'done
+          (let m-loop ([m 100])
+            (if (zero? m)
+                (n-loop (sub1 n))
+                (m-loop (sub1 m))))))
+
+then the expansion of the let form to implement m-loop involves a closure over
+n, but the compiler automatically converts the closure to pass itself n as an
+argument instead.
+
+18.10 Parallelism with Futures
+
+The racket/future library provides support for performance improvement through
+parallelism with the future and touch functions. The level of parallelism
+available from those constructs, however, is limited by several factors, and
+the current implementation is best suited to numerical tasks.
+
+            Other functions, such as thread, support the creation of reliably
+            concurrent tasks. However, thread never run truly in parallel, even
+            if the hardware and operating system support parallelism.
+
+As a starting example, the any-double? function below takes a list of numbers
+and determines whether any number in the list has a double that is also in the
+list:
+
+    (define (any-double? l)
+      (for/or ([i (in-list l)])
+        (for/or ([i2 (in-list l)])
+          (= i2 (* 2 i)))))
+
+This function runs in quadratic time, so it can take a long time (on the order
+of a second) on large lists like l1 and l2:
+
+    (define l1 (for/list ([i (in-range 5000)])
+                 (+ (* 2 i) 1)))
+    (define l2 (for/list ([i (in-range 5000)])
+                 (- (* 2 i) 1)))
+    (or (any-double? l1)
+        (any-double? l2))
+
+The best way to speed up any-double? is to use a different algorithm. However,
+on a machine that offers at least two processing units, the example above can
+run in about half the time using future and touch:
+
+    (let ([f (future (lambda () (any-double? l2)))])
+      (or (any-double? l1)
+          (touch f)))
+
+The future f runs (any-double? l2) in parallel to (any-double? l1), and the
+result for (any-double? l2) becomes available about the same time that it is
+demanded by (touch f).
+
+Futures run in parallel as long as they can do so safely, but the notion of
+“safe” for parallelism is inherently tied to the system implementation. The
+distinction between “safe” and “unsafe” operations may be far from apparent at
+the level of a Racket program.
+
+Consider the following core of a Mandelbrot-set computation:
+
+    (define (mandelbrot iterations x y n)
+      (let ((ci (- (/ (* 2.0 y) n) 1.0))
+            (cr (- (/ (* 2.0 x) n) 1.5)))
+        (let loop ((i 0) (zr 0.0) (zi 0.0))
+          (if (> i iterations)
+              i
+              (let ((zrq (* zr zr))
+                    (ziq (* zi zi)))
+                (cond
+                 ((> (+ zrq ziq) 4.0) i)
+                 (else (loop (add1 i)
+                             (+ (- zrq ziq) cr)
+                             (+ (* 2.0 zr zi) ci)))))))))
+
+The expressions (mandelbrot 10000000 62 500 1000) and (mandelbrot 10000000 62
+501 1000) each take a while to produce an answer. Computing them both, of
+course, takes twice as long:
+
+    (list (mandelbrot 10000000 62 500 1000)
+          (mandelbrot 10000000 62 501 1000))
+
+Unfortunately, attempting to run the two computations in parallel with future
+does not improve performance:
+
+    (let ([f (future (lambda () (mandelbrot 10000000 62 501 1000)))])
+      (list (mandelbrot 10000000 62 500 1000)
+            (touch f)))
+
+One problem is that the * and / operations in the first two lines of mandelbrot
+involve a mixture of exact and inexact real numbers. Such mixtures typically
+trigger a slow path in execution, and the general slow path is not safe for
+parallelism. Consequently, the future created in this example is almost
+immediately suspended, and it cannot resume until touch is called.
+
+Changing the first two lines of mandelbrot addresses that first the problem:
+
+    (define (mandelbrot iterations x y n)
+      (let ((ci (- (/ (* 2.0 (->fl y)) (->fl n)) 1.0))
+            (cr (- (/ (* 2.0 (->fl x)) (->fl n)) 1.5)))
+        ....))
+
+With that change, mandelbrot computations can run in parallel. Nevertheless,
+performance still does not improve. The problem is that most every arithmetic
+operation in this example produces an inexact number whose storage must be
+allocated. Especially frequent allocation triggers communication between
+parallel tasks that defeats any performance improvement.
+
+By using flonum-specific operations (see Fixnum and Flonum Optimizations), we
+can re-write mandelbot to use much less allocation:
+
+    (define (mandelbrot iterations x y n)
+      (let ((ci (fl- (fl/ (* 2.0 (->fl y)) (->fl n)) 1.0))
+            (cr (fl- (fl/ (* 2.0 (->fl x)) (->fl n)) 1.5)))
+        (let loop ((i 0) (zr 0.0) (zi 0.0))
+          (if (> i iterations)
+              i
+              (let ((zrq (fl* zr zr))
+                    (ziq (fl* zi zi)))
+                (cond
+                 ((fl> (fl+ zrq ziq) 4.0) i)
+                 (else (loop (add1 i)
+                             (fl+ (fl- zrq ziq) cr)
+                             (fl+ (fl* 2.0 (fl* zr zi)) ci)))))))))
+
+This conversion can speed mandelbrot by a factor of 8, even in sequential mode,
+but avoiding allocation also allows mandelbrot to run usefully faster in
+parallel.
+
+As a general guideline, any operation that is inlined by the JIT compiler runs
+safely in parallel, while other operations that are not inlined (including all
+operations if the JIT compiler is disabled) are considered unsafe. The mzc
+decompiler tool annotates operations that can be inlined by the compiler (see
+raco decompile: Decompiling Bytecode), so the decompiler can be used to help
+predict parallel performance.
+
+To more directly report what is happening in a program that uses future and
+touch, operations are logged when they suspend a computation or synchronize
+with the main computation. For example, running the original mandelbrot in a
+future produces the following output in the 'debug log level:
+
+            To see 'debug logging output on stderr, set the PLTSTDERR
+            environment variable to debug or start racket with -W debug.
+
+  future 1, process 1: BLOCKING on process 0; time: ....
+
+  ....
+
+  future 1, process 0: HANDLING: *; time: ....
+
+
+The messages indicate which internal future-running task became blocked on an
+unsafe operation, the time it blocked (in terms of
+current-inexact-miliseconds), and the operation that caused the computation it
+to block.
+
+The first revision to mandelbrot avoids suspending at *, but produces many log
+entries of the form
+
+  future 1, process 0: synchronizing: [allocate memory]; time: ....
+
+
+The [allocate memory] part of the message indicates that synchronization was
+needed for memory allocation.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

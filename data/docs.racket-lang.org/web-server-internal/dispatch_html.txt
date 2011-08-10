@@ -1,0 +1,74 @@
+►  Web Server: HTTP Server
+1  Dispatching Server
+2  Dispatchers
+3  Launching Servers
+4  Web Servers
+5  Internal APIs
+6  Troubleshooting and Tips
+   Index
+▼ 2  Dispatchers
+ 2.1  General
+ 2.2  Mapping URLs to Paths
+ 2.3  Sequencing
+ 2.4  Timeouts
+ 2.5  Lifting Procedures
+ 2.6  Filtering Requests
+ 2.7  Procedure Invocation upon Request
+ 2.8  Logging
+ 2.9  Password Protection
+2.10  Virtual Hosts
+2.11  Serving Files
+2.12  Serving Servlets
+2.13  Statistics
+2.14  Limiting Requests
+On this page:
+dispatcher/ c
+dispatcher-interface-version/ c
+exn: dispatcher
+next-dispatcher
+[...search manuals...]
+  top← prev  up  next → 
+
+2.1 General
+
+ (require web-server/dispatchers/dispatch)
+This module provides a few functions for dispatchers in general.
+
+dispatcher/c : contract?
+Equivalent to (-> connection? request? void).
+
+(dispatcher-interface-version/c any) → boolean?
+  any : any/c
+Equivalent to (symbols 'v1)
+
+(struct   exn:dispatcher ()
+          #:extra-constructor-name make-exn:dispatcher)
+An exception thrown to indicate that a dispatcher does not apply to a
+particular request.
+
+(next-dispatcher) → void
+Raises a exn:dispatcher
+
+As the dispatcher/c contract suggests, a dispatcher is a function that takes a
+connection and request object and does something to them. Mostly likely it will
+generate some response and output it on the connection, but it may do something
+different. For example, it may apply some test to the request object, perhaps
+checking for a valid source IP address, and error if the test is not passed,
+and call next-dispatcher otherwise.
+
+Consider the following example dispatcher, that captures the essence of URL
+rewriting:
+
+    ; (url? -> url?) dispatcher/c -> dispatcher/c
+    (lambda (rule inner)
+      (lambda (conn req)
+        ; Call the inner dispatcher...
+        (inner conn
+               ; with a new request object...
+               (struct-copy request req
+                            ; with a new URL!
+                            [request-uri (rule (request-uri req))]))))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,82 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+write-gif
+write-animated-gif
+[...search manuals...]
+  top← prev  up  next → 
+
+5 GIF and Animated GIF Writing
+
+ (require mrlib/gif)
+
+(write-gif bitmap filename) → void?
+   bitmap   :   (or/c (is-a?/c bitmap%)
+                      (-> (is-a?/c bitmap%)))
+  filename : path-string
+Writes the given bitmap to filename as a GIF image, where bitmap is either an
+instance of bitmap% or a thunk (to be called just once) that generates such an
+object. If the bitmap uses more than 256 colors, it is automatically quantized
+using a simple algorithm; see quantize. If the bitmap has a mask bitmap via
+get-loaded-mask, it is used to determine transparent pixels in the generated
+GIF image.
+
+(write-animated-gif    bitmaps                                
+                       delay-csec                             
+                       filename                               
+                     [ #:loop loop?                           
+                       #:one-at-a-time? one-at-a-time?        
+                       #:last-frame-delay last-frame-delay])  
+ → void?
+                 (and/c
+   bitmaps   :     (listof (or/c (is-a?/c bitmap%)
+                                 (-> (is-a?/c bitmap%))))
+                   pair?)
+  delay-csec : (integer-in 0 4294967295)
+  filename : path-string
+  loop? : any/c = (and delay-csec #t)
+  one-at-a-time? : any/c = #f
+   last-frame-delay   :   (or/c (integer-in 0 4294967295) false/c)
+                      =   #f
+Writes the bitmaps in bitmaps to filename as an animated GIF. The bitmaps list
+can contain a mixture of bitmap% objects and thunks (each called just once)
+that produce bitmap% objects. The delay-csec argument is the amount of time in
+1/100s of a second to wait between transitions. If loop? is a true value, then
+the GIF is marked as a looping animation.
+
+If one-at-a-time? is #f, then the content of all images is collected and
+quantized at once, to produce a single colortable; a drawback to this approach
+is that it uses more memory, and it allows less color variation among animation
+frames. Even when one-at-a-time? is #f, the result of each thunk in bitmaps is
+converted to a byte-string one at a time.
+
+If one-at-a-time? is true, then the bitmaps are quantized and written to the
+file one at a time; that is, for each thunk in bitmaps, its result is written
+and discarded before another thunk is called. A drawback to this approach is
+that a separate colortable is written for each frame in the animation, which
+can make the resulting file large.
+
+If last-frame-delay is not false, a delay of last-frame-delay (in 1/100s of a
+second) is added to the last frame. This extra delay is useful when loop? is
+true.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

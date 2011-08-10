@@ -1,0 +1,187 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 19
+
+R^5RS compatibility
+
+The features described in this chapter are exported from the (rnrs r5rs (6))
+library and provide some functionality of the preceding revision of this
+report [8] that was omitted from the main part of the current report.
+
+(exact->inexact z)    procedure 
+(inexact->exact z)    procedure 
+
+These are the same as the inexact and exact procedures; see report section on
+“Generic conversions”.
+
+(quotient n[1] n[2])    procedure 
+(remainder n[1] n[2])    procedure 
+(modulo n[1] n[2])    procedure 
+
+These procedures implement number-theoretic (integer) division. N[2] must be
+non-zero. All three procedures return integer objects. If n[1]/n[2] is an
+integer object:
+
+    (quotient n[1] n[2])           ⇒ n[1]/n[2]
+    (remainder n[1] n[2])          ⇒ 0
+    (modulo n[1] n[2])             ⇒ 0
+
+If n[1]/n[2] is not an integer object:
+
+    (quotient n[1] n[2])           ⇒ n[q]
+    (remainder n[1] n[2])          ⇒ n[r]
+    (modulo n[1] n[2])             ⇒ n[m]
+
+where n[q] is n[1]/n[2] rounded towards zero, 0 < |n[r]| < |n[2]|, 0 < |n[m]| <
+|n[2]|, n[r] and n[m] differ from n[1] by a multiple of n[2], n[r] has the same
+sign as n[1], and n[m] has the same sign as n[2].
+
+Consequently, for integer objects n[1] and n[2] with n[2] not equal to 0,
+
+     (= n[1] (+ (* n[2] (quotient n[1] n[2]))
+           (remainder n[1] n[2])))
+                                         ⇒  #t
+
+provided all number object involved in that computation are exact.
+
+(modulo 13 4)                   ⇒  1
+(remainder 13 4)                ⇒  1
+
+(modulo -13 4)                  ⇒  3
+(remainder -13 4)               ⇒  -1
+
+(modulo 13 -4)                  ⇒  -3
+(remainder 13 -4)               ⇒  1
+
+(modulo -13 -4)                 ⇒  -1
+(remainder -13 -4)              ⇒  -1
+
+(remainder -13 -4.0)            ⇒  -1.0
+
+    Note:   These procedures could be defined in terms of div and mod (see
+    report section on “Arithmetic operations”) as follows (without checking of
+    the argument types): (define (sign n)
+      (cond
+        ((negative? n) -1)
+        ((positive? n) 1)
+        (else 0)))
+
+    (define (quotient n1 n2)
+      (* (sign n1) (sign n2) (div (abs n1) (abs n2))))
+
+    (define (remainder n1 n2)
+      (* (sign n1) (mod (abs n1) (abs n2))))
+
+    (define (modulo n1 n2)
+      (* (sign n2) (mod (* (sign n2) n1) (abs n2))))
+
+(delay <expression>)    syntax 
+
+The delay construct is used together with the procedure force to implement lazy
+evaluation or call by need. (delay <expression>) returns an object called a 
+promise which at some point in the future may be asked (by the force procedure)
+to evaluate <expression>, and deliver the resulting value. The effect of
+<expression> returning multiple values is unspecified.
+
+(force promise)    procedure 
+
+Promise must be a promise. The force procedure forces the value of promise. If
+no value has been computed for the promise, then a value is computed and
+returned. The value of the promise is cached (or “memoized”) so that if it is
+forced a second time, the previously computed value is returned.
+
+(force (delay (+ 1 2)))           ⇒  3
+(let ((p (delay (+ 1 2))))
+  (list (force p) (force p)))  
+                                       ⇒  (3 3)
+
+(define a-stream
+  (letrec ((next
+            (lambda (n)
+              (cons n (delay (next (+ n 1)))))))
+    (next 0)))
+(define head car)
+(define tail
+  (lambda (stream) (force (cdr stream))))
+
+(head (tail (tail a-stream)))  
+                                       ⇒  2
+
+Promises are mainly intended for programs written in functional style. The
+following examples should not be considered to illustrate good programming
+style, but they illustrate the property that only one value is computed for a
+promise, no matter how many times it is forced.
+
+(define count 0)
+(define p
+  (delay (begin (set! count (+ count 1))
+                (if (> count x)
+                    count
+                    (force p)))))
+(define x 5)
+p                             ⇒  a promise
+(force p)                     ⇒  6
+p                             ⇒  a promise, still
+(begin (set! x 10)
+       (force p))             ⇒  6
+
+Here is a possible implementation of delay and force. Promises are implemented
+here as procedures of no arguments, and force simply calls its argument:
+
+(define force
+  (lambda (object)
+    (object)))
+
+The expression
+
+(delay <expression>)
+
+has the same meaning as the procedure call
+
+(make-promise (lambda () <expression>))
+
+as follows
+
+(define-syntax delay
+  (syntax-rules ()
+    ((delay expression)
+     (make-promise (lambda () expression))))),
+
+where make-promise is defined as follows:
+
+(define make-promise
+  (lambda (proc)
+    (let ((result-ready? #f)
+          (result #f))
+      (lambda ()
+        (if result-ready?
+            result
+            (let ((x (proc)))
+              (if result-ready?
+                  result
+                  (begin (set! result-ready? #t)
+                         (set! result x)
+                         result))))))))
+
+(null-environment n)    procedure 
+
+N must be the exact integer object 5. The null-environment procedure returns an
+environment specifier suitable for use with eval (see chapter 16) representing
+an environment that is empty except for the (syntactic) bindings for all
+keywords described in the previous revision of this report [8], including
+bindings for =>, ..., else, and _ that are the same as those in the (rnrs base
+(6)) library.
+
+(scheme-report-environment n)    procedure 
+
+N must be the exact integer object 5. The scheme-report-environment procedure
+returns an environment specifier for an environment that is empty except for
+the bindings for the identifiers described in the previous revision of this
+report [8], omitting load, interaction-environment, transcript-on,
+transcript-off, and char-ready?. The variable bindings have as values the
+procedures of the same names described in this report, and the keyword
+bindings, including =>, ..., else, and _ are the same as those described in
+this report.
+
+                        [Go to first, previous, next page;   contents;   index]
+

@@ -1,0 +1,450 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 1  Ht DP Teachpacks
+ 1.1  Manipulating Images: "image.ss"
+ 1.2  Simulations and Animations: "world.ss"
+ 1.3  Converting Temperatures: "convert.ss"
+ 1.4  Guessing Numbers: "guess.ss"
+ 1.5  Master Minding: "master.ss"
+ 1.6  Playing Master Mind: "master-play.ss"
+ 1.7  Simple Drawing: "draw.ss"
+ 1.8  Hangman: "hangman.ss"
+ 1.9  Playing Hangman: "hangman-play.ss"
+1.10  Managing Control Arrows: "arrow.ss"
+1.11  Manipulating Simple HTML Documents: "docs.ss"
+1.12  Working with Files and Directories: "dir.ss"
+1.13  Graphing Functions: "graphing.ss"
+1.14  Simple Graphical User Interfaces: "gui.ss"
+1.15  An Arrow GUI: "arrow-gui.ss"
+1.16  Controlling an Elevator: "elevator.ss"
+1.17  Lookup GUI: "lkup-gui.ss"
+1.18  Guess GUI: "guess-gui.ss"
+1.19  Queens: "show-queen.ss"
+1.20  Matrix Functions: "matrix.ss"
+► 1.2  Simulations and Animations: "world.ss"
+1.2.1  Simple Simulations
+1.2.2  Interactions
+1.2.3  A First Example
+On this page:
+1.2.1 Simple Simulations
+run-movie
+run-simulation
+1.2.2 Interactions
+big-bang
+on-tick-event
+key-event?
+key=?
+on-key-event
+on-mouse-event
+on-redraw
+stop-when
+1.2.3 A First Example
+1.2.3.1 Understanding a Door
+1.2.3.2 Simulations of the World
+1.2.3.3 Simulating a Door: Data
+1.2.3.4 Simulating a Door: Functions
+[...search manuals...]
+  top← prev  up  next → 
+
+1.2 Simulations and Animations: "world.ss"
+
+ (require htdp/world)
+
+This teachpack is deprecated. Use 2htdp/universe
+instead. See the Porting World Programs to Universe
+section for information on how to adapt old code to the
+new teachpack.
+
+
+Note: For a quick and educational introduction to the teachpack, see How to
+Design Programs, Second Edition: Prologue. As of August 2008, we also have a
+series of projects available as a small booklet on How to Design Worlds.
+
+The purpose of this documentation is to give experienced Racketers a concise
+overview for using the library and for incorporating it elsewhere. The last
+section presents A First Example for an extremely simple domain and is suited
+for a novice who knows how to design conditional functions for symbols.
+
+The teachpack provides two sets of tools. The first allows students to create
+and display a series of animated scenes, i.e., a simulation. The second one
+generalizes the first by adding interactive GUI features.
+
+1.2.1 Simple Simulations
+
+(run-movie r m) → true
+  r : (and/c real? positive?)
+  m : [Listof image?]
+run-movie displays the list of images m at the rate of r images per second.
+
+(run-simulation w h r create-image) → true
+  w : natural-number/c
+  h : natural-number/c
+  r : number?
+  create-image : (-> natural-number/c scene)
+creates and shows a canvas of width w and height h , starts a clock, making it
+tick every r (usually fractional) seconds. Every time the clock ticks,
+run-simulation applies create-image to the number of ticks passed since this
+function call. The results of these applications are displayed in the canvas.
+
+Example:
+
+    (define (create-UFO-scene height)
+      (place-image UFO 50 height (empty-scene 100 100)))
+     
+    (define UFO
+      (overlay (circle 10 'solid 'green)
+               (rectangle 40 4 'solid 'green)))
+     
+    (run-simulation 100 100 (/ 1 28) create-UFO-scene)
+
+1.2.2 Interactions
+
+An animation starts from a given “world” and generates new ones in response to
+events on the computer. This teachpack keeps track of the “current world” and
+recognizes three kinds of events: clock ticks; keyboard presses and releases;
+and mouse movements, mouse clicks, etc.
+
+Your program may deal with such events via the installation of handlers. The
+teachpack provides for the installation of three event handlers: on-tick-event,
+on-key-event, and on-mouse-event. In addition, it provides for the installation
+of a draw handler, which is called every time your program should visualize the
+current world.
+
+The following picture provides an intuitive overview of the workings of
+"world".
+
+[world]
+
+The big-bang function installs World_0 as the initial world; the callbacks
+tock, react, and click transform one world into another one; done checks each
+time whether the world is final; and draw renders each world as a scene.
+
+World any/c
+
+For animated worlds and games, using the teachpack requires that you provide a
+data definition for World. In principle, there are no constraints on this data
+definition. You can even keep it implicit, even if this violates the Design
+Recipe.
+
+(big-bang width height r world0) → true
+  width : natural-number/c
+  height : natural-number/c
+  r : number?
+  world0 : World
+(big-bang width height r world0 animated-gif?) → true
+  width : natural-number/c
+  height : natural-number/c
+  r : number?
+  world0 : World
+  animated-gif? : boolean?
+Creates and displays a width x height canvas, starts the clock, makes it tick
+every r seconds, and makes world0 the current world. If it is called with five
+instead of four arguments and the last one (animated-gif?) is true, the
+teachpack allows the generation of images from the animation, including an
+animated GIF image.
+
+(on-tick-event tock) → true
+  tock : (-> World World)
+Tells big-bang to call tock on the current world every time the clock ticks.
+The result of the call becomes the current world.
+
+KeyEvent (or/c char? symbol?)
+
+A KeyEvent represents key board events, e.g., keys pressed or released, by the
+computer’s user. A char? KeyEvent is used to signal that the user has hit an
+alphanumeric key. Symbols such as 'left, 'right, 'up, 'down, 'release denote
+arrow keys or special events, such as releasing the key on the keypad.
+
+(key-event? x) → boolean?
+  x : any
+is x a KeyEvent
+
+(key=? x y) → boolean?
+  x : key-event?
+  y : key-event?
+compares two KeyEvent for equality
+
+(on-key-event change) → true
+  change : (-> World key-event? World)
+Tells big-bang to call change on the current world and a KeyEvent for every
+keystroke the user of the computer makes. The result of the call becomes the
+current world.
+
+Here is a typical key-event handler:
+
+    (define (change w a-key-event)
+      (cond
+        [(key=? a-key-event 'left)  (world-go w -DELTA)]
+        [(key=? a-key-event 'right) (world-go w +DELTA)]
+        [(char? a-key-event) w] ; to demonstrate order-free checking
+        [(key=? a-key-event 'up)    (world-go w -DELTA)]
+        [(key=? a-key-event 'down)  (world-go w +DELTA)]
+        [else w]))
+
+MouseEvent (one-of/c 'button-down 'button-up 'drag 'move 'enter 'leave)
+
+A MouseEvent represents mouse events, e.g., mouse movements or mouse clicks, by
+the computer’s user.
+
+(on-mouse-event clack) → true
+  clack : (-> World natural-number/c natural-number/c MouseEvent World)
+Tells big-bang to call clack on the current world, the current x and y
+coordinates of the mouse, and a MouseEvent for every action of the mouse by the
+user of the computer. The result of the call becomes the current world.
+
+(on-redraw to-scene) → true
+  to-scene : (-> World Scene)
+Tells big-bang to call to-scene whenever the canvas must be redrawn. The canvas
+is usually re-drawn after a tick event, a keyboard event, or a mouse event has
+occurred. The generated scene is displayed in the world’s canvas.
+
+(stop-when last-world?) → true
+  last-world? : (-> World boolean?)
+Tells big-bang to call last-world? whenever the canvas is drawn. If this call
+produces true, the clock is stopped; no more tick events, KeyEvents, or
+MouseEvents are forwarded to the respective handlers. As a result, the canvas
+isn’t updated either.
+
+Example: The following examples shows that (run-simulation 100 100 (/ 1 28)
+create-UFO-scene) is a short-hand for three lines of code:
+
+    (define (create-UFO-scene height)
+      (place-image UFO 50 height (empty-scene 100 100)))
+     
+    (define UFO
+      (overlay (circle 10 'solid 'green)
+               (rectangle 40 4 'solid 'green)))
+     
+    (big-bang 100 100 (/1 28) 0)
+    (on-tick-event add1)
+    (on-redraw create-UFO-scene)
+
+Exercise: Add a condition for stopping the flight of the UFO when it reaches
+the bottom.
+
+1.2.3 A First Example
+
+1.2.3.1 Understanding a Door
+
+Say we want to represent a door with an automatic door closer. If this kind of
+door is locked, you can unlock it. While this doesn’t open the door per se, it
+is now possible to do so. That is, an unlocked door is closed and pushing at
+the door opens it. Once you have passed through the door and you let go, the
+automatic door closer takes over and closes the door again. Of course, at this
+point you could lock it again.
+
+Here is a picture that translates our words into a graphical representation:
+
+[door-real]
+
+The picture displays a so-called "state machine". The three circled words are
+the states that our informal description of the door identified: locked, closed
+(and unlocked), and open. The arrows specify how the door can go from one state
+into another. For example, when the door is open, the automatic door closer
+shuts the door as time passes. This transition is indicated by the arrow
+labeled "time passes." The other arrows represent transitions in a similar
+manner:
+
+  • "push" means a person pushes the door open (and let’s go);
+
+  • "lock" refers to the act of inserting a key into the lock and turning it to
+    the locked position; and
+
+  • "unlock" is the opposite of "lock".
+
+1.2.3.2 Simulations of the World
+
+Simulating any dynamic behavior via a program demands two different activities.
+First, we must tease out those portions of our "world" that change over time or
+in reaction to actions, and we must develop a data representation D for this
+information. Keep in mind that a good data definition makes it easy for readers
+to map data to information in the real world and vice versa. For all others
+aspects of the world, we use global constants, including graphical or visual
+constants that are used in conjunction with the rendering functions.
+
+Second, we must translate the "world" actions—the arrows in the above diagram—
+into interactions with the computer that the world teachpack can deal with.
+Once we have decided to use the passing of time for one aspect and mouse
+movements for another, we must develop functions that map the current state of
+the world—represented as data—into the next state of the world. Since the data
+definition D describes the class of data that represents the world, these
+functions have the following general contract and purpose statements:
+
+    ; tick : D -> D
+    ; deal with the passing of time
+    (define (tick w) ...)
+     
+    ; click : D Number Number MouseEvent -> D
+    ; deal with a mouse click at (x,y) of kind me
+    ; in the current world w
+    (define (click w x y me) ...)
+     
+    ; control : D KeyEvent -> D
+    ; deal with a key event (symbol, char) ke
+    ; in the current world w
+    (define (control w ke) ...)
+
+That is, the contracts of the various hooks dictate what the contracts of these
+functions are once we have defined how to represent the world in data.
+
+A typical program does not use all three of these actions and functions but
+often just one or two. Furthermore, the design of these functions provides only
+the top-level, initial design goal. It often demands the design of many
+auxiliary functions.
+
+1.2.3.3 Simulating a Door: Data
+
+Our first and immediate goal is to represent the world as data. In this
+specific example, the world consists of our door and what changes about the
+door is whether it is locked, unlocked but closed, or open. We use three
+symbols to represent the three states:
+
+SD
+
+    ; DATA DEF.
+    ; The state of the door (SD) is one of:
+    ; – 'locked
+    ; – 'closed
+    ; – 'open
+
+Symbols are particularly well-suited here because they directly express the
+state of the door.
+
+Now that we have a data definition, we must also decide which computer actions
+and interactions should model the various actions on the door. Our pictorial
+representation of the door’s states and transitions, specifically the arrow
+from "open" to "closed" suggests the use of a function that simulates time. For
+the other three arrows, we could use either keyboard events or mouse clicks or
+both. Our solution uses three keystrokes: #\u for unlocking the door, #\l for
+locking it, and #\space for pushing it open. We can express these choices
+graphically by translating the above "state machine" from the world of
+information into the world of data:
+
+[door-sim]
+
+1.2.3.4 Simulating a Door: Functions
+
+Our analysis and data definition leaves us with three functions to design:
+
+  • automatic-closer, which closes the time during one tick;
+
+  • door-actions, which manipulates the time in response to pressing a key; and
+
+  • render, which translates the current state of the door into a visible
+    scene.
+
+Let’s start with automatic-closer. We know its contract and it is easy to
+refine the purpose statement, too:
+
+    ; automatic-closer : SD -> SD
+    ; closes an open door over the period of one tick
+    (define (automatic-closer state-of-door) ...)
+
+Making up examples is trivial when the world can only be in one of three
+states:
+
+    given state desired state
+
+    ’locked     ’locked
+
+    ’closed     ’closed
+
+    ’open       ’closed
+
+
+    ; automatic-closer : SD -> SD
+    ; closes an open door over the period of one tick
+     
+    (check-expect (automatic-closer 'locked) 'locked)
+    (check-expect (automatic-closer 'closed) 'closed)
+    (check-expect (automatic-closer 'open) 'closed)
+     
+    (define (automatic-closer state-of-door) ...)
+
+The template step demands a conditional with three clauses:
+
+    (define (automatic-closer state-of-door)
+      (cond
+        [(symbol=? 'locked state-of-door) ...]
+        [(symbol=? 'closed state-of-door) ...]
+        [(symbol=? 'open state-of-door) ...]))
+
+The examples basically dictate what the outcomes of the three cases must be:
+
+    (define (automatic-closer state-of-door)
+      (cond
+        [(symbol=? 'locked state-of-door) 'locked]
+        [(symbol=? 'closed state-of-door) 'closed]
+        [(symbol=? 'open state-of-door) 'closed]))
+
+Don’t forget to run the example-tests.
+
+For the remaining three arrows of the diagram, we design a function that reacts
+to the three chosen keyboard events. As mentioned, functions that deal with
+keyboard events consume both a world and a keyevent:
+
+    ; door-actions : SD Keyevent -> SD
+    ; key events simulate actions on the door
+    (define (door-actions s k) ...)
+
+    given state given keyevent desired state
+
+    ’locked     #\u            ’closed
+
+    ’closed     #\l            ’locked
+
+    ’closed     #\space        ’open
+
+    ’open       —              ’open
+
+
+The examples combine what the above picture shows and the choices we made about
+mapping actions to keyboard events.
+
+From here, it is straightforward to turn this into a complete design:
+
+    (define (door-actions s k)
+      (cond
+        [(and (symbol=? 'locked s) (key=? #\u k)) 'closed]
+        [(and (symbol=? 'closed s) (key=? #\l k)) 'locked]
+        [(and (symbol=? 'closed s) (key=? #\space k)) 'open]
+        [else s]))
+     
+    (check-expect (door-actions 'locked #\u) 'closed)
+    (check-expect (door-actions 'closed #\l) 'locked)
+    (check-expect (door-actions 'closed #\space) 'open)
+    (check-expect (door-actions 'open 'any) 'open)
+    (check-expect (door-actions 'closed 'any) 'closed)
+
+Last but not least we need a function that renders the current state of the
+world as a scene. For simplicity, let’s just use a large enough text for this
+purpose:
+
+    ; render : SD -> Scene
+    ; translate the current state of the door into a large text
+    (define (render s)
+      (text (symbol->string s) 40 'red))
+     
+    (check-expecy (render 'closed) (text "closed" 40 'red))
+
+The function symbol->string translates a symbol into a string, which is needed
+because text can deal only with the latter, not the former. A look into the
+language documentation revealed that this conversion function exists, and so we
+use it.
+
+Once everything is properly designed, it is time to run the program. In the
+case of the world teachpack, this means we must specify which function takes
+care of tick events, key events, and redraws:
+
+    (big-bang 100 100 1 'locked)
+    (on-tick-event automatic-closer)
+    (on-key-event door-actions)
+    (on-redraw render)
+
+Now it’s time for you to collect the pieces and run them in big-bang to see
+whether it all works.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

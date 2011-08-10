@@ -1,0 +1,308 @@
+▼  Net: Networking Libraries
+ 1  URLs and HTTP
+ 2  URI Codec: Encoding and Decoding URIs
+ 3  Web Socket
+ 4  FTP: Client Downloading
+ 5  Send URL: Opening a Web Browser
+ 6  SMTP: Sending E-Mail
+ 7  sendmail: Sending E-Mail
+ 8  Headers: Parsing and Constructing
+ 9  IMAP: Reading Mail
+10  POP3: Reading Mail
+11  MIME: Decoding Internet Data
+12  Base 64: Encoding and Decoding
+13  Quoted-Printable: Encoding and Decoding
+14  DNS: Domain Name Service Queries
+15  NNTP: Newsgroup Protocol
+16  TCP: Unit and Signature
+17  TCP Redirect: tcp^ via Channels
+18  SSL Unit: tcp^ via SSL
+19  CGI Scripts
+20  Cookie: HTTP Client Storage
+    Bibliography
+    Index
+► 11  MIME: Decoding Internet Data
+11.1  Message Decoding
+11.2  Exceptions
+11.3  MIME Unit
+11.4  MIME Signature
+On this page:
+11.1 Message Decoding
+mime-analyze
+message
+entity
+disposition
+11.2 Exceptions
+mime-error
+unexpected-termination
+missing-multipart-boundary-parameter
+malformed-multipart-entity
+empty-mechanism
+empty-type
+empty-subtype
+empty-disposition-type
+11.3 MIME Unit
+mime@
+11.4 MIME Signature
+mime^
+[...search manuals...]
+  top← prev  up  next → 
+
+11 MIME: Decoding Internet Data
+
+ (require net/mime)
+The net/mime library provides utilities for parsing and creating MIME encodings
+as described in RFC 2045 through RFC 2049.
+The library was written by Francisco Solsona.
+
+11.1 Message Decoding
+
+(mime-analyze message-in part?) → message?
+  message-in : (or/c bytes? input-port)
+  part? : any/c
+Parses message-in and returns the parsed result as a message instance.
+
+(struct   message (version entity fields)
+          #:extra-constructor-name make-message)
+  version : real?
+  entity : entity
+  fields : (listof string?)
+A decoded MIME message. The version is 1.0 by default. The entity field
+represents the message data. The fields field contains one string for each
+field in the message header.
+
+(struct   entity       (  type
+                          subtype
+                          charset
+                          encoding
+                          disposition
+                          params
+                          id
+                          description
+                          other
+                          fields
+                          parts
+                          body)
+          #:extra-constructor-name make-entity)
+  type : symbol?
+  subtype : symbol?
+  charset : symbol?
+  encoding : symbol?
+  disposition : disposition?
+  params : (listof (cons/c symbol? string?))
+  id : string?
+  description : string?
+  other : (listof string?)
+  fields : (listof string?)
+  parts : (listof message?)
+  body : (output-port? . -> . void?)
+Represents the content of a message or a sub-part.
+
+Standard values for the type field include 'text, 'image, 'audio, 'video,
+'application, 'message, and 'multipart.
+
+Standard values for the subtype field depend on the type field, and include the
+following:
+
+'text          'plain                  [RFC1521, NSB]
+
+               'richtext               [RFC1521, NSB]
+
+               'tab-separated-values   [Lindner]
+
+'multipart     'mixed                  [RFC1521, NSB]
+
+               'alternative            [RFC1521, NSB]
+
+               'digest                 [RFC1521, NSB]
+
+               'parallel               [RFC1521, NSB]
+
+               'appledouble            [MacMime, Faltstrom]
+
+               'header-set             [Crocker]
+
+'message       'rfc822                 [RFC1521, NSB]
+
+               'partial                [RFC1521, NSB]
+
+               'external-body          [RFC1521, NSB]
+
+               'news                   [RFC 1036, Spencer]
+
+'application   'octet-stream           [RFC1521, NSB]
+
+               'postscript             [RFC1521, NSB]
+
+               'oda                    [RFC1521, NSB]
+
+               'atomicmail             [atomicmail, NSB]
+
+               'andrew-inset           [andrew-inset, NSB]
+
+               'slate                  [slate, Crowley]
+
+               'wita                   [Wang Info Transfer, Campbell]
+
+               'dec-dx                 [Digital Doc Trans, Campbell]
+
+               'dca-rft                [IBM Doc Content Arch, Campbell]
+
+               'activemessage          [Shapiro]
+
+               'rtf                    [Lindner]
+
+               'applefile              [MacMime, Faltstrom]
+
+               'mac-binhex40           [MacMime, Faltstrom]
+
+               'news-message-id        [RFC1036, Spencer]
+
+               'news-transmission      [RFC1036, Spencer]
+
+               'wordperfect5.1         [Lindner]
+
+               'pdf                    [Lindner]
+
+               'zip                    [Lindner]
+
+               'macwriteii             [Lindner]
+
+               'msword                 [Lindner]
+
+               'remote-printing        [RFC1486,MTR]
+
+'image         'jpeg                   [RFC1521, NSB]
+
+               'gif                    [RFC1521, NSB]
+
+               'ief                    [RFC1314]
+
+               'tiff                   [MTR]
+
+'audio         'basic                  [RFC1521, NSB]
+
+'video         'mpeg                   [RFC1521, NSB]
+
+               'quicktime              [Lindner]
+
+
+Standard values for the charset field include 'us-ascii, which is the default.
+
+Standard values for the encoding field are '7bit, '8bit, 'binary,
+'quoted-printable, and 'base64. The default is '7bit.
+
+The params field contains a list of parameters from other MIME headers.
+
+The id field is taken from the "Content-Id" header field.
+
+The description field is taken from the "Content-description" header field.
+
+The other field contains additional (non-standard) field headers whose field
+names start with "Content-".
+
+The fields field contains additional field headers whose field names do not
+start with "Content-".
+
+The parts contains sub-parts from multipart MIME messages. This list is
+non-empty only when type is 'multipart or 'message.
+
+The body field represents the body as a function that consumes an output out
+and writes the decoded message to the port. No bytes are written if type is
+'multipart or 'message. All of the standard values of encoding are supported.
+The procedure only works once (since the encoded body is pulled from a stream).
+
+(struct   disposition        (  type
+                                filename
+                                creation
+                                modification
+                                read
+                                size
+                                params)
+          #:extra-constructor-name make-disposition)
+  type : symbol?
+  filename : (or/c string? false/c)
+  creation : (or/c string? false/c)
+  modification : (or/c string? false/c)
+  read : (or/c string? false/c)
+  size : (or/c exact-nonnegative-integer? false/c)
+  params : (listof (cons/c symbol? string?))
+Represents a "Content-Disposition" header as defined in RFC 2183.
+
+Standard values for the type field include 'inline and 'attachment.
+
+The filename field is drawn from the "filename" parameter of the
+"Content-Disposition" header, if included in the message.
+
+The creation, modification, and read fields represent file timestamps as drawn
+from the "creation-date", "modification-date", and "read-date" attributes of
+the "Content-Disposition" header, if included in the message.
+
+The size field is drawn from the "size" parameter of the "Content-Disposition"
+header, if included in the message.
+
+The params field stores any additional attribute bindings of the
+"Content-Disposition" header, if included in the message.
+
+11.2 Exceptions
+
+(struct   mime-error ()
+          #:extra-constructor-name make-mime-error)
+The supertype of all MIME exceptions.
+
+(struct   unexpected-termination mime-error (msg)
+          #:extra-constructor-name make-unexpected-termination)
+  msg : string?
+Raised when an end-of-file is reached while parsing the headers of a MIME
+entity. It usually means that the message does not conform to RFC 2045 and
+friends.
+
+(struct   missing-multipart-boundary-parameter mime-error ()
+          #:extra-constructor-name make-missing-multipart-boundary-parameter)
+Raised when a multipart type is specified, but no "Boundary" parameter is given
+or an end-of-file is encountered before the boundary.
+
+(struct   malformed-multipart-entity mime-error (msg)
+          #:extra-constructor-name make-malformed-multipart-entity)
+  msg : string?
+Similar to unexpected-termination, but used only while scanning parts of a
+multipart message.
+
+(struct   empty-mechanism mime-error ()
+          #:extra-constructor-name make-empty-mechanism)
+Raised when no transport encoding mechanism was provided with the
+"Content-Transfer-Encoding" field.
+
+(struct   empty-type mime-error ()
+          #:extra-constructor-name make-empty-type)
+Raised when no type is specified for "Content-Type", or when the specification
+is incorrectly formatted.
+
+(struct   empty-subtype mime-error ()
+          #:extra-constructor-name make-empty-subtype)
+Raised when no sub-type is specified for "Content-Type", or when the
+specification is incorrectly formatted.
+
+(struct   empty-disposition-type mime-error ()
+          #:extra-constructor-name make-empty-disposition-type)
+Raised when type specified for the "Content-Disposition" field, or when the
+specification is incorrectly formatted.
+
+11.3 MIME Unit
+
+ (require net/mime-unit)
+
+mime@ : unit?
+Imports nothing, exports mime^.
+
+11.4 MIME Signature
+
+ (require net/mime-sig)
+
+mime^ : signature
+
+Includes everything exported by the net/mime module.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,225 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 4  Expressions and Definitions
+ 4.1  Notation
+ 4.2  Identifiers and Binding
+ 4.3  Function Calls (Procedure Applications)
+ 4.4  Functions (Procedures): lambda
+ 4.5  Definitions: define
+ 4.6  Local Binding
+ 4.7  Conditionals
+ 4.8  Sequencing
+ 4.9  Assignment: set!
+4.10  Quoting: quote and ’
+4.11  Quasiquoting: quasiquote and `
+4.12  Simple Dispatch: case
+4.13  Dynamic Binding: parameterize
+► 4.8  Sequencing
+4.8.1  Effects Before: begin
+4.8.2  Effects After: begin0
+4.8.3  Effects If...: when and unless
+On this page:
+4.8.1 Effects Before: begin
+4.8.2 Effects After: begin0
+4.8.3 Effects If...: when and unless
+[...search manuals...]
+  top← prev  up  next → 
+
+4.8 Sequencing
+
+Racket programmers prefer to write programs with as few side-effects as
+possible, since purely functional code is more easily tested and composed into
+larger programs. Interaction with the external environment, however, requires
+sequencing, such as when writing to a display, opening a graphical window, or
+manipulating a file on disk.
+
+4.8.1 Effects Before: begin
+
+            +Sequencing: begin, begin0, and begin-for-syntax in The Racket
+            Reference also documents begin.
+
+A begin expression sequences expressions:
+
+    (begin expr ...+)
+
+The exprs are evaluated in order, and the result of all but the last expr is
+ignored. The result from the last expr is the result of the begin form, and it
+is in tail position with respect to the begin form.
+
+Examples:
+
+    (define (print-triangle height)
+      (if (zero? height)
+          (void)
+          (begin
+           (display (make-string height #\*))
+           (newline)
+           (print-triangle (sub1 height)))))
+    > (print-triangle 4)
+    ****
+
+    ***
+
+    **
+
+    *
+
+
+
+Many forms, such as lambda or cond support a sequence of expressions even
+without a begin. Such positions are sometimes said to have an implicit begin.
+
+Examples:
+
+    (define (print-triangle height)
+      (cond
+        [(positive? height)
+         (display (make-string height #\*))
+         (newline)
+         (print-triangle (sub1 height))]))
+    > (print-triangle 4)
+    ****
+
+    ***
+
+    **
+
+    *
+
+
+
+The begin form is special at the top level, at module level, or as a body after
+only internal definitions. In those positions, instead of forming an
+expression, the content of begin is spliced into the surrounding context.
+
+Example:
+
+    > (let ([curly 0])
+       (begin
+        (define moe (+ 1 curly))
+        (define larry (+ 1 moe)))
+       (list larry curly moe))
+    '(2 0 1)
+
+
+
+This splicing behavior is mainly useful for macros, as we discuss later in
+Macros.
+
+4.8.2 Effects After: begin0
+
+            +Sequencing: begin, begin0, and begin-for-syntax in The Racket
+            Reference also documents begin0.
+
+A begin0 expression has the same syntax as a begin expression:
+
+    (begin0 expr ...+)
+
+The difference is that begin0 returns the result of the first expr, instead of
+the result of the last expr. The begin0 form is useful for implementing
+side-effects that happen after a computation, especially in the case where the
+computation produces an unknown number of results.
+
+Examples:
+
+    (define (log-times thunk)
+      (printf "Start: ~s\n" (current-inexact-milliseconds))
+      (begin0
+        (thunk)
+        (printf "End..: ~s\n" (current-inexact-milliseconds))))
+    > (log-times (lambda () (sleep 0.1) 0))
+    Start: 1312391384103.868
+
+    End..: 1312391384204.536
+
+    0
+
+    > (log-times (lambda () (values 1 2)))
+    Start: 1312391384205.04
+
+    End..: 1312391384205.098
+
+    1
+
+    2
+
+
+
+4.8.3 Effects If...: when and unless
+
+            +Guarded Evaluation: when and unless in The Racket Reference also
+            documents when and unless.
+
+The when form combines an if-style conditional with sequencing for the “then”
+clause and no “else” clause:
+
+    (when test-expr then-expr ...)
+
+If test-expr produces a true value, then all of the then-exprs are evaluated.
+Otherwise, no then-exprs are evaluated. The result is #<void> in any case.
+
+The unless form is similar:
+
+    (unless test-expr then-expr ...)
+
+The difference is that the test-expr result is inverted: the then-exprs are
+evaluated only if the test-expr result is #f.
+
+Examples:
+
+    (define (enumerate lst)
+     (if (null? (cdr lst))
+         (printf "~a.\n" (car lst))
+         (begin
+           (printf "~a, " (car lst))
+           (when (null? (cdr (cdr lst)))
+             (printf "and "))
+          (enumerate (cdr lst)))))
+    > (enumerate '("Larry" "Curly" "Moe"))
+    Larry, Curly, and Moe.
+
+
+
+    (define (print-triangle height)
+      (unless (zero? height)
+        (display (make-string height #\*))
+        (newline)
+        (print-triangle (sub1 height))))
+     
+
+    > (print-triangle 4)
+    ****
+
+    ***
+
+    **
+
+    *
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

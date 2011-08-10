@@ -1,0 +1,212 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 17  Running Racket
+17.1  Running Racket or GRacket
+17.2  Libraries and Collections
+17.3  Interactive Help
+17.4  Interactive Module Loading
+17.5  Debugging
+► 17.5  Debugging
+17.5.1  Tracing
+On this page:
+17.5.1 Tracing
+trace
+untrace
+current-trace-notify
+trace-call
+current-trace-print-args
+current-trace-print-results
+current-prefix-in
+current-prefix-out
+[...search manuals...]
+  top← prev  up  next → 
+
+17.5 Debugging
+
+Racket’s built-in debugging support is limited to context (i.e., “stack trace”)
+information that is printed with an exception. In some cases, disabling the JIT
+compiler can affect context information. The errortrace library supports more
+consistent (independent of the JIT compiler) and precise context information.
+The racket/trace library provides simple tracing support. Finally, the DrRacket
+programming environment provides much more debugging support.
+
+17.5.1 Tracing
+
+ (require racket/trace)
+The bindings documented in this section are provided by the racket/trace
+library, not racket/base or racket.
+
+The racket/trace library mimics the tracing facility available in Chez Scheme.
+
+(trace id ...)
+Each id must be bound to a procedure in the environment of the trace
+expression. Each id is set!ed to a new procedure that traces procedure calls
+and returns by printing the arguments and results of the call via
+current-trace-notify. If multiple values are returned, each value is displayed
+starting on a separate line.
+
+When traced procedures invoke each other, nested invocations are shown by
+printing a nesting prefix. If the nesting depth grows to ten and beyond, a
+number is printed to show the actual nesting depth.
+
+The trace form can be used on an identifier that is already traced. In this
+case, assuming that the variable’s value has not been changed, trace has no
+effect. If the variable has been changed to a different procedure, then a new
+trace is installed.
+
+Tracing respects tail calls to preserve loops, but its effect may be visible
+through continuation marks. When a call to a traced procedure occurs in tail
+position with respect to a previous traced call, then the tailness of the call
+is preserved (and the result of the call is not printed for the tail call,
+because the same result will be printed for an enclosing call). Otherwise,
+however, the body of a traced procedure is not evaluated in tail position with
+respect to a call to the procedure.
+
+The result of a trace expression is #<void>.
+
+Examples:
+
+    > (define (f x) (if (zero? x) 0 (add1 (f (sub1 x)))))
+    > (trace f)
+    > (f 10)
+    >(f 10)
+
+    > (f 9)
+
+    > >(f 8)
+
+    > > (f 7)
+
+    > > >(f 6)
+
+    > > > (f 5)
+
+    > > > >(f 4)
+
+    > > > > (f 3)
+
+    > > > > >(f 2)
+
+    > > > > > (f 1)
+
+    > > > >[10] (f 0)
+
+    < < < <[10] 0
+
+    < < < < < 1
+
+    < < < < <2
+
+    < < < < 3
+
+    < < < <4
+
+    < < < 5
+
+    < < <6
+
+    < < 7
+
+    < <8
+
+    < 9
+
+    <10
+
+    10
+
+
+
+(untrace id ...)
+Undoes the effects of the trace form for each id, set!ing each id back to the
+untraced procedure, but only if the current value of id is a traced procedure.
+If the current value of a id is not a procedure installed by trace, then the
+variable is not changed.
+
+The result of an untrace expression is #<void>.
+
+(current-trace-notify) → (string? . -> . any)
+(current-trace-notify proc) → void?
+  proc : (string? . -> . any)
+A parameter that determines the way that trace output is displayed. The string
+given to proc is a trace; it does not end with a newline, but it may contain
+internal newlines. Each call or result is converted into a string using
+pretty-print. The parameter’s default value prints the given string followed by
+a newline to (current-output-port).
+
+(trace-call id proc #:<kw> kw-arg ...) → any/c
+  id : symbol?
+  proc : procedure?
+  kw-arg : any/c
+Calls proc with the arguments supplied in args, and possibly using keyword
+arguments. Also prints out the trace information during the call, as described
+above in the docs for trace, using id as the name of proc.
+
+                                 (-> symbol?
+                                     list?
+(current-trace-print-args)   →       (listof keyword?)
+                                     list?
+                                     number?
+                                     void?)
+(current-trace-print-args trace-print-args) → void?
+                          (-> symbol?
+                              list?
+   trace-print-args   :       (listof keyword?)
+                              list?
+                              number?
+                              void?)
+The value of this parameter is invoked to print out the arguments of a traced
+call. It receives the name of the function, the function’s ordinary arguments,
+its keywords, the values of the keywords, and a number indicating the depth of
+the call.
+
+                                    (-> symbol?
+(current-trace-print-results)   →       list?
+                                        number?
+                                        any)
+(current-trace-print-results trace-print-results) → void?
+                             (-> symbol?
+   trace-print-results   :       list?
+                                 number?
+                                 any)
+The value of this parameter is invoked to print out the results of a traced
+call. It receives the name of the function, the function’s results, and a
+number indicating the depth of the call.
+
+(current-prefix-in) → string?
+(current-prefix-in prefix) → void?
+  prefix : string?
+This string is used by the default value of current-trace-print-args indicating
+that the current line is showing the a call to a traced function.
+
+It defaults to ">".
+
+(current-prefix-out) → string?
+(current-prefix-out prefix) → void?
+  prefix : string?
+This string is used by the default value of current-trace-print-results
+indicating that the current line is showing the result of a traced call.
+
+It defaults to "<".
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

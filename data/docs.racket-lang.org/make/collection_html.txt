@@ -1,0 +1,54 @@
+▼  Make: Dependency Manager
+1  Overview
+2  Make from Dependencies
+3  Building Native-Code Extensions
+4  Making Collections
+► 4  Making Collections
+4.1  Signature
+4.2  Unit
+On this page:
+make-collection
+4.1 Signature
+make: collection^
+4.2 Unit
+make: collection@
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Making Collections
+
+ (require make/collection)
+
+(make-collection   collection-name         
+                   collection-files        
+                   argv)              →   void?
+  collection-name : any/c
+  collection-files : (listof path-string?)
+  argv : (or/c string? (vectorof string?))
+Builds bytecode files for each file in collection-files, writing each to a
+"compiled" subdirectory and automatically managing dependencies. Supply '#
+("zo") as argv to compile all files. The collection-name argument is used only
+for printing status information.
+
+Compilation is performed as with raco make (see raco: Racket Command-Line Tools
+).
+
+4.1 Signature
+
+ (require make/collection-sig)
+
+make:collection^ : signature
+
+
+    Provides make-collection.
+
+4.2 Unit
+
+ (require make/collection-unit)
+
+make:collection@ : unit?
+Imports make^, dynext:file^, and compiler^, and exports make:collection^.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

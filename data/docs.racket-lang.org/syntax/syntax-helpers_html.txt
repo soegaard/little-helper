@@ -1,0 +1,751 @@
+▼  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+► 1  Syntax Object Helpers
+1.1  Deconstructing Syntax Objects
+1.2  Matching Fully-Expanded Expressions
+1.3  Hashing on bound-identifier=? and free-identifier=?
+1.4  Identifier dictionaries
+1.5  Rendering Syntax Objects with Formatting
+1.6  Computing the Free Variables of an Expression
+1.7  Replacing Lexical Context
+1.8  Helpers for Processing Keyword Syntax
+1.9  Legacy Zodiac Interface
+On this page:
+1.1 Deconstructing Syntax Objects
+stx-null?
+stx-pair?
+stx-list?
+stx->list
+stx-car
+stx-cdr
+stx-map
+module-or-top-identifier=?
+1.2 Matching Fully-Expanded Expressions
+kernel-syntax-case
+kernel-syntax-case*
+kernel-syntax-case/ phase
+kernel-syntax-case*/ phase
+kernel-form-identifier-list
+1.3 Hashing on bound-identifier=? and free-identifier=?
+make-bound-identifier-mapping
+bound-identifier-mapping?
+bound-identifier-mapping-get
+bound-identifier-mapping-put!
+bound-identifier-mapping-for-each
+bound-identifier-mapping-map
+make-free-identifier-mapping
+free-identifier-mapping?
+free-identifier-mapping-get
+free-identifier-mapping-put!
+free-identifier-mapping-for-each
+free-identifier-mapping-map
+make-module-identifier-mapping
+module-identifier-mapping?
+module-identifier-mapping-get
+module-identifier-mapping-put!
+module-identifier-mapping-for-each
+module-identifier-mapping-map
+1.4 Identifier dictionaries
+1.4.1 Dictionaries for bound-identifier=?
+make-bound-id-table
+make-immutable-bound-id-table
+bound-id-table?
+mutable-bound-id-table?
+immutable-bound-id-table?
+bound-id-table-ref
+bound-id-table-set!
+bound-id-table-set
+bound-id-table-remove!
+bound-id-table-remove
+bound-id-table-map
+bound-id-table-for-each
+bound-id-table-count
+1.4.2 Dictionaries for free-identifier=?
+make-free-id-table
+make-immutable-free-id-table
+free-id-table?
+mutable-free-id-table?
+immutable-free-id-table?
+free-id-table-ref
+free-id-table-set!
+free-id-table-set
+free-id-table-remove!
+free-id-table-remove
+free-id-table-map
+free-id-table-for-each
+free-id-table-count
+1.5 Rendering Syntax Objects with Formatting
+syntax->string
+1.6 Computing the Free Variables of an Expression
+free-vars
+1.7 Replacing Lexical Context
+strip-context
+replace-context
+1.8 Helpers for Processing Keyword Syntax
+parse-keyword-options
+parse-keyword-options/ eol
+options-select
+options-select-row
+options-select-value
+check-identifier
+check-expression
+check-stx-listof
+check-stx-string
+check-stx-boolean
+1.9 Legacy Zodiac Interface
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Syntax Object Helpers
+
+1.1 Deconstructing Syntax Objects
+
+ (require syntax/stx)
+
+(stx-null? v) → boolean?
+  v : any/c
+Returns #t if v is either the empty list or a syntax object representing the
+empty list (i.e., syntax-e on the syntax object returns the empty list).
+
+(stx-pair? v) → boolean?
+  v : any/c
+Returns #t if v is either a pair or a syntax object representing a pair (see
+syntax pair).
+
+(stx-list? v) → boolean?
+  v : any/c
+Returns #t if v is a list, or if it is a sequence of pairs leading to a syntax
+object such that syntax->list would produce a list.
+
+(stx->list stx-list) → (or/c list? #f)
+  stx-list : stx-list?
+Produces a list by flatting out a trailing syntax object using syntax->list.
+
+(stx-car v) → any
+  v : stx-pair?
+Takes the car of a syntax pair.
+
+(stx-cdr v) → any
+  v : stx-pair?
+Takes the cdr of a syntax pair.
+
+(stx-map proc stxl ...) → list?
+  proc : procedure?
+  stxl : stx-list?
+Equivalent to (map proc (stx->list stxl) ...).
+
+(module-or-top-identifier=? a-id b-id) → boolean?
+  a-id : identifier?
+  b-id : identifier?
+Returns #t if a-id and b-id are free-identifier=?, or if a-id and b-id have the
+same name (as extracted by syntax-e) and a-id has no binding other than at the
+top level.
+
+This procedure is useful in conjunction with syntax-case* to match procedure
+names that are normally bound by Racket. For example, the include macro uses
+this procedure to recognize build-path; using free-identifier=? would not work
+well outside of module, since the top-level build-path is a distinct variable
+from the racket/base export (though it’s bound to the same procedure,
+initially).
+
+1.2 Matching Fully-Expanded Expressions
+
+ (require syntax/kerncase)
+
+(kernel-syntax-case stx-expr trans?-expr clause ...)
+A syntactic form like syntax-case*, except that the literals are built-in as
+the names of the primitive Racket forms as exported by scheme/base; see Fully
+Expanded Programs.
+
+The trans?-expr boolean expression replaces the comparison procedure, and
+instead selects simply between normal-phase comparisons or transformer-phase
+comparisons. The clauses are the same as in syntax-case*.
+
+The primitive syntactic forms must have their normal bindings in the context of
+the kernel-syntax-case expression. Beware that kernel-syntax-case does not work
+in a module whose language is mzscheme, since the binding of if from mzscheme
+is different than the primitive if.
+
+(kernel-syntax-case* stx-expr trans?-expr (extra-id ...) clause ...)
+A syntactic form like kernel-syntax-case, except that it takes an additional
+list of extra literals that are in addition to the primitive Racket forms.
+
+(kernel-syntax-case/phase stx-expr phase-expr clause ...)
+Generalizes kernel-syntax-case to work at an arbitrary phase level, as
+indicated by phase-expr.
+
+(kernel-syntax-case*/phase stx-expr phase-expr (extra-id ..)
+  clause ...)
+Generalizes kernel-syntax-case* to work at an arbitrary phase level, as
+indicated by phase-expr.
+
+(kernel-form-identifier-list) → (listof identifier?)
+Returns a list of identifiers that are bound normally, for-syntax, and
+for-template to the primitive Racket forms for expressions, internal-definition
+positions, and module-level and top-level positions. This function is useful
+for generating a list of stopping points to provide to local-expand.
+
+In addition to the identifiers listed in Fully Expanded Programs, the list
+includes letrec-syntaxes+values, which is the core form for local expand-time
+binding and can appear in the result of local-expand.
+
+1.3 Hashing on bound-identifier=? and free-identifier=?
+
+See also syntax/id-table for an implementation of identifier mappings using the
+scheme/dict dictionary interface.
+
+ (require syntax/boundmap)
+
+(make-bound-identifier-mapping) → bound-identifier-mapping?
+Produces a hash-table-like value for storing a mapping from syntax identifiers
+to arbitrary values.
+
+The mapping uses bound-identifier=? to compare mapping keys, but also uses a
+hash table based on symbol equality to make the mapping efficient in the common
+case (i.e., where non-equivalent identifiers are derived from different
+symbolic names).
+
+(bound-identifier-mapping? v) → boolean?
+  v : any/c
+Returns #t if v was produced by make-bound-identifier-mapping, #f otherwise.
+
+(bound-identifier-mapping-get    bound-map              
+                                 id                     
+                               [ failure-thunk])   →   any
+  bound-map : bound-identifier-mapping?
+  id : identifier?
+   failure-thunk   :   any/c
+                   =   (lambda () (raise (make-exn:fail ....)))
+Like hash-table-get for bound-identifier mappings.
+
+(bound-identifier-mapping-put!   bound-map        
+                                 id               
+                                 v)          →   void?
+  bound-map : bound-identifier-mapping?
+  id : identifier?
+  v : any/c
+Like hash-table-put! for bound-identifier mappings.
+
+(bound-identifier-mapping-for-each   bound-map        
+                                     proc)       →   void?
+  bound-map : boud-identifier-mapping?
+  proc : (identifier? any/c . -> . any)
+Like hash-table-for-each.
+
+(bound-identifier-mapping-map   bound-map        
+                                proc)       →   (listof any?)
+  bound-map : bound-identifier-mapping?
+  proc : (identifier? any/c . -> . any)
+Like hash-table-map.
+
+(make-free-identifier-mapping) → free-identifier-mapping?
+Produces a hash-table-like value for storing a mapping from syntax identifiers
+to arbitrary values.
+
+The mapping uses free-identifier=? to compare mapping keys, but also uses a
+hash table based on symbol equality to make the mapping efficient in the common
+case (i.e., where non-equivalent identifiers are derived from different
+symbolic names at their definition sites).
+
+(free-identifier-mapping? v) → boolean?
+  v : any/c
+Returns #t if v was produced by make-free-identifier-mapping, #f otherwise.
+
+(free-identifier-mapping-get    free-map               
+                                id                     
+                              [ failure-thunk])   →   any
+  free-map : free-identifier-mapping?
+  id : identifier?
+   failure-thunk   :   any/c
+                   =   (lambda () (raise (make-exn:fail ....)))
+Like hash-table-get for free-identifier mappings.
+
+(free-identifier-mapping-put! free-map id v) → void?
+  free-map : free-identifier-mapping?
+  id : identifier?
+  v : any/c
+Like hash-table-put! for free-identifier mappings.
+
+(free-identifier-mapping-for-each   free-map        
+                                    proc)      →   void?
+  free-map : free-identifier-mapping?
+  proc : (identifier? any/c . -> . any)
+Like hash-table-for-each.
+
+(free-identifier-mapping-map free-map proc) → (listof any?)
+  free-map : free-identifier-mapping?
+  proc : (identifier? any/c . -> . any)
+Like hash-table-map.
+
+(make-module-identifier-mapping) → module-identifier-mapping?
+(module-identifier-mapping? v) → boolean?
+  v : any/c
+(module-identifier-mapping-get    module-map             
+                                  id                     
+                                [ failure-thunk])   →   any
+  module-map : module-identifier-mapping?
+  id : identifier?
+   failure-thunk   :   any/c
+                   =   (lambda () (raise (make-exn:fail ....)))
+(module-identifier-mapping-put!   module-map        
+                                  id                
+                                  v)           →   void?
+  module-map : module-identifier-mapping?
+  id : identifier?
+  v : any/c
+(module-identifier-mapping-for-each   module-map        
+                                      proc)        →   void?
+  module-map : module-identifier-mapping?
+  proc : (identifier? any/c . -> . any)
+(module-identifier-mapping-map   module-map        
+                                 proc)        →   (listof any?)
+  module-map : module-identifier-mapping?
+  proc : (identifier? any/c . -> . any)
+The same as make-free-identifier-mapping, etc.
+
+1.4 Identifier dictionaries
+
+ (require syntax/id-table)
+
+This module provides functionality like that of syntax/boundmap but with more
+operations, standard names, implementation of the scheme/dict interface, and
+immutable (functionally-updating) variants.
+
+1.4.1 Dictionaries for bound-identifier=?
+
+Bound-identifier tables implement the dictionary interface of scheme/dict.
+Consequently, all of the appropriate generic functions (dict-ref, dict-map,
+etc) can be used on free-identifier tables.
+
+(make-bound-id-table  [ init-dict              
+                        #:phase phase])   →   mutable-bound-id-table?
+  init-dict : dict? = null
+  phase : (or/c exact-integer? #f) = (syntax-local-phase-level)
+(make-immutable-bound-id-table  [ init-dict        
+                                  #:phase phase])  
+ → immutable-bound-id-table?
+  init-dict : dict? = null
+  phase : (or/c exact-integer? #f) = (syntax-local-phase-level)
+Produces a dictionary mapping syntax identifiers to arbitrary values. The
+mapping uses bound-identifier=? to compare keys, but also uses a hash table
+based on symbol equality to make the mapping efficient in the common case. The
+two procedures produce mutable and immutable dictionaries, respectively.
+
+The identifiers are compared at phase level phase. The default value is
+generally appropriate for identifier tables used by macros, but code that
+analyzes fully-expanded programs may need to create identifier tables at
+multiple different phases.
+
+The optional init-dict argument provides the initial mappings. It must be a
+dictionary, and its keys must all be identifiers. If the init-dict dictionary
+has multiple distinct entries whose keys are bound-identifier=?, only one of
+the entries appears in the new id-table, and it is not specified which entry is
+picked.
+
+(bound-id-table? v) → boolean?
+  v : any/c
+Returns #t if v was produced by make-bound-id-table or
+make-immutable-bound-id-table, #f otherwise.
+
+(mutable-bound-id-table? v) → boolean?
+  v : any/c
+(immutable-bound-id-table? v) → boolean?
+  v : any/c
+Predicate for the mutable and immutable variants of bound-identifier tables,
+respectively.
+
+(bound-id-table-ref table id [failure]) → any
+  table : bound-id-table?
+  id : identifier?
+  failure : any/c = (lambda () (raise (make-exn:fail .....)))
+Like hash-ref for bound identifier tables. In particular, if id is not found,
+the failure argument is applied if it is a procedure, or simply returned
+otherwise.
+
+(bound-id-table-set! table id v) → void?
+  table : mutable-bound-id-table?
+  id : identifier?
+  v : any/c
+Like hash-set! for mutable bound-identifier tables.
+
+(bound-id-table-set table id v) → immutable-bound-id-table?
+  table : immutable-bound-id-table?
+  id : identifier?
+  v : any/c
+Like hash-set for immutable bound-identifier tables.
+
+(bound-id-table-remove! table id) → void?
+  table : mutable-bound-id-table?
+  id : identifier?
+Like hash-remove! for mutable bound-identifier tables.
+
+(bound-id-table-remove table id v) → immutable-bound-id-table?
+  table : immutable-bound-id-table?
+  id : identifier?
+  v : any/c
+Like hash-remove for immutable bound-identifier tables.
+
+(bound-id-table-map table proc) → list?
+  table : bound-id-table?
+  proc : (-> identifier? any/c any)
+Like hash-map for bound-identifier tables.
+
+(bound-id-table-for-each table proc) → void?
+  table : bound-id-table?
+  proc : (-> identifier? any/c any)
+Like hash-for-each for bound-identifier tables.
+
+(bound-id-table-count table) → exact-nonnegative-integer?
+  table : bound-id-table?
+Like hash-count for bound-identifier tables.
+
+1.4.2 Dictionaries for free-identifier=?
+
+Free-identifier tables implement the dictionary interface of scheme/dict.
+Consequently, all of the appropriate generic functions (dict-ref, dict-map,
+etc) can be used on free-identifier tables.
+
+(make-free-id-table  [ init-dict              
+                       #:phase phase])   →   mutable-free-id-table?
+  init-dict : dict? = null
+  phase : (or/c exact-integer? #f) = (syntax-local-phase-level)
+(make-immutable-free-id-table  [ init-dict        
+                                 #:phase phase])  
+ → immutable-free-id-table?
+  init-dict : dict? = null
+  phase : (or/c exact-integer? #f) = (syntax-local-phase-level)
+(free-id-table? v) → boolean?
+  v : any/c
+(mutable-free-id-table? v) → boolean?
+  v : any/c
+(immutable-free-id-table? v) → boolean?
+  v : any/c
+(free-id-table-ref table id [failure]) → any
+  table : free-id-table?
+  id : identifier?
+  failure : any/c = (lambda () (raise (make-exn:fail .....)))
+(free-id-table-set! table id v) → void?
+  table : mutable-free-id-table?
+  id : identifier?
+  v : any/c
+(free-id-table-set table id v) → immutable-free-id-table?
+  table : immutable-free-id-table?
+  id : identifier?
+  v : any/c
+(free-id-table-remove! table id) → void?
+  table : mutable-free-id-table?
+  id : identifier?
+(free-id-table-remove table id v) → immutable-free-id-table?
+  table : immutable-free-id-table?
+  id : identifier?
+  v : any/c
+(free-id-table-map table proc) → list?
+  table : free-id-table?
+  proc : (-> identifier? any/c any)
+(free-id-table-for-each table proc) → void?
+  table : free-id-table?
+  proc : (-> identifier? any/c any)
+(free-id-table-count table) → exact-nonnegative-integer?
+  table : free-id-table?
+Like the procedures for bound-identifier tables (make-bound-id-table,
+bound-id-table-ref, etc), but for free-identifier tables, which use
+free-identifier=? to compare keys.
+
+1.5 Rendering Syntax Objects with Formatting
+
+ (require syntax/to-string)
+
+(syntax->string stx-list) → string?
+  stx-list : stx-list?
+Builds a string with newlines and indenting according to the source locations
+in stx-list; the outer pair of parens are not rendered from stx-list.
+
+1.6 Computing the Free Variables of an Expression
+
+ (require syntax/free-vars)
+
+(free-vars expr-stx) → (listof identifier?)
+  expr-stx : syntax?
+Returns a list of free lambda- and let-bound identifiers in expr-stx. The
+expression must be fully expanded (see Fully Expanded Programs and expand).
+
+1.7 Replacing Lexical Context
+
+ (require syntax/strip-context)
+
+(strip-context stx) → syntax?
+  stx : syntax?
+Removes all lexical context from stx, preserving source-location information
+and properties.
+
+(replace-context ctx-stx stx) → syntax?
+  ctx-stx : (or/c syntax? #f)
+  stx : syntax?
+Uses the lexical context of ctx-stx to replace the lexical context of all parts
+of stx, preserving source-location information and properties of stx.
+
+1.8 Helpers for Processing Keyword Syntax
+
+The syntax/keyword module contains procedures for parsing keyword options in
+macros.
+
+ (require syntax/keyword)
+
+  keyword-table   =   (dict-of keyword (listof check-procedure))
+
+A keyword-table is a dictionary (dict?) mapping keywords to lists of
+check-procedures. (Note that an association list is a suitable dictionary.) The
+keyword’s arity is the length of the list of procedures.
+
+Example:
+
+    > (define my-keyword-table
+        (list (list '#:a check-identifier)
+              (list '#:b check-expression check-expression)))
+    current-directory: `exists' access denied for
+
+    /var/tmp/racket/src/build/
+
+
+
+  check-procedure   =   (syntax syntax -> any)
+
+A check procedure consumes the syntax to check and a context syntax object for
+error reporting and either raises an error to reject the syntax or returns a
+value as its parsed representation.
+
+Example:
+
+    > (define (check-stx-string stx context-stx)
+        (unless (string? (syntax-e stx))
+          (raise-syntax-error #f "expected string" context-stx stx))
+        stx)
+
+
+  options   =   (listof (list keyword syntax-keyword any ...))
+
+Parsed options are represented as an list of option entries. Each entry
+contains the keyword, the syntax of the keyword (for error reporting), and the
+list of parsed values returned by the keyword’s list of check procedures. The
+list contains the parsed options in the order they appeared in the input, and a
+keyword that occurs multiple times in the input occurs multiple times in the
+options list.
+
+(parse-keyword-options    stx                                       
+                          table                                     
+                        [ #:context ctx                             
+                          #:no-duplicates? no-duplicates?           
+                          #:incompatible incompatible               
+                          #:on-incompatible incompatible-handler    
+                          #:on-too-short too-short-handler          
+                          #:on-not-in-table not-in-table-handler])  
+  →   options   any/c
+  stx : syntax?
+  table : keyword-table
+  ctx : (or/c false/c syntax?) = #f
+  no-duplicates? : boolean? = #f
+  incompatible : (listof (listof keyword?)) = '()
+                              (-> keyword? keyword?
+   incompatible-handler   :       options syntax? syntax?
+                                  (values options syntax?))
+                          =   (lambda (....) (error ....))
+   too-short-handler   :   (-> keyword? options syntax? syntax?
+                               (values options syntax?))
+                       =   (lambda (....) (error ....))
+   not-in-table-handler   :   (-> keyword? options syntax? syntax?
+                                  (values options syntax?))
+                          =   (lambda (....) (error ....))
+Parses the keyword options in the syntax stx (stx may be an improper syntax
+list). The keyword options are described in the table association list. Each
+entry in table should be a list whose first element is a keyword and whose
+subsequent elements are procedures for checking the arguments following the
+keyword. The keyword’s arity (number of arguments) is determined by the number
+of procedures in the entry. Only fixed-arity keywords are supported.
+
+Parsing stops normally when the syntax list does not have a keyword at its head
+(it may be empty, start with a non-keyword term, or it may be a non-list syntax
+object). Two values are returned: the parsed options and the rest of the syntax
+(generally either a syntax object or a list of syntax objects).
+
+A variety of errors and exceptional conditions can occur during the parsing
+process. The following keyword arguments determine the behavior in those
+situations.
+
+The #:context ctx argument is used to report all errors in parsing syntax. In
+addition, ctx is passed as the final argument to all provided handler
+procedures. Macros using parse-keyword-options should generally pass the syntax
+object for the whole macro use as ctx.
+
+If no-duplicates? is a non-false value, then duplicate keyword options are not
+allowed. If a duplicate is seen, the keyword’s associated check procedures are
+not called and an incompatibility is reported.
+
+The incompatible argument is a list of incompatibility entries, where each
+entry is a list of at least two keywords. If any keyword in the entry occurs
+after any other keyword in the entry, an incompatibility is reported.
+
+Note that including a keyword in an incompatibility entry does not prevent it
+from occurring multiple times. To disallow duplicates of some keywords (as
+opposed to all keywords), include those keywords in the incompatible list as
+being incompatible with themselves. That is, include them twice:
+
+    ; Disallow duplicates of only the #:foo keyword
+    (parse-keyword-options .... #:incompatible '((#:foo #:foo)))
+
+When an incompatibility occurs, the incompatible-handler is tail-called with
+the two keywords causing the incompatibility (in the order that they occurred
+in the syntax list, so the keyword triggering the incompatibility occurs
+second), the syntax list starting with the occurrence of the second keyword,
+and the context (ctx). If the incompatibility is due to a duplicate, the two
+keywords are the same.
+
+When a keyword is not followed by enough arguments according to its arity in
+table, the too-short-handler is tail-called with the keyword, the options
+parsed thus far, the syntax list starting with the occurrence of the keyword,
+and ctx.
+
+When a keyword occurs in the syntax list that is not in table, the
+not-in-table-handler is tail-called with the keyword, the options parsed thus
+far, the syntax list starting with the occurrence of the keyword, and ctx.
+
+Handlers typically escape—all of the default handlers raise errors—but if they
+return, they should return two values: the parsed options and a syntax object;
+these are returned as the results of parse-keyword-options.
+
+Examples:
+
+    > (parse-keyword-options
+       #'(#:transparent #:property p (lambda (x) (f x)))
+       (list (list '#:transparent)
+             (list '#:inspector check-expression)
+             (list '#:property check-expression check-expression)))
+    current-directory: `exists' access denied for
+
+    /var/tmp/racket/src/build/
+
+    > (parse-keyword-options
+       #'(#:transparent #:inspector (make-inspector))
+       (list (list '#:transparent)
+             (list '#:inspector check-expression)
+             (list '#:property check-expression check-expression))
+       #:context #'define-struct
+       #:incompatible '((#:transparent #:inspector)
+                        (#:inspector #:inspector)
+                        (#:inspector #:inspector)))
+    current-directory: `exists' access denied for
+
+    /var/tmp/racket/src/build/
+
+
+
+(parse-keyword-options/eol                   
+     stx                                     
+     table                                   
+   [ #:context ctx                           
+     #:no-duplicates? no-duplicates?         
+     #:incompatible incompatible             
+     #:on-incompatible incompatible-handler  
+     #:on-too-short too-short-handler        
+     #:on-not-in-table not-in-table-handler  
+     #:on-not-eol not-eol-handler])          
+ → options
+  stx : syntax?
+  table : keyword-table
+  ctx : (or/c false/c syntax?) = #f
+  no-duplicates? : boolean? = #f
+  incompatible : (listof (list keyword? keyword?)) = '()
+                              (-> keyword? keyword?
+   incompatible-handler   :       options syntax? syntax?
+                                  (values options syntax?))
+                          =   (lambda (....) (error ....))
+   too-short-handler   :   (-> keyword? options syntax? syntax?
+                               (values options syntax?))
+                       =   (lambda (....) (error ....))
+   not-in-table-handler   :   (-> keyword? options syntax? syntax?
+                                  (values options syntax?))
+                          =   (lambda (....) (error ....))
+   not-eol-handler   :   (-> options syntax? syntax?
+                             options)
+                     =   (lambda (....) (error ....))
+Like parse-keyword-options, but checks that there are no terms left over after
+parsing all of the keyword options. If there are, not-eol-handler is
+tail-called with the options parsed thus far, the leftover syntax, and ctx.
+
+(options-select options keyword) → (listof list?)
+  options : options
+  keyword : keyword?
+Selects the values associated with one keyword from the parsed options. The
+resulting list has as many items as there were occurrences of the keyword, and
+each element is a list whose length is the arity of the keyword.
+
+(options-select-row   options                   
+                      keyword                   
+                      #:default default)   →   any
+  options : options
+  keyword : keyword?
+  default : any/c
+Like options-select, except that the given keyword must occur either zero or
+one times in options. If the keyword occurs, the associated list of parsed
+argument values is returned. Otherwise, the default list is returned.
+
+(options-select-value   options                   
+                        keyword                   
+                        #:default default)   →   any
+  options : options
+  keyword : keyword?
+  default : any/c
+Like options-select, except that the given keyword must occur either zero or
+one times in options. If the keyword occurs, the associated list of parsed
+argument values must have exactly one element, and that element is returned. If
+the keyword does not occur in options, the default value is returned.
+
+(check-identifier stx ctx) → identifier?
+  stx : syntax?
+  ctx : (or/c false/c syntax?)
+A check-procedure that accepts only identifiers.
+
+(check-expression stx ctx) → syntax?
+  stx : syntax?
+  ctx : (or/c false/c syntax?)
+A check-procedure that accepts any non-keyword term. It does not actually check
+that the term is a valid expression.
+
+((check-stx-listof check) stx ctx) → (listof any/c)
+  check : check-procedure
+  stx : syntax?
+  ctx : (or/c false/c syntax?)
+Lifts a check-procedure to accept syntax lists of whatever the original
+procedure accepted.
+
+(check-stx-string stx ctx) → syntax?
+  stx : syntax?
+  ctx : (or/c false/c syntax?)
+A check-procedure that accepts syntax strings.
+
+(check-stx-boolean stx ctx) → syntax?
+  stx : syntax?
+  ctx : (or/c false/c syntax?)
+A check-procedure that accepts syntax booleans.
+
+1.9 Legacy Zodiac Interface
+
+ (require syntax/zodiac)
+ (require syntax/zodiac-unit)
+ (require syntax/zodiac-sig)
+
+The interface is similar to Zodiac—enough to be useful for porting—but
+different in many ways. See the source "zodiac-sig.rkt" for details. New
+software should not use this compatibility layer.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

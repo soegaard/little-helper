@@ -1,0 +1,106 @@
+►  Slideshow: Figure and Presentation Tools
+1  Creating Slide Presentations
+2  Making Pictures
+3  Making Slides
+4  Typesetting Racket Code
+5  Animations
+   Bibliography
+   Index
+▼ 2  Making Pictures
+2.1  Pict Datatype
+2.2  Basic Pict Constructors
+2.3  Pict Combiners
+2.4  Pict Drawing Adjusters
+2.5  Bounding-Box Adjusters
+2.6  Pict Finders
+2.7  More Pict Constructors
+2.8  Miscellaneous
+2.9  Rendering
+On this page:
+lt-find
+ltl-find
+lc-find
+lbl-find
+lb-find
+ct-find
+ctl-find
+cc-find
+cbl-find
+cb-find
+rt-find
+rtl-find
+rc-find
+rbl-find
+rb-find
+pict-path?
+launder
+[...search manuals...]
+  top← prev  up  next → 
+
+2.6 Pict Finders
+
+(lt-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(ltl-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(lc-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(lbl-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(lb-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(ct-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(ctl-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(cc-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(cbl-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(cb-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(rt-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(rtl-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(rc-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(rbl-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+(rb-find pict find)   →   real?   real?
+  pict : pict?
+  find : pict-path?
+Locates a pict designated by find is within pict. If find is a pict, then the
+pict must have been created as some combination involving find.
+
+If find is a list, then the first element of find must be within pict, the
+second element of find must be within the second element, and so on.
+
+(pict-path? v) → boolean?
+  v : any/c
+Returns #t if v is a pict or a non-empty list of picts.
+
+(launder pict) → pict?
+  pict : pict?
+Creates a pict that has the same drawing and bounding box of pict, but which
+hides all of its sub-picts so that they cannot be found with functions like
+lt-find. If pict has a last-line pict, then the laundered pict has a fresh
+last-line pict with the same shape and location.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

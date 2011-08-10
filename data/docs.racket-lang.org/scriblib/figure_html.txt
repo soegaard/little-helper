@@ -1,0 +1,68 @@
+▼  Scriblib: Extra Scribble Libraries
+1  Examples Using the GUI Toolbox
+2  Figures
+3  Bibliographies
+4  Bib Te X Bibliographies
+5  Footnotes
+6  Conditional Content
+On this page:
+figure
+figure*
+figure**
+figure-here
+figure-ref
+Figure-ref
+Figure-target
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Figures
+
+ (require scriblib/figure)
+
+(figure tag caption pre-flow ...) → block?
+  tag : string?
+  caption : content?
+  pre-flow : pre-flow?
+(figure* tag caption pre-flow ...) → block?
+  tag : string?
+  caption : content?
+  pre-flow : pre-flow?
+(figure** tag caption pre-flow ...) → block?
+  tag : string?
+  caption : content?
+  pre-flow : pre-flow?
+(figure-here tag caption pre-flow ...) → block?
+  tag : string?
+  caption : content?
+  pre-flow : pre-flow?
+Creates a figure. The given tag is for use with figure-ref or Figure-ref. The
+caption is an element. The pre-flow is decoded as a flow.
+
+For HTML output, the figure and figure* functions center the figure content,
+while figure** allows the content to be wider than the document body. For
+two-column Latex output, figure* and figure** generate a figure that spans
+columns.
+
+For Latex output, figure-here generates a figure to be included at the position
+in the output text where the figure-here occurs in the source text. For HTML
+output, all figure variants place the figure where the use appears in the
+source text.
+
+(figure-ref tag) → element?
+  tag : string?
+Generates a reference to a figure, using a lowercase word “figure”.
+
+(Figure-ref tag) → element?
+  tag : string?
+Generates a reference to a figure, capitalizing the word “Figure”.
+
+(Figure-target tag) → element?
+  tag : string?
+Generates a new figure label. This function is normally not used directly,
+since it is used by figure.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,931 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 11  Macros
+ 11.1  Pattern-Based Syntax Matching
+ 11.2  Syntax Object Content
+ 11.3  Syntax Object Bindings
+ 11.4  Syntax Transformers
+ 11.5  Syntax Parameters
+ 11.6  Local Binding with Splicing Body
+ 11.7  Syntax Object Properties
+ 11.8  Syntax Taints
+ 11.9  Expanding Top-Level Forms
+11.10  File Inclusion
+11.11  Syntax Utilities
+► 11.4  Syntax Transformers
+11.4.1  require Transformers
+11.4.2  provide Transformers
+On this page:
+set!-transformer?
+make-set!-transformer
+set!-transformer-procedure
+prop: set!-transformer
+rename-transformer?
+make-rename-transformer
+rename-transformer-target
+prop: rename-transformer
+local-expand
+syntax-local-expand-expression
+local-transformer-expand
+local-expand/ capture-lifts
+local-transformer-expand/ capture-lifts
+internal-definition-context?
+syntax-local-make-definition-context
+syntax-local-bind-syntaxes
+internal-definition-context-seal
+identifier-remove-from-definition-context
+syntax-local-value
+syntax-local-value/ immediate
+syntax-local-lift-expression
+syntax-local-lift-values-expression
+syntax-local-lift-context
+syntax-local-lift-module-end-declaration
+syntax-local-lift-require
+syntax-local-lift-provide
+syntax-local-name
+syntax-local-context
+syntax-local-phase-level
+syntax-local-module-exports
+syntax-local-get-shadower
+syntax-local-armer
+syntax-local-certifier
+syntax-transforming?
+syntax-local-introduce
+make-syntax-introducer
+make-syntax-delta-introducer
+syntax-local-make-delta-introducer
+syntax-local-transforming-module-provides?
+syntax-local-module-defined-identifiers
+syntax-local-module-required-identifiers
+11.4.1 require Transformers
+expand-import
+make-require-transformer
+prop: require-transformer
+require-transformer?
+import
+import-source
+syntax-local-require-certifier
+11.4.2 provide Transformers
+expand-export
+make-provide-transformer
+prop: provide-transformer
+provide-transformer?
+export
+syntax-local-provide-certifier
+[...search manuals...]
+  top← prev  up  next → 
+
+11.4 Syntax Transformers
+
+(set!-transformer? v) → boolean?
+  v : any/c
+Returns #t if v is a value created by make-set!-transformer or an instance of a
+structure type with the prop:set!-transformer property, #f otherwise.
+
+(make-set!-transformer proc) → set!-transformer?
+  proc : (syntax? . -> . syntax?)
+Creates an assignment transformer that cooperates with set!. If the result of
+make-set!-transformer is bound to id as a transformer binding, then proc is
+applied as a transformer when id is used in an expression position, or when it
+is used as the target of a set! assignment as (set! id expr). When the
+identifier appears as a set! target, the entire set! expression is provided to
+the transformer.
+
+Example:
+
+    > (let ([x 1]
+            [y 2])
+        (let-syntax ([x (make-set!-transformer
+                          (lambda (stx)
+                            (syntax-case stx (set!)
+                              ; Redirect mutation of x to y
+                              [(set! id v) #'(set! y v)]
+                              ; Normal use of x really gets x
+                              [id (identifier? #'id)  #'x])))])
+          (begin
+            (set! x 3)
+            (list x y))))
+    '(1 3)
+
+
+
+(set!-transformer-procedure transformer)
+ → (syntax? . -> . syntax?)
+  transformer : set!-transformer?
+Returns the procedure that was passed to make-set!-transformer to create
+transformer or that is identified by the prop:set!-transformer property of
+transformer.
+
+prop:set!-transformer : struct-type-property?
+A structure type property to identify structure types that act as assignment
+transformers like the ones created by make-set!-transformer.
+
+The property value must be an exact integer or procedure of one or two
+arguments. In the former case, the integer designates a field within the
+structure that should contain a procedure; the integer must be between 0
+(inclusive) and the number of non-automatic fields in the structure type
+(exclusive, not counting supertype fields), and the designated field must also
+be specified as immutable.
+
+If the property value is a procedure of one argument, then the procedure serves
+as a syntax transformer and for set! transformations. If the property value is
+a procedure of two arguments, then the first argument is the structure whose
+type has prop:set!-transformer property, and the second argument is a syntax
+object as for a syntax transformer and for set! transformations; set!
+-transformer-procedure applied to the structure produces a new function that
+accepts just the syntax object and calls the procedure associated through the
+property. Finally, if the property value is an integer, the target identifier
+is extracted from the structure instance; if the field value is not a procedure
+of one argument, then a procedure that always calls raise-syntax-error is used,
+instead.
+
+If a value has both the prop:set!-transformer and prop:rename-transformer
+properties, then the latter takes precedence. If a structure type has the
+prop:set!-transformer and prop:procedure properties, then the former takes
+precedence for the purposes of macro expansion.
+
+(rename-transformer? v) → boolean?
+  v : any/c
+Returns #t if v is a value created by make-rename-transformer or an instance of
+a structure type with the prop:rename-transformer property, #f otherwise.
+
+(make-rename-transformer    id-stx                   
+                          [ delta-introduce])   →   rename-transformer?
+  id-stx : syntax?
+   delta-introduce   :   (identifier? . -> . identifier?)
+                     =   (lambda (id) id)
+Creates a rename transformer that, when used as a transformer binding, acts as
+a transformer that inserts the identifier id-stx in place of whatever
+identifier binds the transformer, including in non-application positions, in
+set! expressions.
+
+Such a transformer could be written manually, but the one created by
+make-rename-transformer triggers special cooperation with the parser and other
+syntactic forms when id is bound to the rename transformer:
+
+  • The parser to installs a free-identifier=? and identifier-binding
+    equivalence between id and id-stx, as long as id-stx does not have a true
+    value for the 'not-free-identifier=? syntax property.
+
+  • A provide of id provides the binding indicated by id-stx instead of id, as
+    long as id-stx does not have a true value for the 'not-free-identifier=?
+    syntax property and as long as id-stx has a binding.
+
+  • If provide exports id, it uses a symbol-valued 'nominal-id property of
+    id-stx to specify the “nominal source identifier” of the binding as
+    reported by identifier-binding.
+
+  • If id-stx has a true value for the 'not-provide-all-defined syntax property
+    , then id (or its target) is not exported by all-defined-out.
+
+  • The syntax-local-value and syntax-local-make-delta-introducer functions
+    recognize rename-transformer bindings and consult their targets.
+
+(rename-transformer-target transformer) → identifier?
+  transformer : rename-transformer?
+Returns the identifier passed to make-rename-transformer to create transformer
+or as indicated by a prop:rename-transformer property on transformer.
+
+prop:rename-transformer : struct-type-property?
+A structure type property to identify structure types that act as rename
+transformers like the ones created by make-rename-transformer.
+
+The property value must be an exact integer or an identifier syntax object. In
+the former case, the integer designates a field within the structure that
+should contain an identifier; the integer must be between 0 (inclusive) and the
+number of non-automatic fields in the structure type (exclusive, not counting
+supertype fields), and the designated field must also be specified as
+immutable.
+
+If the property value is an identifier, the identifier serves as the target for
+renaming, just like the first argument to make-rename-transformer. If the
+property value is an integer, the target identifier is extracted from the
+structure instance; if the field value is not an identifier, then an identifier
+? with an empty context is used, instead.
+
+(local-expand    stx                 
+                 context-v           
+                 stop-ids            
+               [ intdef-ctx])   →   syntax?
+  stx : syntax?
+  context-v : (or/c 'expression 'top-level 'module 'module-begin list?)
+  stop-ids : (or/c (listof identifier?) #f)
+                    (or/c internal-definition-context?
+   intdef-ctx   :         (and/c pair?
+                                 (listof internal-definition-context?))
+                          #f)
+                =   #f
+Expands stx in the lexical context of the expression currently being expanded.
+The context-v argument is used as the result of syntax-local-context for
+immediate expansions; for a particular internal-definition context, generate a
+unique value and cons it onto the current result of syntax-local-context if it
+is a list.
+
+When an identifier in stop-ids is encountered by the expander in a
+sub-expression, expansions stops for the sub-expression. If stop-ids is a
+non-empty list, then begin, quote, set!, lambda, case-lambda, let-values,
+letrec-values, if, begin0, with-continuation-mark, letrec-syntaxes+values, #
+%app, #%expression, #%top, and #%variable-reference are added to stop-ids. If #
+%app, #%top, or #%datum appears in stop-ids, then application, top-level
+variable reference, and literal data expressions without the respective
+explicit form are not wrapped with the explicit form. If stop-ids is #f instead
+of a list, then stx is expanded only as long as the outermost form of stx is a
+macro (i.e., expansion does not proceed to sub-expressions). A fully expanded
+form can include the bindings listed in Fully Expanded Programs plus the
+letrec-syntaxes+values form.
+
+The optional intdef-ctx argument must be either #f, the result of
+syntax-local-make-definition-context, or a list of such results. In the latter
+two cases, lexical information for internal definitions is added to stx before
+it is expanded (in reverse order relative to the list). The lexical information
+is also added to the expansion result (because the expansion might introduce
+bindings or references to internal-definition bindings).
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+Examples:
+
+    > (define-syntax do-print
+        (syntax-rules ()
+          [(_ x ...) (printf x ...)]))
+    > (define-syntax hello
+        (syntax-rules ()
+          [(_ x) (do-print "hello ~a" x)]))
+    > (define-syntax (show stx)
+        (syntax-case stx ()
+          [(_ x)
+           (with-syntax ([partly-expanded (local-expand #'(hello x)
+                                                        'expression
+                                                        (list #'do-print))]
+                         [expanded (local-expand #'(hello x)
+                                                 'expression
+                                                 #f)])
+             (printf "partly expanded syntax is ~a\n" (syntax->datum #
+    'partly-expanded))
+             (printf "expanded syntax is ~a\n" (syntax->datum #'expanded))
+             #'expanded)]))
+    > (show 1)
+    partly expanded syntax is (do-print hello ~a 1)
+
+    expanded syntax is (printf hello ~a 1)
+
+    hello 1
+
+
+
+(syntax-local-expand-expression stx)   →   syntax?   syntax?
+  stx : syntax?
+Like local-expand given 'expression and an empty stop list, but with two
+results: a syntax object for the fully expanded expression, and a syntax object
+whose content is opaque. The latter can be used in place of the former (perhaps
+in a larger expression produced by a macro transformer), and when the macro
+expander encounters the opaque object, it substitutes the fully expanded
+expression without re-expanding it; the exn:fail:syntax exception is raised if
+the expansion context includes bindings or marks that were not present for the
+original expansion, in which case re-expansion might produce different results.
+Consistent use of syntax-local-expand-expression and the opaque object thus
+avoids quadratic expansion times when local expansions are nested.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(local-transformer-expand    stx                 
+                             context-v           
+                             stop-ids            
+                           [ intdef-ctx])   →   syntax?
+  stx : syntax?
+  context-v : (or/c 'expression 'top-level 'module 'module-begin list?)
+  stop-ids : (or/c (listof identifier?) #f)
+  intdef-ctx : (or/c internal-definition-context? #f) = #f
+Like local-expand, but stx is expanded as a transformer expression instead of a
+run-time expression, and any lifted expressions—from calls to
+syntax-local-lift-expression during the expansion of stx—are captured into a
+let-values form in the result.
+
+(local-expand/capture-lifts    stx               
+                               context-v         
+                               stop-ids          
+                             [ intdef-ctx        
+                               lift-ctx])   →   syntax?
+  stx : syntax?
+  context-v : (or/c 'expression 'top-level 'module 'module-begin list?)
+  stop-ids : (or/c (listof identifier?) #f)
+  intdef-ctx : (or/c internal-definition-context? #f) = #f
+  lift-ctx : any/c = (gensym 'lifts)
+Like local-expand, but the result is a syntax object that represents a begin
+expression. Lifted expressions—from calls to syntax-local-lift-expression
+during the expansion of stx—appear with their identifiers in define-values
+forms, and the expansion of stx is the last expression in the begin. The
+lift-ctx value is reported by syntax-local-lift-context during local expansion.
+The lifted expressions are not expanded, but instead left as provided in the
+begin form.
+
+(local-transformer-expand/capture-lifts    stx                 
+                                           context-v           
+                                           stop-ids            
+                                         [ intdef-ctx])   →   syntax?
+  stx : syntax?
+  context-v : (or/c 'expression 'top-level 'module 'module-begin list?)
+  stop-ids : (or/c (listof identifier?) #f)
+  intdef-ctx : (or/c internal-definition-context? #f) = #f
+Like local-expand/capture-lifts, but stx is expanded as a transformer
+expression instead of a run-time expression. Lifted expressions are reported as
+define-values forms (in the transformer environment).
+
+(internal-definition-context? v) → boolean?
+  v : any/c
+Returns #t if v is an internal-definition context, #f otherwise.
+
+(syntax-local-make-definition-context [intdef-ctx])
+ → internal-definition-context?
+  intdef-ctx : (or/c internal-definition-context? #f) = #f
+Creates an opaque internal-definition context value to be used with
+local-expand and other functions. A transformer should create one context for
+each set of internal definitions to be expanded, and use it when expanding any
+form whose lexical context should include the definitions. After discovering an
+internal define-values or define-syntaxes form, use syntax-local-bind-syntaxes
+to add bindings to the context. Finally, the transformer must call
+internal-definition-context-seal after all bindings have been added; if an
+unsealed internal-definition context is detected in a fully expanded
+expression, the exn:fail:contract exception is raised.
+
+If intdef-ctx is not #f, then the new internal-definition context extends the
+given one. That is, expanding in the new internal-definition context can use
+bindings previously introduced into intdef-ctx.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-bind-syntaxes   id-list            
+                              expr               
+                              intdef-ctx)   →   void?
+  id-list : (listof identifier?)
+  expr : (or/c syntax? #f)
+  intdef-ctx : internal-definition-context?
+Binds each identifier in id-list within the internal-definition context
+represented by intdef-ctx, where intdef-ctx is the result of
+syntax-local-make-definition-context. Supply #f for expr when the identifiers
+correspond to define-values bindings, and supply a compile-time expression when
+the identifiers correspond to define-syntaxes bindings; in the latter case, the
+number of values produced by the expression should match the number of
+identifiers, otherwise the exn:fail:contract:arity exception is raised.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(internal-definition-context-seal intdef-ctx) → void?
+  intdef-ctx : internal-definition-context?
+Indicates that no further bindings will be added to intdef-ctx, which must not
+be sealed already. See also syntax-local-make-definition-context.
+
+(identifier-remove-from-definition-context   id-stx       
+                                             intdef-ctx)  
+ → identifier?
+  id-stx : identifier?
+   intdef-ctx   :   (or/c internal-definition-context?
+                          (listof internal-definition-context?))
+Removes intdef-ctx (or each identifier in the list) from the lexical
+information of id-stx. This operation is useful for correlating an identifier
+that is bound in an internal-definition context with its binding before the
+internal-definition context was created.
+
+If simply removing the contexts produces a different binding than completely
+ignoring the contexts (due to nested internal definition contexts, for
+example), then the resulting identifier is given a syntax mark to simulate a
+non-existent lexical context. The intdef-ctx argument can be a list because
+removing internal-definition contexts one at a time can produce a different
+intermediate binding than removing them all at once.
+
+(syntax-local-value    id-stx               
+                     [ failure-thunk        
+                       intdef-ctx])    →   any
+  id-stx : syntax?
+  failure-thunk : (or/c (-> any) #f) = #f
+   intdef-ctx   :   (or/c internal-definition-context?   =   #f
+                          #f)
+Returns the transformer binding value of id-stx in either the context
+associated with intdef-ctx (if not #f) or the context of the expression being
+expanded (if intdef-ctx is #f). If intdef-ctx is provided, it must be an
+extension of the context of the expression being expanded.
+
+If id-stx is bound to a rename transformer created with make-rename-transformer
+, syntax-local-value effectively calls itself with the target of the rename and
+returns that result, instead of the rename transformer.
+
+If id-stx has no transformer binding (via define-syntax, let-syntax, etc.) in
+that environment, the result is obtained by applying failure-thunk if not #f.
+If failure-thunk is false, the exn:fail:contract exception is raised.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-value/immediate    id-stx               
+                               [ failure-thunk        
+                                 intdef-ctx])    →   any
+  id-stx : syntax?
+  failure-thunk : (or/c (-> any) #f) = #f
+   intdef-ctx   :   (or/c internal-definition-context?   =   #f
+                          #f)
+Like syntax-local-value, but the result is normally two values. If id-stx is
+bound to a rename transformer, the results are the rename transformer and the
+identifier in the transformer. Beware that provide on an id bound to a rename
+transformer may export the target of the rename instead of id. See
+make-rename-transformer for more information. If id-stx is not bound to a
+rename transformer, then the results are the value that syntax-local-value
+would produce and #f.
+
+If id-stx has no transformer binding, then failure-thunk is called (and it can
+return any number of values), or an exception is raised if failure-thunk is #f.
+
+(syntax-local-lift-expression stx) → identifier?
+  stx : syntax?
+Returns a fresh identifier, and cooperates with the module,
+letrec-syntaxes+values, define-syntaxes, begin-for-syntax, and top-level
+expanders to bind the generated identifier to the expression stx.
+
+A run-time expression within a module is lifted to the module’s top level, just
+before the expression whose expansion requests the lift. Similarly, a run-time
+expression outside of a module is lifted to a top-level definition. A
+compile-time expression in a letrec-syntaxes+values or define-syntaxes binding
+is lifted to a let wrapper around the corresponding right-hand side of the
+binding. A compile-time expression within begin-for-syntax is lifted to a
+define-for-syntax declaration just before the requesting expression.
+
+Other syntactic forms can capture lifts by using local-expand/capture-lifts or
+local-transformer-expand/capture-lifts.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-lift-values-expression n stx)
+ → (listof identifier?)
+  n : exact-nonnegative-integer?
+  stx : syntax?
+Like syntax-local-lift-expression, but binds the result to n identifiers, and
+returns a list of the n identifiers.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-lift-context) → any/c
+Returns a value that represents the target for expressions lifted via
+syntax-local-lift-expression. That is, for different transformer calls for
+which this procedure returns the same value (as determined by eq?), lifted
+expressions for the two transformer are moved to the same place. Thus, the
+result is useful for caching lift information to avoid redundant lifts.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-lift-module-end-declaration stx) → void?
+  stx : syntax?
+Cooperates with the module form to insert stx as a top-level declaration at the
+end of the module currently being expanded. If the current expression being
+transformed is not in the module top-level, then stx is eventually expanded in
+an expression context.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+If the current expression being transformed is not within a module form, or if
+it is not a run-time expression, then the exn:fail:contract exception is
+raised.
+
+(syntax-local-lift-require   raw-require-spec        
+                             stx)               →   syntax?
+  raw-require-spec : any/c
+  stx : syntax?
+Lifts a #%require form corresponding to raw-require-spec (either as a syntax
+object or datum) to the top-level or to the top of the module currently being
+expanded, wrapping it with for-meta if the current expansion context is not
+phase level 0.
+
+The resulting syntax object is the same as stx, except that a fresh syntax mark
+is added. The same syntax mark is added to the lifted #%require form, so that
+the #%require form can bind uses of imported identifiers in the resulting
+syntax object (assuming that the lexical information of stx includes the
+binding environment into which the #%require is lifted).
+
+If raw-require-spec and stx are part of the input to a transformer, then
+typically syntax-local-introduce should be applied to each before passing them
+to syntax-local-lift-require, and then syntax-local-introduce should be applied
+to the result of syntax-local-lift-require. Otherwise, marks added by the macro
+expander can prevent access to the new imports.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-lift-provide raw-provide-spec-stx) → void?
+  raw-provide-spec-stx : syntax?
+Lifts a #%provide form corresponding to raw-provide-spec-stx to the top of the
+module currently being expanded.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+If the current expression being transformed is not within a module form, or if
+it is not a run-time expression, then the exn:fail:contract exception is
+raised.
+
+(syntax-local-name) → any/c
+Returns an inferred name for the expression position being transformed, or #f
+if no such name is available. A name is normally a symbol or an identifier. See
+also Inferred Value Names.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-context)
+ → (or/c 'expression 'top-level 'module 'module-begin list?)
+Returns an indication of the context for expansion that triggered a syntax
+transformer call. See Expansion Context for more information on contexts.
+
+The symbol results indicate that the expression is being expanded for an
+expression context, a top-level context, a module context, or a module-begin
+context.
+
+A list result indicates expansion in an internal-definition context. The
+identity of the list’s first element (i.e., its eq?ness) reflects the identity
+of the internal-definition context; in particular two transformer expansions
+receive the same first value if and only if they are invoked for the same
+internal-definition context. Later values in the list similarly identify
+internal-definition contexts that are still being expanded, and that required
+the expansion of nested internal-definition contexts.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-phase-level) → (or/c exact-integer? #f)
+During the dynamic extent of a syntax transformer application by the expander,
+the result is the phase level of the form being expanded. Otherwise, the result
+is 0.
+
+                                             (listof symbol?)
+(syntax-local-module-exports mod-path)   →   (listof symbol?)
+                                             (listof symbol?)
+  mod-path : module-path?
+Returns three lists of symbols that represent the provided bindings of the
+module named by mod-path. The first list corresponds to the phase level 0
+exports of the module, the second list corresponds to the phase level -1
+exports of the module, and the last list corresponds to the label phase level
+exports of the module.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-get-shadower id-stx) → identifier?
+  id-stx : identifier?
+Returns id-stx if no binding in the current expansion context shadows id-stx
+(ignoring unsealed internal-definition contexts and identifiers that had the 
+'unshadowable syntax property), if id-stx has no module bindings in its lexical
+information, and if the current expansion context is not a module context.
+
+If a binding of inner-identifier shadows id-stx, the result is the same as (
+syntax-local-get-shadower inner-identifier), except that it has the location
+and properties of id-stx. When searching for a shadowing binding, bindings from
+unsealed internal-definition contexts are ignored.
+
+Otherwise, the result is the same as id-stx with its module bindings (if any)
+removed from its lexical information, and the lexical information of the
+current module context (if any) added.
+
+Thus, the result is an identifier corresponding to the innermost shadowing of
+id-stx in the current context if it is shadowed, and a module-contextless
+version of id-stx otherwise.
+
+If id-stx is tainted or armed, then the resulting identifier is tainted.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-armer)
+ → ((syntax?) (any/c any/c) . ->* . syntax?)
+Returns a procedure that captures the declaration-time code inspector of the
+module in which a syntax transformer was bound (if a syntax transformer is
+being applied) or the module being visited. The result is a procedure like
+syntax-taint-arm, except that the optional third argument is automatically the
+captured inspector.
+
+The syntax-local-armer function is needed by macro-generating macros, where a
+syntax object in the generated macro needs to be protected using the code
+inspector of the generating macro’s module.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-certifier [active?])
+  →   ((syntax?) (any/c (or/c procedure? #f))
+       . ->* . syntax?)
+  active? : boolean? = #f
+For backward compatibility only; returns a procedure that returns its first
+argument.
+
+(syntax-transforming?) → boolean?
+Returns #t during the dynamic extent of a syntax transformer application by the
+expander and while a module is being visited, #f otherwise.
+
+(syntax-local-introduce stx) → syntax?
+  stx : syntax?
+Produces a syntax object that is like stx, except that a syntax mark for the
+current expansion is added (possibly canceling an existing mark in parts of
+stx). See Transformer Bindings for information on syntax marks.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(make-syntax-introducer) → (syntax? . -> . syntax?)
+Produces a procedure that behaves like syntax-local-introduce, but using a
+fresh syntax mark. Multiple applications of the same make-syntax-introducer
+result procedure use the same mark, and different result procedures use
+distinct marks.
+
+(make-syntax-delta-introducer    ext-stx        
+                                 base-stx       
+                               [ phase-level])  
+ → (syntax? . -> . syntax?)
+  ext-stx : syntax?
+  base-stx : (or/c syntax? #f)
+   phase-level   :   (or/c #f exact-integer?)
+                 =   (syntax-local-phase-level)
+Produces a procedure that behaves like syntax-local-introduce, but using the
+syntax marks of ext-stx that are not shared with base-stx. If ext-stx does not
+extend the set of marks in base-stx or if base-stx is #f, and if ext-stx has a
+module binding in the phase level indicated by phase-level, then any marks of
+ext-stx that would be needed to preserve its binding are not transferred in an
+introduction.
+
+This procedure is potentially useful when m-id has a transformer binding that
+records some orig-id, and a use of m-id introduces a binding of orig-id. In
+that case, the syntax marks in the use of m-id since the binding of m-id should
+be transferred to the binding instance of orig-id, so that it captures uses
+with the same lexical context as the use of m-id.
+
+More typically, however, syntax-local-make-delta-introducer should be used,
+since it cooperates with rename transformers.
+
+If ext-stx is tainted or armed, then an identifier result from the created
+procedure is tainted.
+
+(syntax-local-make-delta-introducer id)
+ → (identifier? . -> . identifier?)
+  id : identifier?
+Determines the binding of id. If the binding is not a rename transformer, the
+result is an introducer as created by make-syntax-delta-introducer using id and
+the binding of id in the environment of expansion. If the binding is a rename
+transformer, then the introducer is one composed with the target of the rename
+transformer and its binding. Furthermore, the delta-introduce functions
+associated with the rename transformers (supplied as the second argument to
+make-rename-transformer) are composed (in first-to-last order) before the
+introducers created with make-syntax-delta-introducer (which are composed
+last-to-first).
+
+The exn:fail:contract exception is raised if id or any identifier in its
+rename-transformer chain has no binding.
+
+This procedure must be called during the dynamic extent of a syntax transformer
+application by the expander or while a module is visited, otherwise the
+exn:fail:contract exception is raised.
+
+(syntax-local-transforming-module-provides?) → boolean?
+Returns #t while a provide transformer is running (see make-provide-transformer
+) or while an expand sub-form of #%provide is expanded, #f otherwise.
+
+(syntax-local-module-defined-identifiers)
+  →   (listof identifier?)   (listof identifier?)
+Can be called only while syntax-local-transforming-module-provides? returns #t.
+
+It returns two lists of identifiers corresponding to all definitions within the
+module being expanded. This information is used for implementing provide
+sub-forms like all-defined-out.
+
+The first result list corresponds to phase 0 (i.e., normal) definitions, and
+the second corresponds to phase -1 (i.e., for-syntax) definitions.
+
+(syntax-local-module-required-identifiers   mod-path      
+                                            phase-level)  
+  →   (listof (cons/c (or/c exact-integer? #f)
+                      (listof identifier?)))
+  mod-path : (or/c module-path? #f)
+  phase-level : (or/c exact-integer? #f #t)
+Can be called only while syntax-local-transforming-module-provides? returns #t.
+
+It returns an association list mapping phase levels to lists of identifiers.
+Each list of identifiers includes all bindings imported (into the module being
+expanded) using the module path mod-path, or all modules if mod-path is #f. The
+association list includes all identifiers imported with a phase-level shift, of
+all shifts if phase-level is #t.
+
+When an identifier is renamed on import, the result association list includes
+the identifier by its internal name. Use identifier-binding to obtain more
+information about the identifier.
+
+11.4.1 require Transformers
+
+ (require racket/require-transform)
+The bindings documented in this section are provided by the racket/
+require-transform library, not racket/base or racket.
+
+A transformer binding whose value is a structure with the
+prop:require-transformer property implements a derived require-spec for require
+.
+
+The transformer is called with the syntax object representing its use as a
+require-spec within a require form, and the result must be two lists: a list of
+imports and a list of import-sources.
+
+If the derived form contains a sub-form that is a require-spec, then it can
+call expand-import to transform the sub-require-spec to lists of imports and
+import sources.
+
+See also define-require-syntax, which supports macro-style require
+transformers.
+
+(expand-import stx)   →   (listof import?)   (listof import-source?)
+  stx : syntax?
+Expands the given require-spec to lists of imports and import sources. The
+latter specifies modules to be instantiated or visited, so the modules that it
+represents should be a superset of the modules represented in the former list
+(so that a module will be instantiated or visited even if all of imports are
+eventually filtered from the former list).
+
+(make-require-transformer proc) → require-transformer?
+              (syntax? . -> . (values
+   proc   :                    (listof import?)
+                               (listof import-source?)))
+Creates a require transformer (i.e., a structure with the
+prop:require-transformer property) using the given procedure as the
+transformer.
+
+prop:require-transformer : struct-type-property?
+A property to identify require transformers. The property value must be a
+procedure that takes a syntax object and returns import and import-source
+lists.
+
+(require-transformer? v) → boolean?
+  v : any/c
+Returns #t if v has the prop:require-transformer property, #f otherwise.
+
+(struct   import       (  local-id
+                          src-sym
+                          src-mod-path
+                          mode
+                          req-mode
+                          orig-mode
+                          orig-stx)
+          #:extra-constructor-name make-import)
+  local-id : identifier?
+  src-sym : symbol?
+  src-mod-path : module-path?
+  mode : (or/c exact-integer? #f)
+  req-mode : (or/c exact-integer? #f)
+  orig-mode : (or/c exact-integer? #f)
+  orig-stx : syntax?
+A structure representing a single imported identifier:
+
+  • local-id — the identifier to be bound within the importing module.
+
+  • src-sym — the external name of the binding as exported from its source
+    module.
+
+  • src-mod-path — a module path (relative to the importing module) for the
+    source of the imported binding.
+
+  • orig-stx — a syntax object for the source of the import, used for error
+    reporting.
+
+  • mode — the phase level of the binding in the importing module.
+
+  • req-mode — the phase level shift of the import relative to the exporting
+    module.
+
+  • orig-mode — the phase level of the binding as exported by the exporting
+    module.
+
+(struct   import-source (mod-path-stx mode)
+          #:extra-constructor-name make-import-source)
+                      (and/c syntax?
+   mod-path-stx   :          (lambda (x)
+                               (module-path? (syntax->datum x))))
+  mode : (or/c exact-integer? #f)
+A structure representing an imported module, which must be instantiated or
+visited even if no binding is imported into a module.
+
+  • mod-path-stx — a module path (relative to the importing module) for the
+    source of the imported binding.
+
+  • mode — the phase level shift of the import.
+
+(syntax-local-require-certifier)
+  →   ((syntax?) (or/c #f (syntax? . -> . syntax?))
+       . ->* . syntax?)
+For backward compatibility only; returns a procedure that returns its first
+argument.
+
+11.4.2 provide Transformers
+
+ (require racket/provide-transform)
+The bindings documented in this section are provided by the racket/
+provide-transform library, not racket/base or racket.
+
+A transformer binding whose value is a structure with the
+prop:provide-transformer property implements a derived provide-spec for provide
+.
+
+The transformer is called with the syntax object representing its use as a
+provide-spec within a provide form and a list of symbols representing the
+export modes specified by enclosing provide-specs. The result must be a list of
+exports.
+
+If the derived form contains a sub-form that is a provide-spec, then it can
+call expand-export to transform the sub-provide-spec to a list of exports.
+
+See also define-provide-syntax, which supports macro-style provide
+transformers.
+
+(expand-export stx modes) → (listof export?)
+  stx : syntax?
+  modes : (listof (or/c exact-integer? #f))
+Expands the given provide-spec to a list of exports. The modes list controls
+the expansion of sub-provide-specs; for example, an identifier refers to a
+phase level 0 binding unless the modes list specifies otherwise. Normally,
+modes is either empty or contains a single element.
+
+(make-provide-transformer proc) → provide-transformer?
+   proc   :   (syntax? (listof (or/c exact-integer? #f))
+               . -> . (listof export?))
+Creates a provide transformer (i.e., a structure with the
+prop:provide-transformer property) using the given procedure as the
+transformer.
+
+prop:provide-transformer : struct-type-property?
+A property to identify provide transformers. The property value must be a
+procedure that takes a syntax object and mode list and returns an export list.
+
+(provide-transformer? v) → boolean?
+  v : any/c
+Returns #t if v has the prop:provide-transformer property, #f otherwise.
+
+(struct   export (local-id out-sym mode protect? orig-stx)
+          #:extra-constructor-name make-export)
+  local-id : identifier?
+  out-sym : symbol?
+  mode : (or/c exact-integer? #f)
+  protect? : any/c
+  orig-stx : syntax?
+A structure representing a single imported identifier:
+
+  • local-id — the identifier that is bound within the exporting module.
+
+  • out-sym — the external name of the binding.
+
+  • orig-stx — a syntax object for the source of the export, used for error
+    reporting.
+
+  • protect? — indicates whether the identifier should be protected (see Code
+    Inspectors).
+
+  • mode — the phase level of the binding in the exporting module.
+
+(syntax-local-provide-certifier)
+  →   ((syntax?) (or/c #f (syntax? . -> . syntax?))
+       . ->* . syntax?)
+For backward compatibility only; returns a procedure that returns its first
+argument.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

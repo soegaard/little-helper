@@ -1,0 +1,130 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 12  Input and Output
+ 12.1  Ports
+ 12.2  Byte and String Input
+ 12.3  Byte and String Output
+ 12.4  Reading
+ 12.5  Writing
+ 12.6  The Reader
+ 12.7  The Printer
+ 12.8  Pretty Printing
+ 12.9  Reader Extension
+12.10  Printer Extension
+12.11  Serialization
+12.12  Fast-Load Serialization
+▼ 12.1  Ports
+ 12.1.1  Encodings and Locales
+ 12.1.2  Managing Ports
+ 12.1.3  Port Buffers and Positions
+ 12.1.4  Counting Positions, Lines, and Columns
+ 12.1.5  File Ports
+ 12.1.6  String Ports
+ 12.1.7  Pipes
+ 12.1.8  Structures as Ports
+ 12.1.9  Custom Ports
+12.1.10  More Port Constructors, Procedures, and Events
+On this page:
+current-locale
+[...search manuals...]
+  top← prev  up  next → 
+
+12.1.1 Encodings and Locales
+
+When a port is provided to a character-based operation, such as read-char or
+read, the port’s bytes are read and interpreted as a UTF-8 encoding of
+characters. Thus, reading a single character may require reading multiple
+bytes, and a procedure like char-ready? may need to peek several bytes into the
+stream to determine whether a character is available. In the case of a byte
+stream that does not correspond to a valid UTF-8 encoding, functions such as
+read-char may need to peek one byte ahead in the stream to discover that the
+stream is not a valid encoding.
+
+When an input port produces a sequence of bytes that is not a valid UTF-8
+encoding in a character-reading context, then bytes that constitute an invalid
+sequence are converted to the character #\uFFFD. Specifically, bytes 255 and
+254 are always converted to #\uFFFD, bytes in the range 192 to 253 produce #\
+uFFFD when they are not followed by bytes that form a valid UTF-8 encoding, and
+bytes in the range 128 to 191 are converted to #\uFFFD when they are not part
+of a valid encoding that was started by a preceding byte in the range 192 to
+253. To put it another way, when reading a sequence of bytes as characters, a
+minimal set of bytes are changed to the encoding of #\uFFFD so that the entire
+sequence of bytes is a valid UTF-8 encoding.
+
+See Byte Strings for procedures that facilitate conversions using UTF-8 or
+other encodings. See also reencode-input-port and reencode-output-port for
+obtaining a UTF-8-based port from one that uses a different encoding of
+characters.
+
+A locale captures information about a user’s language-specific interpretation
+of character sequences. In particular, a locale determines how strings are
+“alphabetized,” how a lowercase character is converted to an uppercase
+character, and how strings are compared without regard to case. String
+operations such as string-ci=? are not sensitive to the current locale, but
+operations such as string-locale-ci=? (see Strings) produce results consistent
+with the current locale.
+
+A locale also designates a particular encoding of code-point sequences into
+byte sequences. Racket generally ignores this aspect of the locale, with a few
+notable exceptions: command-line arguments passed to Racket as byte strings are
+converted to character strings using the locale’s encoding; command-line
+strings passed as byte strings to other processes (through subprocess) are
+converted to byte strings using the locale’s encoding; environment variables
+are converted to and from strings using the locale’s encoding; filesystem paths
+are converted to and from strings (for display purposes) using the locale’s
+encoding; and, finally, Racket provides functions such as string->bytes/locale
+to specifically invoke a locale-specific encoding.
+
+A Unix user selects a locale by setting environment variables, such as LC_ALL.
+On Windows and Mac OS X, the operating system provides other mechanisms for
+setting the locale. Within Racket, the current locale can be changed by setting
+the current-locale parameter. The locale name within Racket is a string, and
+the available locale names depend on the platform and its configuration, but
+the "" locale means the current user’s default locale; on Windows and Mac OS X,
+the encoding for "" is always UTF-8, and locale-sensitive operations use the
+operating system’s native interface. (In particular, setting the LC_ALL and
+LC_CTYPE environment variables does not affect the locale "" on Mac OS X. Use
+getenv and current-locale to explicitly install the environment-specified
+locale, if desired.) Setting the current locale to #f makes locale-sensitive
+operations locale-insensitive, which means using the Unicode mapping for case
+operations and using UTF-8 for encoding.
+
+(current-locale) → (or/c string? #f)
+(current-locale locale) → void?
+  locale : (or/c string? #f)
+A parameter that determines the current locale for procedures such as
+string-locale-ci=?.
+
+When locale sensitivity is disabled by setting the parameter to #f, strings are
+compared, etc., in a fully portable manner, which is the same as the standard
+procedures. Otherwise, strings are interpreted according to a locale setting
+(in the sense of the C library’s setlocale). The "" locale is always an alias
+for the current machine’s default locale, and it is the default. The "C" locale
+is also always available; setting the locale to "C" is the same as disabling
+locale sensitivity with #f only when string operations are restricted to the
+first 128 characters. Other locale names are platform-specific.
+
+String or character printing with write is not affected by the parameter, and
+neither are symbol case or regular expressions (see Regular Expressions).
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

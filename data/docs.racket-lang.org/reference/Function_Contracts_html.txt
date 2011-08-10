@@ -1,0 +1,349 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Data-structure Contracts
+7.2  Function Contracts
+7.3  Parametric Contracts
+7.4  Lazy Data-structure Contracts
+7.5  Attaching Contracts to Values
+7.6  Building New Contract Combinators
+7.7  Contract Utilities
+7.8  Legacy Contracts
+On this page:
+->
+->*
+->i
+->d
+case->
+unconstrained-domain->
+the-unsupplied-arg
+unsupplied-arg?
+[...search manuals...]
+  top← prev  up  next → 
+
+7.2 Function Contracts
+
+A function contract wraps a procedure to delay checks for its arguments and
+results. There are three primary function contract combinators that have
+increasing amounts of expressiveness and increasing additional overheads. The
+first -> is the cheapest. It generates wrapper functions that can call the
+original function directly. Contracts built with ->* require packaging up
+arguments as lists in the wrapper function and then using either keyword-apply
+or apply. Finally, ->i is the most expensive (along with ->d), because it
+requires delaying the evaluation of the contract expressions for the domain and
+range until the function itself is called or returns.
+
+The case-> contract is a specialized contract, designed to match case-lambda
+and unconstrained-domain-> allows range checking without requiring that the
+domain have any particular shape (see below for an example use).
+
+(-> dom ... range)
+ 
+  dom   =   dom-expr
+        |   keyword dom-expr
+             
+range   =   range-expr
+        |   (values range-expr ...)
+        |   any
+Produces a contract for a function that accepts a fixed number of arguments and
+returns either a fixed number of results or completely unspecified results (the
+latter when any is specified).
+
+Each dom-expr is a contract on an argument to a function, and each range-expr
+is a contract on a result of the function.
+
+            Using a -> between two whitespace-delimited .s is the same as
+            putting the -> right after the enclosing opening parenthesis. See
+            Lists and Racket Syntax or Reading Pairs and Lists for more
+            information.
+
+For example,
+
+    (integer? boolean? . -> . integer?)
+
+produces a contract on functions of two arguments. The first argument must be
+an integer, and the second argument must be a boolean. The function must
+produce an integer.
+
+A domain specification may include a keyword. If so, the function must accept
+corresponding (mandatory) keyword arguments, and the values for the keyword
+arguments must match the corresponding contracts. For example:
+
+    (integer? #:x boolean? . -> . integer?)
+
+is a contract on a function that accepts a by-position argument that is an
+integer and a #:x argument that is a boolean.
+
+If any is used as the last sub-form for ->, no contract checking is performed
+on the result of the function, and thus any number of values is legal (even
+different numbers on different invocations of the function).
+
+If (values range-expr ...) is used as the last sub-form of ->, the function
+must produce a result for each contract, and each value must match its
+respective contract.
+
+(->* (mandatory-dom ...) optional-doms rest pre range post)
+ 
+mandatory-dom   =   dom-expr
+                |   keyword dom-expr
+                     
+optional-doms   =  
+                |   (optional-dom ...)
+                     
+ optional-dom   =   dom-expr
+                |   keyword dom-expr
+                     
+         rest   =  
+                |   #:rest rest-expr
+                     
+          pre   =  
+                |   #:pre pre-cond-expr
+                     
+        range   =   range-expr
+                |   (values range-expr ...)
+                |   any
+                     
+         post   =  
+                |   #:post post-cond-expr
+The ->* contract combinator produces contracts for functions that accept
+optional arguments (either keyword or positional) and/or arbitrarily many
+arguments. The first clause of a ->* contract describes the mandatory
+arguments, and is similar to the argument description of a -> contract. The
+second clause describes the optional arguments. The range of description can
+either be any or a sequence of contracts, indicating that the function must
+return multiple values. If present, the rest-expr contract governs the
+arguments in the rest parameter. The pre-cond-expr and post-cond-expr
+expressions are checked as the function is called and returns, respectively,
+and allow checking of the environment without an explicit connection to an
+argument (or a result).
+
+As an example, the contract
+
+
+    (->* () (boolean? #:x integer?) #:rest (listof symbol?) symbol?)
+
+matches functions that optionally accept a boolean, an integer keyword argument
+#:x and arbitrarily more symbols, and that return a symbol.
+
+(->i (mandatory-dependent-dom ...)
+     dependent-rest
+     pre-condition
+     dep-range
+     post-condition)
+(->i (mandatory-dependent-dom ...)
+     (optional-dependent-dom ...)
+     dependent-rest
+     pre-condition
+     dep-range
+     post-condition)
+ 
+mandatory-dependent-dom   =   id+ctc
+                          |   keyword id+ctc
+                               
+ optional-dependent-dom   =   id+ctc
+                          |   keyword id+ctc
+                               
+         dependent-rest   =  
+                          |   #:rest id+ctc
+                               
+          pre-condition   =  
+                          |   #:pre (id ...) boolean-expr pre-condition
+                          |   #:pre/name (id ...)
+                               string boolean-expr pre-condition
+                               
+        dependent-range   =   any
+                          |   id+ctc
+                          |   un+ctc
+                          |   (values id+ctc ...)
+                          |   (values un+ctc ...)
+                               
+         post-condition   =  
+                          |   #:post (id ...) boolean-expr post-condition
+                          |   #:post/name (id ...)
+                               string boolean-expr post-condition
+                               
+                 id+ctc   =   [id contract-expr]
+                          |   [id (id ...) contract-expr]
+                               
+                 un+ctc   =   [_ contract-expr]
+                          |   [_ (id ...) contract-expr]
+The ->i contract combinator differs from the ->* combinator in that the support
+pre- and post-condition clauses and in that each argument and result is named.
+These names can then be used in the subcontracts and in the pre-/post-condition
+clauses. In short, contracts now express dependencies among arguments and
+results.
+
+The first sub-form of a ->i contract covers the mandatory and the second
+sub-form covers the optional arguments. Following that is an optional rest-args
+contract, and an optional pre-condition. The pre-condition is introduced with
+the #:pre keyword followed by the list of names on which it depends. If the
+#:pre/name keyword is used, the string supplied is used as part of the error
+message; similarly with #:post/name.
+
+The dep-range non-terminal specifies the possible result contracts. If it is
+any, then any value is allowed. Otherwise, the result contract pairs a name and
+a contract or a multiple values return with names and contracts. In the last
+two cases, the range contract may be optionally followed by a post-condition;
+the post-condition expression is not allowed if the range contract is any. Like
+the pre-condition, the post-condition must specify the variables on which it
+depends.
+
+Consider this sample contract:
+
+    (->i ([x number?]
+          [y (x) (>=/c x)])
+         [result (x y) (and/c number? (>=/c (+ x y)))])
+
+It specifies a function of two arguments, both numbers. The contract on the
+second argument (y) demands that it is greater than the first argument. The
+result contract promises a number that is greater than the sum of the two
+arguments. While the dependency specification for y signals that the argument
+contract depends on the value of the first argument, the dependency sequence
+for result indicates that the contract depends on both argument values. In
+general, an empty sequence is (nearly) equivalent to not adding a sequence at
+all except that the former is more expensive than the latter. Since the
+contract for x does not depend on anything else, it does not come with any
+dependency sequence, not even ().
+
+The contract expressions are not always evaluated in order. First, if there is
+no dependency for a given contract expression, the contract expression is
+evaluated at the time that the ->i expression is evaluated rather than the time
+when the function is called or returns. These dependency-free contract
+expressions are evaluated in the order in which they are listed. Second, the
+dependent contract sub-expressions are evaluated when the contracted function
+is called or returns in some order that satisfies the dependencies. That is, if
+a contract for an argument depends on the value of some other contract, the
+former is evaluated first (so that the argument, with its contract checked, is
+available for the other). When there is no dependency between two arguments (or
+the result and an argument), then the contract that appears earlier in the
+source text is evaluated first.
+
+Finally, if all of the identifier positions of the range contract are _s
+(underscores), then the range contract expressions are evaluated when the
+function is called and the underscore is not bound in the range, after the
+argument contracts are evaluated and checked. Otherwise, the range expressions
+are evaluated when the function returns.
+
+If there are optional arguments that are not supplied, then the corresponding
+variables will be bound to a special value called the-unsupplied-arg value.
+
+(->d (mandatory-dependent-dom ...)
+     dependent-rest
+     pre-condition
+     dependent-range
+     post-condition)
+(->d (mandatory-dependent-dom ...)
+     (optional-dependent-dom ...)
+     dependent-rest
+     pre-condition
+     dependent-range
+     post-condition)
+ 
+mandatory-dependent-dom   =   [id dom-expr]
+                          |   keyword [id dom-expr]
+                               
+ optional-dependent-dom   =   [id dom-expr]
+                          |   keyword [id dom-expr]
+                               
+         dependent-rest   =  
+                          |   #:rest id rest-expr
+                               
+          pre-condition   =  
+                          |   #:pre boolean-expr
+                          |   #:pre-cond boolean-expr
+                               
+        dependent-range   =   any
+                          |   [_ range-expr]
+                          |   (values [_ range-expr] ...)
+                          |   [id range-expr]
+                          |   (values [id range-expr] ...)
+                               
+         post-condition   =  
+                          |   #:post-cond boolean-expr
+This contract is here for backwards compatibility; any new code should use ->i
+instead.
+
+This contract is similar to ->i, but is “lax”, meaning that it does not enforce
+contracts internally. For example, using this contract
+
+    (->d ([f (-> integer? integer?)])
+         #:pre
+         (zero? (f #f))
+         any)
+
+will allow f to be called with #f, trigger whatever bad behavior the author of
+f was trying to prohibit by insisting that f’s contract accept only integers.
+
+The #:pre-cond and #:post-cond keywords are aliases for #:pre and #:post and
+are provided for backwards compatibility.
+
+(case-> (-> dom-expr ... rest range) ...)
+ 
+ rest   =  
+        |   #:rest rest-expr
+             
+range   =   range-expr
+        |   (values range-expr ...)
+        |   any
+This contract form is designed to match case-lambda. Each argument to case-> is
+a contract that governs a clause in the case-lambda. If the #:rest keyword is
+present, the corresponding clause must accept an arbitrary number of arguments.
+The range specification is just like that for -> and ->*.
+
+(unconstrained-domain-> range-expr ...)
+Constructs a contract that accepts a function, but makes no constraint on the
+function’s domain. The range-exprs determine the number of results and the
+contract for each result.
+
+Generally, this contract must be combined with another contract to ensure that
+the domain is actually known to be able to safely call the function itself.
+
+For example, the contract
+
+    (provide/contract
+     [f (->d ([size natural-number/c]
+              [proc (and/c (unconstrained-domain-> number?)
+                           (lambda (p)
+                             (procedure-arity-includes? p size)))])
+             ()
+             number?)])
+
+says that the function f accepts a natural number and a function. The domain of
+the function that f accepts must include a case for size arguments, meaning
+that f can safely supply size arguments to its input.
+
+For example, the following is a definition of f that cannot be blamed using the
+above contract:
+
+    (define (f i g)
+      (apply g (build-list i add1)))
+
+the-unsupplied-arg : unsupplied-arg?
+Used by ->i (and ->d) to bind optional arguments that are not supplied by a
+call site.
+
+(unsupplied-arg? v) → boolean?
+  v : any/c
+A predicate to determine whether v is the-unsupplied-arg.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

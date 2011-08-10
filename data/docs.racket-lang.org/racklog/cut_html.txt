@@ -1,0 +1,140 @@
+▼  Racklog: Prolog-Style Logic Programming
+ 1  Simple Goals and Queries
+ 2  Predicates
+ 3  Using Conventional Racket Expressions in Racklog
+ 4  Backtracking
+ 5  Unification
+ 6  Conjuctions and Disjunctions
+ 7  Manipulating Racklog Variables
+ 8  The Cut (!)
+ 9  Set Predicates
+10  Racklog Module Language
+11  Glossary of Racklog Primitives
+    Bibliography
+► 8  The Cut (!)
+8.1  Conditional Goals
+8.2  Negation as Failure
+On this page:
+8.1 Conditional Goals
+8.2 Negation as Failure
+[...search manuals...]
+  top← prev  up  next → 
+
+8 The Cut (!)
+
+The cut (called !) is a special goal that is used to prune backtracking
+options. Like the %true goal, the cut goal too succeeds, when accosted by the
+Racklog subgoaling engine. However, when a further subgoal down the line fails,
+and time comes to retry the cut goal, Racklog will refuse to try alternate
+clauses for the predicate in whose definition the cut occurs. In other words,
+the cut causes Racklog to commit to all the decisions made from the time that
+the predicate was selected to match a subgoal till the time the cut was
+satisfied.
+
+For example, consider again the %factorial predicate, as defined in %is:
+
+    (define %factorial
+      (%rel (x y x1 y1)
+        [(0 1)]
+        [(x y) (%is x1 (- x 1))
+               (%factorial x1 y1)
+               (%is y (* y1 x))]))
+
+Clearly,
+
+    > (%which ()
+        (%factorial 0 1))
+    '()
+
+    > (%which (n)
+        (%factorial 0 n))
+    '((n . 1))
+
+
+But what if we asked for (%more) for either query? Backtracking will try the
+second clause of %factorial, and sure enough the clause-head unifies, producing
+binding [x . 0]. We now get three subgoals. Solving the first, we get [x1 .
+-1], and then we have to solve (%factorial -1 y1). It is easy to see there is
+no end to this, as we fruitlessly try to get the factorials of numbers that get
+more and more negative.
+
+If we placed a cut at the first clause:
+
+    ...
+    [(0 1) !]
+    ...
+
+the attempt to find more solutions for (%factorial 0 1) is nipped in the bud.
+
+Calling %factorial with a negative number would still cause an infinite loop.
+To take care of that problem as well, we use another cut:
+
+    (define %factorial
+      (%rel (x y x1 y1)
+        [(0 1) !]
+        [(x y) (%< x 0) ! %fail]
+        [(x y) (%is x1 (- x 1))
+               (%factorial x1 y1)
+               (%is y (* y1 x))]))
+
+    > (%which ()
+        (%factorial 0 1))
+    '()
+
+    > (%more)
+    #f
+
+    > (%which ()
+        (%factorial -1 1))
+    #f
+
+
+Using raw cuts as above can get very confusing. For this reason, it is
+advisable to use it hidden away in well-understood abstractions. Two such
+common abstractions are the conditional and negation.
+
+8.1 Conditional Goals
+
+An “if ... then ... else ...” predicate can be defined as follows
+
+    (define %if-then-else
+      (%rel (p q r)
+        [(p q r) p ! q]
+        [(p q r) r]))
+
+(Note that for the first time we have predicate arguments that are themselves
+goals.)
+
+Consider the goal
+
+    G0 = (%if-then-else Gbool Gthen Gelse)
+
+We first unify G0 with the first clause-head, giving [p . Gbool], [q . Gthen],
+[r . Gelse]. Gbool can now either succeed or fail.
+
+Case 1: If Gbool fails, backtracking will cause the G0 to unify with the second
+clause-head. r is bound to Gelse, and so Gelse is tried, as expected.
+
+Case 2: If Gbool succeeds, the cut commits to this clause of the %if-then-else.
+We now try Gthen. If Gthen should now fail — or even if we simply retry for
+more solutions — we are guaranteed that the second clause-head will not be
+tried. If it were not for the cut, G0 would attempt to unify with the second
+clause-head, which will of course succeed, and Gelse will be tried.
+
+8.2 Negation as Failure
+
+Another common abstraction using the cut is negation. The negation of goal G is
+defined as (%not G), where the predicate %not is defined as follows:
+
+    (define %not
+      (%rel ()
+        [(g) g ! %fail]
+        [(g) %true]))
+
+Thus, g’s negation is deemed a failure if g succeeds, and a success if g fails.
+This is of course confusing goal failure with falsity. In some cases, this view
+of negation is actually helpful.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

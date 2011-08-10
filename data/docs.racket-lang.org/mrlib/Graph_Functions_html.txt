@@ -1,0 +1,127 @@
+►  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+▼ 6  Graphs
+6.1  graph-pasteboard<%>
+6.2  graph-pasteboard-mixin
+6.3  graph-snip<%>
+6.4  graph-snip-mixin
+6.5  Graph Functions
+On this page:
+add-links
+add-links/ text-colors
+remove-links
+set-link-label
+[...search manuals...]
+  top← prev  up  next → 
+
+6.5 Graph Functions
+
+(add-links parent child) → void?
+  parent : (is-a?/c graph-snip<%>)
+  child : (is-a?/c graph-snip<%>)
+(add-links parent child) → void?
+  parent : (is-a?/c graph-snip<%>)
+  child : (is-a?/c graph-snip<%>)
+(add-links    parent             
+              child              
+              dark-pen           
+              light-pen          
+              dark-brush         
+              light-brush        
+            [ label])       →   void?
+  parent : (is-a?/c graph-snip<%>)
+  child : (is-a?/c graph-snip<%>)
+  dark-pen : (or/c (is-a?/c pen) false/c)
+  light-pen : (or/c (is-a?/c pen) false/c)
+  dark-brush : (or/c (is-a?/c brush%) false/c)
+  light-brush : (or/c (is-a?/c brush%) false/c)
+  label : (or/c string? false/c) = #f
+(add-links    parent             
+              child              
+              dark-pen           
+              light-pen          
+              dark-brush         
+              light-brush        
+              dx                 
+              dy                 
+            [ label])       →   void?
+  parent : (is-a?/c graph-snip<%>)
+  child : (is-a?/c graph-snip<%>)
+  dark-pen : (or/c (is-a?/c pen) false/c)
+  light-pen : (or/c (is-a?/c pen) false/c)
+  dark-brush : (or/c (is-a?/c brush%) false/c)
+  light-brush : (or/c (is-a?/c brush%) false/c)
+  dx : real?
+  dy : real?
+  label : (or/c string? false/c) = #f
+Connects a parent snip to a child snip within a pasteboard.
+
+The default dark-pen/dark-brush and light-pen/light-brush are blue and purple,
+respectively. The dark-pen and dark-brush are used when the mouse cursor is
+over the snip (or a child or parent), and the light-pen and light-brush are
+used when the mouse cursor is not over the snip. The brush is used to draw
+inside the arrow head and the pen is used to draw the border of the arrowhead
+and the line connecting the two snips.
+
+if label is provided and not #f, it is used as a label on the edge.
+
+When dx and dy are provided, the are offsets for the head and the tail of the
+arrow. Otherwise, 0 offsets are used.
+
+(add-links/text-colors   parent             
+                         child              
+                         dark-pen           
+                         light-pen          
+                         dark-brush         
+                         light-brush        
+                         dark-text          
+                         light-text         
+                         dx                 
+                         dy                 
+                         label)        →   void?
+  parent : (is-a?/c graph-snip<%>)
+  child : (is-a?/c graph-snip<%>)
+  dark-pen : (or/c (is-a?/c pen) false/c)
+  light-pen : (or/c (is-a?/c pen) false/c)
+  dark-brush : (or/c (is-a?/c brush%) false/c)
+  light-brush : (or/c (is-a?/c brush%) false/c)
+  dark-text : (or/c (is-a?/c color%) false/c)
+  light-text : (or/c (is-a?/c color) false/c)
+  dx : real?
+  dy : real?
+  label : (or/c string? false/c)
+Like add-links, but with extra dark-text and light-text arguments to set the
+colors of the label.
+
+(remove-links parent child) → void?
+  parent : (is-a?/c graph-snip<%>)
+  child : (is-a?/c graph-snip<%>)
+Disconnects a parent snip from a child snip within a pasteboard.
+
+(set-link-label parent child label) → void?
+  parent : (is-a?/c graph-snip<%>)
+  child : (is-a?/c graph-snip<%>)
+  label : (or/c string? false/c)
+Changes the label on the edge going from child to parent to be label. If there
+is no existing edge between the two nodes, then nothing happens.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

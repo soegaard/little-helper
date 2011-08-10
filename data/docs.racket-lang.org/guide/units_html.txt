@@ -1,0 +1,72 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 14  Units (Components)
+14.1  Signatures and Units
+14.2  Invoking Units
+14.3  Linking Units
+14.4  First-Class Units
+14.5  Whole-module Signatures and Units
+14.6  Contracts for Units
+14.7  unit versus module
+[...search manuals...]
+  top← prev  up  next → 
+
+14 Units (Components)
+
+Units organize a program into separately compilable and reusable components. A
+unit resembles a procedure in that both are first-class values that are used
+for abstraction. While procedures abstract over values in expressions, units
+abstract over names in collections of definitions. Just as a procedure is
+called to evaluate its expressions given actual arguments for its formal
+parameters, a unit is invoked to evaluate its definitions given actual
+references for its imported variables. Unlike a procedure, however, a unit’s
+imported variables can be partially linked with the exported variables of
+another unit prior to invocation. Linking merges multiple units together into a
+single compound unit. The compound unit itself imports variables that will be
+propagated to unresolved imported variables in the linked units, and re-exports
+some variables from the linked units for further linking.
+
+    14.1 Signatures and Units
+
+    14.2 Invoking Units
+
+    14.3 Linking Units
+
+    14.4 First-Class Units
+
+    14.5 Whole-module Signatures and Units
+
+    14.6 Contracts for Units
+
+      14.6.1 Adding Contracts to Signatures
+
+      14.6.2 Adding Contracts to Units
+
+    14.7 unit versus module
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

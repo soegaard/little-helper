@@ -1,0 +1,64 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+► 26  Signature and Unit
+26.1  Draw Unit
+26.2  Draw Signature
+On this page:
+26.1 Draw Unit
+draw@
+26.2 Draw Signature
+draw^
+[...search manuals...]
+  top← prev  up  next → 
+
+26 Signature and Unit
+
+The racket/draw/draw-sig and racket/draw/draw-unit libraries define the draw^
+signature and draw@ implementation.
+
+26.1 Draw Unit
+
+ (require racket/draw/draw-unit)
+
+draw@ : unit?
+Re-exports all of the exports of racket/draw.
+
+26.2 Draw Signature
+
+ (require racket/draw/draw-sig)
+
+draw^ : signature
+
+Includes all of the identifiers exported by racket/draw.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

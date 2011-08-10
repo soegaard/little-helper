@@ -1,0 +1,1438 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+▼ 3.2  Numbers
+3.2.1  Number Types
+3.2.2  Generic Numerics
+3.2.3  Flonums
+3.2.4  Fixnums
+► 3.2.2  Generic Numerics
+3.2.2.1  Arithmetic
+3.2.2.2  Number Comparison
+3.2.2.3  Powers and Roots
+3.2.2.4  Trignometric Functions
+3.2.2.5  Complex Numbers
+3.2.2.6  Bitwise Operations
+3.2.2.7  Random Numbers
+3.2.2.8  Number–String Conversions
+3.2.2.9  Extra Constants and Functions
+On this page:
+3.2.2.1 Arithmetic
++
+-
+*
+/
+quotient
+remainder
+quotient/ remainder
+modulo
+add1
+sub1
+abs
+max
+min
+gcd
+lcm
+round
+floor
+ceiling
+truncate
+numerator
+denominator
+rationalize
+3.2.2.2 Number Comparison
+=
+<
+<=
+>
+>=
+3.2.2.3 Powers and Roots
+sqrt
+integer-sqrt
+integer-sqrt/ remainder
+expt
+exp
+log
+3.2.2.4 Trignometric Functions
+sin
+cos
+tan
+asin
+acos
+atan
+3.2.2.5 Complex Numbers
+make-rectangular
+make-polar
+real-part
+imag-part
+magnitude
+angle
+3.2.2.6 Bitwise Operations
+bitwise-ior
+bitwise-and
+bitwise-xor
+bitwise-not
+bitwise-bit-set?
+bitwise-bit-field
+arithmetic-shift
+integer-length
+3.2.2.7 Random Numbers
+random
+random-seed
+make-pseudo-random-generator
+pseudo-random-generator?
+current-pseudo-random-generator
+pseudo-random-generator->vector
+vector->pseudo-random-generator
+vector->pseudo-random-generator!
+3.2.2.8 Number–String Conversions
+number->string
+string->number
+real->decimal-string
+integer-bytes->integer
+integer->integer-bytes
+floating-point-bytes->real
+real->floating-point-bytes
+system-big-endian?
+3.2.2.9 Extra Constants and Functions
+pi
+sqr
+sgn
+conjugate
+sinh
+cosh
+tanh
+order-of-magnitude
+[...search manuals...]
+  top← prev  up  next → 
+
+3.2.2 Generic Numerics
+
+Most Racket numeric operations work on any kind of number.
+
+3.2.2.1 Arithmetic
+
+(+ z ...) → number?
+  z : number?
+Returns the sum of the zs, adding pairwise from left to right. If no arguments
+are provided, the result is 0.
+
+Examples:
+
+    > (+ 1 2)
+    3
+
+    > (+ 1.0 2+3i 5)
+    8.0+3.0i
+
+    > (+)
+    0
+
+
+
+(- z) → number?
+  z : number?
+(- z w ...+) → number?
+  z : number?
+  w : number?
+When no ws are supplied, returns (- 0 z). Otherwise, returns the subtraction of
+the ws from z working pairwise from left to right.
+
+Examples:
+
+    > (- 5 3.0)
+    2.0
+
+    > (- 1)
+    -1
+
+    > (- 2+7i 1 3)
+    -2+7i
+
+
+
+(* z ...) → number?
+  z : number?
+Returns the product of the zs, multiplying pairwise from left to right. If no
+arguments are provided, the result is 1. Multiplying any number by exact 0
+produces exact 0.
+
+Examples:
+
+    > (* 2 3)
+    6
+
+    > (* 8.0 9)
+    72.0
+
+    > (* 1+2i 3+4i)
+    -5+10i
+
+
+
+(/ z) → number?
+  z : number?
+(/ z w ...+) → number?
+  z : number?
+  w : number?
+When no ws are supplied, returns (/ 1 z). Otherwise, returns the division of z
+by the ws working pairwise from left to right.
+
+If z is exact 0 and no w is exact 0, then the result is exact 0. If any w is
+exact 0, the exn:fail:contract:divide-by-zero exception is raised.
+
+Examples:
+
+    > (/ 3 4)
+    3/4
+
+    > (/ 81 3 3)
+    9
+
+    > (/ 10.0)
+    0.1
+
+    > (/ 1+2i 3+4i)
+    11/25+2/25i
+
+
+
+(quotient n m) → integer?
+  n : integer?
+  m : integer?
+Returns (truncate (/ n m)).
+
+Examples:
+
+    > (quotient 10 3)
+    3
+
+    > (quotient -10.0 3)
+    -3.0
+
+    > (quotient +inf.0 3)
+    quotient: expects type <integer> as 1st argument, given:
+
+    +inf.0; other arguments were: 3
+
+
+
+(remainder n m) → integer?
+  n : integer?
+  m : integer?
+Returns q with the same sign as n such that
+
+  • (abs q) is between 0 (inclusive) and (abs m) (exclusive), and
+
+  • (+ q (* m (quotient n m))) equals n.
+
+If m is exact 0, the exn:fail:contract:divide-by-zero exception is raised.
+
+Examples:
+
+    > (remainder 10 3)
+    1
+
+    > (remainder -10.0 3)
+    -1.0
+
+    > (remainder 10.0 -3)
+    1.0
+
+    > (remainder -10 -3)
+    -1
+
+    > (remainder +inf.0 3)
+    remainder: expects type <integer> as 1st argument, given:
+
+    +inf.0; other arguments were: 3
+
+
+
+(quotient/remainder n m)   →   integer?   integer?
+  n : integer?
+  m : integer?
+Returns (values (quotient n m) (remainder n m)), but the combination may be
+computed more efficiently than separate calls to quotient and remainder.
+
+Example:
+
+    > (quotient/remainder 10 3)
+    3
+
+    1
+
+
+
+(modulo n m) → integer?
+  n : integer?
+  m : integer?
+Returns q with the same sign as m where
+
+  • (abs q) is between 0 (inclusive) and (abs m) (exclusive), and
+
+  • the difference between q and (- n (* m (quotient n m))) is a multiple of m.
+
+If m is exact 0, the exn:fail:contract:divide-by-zero exception is raised.
+
+Examples:
+
+    > (modulo 10 3)
+    1
+
+    > (modulo -10.0 3)
+    2.0
+
+    > (modulo 10.0 -3)
+    -2.0
+
+    > (modulo -10 -3)
+    -1
+
+    > (modulo +inf.0 3)
+    modulo: expects type <integer> as 1st argument, given:
+
+    +inf.0; other arguments were: 3
+
+
+
+(add1 z) → number?
+  z : number?
+Returns (+ z 1).
+
+(sub1 z) → number?
+  z : number?
+Returns (- z 1).
+
+(abs x) → number?
+  x : real?
+Returns the absolute value of x.
+
+Examples:
+
+    > (abs 1.0)
+    1.0
+
+    > (abs -1)
+    1
+
+
+
+(max x ...+) → real?
+  x : real?
+Returns the largest of the xs, or +nan.0 if any x is +nan.0. If any x is
+inexact, the result is coerced to inexact.
+
+Examples:
+
+    > (max 1 3 2)
+    3
+
+    > (max 1 3 2.0)
+    3.0
+
+
+
+(min x ...+) → real?
+  x : real?
+Returns the smallest of the xs, or +nan.0 if any x is +nan.0. If any x is
+inexact, the result is coerced to inexact.
+
+Examples:
+
+    > (min 1 3 2)
+    1
+
+    > (min 1 3 2.0)
+    1.0
+
+
+
+(gcd n ...) → integer?
+  n : integer?
+Returns the greatest common divisor (a non-negative number) of the ns. If no
+arguments are provided, the result is 0. If all arguments are zero, the result
+is zero.
+
+Examples:
+
+    > (gcd 10)
+    10
+
+    > (gcd 12 81.0)
+    3.0
+
+
+
+(lcm n ...) → integer?
+  n : integer?
+Returns the least common multiple (a non-negative number) of the ns. If no
+arguments are provided, the result is 1. If any argument is zero, the result is
+zero; furthermore, if any argument is exact 0, the result is exact 0.
+
+Examples:
+
+    > (lcm 10)
+    10
+
+    > (lcm 3 4.0)
+    12.0
+
+
+
+(round x) → integer?
+  x : real?
+Returns the integer closest to x, resolving ties in favor of an even number.
+
+Examples:
+
+    > (round 17/4)
+    4
+
+    > (round -17/4)
+    -4
+
+    > (round 2.5)
+    2.0
+
+    > (round -2.5)
+    -2.0
+
+
+
+(floor x) → integer?
+  x : real?
+Returns the largest integer that is no more than x.
+
+Examples:
+
+    > (floor 17/4)
+    4
+
+    > (floor -17/4)
+    -5
+
+    > (floor 2.5)
+    2.0
+
+    > (floor -2.5)
+    -3.0
+
+
+
+(ceiling x) → integer?
+  x : real?
+Returns the smallest integer that is at least as large as x.
+
+Examples:
+
+    > (ceiling 17/4)
+    5
+
+    > (ceiling -17/4)
+    -4
+
+    > (ceiling 2.5)
+    3.0
+
+    > (ceiling -2.5)
+    -2.0
+
+
+
+(truncate x) → integer?
+  x : real?
+Returns the integer farthest from 0 that is not farther from 0 than x.
+
+Examples:
+
+    > (truncate 17/4)
+    4
+
+    > (truncate -17/4)
+    -4
+
+    > (truncate 2.5)
+    2.0
+
+    > (truncate -2.5)
+    -2.0
+
+
+
+(numerator q) → integer?
+  q : rational?
+Coerces q to an exact number, finds the numerator of the number expressed in
+its simplest fractional form, and returns this number coerced to the exactness
+of q.
+
+Examples:
+
+    > (numerator 5)
+    5
+
+    > (numerator 17/4)
+    17
+
+    > (numerator 2.3)
+    2589569785738035.0
+
+
+
+(denominator q) → integer?
+  q : rational?
+Coerces q to an exact number, finds the numerator of the number expressed in
+its simplest fractional form, and returns this number coerced to the exactness
+of q.
+
+Examples:
+
+    > (denominator 5)
+    1
+
+    > (denominator 17/4)
+    4
+
+    > (denominator 2.3)
+    1125899906842624.0
+
+
+
+(rationalize x tolerance) → real?
+  x : real?
+  tolerance : real?
+Among the real numbers within (abs tolerance) of x, returns the one
+corresponding to an exact number whose denominator is the smallest. If multiple
+integers are within tolerance of x, the one closest to 0 is used.
+
+Examples:
+
+    > (rationalize 1/4 1/10)
+    1/3
+
+    > (rationalize -1/4 1/10)
+    -1/3
+
+    > (rationalize 1/4 1/4)
+    0
+
+    > (rationalize 11/40 1/4)
+    1/2
+
+
+
+3.2.2.2 Number Comparison
+
+(= z w ...+) → boolean?
+  z : number?
+  w : number?
+Returns #t if all of the arguments are numerically equal, #f otherwise. An
+inexact number is numerically equal to an exact number when the exact coercion
+of the inexact number is the exact number. Also, 0.0 and -0.0 are numerically
+equal, but +nan.0 is not numerically equal to itself.
+
+Examples:
+
+    > (= 1 1.0)
+    #t
+
+    > (= 1 2)
+    #f
+
+    > (= 2+3i 2+3i 2+3i)
+    #t
+
+
+
+(< x y ...+) → boolean?
+  x : real?
+  y : real?
+Returns #t if the arguments in the given order are strictly increasing, #f
+otherwise.
+
+Examples:
+
+    > (< 1 1)
+    #f
+
+    > (< 1 2 3)
+    #t
+
+    > (< 1 +inf.0)
+    #t
+
+    > (< 1 +nan.0)
+    #f
+
+
+
+(<= x y ...+) → boolean?
+  x : real?
+  y : real?
+Returns #t if the arguments in the given order are non-decreasing, #f
+otherwise.
+
+Examples:
+
+    > (<= 1 1)
+    #t
+
+    > (<= 1 2 1)
+    #f
+
+
+
+(> x y ...+) → boolean?
+  x : real?
+  y : real?
+Returns #t if the arguments in the given order are strictly decreasing, #f
+otherwise.
+
+Examples:
+
+    > (> 1 1)
+    #f
+
+    > (> 3 2 1)
+    #t
+
+    > (> +inf.0 1)
+    #t
+
+    > (< +nan.0 1)
+    #f
+
+
+
+(>= x y ...+) → boolean?
+  x : real?
+  y : real?
+Returns #t if the arguments in the given order are non-increasing, #f
+otherwise.
+
+Examples:
+
+    > (>= 1 1)
+    #t
+
+    > (>= 1 2 1)
+    #f
+
+
+
+3.2.2.3 Powers and Roots
+
+(sqrt z) → number?
+  z : number?
+Returns the principal square root of z. The result is exact if z is exact and
+z’s square root is rational. See also integer-sqrt.
+
+Examples:
+
+    > (sqrt 4/9)
+    2/3
+
+    > (sqrt 2)
+    1.4142135623730951
+
+    > (sqrt -1)
+    0+1i
+
+
+
+(integer-sqrt n) → complex?
+  n : integer?
+Returns (floor (sqrt n)) for positive n. For negative n, the result is (* (
+integer-sqrt (- n)) 0+1i).
+
+Examples:
+
+    > (integer-sqrt 4.0)
+    2.0
+
+    > (integer-sqrt 5)
+    2
+
+
+
+(integer-sqrt/remainder n)   →   integer?   integer?
+  n : integer?
+Returns (integer-sqrt n) and (- n (expt (integer-sqrt n) 2)).
+
+Examples:
+
+    > (integer-sqrt/remainder 4.0)
+    2.0
+
+    0.0
+
+    > (integer-sqrt/remainder 5)
+    2
+
+    1
+
+
+
+(expt z w) → number?
+  z : number?
+  w : number?
+Returns z raised to the power of w. If w is exact 0, the result is exact 1. If
+z is exact 0 and w is negative, the exn:fail:contract:divide-by-zero exception
+is raised.
+
+Examples:
+
+    > (expt 2 3)
+    8
+
+    > (expt 4 0.5)
+    2.0
+
+    > (expt +inf.0 0)
+    1
+
+
+
+(exp z) → number?
+  z : number?
+Returns Euler’s number raised to the power of z. The result is normally
+inexact, but it is exact 1 when z is an exact 0.
+
+Examples:
+
+    > (exp 1)
+    2.718281828459045
+
+    > (exp 2+3i)
+    -7.315110094901103+1.0427436562359045i
+
+    > (exp 0)
+    1
+
+
+
+(log z) → number?
+  z : number?
+Returns the natural logarithm of z. The result is normally inexact, but it is
+exact 0 when z is an exact 1. When z is exact 0,
+exn:fail:contract:divide-by-zero exception is raised.
+
+Examples:
+
+    > (log (exp 1))
+    1.0
+
+    > (log 2+3i)
+    1.2824746787307684+0.982793723247329i
+
+    > (log 1)
+    0
+
+
+
+3.2.2.4 Trignometric Functions
+
+(sin z) → number?
+  z : number?
+Returns the sine of z, where z is in radians. The result is normally inexact,
+but it is exact 0 if z is exact 0.
+
+Examples:
+
+    > (sin 3.14159)
+    2.65358979335273e-06
+
+    > (sin 1.0+5.0i)
+    62.44551846769653+40.0921657779984i
+
+
+
+(cos z) → number?
+  z : number?
+Returns the cosine of z, where z is in radians.
+
+Examples:
+
+    > (cos 3.14159)
+    -0.9999999999964793
+
+    > (cos 1.0+5.0i)
+    40.095806306298826-62.43984868079963i
+
+
+
+(tan z) → number?
+  z : number?
+Returns the tangent of z, where z is in radians. The result is normally
+inexact, but it is exact 0 if z is exact 0.
+
+Examples:
+
+    > (tan 0.7854)
+    1.0000036732118496
+
+    > (tan 1.0+5.0i)
+    8.256719834227411e-05+1.0000377833796008i
+
+
+
+(asin z) → number?
+  z : number?
+Returns the arcsine in radians of z. The result is normally inexact, but it is
+exact 0 if z is exact 0.
+
+Examples:
+
+    > (asin 0.25)
+    0.25268025514207865
+
+    > (asin 1.0+5.0i)
+    0.1937931365549321+2.3309746530493123i
+
+
+
+(acos z) → number?
+  z : number?
+Returns the arccosine in radians of z.
+
+Examples:
+
+    > (acos 0.25)
+    1.318116071652818
+
+    > (acos 1.0+5.0i)
+    1.3770031902399644-2.3309746530493123i
+
+
+
+(atan z) → number?
+  z : number?
+(atan y x) → number?
+  y : real?
+  x : real?
+In the one-argument case, returns the arctangent of the inexact approximation
+of z, except that the result is an exact 0 for an exact 0 argument.
+
+In the two-argument case, the result is roughly the same as (atan (/ (exact->
+inexact y)) (exact->inexact x)), but the signs of y and x determine the
+quadrant of the result. Moreover, a suitable angle is returned when y divided
+by x produces +nan.0 in the case that neither y nor x is +nan.0. Finally, if y
+is exact 0 and x is an exact positive number, the result is exact 0. If both x
+and y are exact 0, the exn:fail:contract:divide-by-zero exception is raised.
+
+Examples:
+
+    > (atan 0.5)
+    0.4636476090008061
+
+    > (atan 2 1)
+    1.1071487177940904
+
+    > (atan -2 -1)
+    -2.0344439357957027
+
+    > (atan 1.0+5.0i)
+    1.530881333938778+0.19442614214700213i
+
+    > (atan +inf.0 -inf.0)
+    2.356194490192345
+
+
+
+3.2.2.5 Complex Numbers
+
+(make-rectangular x y) → number?
+  x : real?
+  y : real?
+Returns (+ x (* y 0+1i)).
+
+Example:
+
+    > (make-rectangular 3 4.0)
+    3.0+4.0i
+
+
+
+(make-polar magnitude angle) → number?
+  magnitude : real?
+  angle : real?
+Returns (+ (* magnitude (cos angle)) (* magnitude (sin angle) 0+1i)).
+
+Examples:
+
+    > (make-polar 10 (* pi 1/2))
+    6.123233995736766e-16+10.0i
+
+    > (make-polar 10 (* pi 1/4))
+    7.0710678118654755+7.071067811865475i
+
+
+
+(real-part z) → real?
+  z : number?
+Returns the real part of the complex number z in rectangle coordinates.
+
+Examples:
+
+    > (real-part 3+4i)
+    3
+
+    > (real-part 5.0)
+    5.0
+
+
+
+(imag-part z) → real?
+  z : number?
+Returns the imaginary part of the complex number z in rectangle coordinates.
+
+Examples:
+
+    > (imag-part 3+4i)
+    4
+
+    > (imag-part 5.0)
+    0
+
+    > (imag-part 5.0+0.0i)
+    0.0
+
+
+
+(magnitude z) → (and/c real? (not/c negative?))
+  z : number?
+Returns the magnitude of the complex number z in polar coordinates.
+
+Examples:
+
+    > (magnitude -3)
+    3
+
+    > (magnitude 3.0)
+    3.0
+
+    > (magnitude 3+4i)
+    5
+
+
+
+(angle z) → real?
+  z : number?
+Returns the angle of the complex number z in polar coordinates.
+
+Examples:
+
+    > (angle -3)
+    3.141592653589793
+
+    > (angle 3.0)
+    0
+
+    > (angle 3+4i)
+    0.9272952180016122
+
+    > (angle +inf.0+inf.0i)
+    0.7853981633974483
+
+
+
+3.2.2.6 Bitwise Operations
+
+(bitwise-ior n ...) → exact-integer?
+  n : exact-integer?
+Returns the bitwise “inclusive or” of the ns in their (semi-infinite) two’s
+complement representation. If no arguments are provided, the result is 0.
+
+Examples:
+
+    > (bitwise-ior 1 2)
+    3
+
+    > (bitwise-ior -32 1)
+    -31
+
+
+
+(bitwise-and n ...) → exact-integer?
+  n : exact-integer?
+Returns the bitwise “and” of the ns in their (semi-infinite) two’s complement
+representation. If no arguments are provided, the result is -1.
+
+Examples:
+
+    > (bitwise-and 1 2)
+    0
+
+    > (bitwise-and -32 -1)
+    -32
+
+
+
+(bitwise-xor n ...) → exact-integer?
+  n : exact-integer?
+Returns the bitwise “exclusive or” of the ns in their (semi-infinite) two’s
+complement representation. If no arguments are provided, the result is 0.
+
+Examples:
+
+    > (bitwise-xor 1 5)
+    4
+
+    > (bitwise-xor -32 -1)
+    31
+
+
+
+(bitwise-not n) → exact-integer?
+  n : exact-integer?
+Returns the bitwise “not” of n in its (semi-infinite) two’s complement
+representation.
+
+Examples:
+
+    > (bitwise-not 5)
+    -6
+
+    > (bitwise-not -1)
+    0
+
+
+
+(bitwise-bit-set? n m) → boolean?
+  n : exact-integer?
+  m : exact-nonnegative-integer?
+Returns #t when the mth bit of n is set in n’s (semi-infinite) two’s complement
+representation.
+
+This operation is equivalent to (not (zero? (bitwise-and n (arithmetic-shift 1
+m)))), but it is faster and runs in constant time when n is positive.
+
+Examples:
+
+    > (bitwise-bit-set? 5 0)
+    #t
+
+    > (bitwise-bit-set? 5 2)
+    #t
+
+    > (bitwise-bit-set? -5 (expt 2 700))
+    #t
+
+
+
+(bitwise-bit-field n start end) → exact-integer?
+  n : exact-integer?
+  start : exact-nonnegative-integer?
+   end   :   (and/c exact-nonnegative-integer?
+                    (start . <= . end))
+Extracts the bits between position start and (- end 1) (inclusive) from n and
+shifts them down to the least significant portion of the number.
+
+This operation is equivalent to the computation
+
+    (bitwise-and (sub1 (arithmetic-shift 1 (- end start)))
+                 (arithmetic-shift n (- start)))
+
+but it runs in constant time when n is positive, start and end are fixnums, and
+(- end start) is no more than the maximum width of a fixnum.
+
+Each pair of examples below uses the same numbers, showing the result both in
+binary and as integers.
+
+Examples:
+
+    > (format "~b" (bitwise-bit-field (string->number "1101" 2) 1 1))
+    "0"
+
+    > (bitwise-bit-field 13 1 1)
+    0
+
+    > (format "~b" (bitwise-bit-field (string->number "1101" 2) 1 3))
+    "10"
+
+    > (bitwise-bit-field 13 1 3)
+    2
+
+    > (format "~b" (bitwise-bit-field (string->number "1101" 2) 1 4))
+    "110"
+
+    > (bitwise-bit-field 13 1 4)
+    6
+
+
+
+(arithmetic-shift n m) → exact-integer?
+  n : exact-integer?
+  m : exact-integer?
+Returns the bitwise “shift” of n in its (semi-infinite) two’s complement
+representation. If m is non-negative, the integer n is shifted left by m bits;
+i.e., m new zeros are introduced as rightmost digits. If m is negative, n is
+shifted right by (- m) bits; i.e., the rightmost m digits are dropped.
+
+Examples:
+
+    > (arithmetic-shift 1 10)
+    1024
+
+    > (arithmetic-shift 255 -3)
+    31
+
+
+
+(integer-length n) → exact-integer?
+  n : exact-integer?
+Returns the number of bits in the (semi-infinite) two’s complement
+representation of n after removing all leading zeros (for non-negative n) or
+ones (for negative n).
+
+Examples:
+
+    > (integer-length 8)
+    4
+
+    > (integer-length -8)
+    3
+
+
+
+3.2.2.7 Random Numbers
+
+(random k [generator]) → exact-nonnegative-integer?
+  k : (integer-in 1 4294967087)
+   generator   :   pseudo-random-generator?
+               =   (current-pseudo-random-generator)
+(random [generator]) → (and/c real? inexact? (>/c 0) (</c 1))
+   generator   :   pseudo-random-generator?
+               =   (current-pseudo-random-generator)
+When called with an integer argument k, returns a random exact integer in the
+range 0 to k-1. When called with zero arguments, returns a random inexact
+number between 0 and 1, exclusive.
+
+In each case, the number is provided by the given pseudo-random number
+generator (which defaults to the current one, as produced by
+current-pseudo-random-generator). The generator maintains an internal state for
+generating numbers. The random number generator uses a 54-bit version of
+L’Ecuyer’s MRG32k3a algorithm [L'Ecuyer02].
+
+(random-seed k) → void?
+  k : (integer-in 1 (sub1 (expt 2 31)))
+Seeds the current pseudo-random number generator with k. Seeding a generator
+sets its internal state deterministically; that is, seeding a generator with a
+particular number forces it to produce a sequence of pseudo-random numbers that
+is the same across runs and across platforms.
+
+(make-pseudo-random-generator) → pseudo-random-generator?
+Returns a new pseudo-random number generator. The new generator is seeded with
+a number derived from (current-milliseconds).
+
+(pseudo-random-generator? v) → boolean?
+  v : any/c
+Returns #t if v is a pseudo-random number generator, #f otherwise.
+
+(current-pseudo-random-generator) → pseudo-random-generator?
+(current-pseudo-random-generator generator) → void?
+  generator : pseudo-random-generator?
+A parameter that determines the pseudo-random number generator used by random.
+
+(pseudo-random-generator->vector generator) → vector?
+  generator : pseudo-random-generator?
+Produces a vector that represents the complete internal state of generator. The
+vector is suitable as an argument to vector->pseudo-random-generator to
+recreate the generator in its current state (across runs and across platforms).
+
+(vector->pseudo-random-generator vec)
+ → pseudo-random-generator?
+  vec : vector?
+Produces a pseudo-random number generator whose internal state corresponds to
+vec. The vector vec must contain six exact integers; the first three integers
+must be in the range 0 to 4294967086, inclusive; the last three integers must
+be in the range 0 to 4294944442, inclusive; at least one of the first three
+integers must be non-zero; and at least one of the last three integers must be
+non-zero.
+
+(vector->pseudo-random-generator!   generator        
+                                    vec)        →   void?
+  generator : pseudo-random-generator?
+  vec : vector?
+Like vector->pseudo-random-generator, but changes generator to the given state,
+instead of creating a new generator.
+
+3.2.2.8 Number–String Conversions
+
+(number->string z [radix]) → string?
+  z : number?
+  radix : (or/c 2 8 10 16) = 10
+Returns a string that is the printed form of z in the base specified by radix.
+If z is inexact, radix must be 10, otherwise the exn:fail:contract exception is
+raised.
+
+Examples:
+
+    > (number->string 3.0)
+    "3.0"
+
+    > (number->string 255 8)
+    "377"
+
+
+
+(string->number s [radix]) → (or/c number? #f)
+  s : string?
+  radix : (integer-in 2 16) = 10
+Reads and returns a number datum from s (see Reading Numbers), returning #f if
+s does not parse exactly as a number datum (with no whitespace). The optional
+radix argument specifies the default base for the number, which can be
+overridden by #b, #o, #d, or #x in the string.
+
+Examples:
+
+    > (string->number "3.0+2.5i")
+    3.0+2.5i
+
+    > (string->number "hello")
+    #f
+
+    > (string->number "111" 7)
+    57
+
+    > (string->number "#b111" 7)
+    7
+
+
+
+(real->decimal-string n [decimal-digits]) → string?
+  n : real?
+  decimal-digits : exact-nonnegative-integer? = 2
+Prints n into a string and returns the string. The printed form of n shows
+exactly decimal-digits digits after the decimal point. The printed form uses a
+minus sign if n is negative, and it does not use a plus sign if n is positive.
+
+Before printing, n is converted to an exact number, multiplied by (expt 10
+decimal-digits), rounded, and then divided again by (expt 10 decimal-digits).
+The result of this process is an exact number whose decimal representation has
+no more than decimal-digits digits after the decimal (and it is padded with
+trailing zeros if necessary).
+
+Examples:
+
+    > (real->decimal-string pi)
+    "3.14"
+
+    > (real->decimal-string pi 5)
+    "3.14159"
+
+
+
+(integer-bytes->integer    bstr               
+                           signed?            
+                         [ big-endian?        
+                           start              
+                           end])         →   exact-integer?
+  bstr : bytes?
+  signed? : any/c
+  big-endian? : any/c = (system-big-endian?)
+  start : exact-nonnegative-integer? = 0
+  end : exact-nonnegative-integer? = (bytes-length bstr)
+Converts the machine-format number encoded in bstr to an exact integer. The
+start and end arguments specify the substring to decode, where (- end start)
+must be 2, 4, or 8. If signed? is true, then the bytes are decoded as a
+two’s-complement number, otherwise it is decoded as an unsigned integer. If
+big-endian? is true, then the first character’s ASCII value provides the most
+significant eight bits of the number, otherwise the first character provides
+the least-significant eight bits, and so on.
+
+(integer->integer-bytes    n                  
+                           size-n             
+                           signed?            
+                         [ big-endian?        
+                           dest-bstr          
+                           start])       →   bytes?
+  n : exact-integer?
+  size-n : (or/c 2 4 8)
+  signed? : any/c
+  big-endian? : any/c = (system-big-endian?)
+   dest-bstr   :   (and/c bytes? (not/c immutable?))
+               =   (make-bytes size-n)
+  start : exact-nonnegative-integer? = 0
+Converts the exact integer n to a machine-format number encoded in a byte
+string of length size-n, which must be 2, 4, or 8. If signed? is true, then the
+number is encoded as two’s complement, otherwise it is encoded as an unsigned
+bit stream. If big-endian? is true, then the most significant eight bits of the
+number are encoded in the first character of the resulting byte string,
+otherwise the least-significant bits are encoded in the first byte, and so on.
+
+The dest-bstr argument must be a mutable byte string of length size-n. The
+encoding of n is written into dest-bstr starting at offset start, and dest-bstr
+is returned as the result.
+
+If n cannot be encoded in a string of the requested size and format, the
+exn:fail:contract exception is raised. If dest-bstr is not of length size-n,
+the exn:fail:contract exception is raised.
+
+(floating-point-bytes->real    bstr               
+                             [ big-endian?        
+                               start              
+                               end])         →   flonum?
+  bstr : bytes?
+  big-endian? : any/c = (system-big-endian?)
+  start : exact-nonnegative-integer? = 0
+  end : exact-nonnegative-integer? = (bytes-length bstr)
+Converts the IEEE floating-point number encoded in bstr from position start
+(inclusive) to end (exclusive) to an inexact real number. The difference
+between start an end must be either 4 or 8 bytes. If big-endian? is true, then
+the first byte’s ASCII value provides the most significant eight bits of the
+IEEE representation, otherwise the first byte provides the least-significant
+eight bits, and so on.
+
+(real->floating-point-bytes    x                  
+                               size-n             
+                             [ big-endian?        
+                               dest-bstr          
+                               start])       →   bytes?
+  x : real?
+  size-n : (or/c 4 8)
+  big-endian? : any/c = (system-big-endian?)
+   dest-bstr   :   (and/c bytes? (not/c immutable?))
+               =   (make-bytes size-n)
+  start : exact-nonnegative-integer? = 0
+Converts the real number x to its IEEE representation in a byte string of
+length size-n, which must be 4 or 8. If big-endian? is true, then the most
+significant eight bits of the number are encoded in the first byte of the
+resulting byte string, otherwise the least-significant bits are encoded in the
+first character, and so on.
+
+The dest-bstr argument must be a mutable byte string of length size-n. The
+encoding of n is written into dest-bstr starting with byte start, and dest-bstr
+is returned as the result.
+
+If dest-bstr is provided and it has less than start plus size-n bytes, the
+exn:fail:contract exception is raised.
+
+(system-big-endian?) → boolean?
+Returns #t if the native encoding of numbers is big-endian for the machine
+running Racket, #f if the native encoding is little-endian.
+
+3.2.2.9 Extra Constants and Functions
+
+ (require racket/math)
+The bindings documented in this section are provided by the racket/math and
+racket libraries, but not racket/base.
+
+pi : real?
+An approximation to the ratio of a circle’s circumference to its diameter:
+3.141592653589793.
+
+(sqr z) → number?
+  z : number?
+Returns (* z z).
+
+(sgn x) → (or/c 1 0 -1 1.0 0.0 -1.0)
+  x : real?
+Returns the sign of x as either -1, 0, or 1.
+
+Examples:
+
+    > (sgn 10)
+    1
+
+    > (sgn -10.0)
+    -1.0
+
+    > (sgn 0)
+    0
+
+
+
+(conjugate z) → number?
+  z : number?
+Returns the complex conjugate of z.
+
+Examples:
+
+    > (conjugate 1)
+    1
+
+    > (conjugate 3+4i)
+    3-4i
+
+
+
+(sinh z) → number?
+  z : number?
+Returns the hyperbolic sine of z.
+
+(cosh z) → number?
+  z : number?
+Returns the hyperbolic cosine of z.
+
+(tanh z) → number?
+  z : number?
+Returns the hyperbolic tangent of z.
+
+(order-of-magnitude r) → (and/c exact? integer?)
+  r : (and/c real? positive?)
+Computes the greatest exact integer m such that:
+
+    (<= (expt 10 m)
+        (inexact->exact r))
+
+Hence also:
+
+    (< (inexact->exact r)
+       (expt 10 (add1 m)))
+
+Examples:
+
+    > (order-of-magnitude 999)
+    2
+
+    > (order-of-magnitude 1000)
+    3
+
+    > (order-of-magnitude 1/100)
+    -2
+
+    > (order-of-magnitude 1/101)
+    -3
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

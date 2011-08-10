@@ -1,0 +1,232 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 4  Structures
+4.1  Defining Structure Types: struct
+4.2  Creating Structure Types
+4.3  Structure Type Properties
+4.4  Copying and Updating Structures
+4.5  Structure Utilities
+4.6  Structure Type Transformer Binding
+On this page:
+make-struct-type
+make-struct-field-accessor
+make-struct-field-mutator
+[...search manuals...]
+  top← prev  up  next → 
+
+4.2 Creating Structure Types
+
+(make-struct-type    name                
+                     super-type          
+                     init-field-cnt      
+                     auto-field-cnt      
+                   [ auto-v              
+                     props               
+                     inspector           
+                     proc-spec           
+                     immutables          
+                     guard               
+                     constructor-name])  
+      struct-type?
+      struct-constructor-procedure?
+  →   struct-predicate-procedure?
+      struct-accessor-procedure?
+      struct-mutator-procedure?
+  name : symbol?
+  super-type : (or/c struct-type? #f)
+  init-field-cnt : exact-nonnegative-integer?
+  auto-field-cnt : exact-nonnegative-integer?
+  auto-v : any/c = #f
+   props   :   (listof (cons/c struct-type-property?   =   null
+                               any/c))
+  inspector : (or/c inspector? #f 'prefab) = (current-inspector)
+                   (or/c procedure?
+   proc-spec   :         exact-nonnegative-integer?   =   #f
+                         #f)
+  immutables : (listof exact-nonnegative-integer?) = null
+  guard : (or/c procedure? #f) = #f
+  constructor-name : (or/c symbol? #f) = #f
+Creates a new structure type, unless inspector is 'prefab, in which case
+make-struct-type accesses a prefab structure type. The name argument is used as
+the type name. If super-type is not #f, the resulting type is a subtype of the
+corresponding structure type.
+
+The resulting structure type has init-field-cnt+auto-field-cnt fields (in
+addition to any fields from super-type), but only init-field-cnt constructor
+arguments (in addition to any constructor arguments from super-type). The
+remaining fields are initialized with auto-v. The total field count (including
+super-type fields) must be no more than 32768.
+
+The props argument is a list of pairs, where the car of each pair is a
+structure type property descriptor, and the cdr is an arbitrary value. A
+property can be specified multiple times in props (including properties that
+are automatically added by properties that are directly included in props) only
+if the associated values are eq?, otherwise the exn:fail:contract exception is
+raised. See Structure Type Properties for more information about properties.
+When inspector is 'prefab, then props must be null.
+
+The inspector argument normally controls access to reflective information about
+the structure type and its instances; see Structure Inspectors for more
+information. If inspector is 'prefab, then the resulting prefab structure type
+and its instances are always transparent.
+
+If proc-spec is an integer or procedure, instances of the structure type act as
+procedures. See prop:procedure for further information. Providing a non-#f
+value for proc-spec is the same as pairing the value with prop:procedure at the
+end of props, plus including proc-spec in immutables when proc-spec is an
+integer.
+
+The immutables argument provides a list of field positions. Each element in the
+list must be unique, otherwise exn:fail:contract exception is raised. Each
+element must also fall in the range 0 (inclusive) to init-field-cnt
+(exclusive), otherwise exn:fail:contract exception is raised.
+
+The guard argument is either a procedure of n+1 arguments or #f, where n is the
+number of arguments for the new structure type’s constructor (i.e.,
+init-field-cnt plus constructor arguments implied by super-type, if any). If
+guard is a procedure, then the procedure is called whenever an instance of the
+type is constructed, or whenever an instance of a subtype is created. The
+arguments to guard are the values provided for the structure’s first n fields,
+followed by the name of the instantiated structure type (which is name, unless
+a subtype is instantiated). The guard result must be n values, which become the
+actual values for the structure’s fields. The guard can raise an exception to
+prevent creation of a structure with the given field values. If a structure
+subtype has its own guard, the subtype guard is applied first, and the first n
+values produced by the subtype’s guard procedure become the first n arguments
+to guard. When inspector is 'prefab, then guard must be #f.
+
+If constructor-name is not #f, it is used as the name of the generated
+constructor procedure as returned by object-name or in the printed form of the
+constructor value.
+
+The result of make-struct-type is five values:
+
+  • a structure type descriptor,
+
+  • a constructor procedure,
+
+  • a predicate procedure,
+
+  • an accessor procedure, which consumes a structure and a field index between
+    0 (inclusive) and init-field-cnt+auto-field-cnt (exclusive), and
+
+  • a mutator procedure, which consumes a structure, a field index, and a field
+    value.
+
+Examples:
+
+    > (define-values (struct:a make-a a? a-ref a-set!)
+        (make-struct-type 'a #f 2 1 'uninitialized))
+    > (define an-a (make-a 'x 'y))
+    > (a-ref an-a 1)
+    'y
+
+    > (a-ref an-a 2)
+    'uninitialized
+
+    > (define a-first (make-struct-field-accessor a-ref 0))
+    > (a-first an-a)
+    'x
+
+
+
+    > (define-values (struct:b make-b b? b-ref b-set!)
+        (make-struct-type 'b struct:a 1 2 'b-uninitialized))
+    > (define a-b (make-b 'x 'y 'z))
+    > (a-ref a-b 1)
+    'y
+
+    > (a-ref a-b 2)
+    'uninitialized
+
+    > (b-ref a-b 0)
+    'z
+
+    > (b-ref a-b 1)
+    'b-uninitialized
+
+    > (b-ref a-b 2)
+    'b-uninitialized
+
+
+    > (define-values (struct:c make-c c? c-ref c-set!)
+        (make-struct-type
+         'c struct:b 0 0 #f null (make-inspector) #f null
+         ; guard checks for a number, and makes it inexact
+         (lambda (a1 a2 b1 name)
+           (unless (number? a2)
+             (error (string->symbol (format "make-~a" name))
+                    "second field must be a number"))
+           (values a1 (exact->inexact a2) b1))))
+    > (make-c 'x 'y 'z)
+    make-c: second field must be a number
+
+    > (define a-c (make-c 'x 2 'z))
+    > (a-ref a-c 1)
+    2.0
+
+
+    > (define p1 #s(p a b c))
+    > (define-values (struct:p make-p p? p-ref p-set!)
+        (make-struct-type 'p #f 3 0 #f null 'prefab #f '(0 1 2)))
+    > (p? p1)
+    #t
+
+    > (p-ref p1 0)
+    'a
+
+    > (make-p 'x 'y 'z)
+    '#s(p x y z)
+
+
+(make-struct-field-accessor    accessor-proc        
+                               field-pos            
+                             [ field-name])    →   procedure?
+  accessor-proc : struct-accessor-procedure?
+  field-pos : exact-nonnegative-integer?
+   field-name   :   (or/c symbol? #f)
+                =   (symbol->string (format "field~a" field-pos))
+Returns a field accessor that is equivalent to (lambda (s) (accessor-proc s
+field-pos)). The accessor-proc must be an accessor returned by make-struct-type
+. The name of the resulting procedure for debugging purposes is derived from
+field-name and the name of accessor-proc’s structure type if field-name is a
+symbol.
+
+For examples, see make-struct-type.
+
+(make-struct-field-mutator    mutator-proc        
+                              field-pos           
+                            [ field-name])   →   procedure?
+  mutator-proc : struct-mutator-procedure?
+  field-pos : exact-nonnegative-integer?
+   field-name   :   (or/c symbol? #f)
+                =   (symbol->string (format "field~a" field-pos))
+Returns a field mutator that is equivalent to (lambda (s v) (mutator-proc s
+field-pos v)). The mutator-proc must be a mutator returned by make-struct-type.
+The name of the resulting procedure for debugging purposes is derived from
+field-name and the name of mutator-proc’s structure type if field-name is a
+symbol.
+
+For examples, see make-struct-type.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

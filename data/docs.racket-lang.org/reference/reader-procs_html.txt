@@ -1,0 +1,80 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 12  Input and Output
+ 12.1  Ports
+ 12.2  Byte and String Input
+ 12.3  Byte and String Output
+ 12.4  Reading
+ 12.5  Writing
+ 12.6  The Reader
+ 12.7  The Printer
+ 12.8  Pretty Printing
+ 12.9  Reader Extension
+12.10  Printer Extension
+12.11  Serialization
+12.12  Fast-Load Serialization
+▼ 12.9  Reader Extension
+12.9.1  Readtables
+12.9.2  Reader-Extension Procedures
+12.9.3  Special Comments
+[...search manuals...]
+  top← prev  up  next → 
+
+12.9.2 Reader-Extension Procedures
+
+Calls to reader extension procedures can be triggered through read, read/
+recursive, read-syntax, or read-honu-syntax. In addition, a special-read
+procedure can be triggered by calls to read-honu, read-honu/recursive,
+read-honu-syntax, read-honu-syntax/recursive, read-char-or-special, or by the
+context of read-bytes-avail!, peek-bytes-avail!*, read-bytes-avail!, and
+peek-bytes-avail!*.
+
+Optional arities for reader-macro and special-result procedures allow them to
+distinguish reads via read, etc., from reads via read-syntax, etc. (where the
+source value is #f and no other location information is available).
+
+When a reader-extension procedure is called in syntax-reading mode (via
+read-syntax, etc.), it should generally return a syntax object that has no
+lexical context (e.g., a syntax object created using datum->syntax with #f as
+the first argument and with the given location information as the third
+argument). Another possible result is a special-comment value (see Special
+Comments). If the procedure’s result is not a syntax object and not a
+special-comment value, it is converted to one using datum->syntax.
+
+When a reader-extension procedure is called in non-syntax-reading modes, it
+should generally not return a syntax object. If a syntax object is returned, it
+is converted to a plain value using syntax->datum.
+
+In either context, when the result from a reader-extension procedure is a
+special-comment value (see Special Comments), then read, read-syntax, etc.
+treat the value as a delimiting comment and otherwise ignore it.
+
+Also, in either context, the result may be copied to prevent mutation to
+vectors or boxes before the read result is completed, and to support the
+construction of graphs with cycles. Mutable boxes, vectors, and prefab
+structures are copied, along with any pairs, boxes, vectors, prefab structures
+that lead to such mutable values, to placeholders produced by a recursive read
+(see read/recursive), or to references of a shared value. Graph structure
+(including cycles) is preserved in the copy.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,290 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 6  raco setup: Installation Management
+6.1  Running raco setup
+6.2  "info.rkt" File Format
+6.3  API for Installation
+6.4  API for Installing ".plt" Archives
+6.5  API for Finding Installation Directories
+6.6  API for Reading "info.rkt" Files
+6.7  API for Relative Paths
+6.8  API for Cross-References for Installed Manuals
+► 6.1  Running raco setup
+6.1.1  Controlling raco setup with "info.rkt" Files
+On this page:
+6.1.1 Controlling raco setup with "info.rkt" Files
+[...search manuals...]
+  top← prev  up  next → 
+
+6.1 Running raco setup
+
+The raco setup command performs two main services:
+
+  • Compiling and setting up all (or some of the) collections: When raco setup
+    is run without any arguments, it finds all of the current collections (see
+    Libraries and Collections) and compiles libraries in each collection.
+
+    An optional "info.rkt" within the collection can indicate specifically how
+    the collection’s files are to be compiled and other actions to take in
+    setting up a collection, such as creating executables or building
+    documentation. See Controlling raco setup with "info.rkt" Files for more
+    information.
+
+    The --clean (or -c) flag to raco setup causes it to delete existing ".zo"
+    files, thus ensuring a clean build from the source files. The exact set of
+    deleted files can be controlled by "info.rkt"; see clean for more
+    information.
+
+    The --workers (or -j) flag to raco setup takes an argument n to make
+    compilation use up to n parallel processes. The default value of n is (
+    processor-count), which typically uses all the machine’s processing cores.
+
+    The -l flag takes one or more collection names and restricts raco setup’s
+    action to those collections.
+
+    The --mode ‹mode› flag causes raco setup to use a ".zo" compiler other than
+    the default compiler, and to put the resulting ".zo" files in a
+    subdirectory (of the usual place) named by ‹mode›. The compiler is obtained
+    by using ‹mode› as a collection name, finding a "zo-compile.rkt" module in
+    that collection, and extracting its zo-compile export. The zo-compile
+    export should be a function like compile; see the "errortrace" collection
+    for an example.
+
+    When building racket, flags can be provided to raco setup as run by make
+    install by setting the PLT_SETUP_OPTIONS environment variable. For example,
+    the following command line uses a single process to build collections
+    during an install:
+
+      env PLT_SETUP_OPTIONS="-j 1" make install
+
+  • Unpacking ".plt" files: A ".plt" file is a platform-independent
+    distribution archive for software based on Racket. When one or more file
+    names are provided as the command line arguments to raco setup, the files
+    contained in the ".plt" archive are unpacked (according to specifications
+    embedded in the ".plt" file) and only collections specified by the ".plt"
+    file are compiled and setup.
+
+Run raco help setup to see a list of all options accepted by the raco setup
+command.
+
+6.1.1 Controlling raco setup with "info.rkt" Files
+
+To compile a collection’s files to bytecode, raco setup uses the
+compile-collection-zos procedure. That procedure, in turn, consults the
+collection’s "info.rkt" file, if it exists, for specific instructions on
+compiling the collection. See compile-collection-zos for more information on
+the fields of "info.rkt" that it uses, and see "info.rkt" File Format for
+information on the format of an "info.rkt" file.
+
+Optional "info.rkt" fields trigger additional actions by raco setup:
+
+  • scribblings : (listof (cons/c string? list?)) — A list of documents to
+    build. Each document in the list is itself represented as a list, where
+    each document’s list starts with a string that is a collection-relative
+    path to the document’s source file.
+
+    More precisely a scribblings entry must be a value that can be generated
+    from an expression matching the following entry grammar:
+
+         entry   =   (list doc ...)
+                      
+           doc   =   (list src-string)
+                 |   (list src-string flags)
+                 |   (list src-string flags category)
+                 |   (list src-string flags category name-string)
+                      
+         flags   =   (list mode-symbol ...)
+                      
+      category   =   (list category-symbol)
+                 |   (list category-symbol sort-number)
+
+    A document’s list optionally continues with information on how to build the
+    document. If a document’s list contains a second item, it must be a list of
+    mode symbols (described below). If a document’s list contains a third item,
+    it must be a list that categorizes the document (described further below).
+    If a document’s list contains a fourth item, it is a name to use for the
+    generated documentation, instead of defaulting to the source file’s name
+    (sans extension).
+
+    Each mode symbol in flags can be one of the following, where only
+    'multi-page is commonly used:
+
+      □ 'multi-page : Generates multi-page HTML output, instead of the default
+        single-page format.
+
+      □ 'main-doc : Indicates that the generated documentation should be
+        written into the main installation directory, instead of to a
+        user-specific directory. This mode is the default for a collection that
+        is itself located in the main installation.
+
+      □ 'user-doc : Indicates that the generated documentation should be
+        written a user-specific directory. This mode is the default for a
+        collection that is not itself located in the main installation.
+
+      □ 'depends-all : Indicates that the document should be re-built if any
+        other document is rebuilt—except for documents that have the
+        'no-depends-on mode.
+
+      □ 'depends-all-main : Indicates that the document should be re-built if
+        any other document is rebuilt that is installed into the main
+        installation—except for documents that have the 'no-depends-on mode.
+
+      □ 'always-run : Build the document every time that raco setup is run,
+        even if none of its dependencies change.
+
+      □ 'no-depend-on : Removes the document for consideration for other
+        dependencies. This mode is typically used with 'always-run to avoid
+        unnecessary dependencies that prevent reaching a stable point in
+        building documentation.
+
+      □ 'main-doc-root : Designates the root document for the main
+        installation. The document that currently has this mode should be the
+        only one with the mode.
+
+      □ 'user-doc-root : Designates the root document for the user-specific
+        documentation directory. The document that currently has this mode
+        should be the only one with the mode.
+
+    The category list specifies how to show the document in the root table of
+    contents. The list must start with a symbol, usually one of the following
+    categories, which are ordered as below in the root documentation page:
+
+      □ 'getting-started : High-level, introductory documentation.
+
+      □ 'language : Documentation for a prominent programming language.
+
+      □ 'tool : Documentation for an executable.
+
+      □ 'gui-library : Documentation for GUI and graphics libraries.
+
+      □ 'net-library : Documentation for networking libraries.
+
+      □ 'parsing-library : Documentation for parsing libraries.
+
+      □ 'tool-library : Documentation for programming-tool libraries (i.e., not
+        important enough for the more prominent 'tool category).
+
+      □ 'interop : Documentation for interoperability tools and libraries.
+
+      □ 'library : Documentation for libraries; this category is the default
+        and used for unrecognized category symbols.
+
+      □ 'legacy : Documentation for deprecated libraries, languages, and tools.
+
+      □ 'experimental : Documentation for an experimental language or library.
+
+      □ 'other : Other documentation.
+
+      □ 'omit : Documentation that should not be listed on the root page.
+
+    If the category list has a second element, it must be a real number that
+    designates the manual’s sorting position with the category; manuals with
+    the same sorting position are ordered alphabetically. For a pair of manuals
+    with sorting numbers n and m, the groups for the manuals are separated by
+    space if (truncate (/ n 10))and (truncate (/ m 10)) are different.
+
+  • racket-launcher-names : (listof string?) — A list of executable names to be
+    generated in the installation’s executable directory to run Racket-based
+    programs implemented by the collection. A parallel list of library names
+    must be provided by racket-launcher-libraries or racket-launcher-flags.
+
+    For each name, a launching executable is set up using make-racket-launcher.
+    The arguments are -l- and ‹colls›/.../‹file›, where ‹file› is the file
+    named by racket-launcher-libraries and ‹colls›/... are the collections (and
+    subcollections) of the "info.rkt" file.
+
+    In addition,
+
+        (build-aux-from-path
+         (build-path (collection-path ‹colls› ...) ‹suffixless-file›))
+
+    is provided for the optional aux argument (for icons, etc.) to
+    make-racket-launcher, where where ‹suffixless-file› is ‹file› without its
+    suffix.
+
+    If racket-launcher-flags is provided, it is used as a list of command-line
+    arguments passed to racket instead of the above default, allowing arbitrary
+    command-line arguments. If racket-launcher-flags is specified together with
+    racket-launcher-libraries, then the flags will override the libraries, but
+    the libraries can still be used to specify a name for build-aux-from-path
+    (to find related information like icon files etc).
+
+  • racket-launcher-libraries : (listof path-string?) — A list of library names
+    in parallel to racket-launcher-names.
+
+  • racket-launcher-flags : (listof string?) — A list of command-line flag
+    lists, in parallel to racket-launcher-names.
+
+  • mzscheme-launcher-names, mzscheme-launcher-libraries, and
+    mzscheme-launcher-flags — Backward-compatible variant of
+    racket-launcher-names, etc.
+
+  • gracket-launcher-names : (listof string?) — Like racket-launcher-names, but
+    for GRacket-based executables. The launcher-name list is treated in
+    parallel to gracket-launcher-libraries and gracket-launcher-flags.
+
+  • gracket-launcher-libraries : (listof path-string?) — A list of library
+    names in parallel to gracket-launcher-names.
+
+  • gracket-launcher-flags : (listof string?) — A list of command-line flag
+    lists, in parallel to gracket-launcher-names.
+
+  • mred-launcher-names, mred-launcher-libraries, and mred-launcher-flags —
+    Backward-compatible variant of gracket-launcher-names, etc.
+
+  • install-collection : path-string? — A library module relative to the
+    collection that provides installer. The installer procedure accepts either
+    one or two arguments. The first argument is a directory path to the parent
+    of the Racket installation’s "collects" directory; the second argument, if
+    accepted, is a path to the collection’s own directory. The procedure should
+    perform collection-specific installation work, and it should avoid
+    unnecessary work in the case that it is called multiple times for the same
+    installation.
+
+  • pre-install-collection : path-string? — Like install-collection, except
+    that the corresponding installer is called before the normal ".zo" build,
+    instead of after. The provided procedure should be named pre-installer in
+    this case, so it can be provided by the same file that provides an
+    installer.
+
+  • post-install-collection : path-string? — Like install-collection. It is
+    called right after the install-collection procedure is executed. The only
+    difference between these is that the --no-install flag can be used to
+    disable the previous two installers, but not this one. It is therefore
+    expected to perform operations that are always needed, even after an
+    installation that contains pre-compiled files. The provided procedure
+    should be named post-installer in this case, so it can be provided by the
+    same file that provides the previous two.
+
+  • clean : (listof path-string?) — A list of pathnames to be deleted when the
+    --clean or -c flag is passed to raco setup. The pathnames must be relative
+    to the collection. If any path names a directory, each of the files in the
+    directory are deleted, but none of the subdirectories of the directory are
+    checked. If the path names a file, the file is deleted. The default, if
+    this flag is not specified, is to delete all files in the "compiled"
+    subdirectory, and all of the files in the platform-specific subdirectory of
+    the compiled directory for the current platform.
+
+    Just as compiling ".zo" files will compile each module used by a compiled
+    module, deleting a module’s compiled image will delete the ".zo" of each
+    module that is used by the module. More specifically, used modules are
+    determined when deleting a ".dep" file, which would have been created to
+    accompany a ".zo" file when the ".zo" was built by raco setup. If the
+    ".dep" file indicates another module, that module’s ".zo" is deleted only
+    if it also has an accompanying ".dep" file. In that case, the ".dep" file
+    is deleted, and additional used modules are deleted based on the used
+    module’s ".dep" file, etc. Supplying a specific list of collections to raco
+    setup disables this dependency-based deletion of compiled files.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

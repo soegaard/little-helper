@@ -1,0 +1,67 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 15  Memory Management
+15.1  Weak Boxes
+15.2  Ephemerons
+15.3  Wills and Executors
+15.4  Garbage Collection
+On this page:
+collect-garbage
+current-memory-use
+dump-memory-stats
+[...search manuals...]
+  top← prev  up  next → 
+
+15.4 Garbage Collection
+
+Set the PLTDISABLEGC environment variable (to any value) before Racket starts
+to disable garbage collection.
+
+(collect-garbage) → void?
+Forces an immediate garbage collection (unless garbage collection is disabled
+by setting PLTDISABLEGC). Some effectively unreachable data may remain
+uncollected, because the collector cannot prove that it is unreachable.
+
+The collect-garbage procedure provides some control over the timing of
+collections, but garbage will obviously be collected even if this procedure is
+never called (unless garbage collection is disabled).
+
+(current-memory-use [cust]) → exact-nonnegative-integer?
+  cust : custodian? = #f
+Returns an estimate of the number of bytes of memory occupied by reachable data
+from cust. This estimate is calculated by the last garbage colection, and can
+be 0 if none occurred (or if none occurred since the given custodian was
+created). The current-memory-use function does not perform a collection by
+itself; doing one before the call will generally decrease the result (or
+increase it from 0 if no collections happened yet).
+
+If cust is not provided, the estimate is a total reachable from any custodians.
+
+When Racket is compiled without support for memory accounting, the estimate is
+the same (i.e., all memory) for any individual custodian; see also
+custodian-memory-accounting-available?.
+
+(dump-memory-stats) → any
+Dumps information about memory usage to the (low-level) standard output port.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

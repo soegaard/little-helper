@@ -1,0 +1,95 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 7  Contracts
+7.1  Data-structure Contracts
+7.2  Function Contracts
+7.3  Parametric Contracts
+7.4  Lazy Data-structure Contracts
+7.5  Attaching Contracts to Values
+7.6  Building New Contract Combinators
+7.7  Contract Utilities
+7.8  Legacy Contracts
+[...search manuals...]
+  top← prev  up  next → 
+
+7 Contracts
+
+            +Contracts in The Racket Guide introduces contracts.
+
+The contract system guards one part of a program from another. Programmers
+specify the behavior of a module’s exports via provide/contract, and the
+contract system enforces those constraints.
+
+ (require racket/contract)
+The bindings documented in this section are provided by the racket/contract and
+racket libraries, but not racket/base.
+
+Contracts come in two forms: those constructed by the various operations listed
+in this section of the manual, and various ordinary Racket values that double
+as contracts, including
+
+  • symbols, booleans, characters, and null, which are treated as contracts
+    that recognize themselves, using eq?,
+
+  • strings and byte strings, which are treated as contracts that recognize
+    themselves using equal?,
+
+  • numbers, which are treated as contracts that recognize themselves using =,
+
+  • regular expressions, which are treated as contracts that recognize byte
+    strings and strings that match the regular expression, and
+
+  • predicates: any procedure of arity 1 is treated as a predicate. During
+    contract checking, it is applied to the values that appear and should
+    return #f to indicate that the contract failed, and anything else to
+    indicate it passed.
+
+    7.1 Data-structure Contracts
+
+    7.2 Function Contracts
+
+    7.3 Parametric Contracts
+
+    7.4 Lazy Data-structure Contracts
+
+    7.5 Attaching Contracts to Values
+
+      7.5.1 Nested Contract Boundaries
+
+      7.5.2 Low-level Contract Boundaries
+
+    7.6 Building New Contract Combinators
+
+      7.6.1 Blame Objects
+
+      7.6.2 Contracts as structs
+
+      7.6.3 Obligation Information in Check Syntax
+
+      7.6.4 Utilities for Building New Combinators
+
+    7.7 Contract Utilities
+
+    7.8 Legacy Contracts
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

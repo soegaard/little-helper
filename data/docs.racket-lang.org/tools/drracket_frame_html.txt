@@ -1,0 +1,221 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+On this page:
+drracket: frame: name-message%
+set-message
+drracket: frame: mixin
+drracket: frame: basics-mixin
+edit-menu: between-find-and-preferences
+file-menu: between-open-and-revert
+file-menu: between-print-and-close
+file-menu: new-callback
+file-menu: new-string
+file-menu: open-callback
+file-menu: open-string
+get-additional-important-urls
+help-menu: about-callback
+help-menu: about-string
+help-menu: before-about
+help-menu: create-about?
+drracket: frame: basics<%>
+drracket: frame: <%>
+add-show-menu-items
+get-show-menu
+not-running
+running
+update-shown
+[...search manuals...]
+  top← prev  up  next → 
+
+15 drracket:frame
+
+drracket:frame:name-message% : class?
+  superclass: canvas%
+
+This class implements the little filename button in the top-right hand side of
+DrRacket’s frame.
+
+    (make-object drracket:frame:name-message% parent)
+     → (is-a?/c drracket:frame:name-message%)
+      parent : (is-a?/c area-container<%>)
+
+    (send a-drracket:frame:name-message set-message   name         
+                                                      short-name)  
+     → void?
+      name : (or/c string? false/c)
+      short-name : string?
+    Specification: Sets the names that the button shows.
+
+    Default implementation: The string short-name is the name that is shown on
+    the button and name is shown when the button is clicked on, in a separate
+    window. If name is #f, a message indicating that the file hasn’t been saved
+    is shown.
+
+drracket:frame:mixin : (class? . -> . class?)
+  argument extends/implements:  drracket:frame:basics<%>
+                                frame:text-info<%>
+                                frame:editor<%>
+  result implements:  drracket:frame:<%>
+Provides an implementation of drracket:frame:<%>
+
+drracket:frame:basics-mixin : (class? . -> . class?)
+  argument extends/implements:  frame:standard-menus<%>
+  result implements:  drracket:frame:basics<%>
+Use this mixin to establish some common menu items across various DrRacket
+windows.
+
+
+    (send a-drracket:frame:basics edit-menu:between-find-and-preferences)
+     → void?
+    Overrides edit-menu:between-find-and-preferences in frame:standard-menus<%>
+    .
+    Adds a separator-menu-item%. Next, adds the "Keybindings" menu item to the
+    edit menu. Finally, if the current-eventspace-has-standard-menus? procedure
+    returns #f, creates another separator-menu-item%.
+
+    (send a-drracket:frame:basics file-menu:between-open-and-revert file-menu)
+     → void?
+      file-menu : (is-a?/c menu%)
+    Overrides file-menu:between-open-and-revert in frame:standard-menus<%>.
+    Adds an “Install .plt File...” menu item, which downloads and installs .plt
+    files from the web, or installs them from the local disk. After that, calls
+    the super method.
+
+    (send a-drracket:frame:basics file-menu:between-print-and-close file-menu)
+     → void?
+      file-menu : (is-a?/c menu%)
+    Overrides file-menu:between-print-and-close in frame:standard-menus<%>.
+    Calls the super method. Then, creates a menu item for multi-file searching.
+    Finally, adds a separator-menu-item%.
+
+    (send a-drracket:frame:basics file-menu:new-callback   item  
+                                                           evt)  
+     → void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides file-menu:new-callback in frame:standard-menus<%>.
+    Opens a new, empty DrRacket window.
+
+    (send a-drracket:frame:basics file-menu:new-string) → string?
+    Overrides file-menu:new-string in frame:standard-menus<%>.
+    Returns the empty string.
+
+    (send a-drracket:frame:basics file-menu:open-callback   item  
+                                                            evt)  
+     → void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides file-menu:open-callback in frame:standard-menus<%>.
+    Calls handler:edit-file.
+
+    (send a-drracket:frame:basics file-menu:open-string) → string?
+    Overrides file-menu:open-string in frame:standard-menus<%>.
+    Returns the empty string.
+
+    (send a-drracket:frame:basics get-additional-important-urls)
+     → (listof (list string string))
+    Specification: Each string in the result of this method is added as a menu
+    item to DrRacket’s “Related Web Sites” menu item. The first string is the
+    name of the menu item and the second string is a url that, when the menu
+    item is chosen, is sent to the user’s browser.
+
+    Default implementation: Returns the empty list by default.
+
+    (send a-drracket:frame:basics help-menu:about-callback   item  
+                                                             evt)  
+     → void?
+      item : (is-a?/c menu-item%)
+      evt : (is-a?/c control-event%)
+    Overrides help-menu:about-callback in frame:standard-menus<%>.
+    Opens an about box for DrRacket.
+
+    (send a-drracket:frame:basics help-menu:about-string)
+     → string?
+    Overrides help-menu:about-string in frame:standard-menus<%>.
+    Returns the string "DrRacket".
+
+    (send a-drracket:frame:basics help-menu:before-about help-menu)
+     → void?
+      help-menu : (is-a?/c menu%)
+    Overrides help-menu:before-about in frame:standard-menus<%>.
+    Adds the Help Desk menu item and the Welcome to DrRacket menu item.
+
+    (send a-drracket:frame:basics help-menu:create-about?)
+     → boolean?
+    Overrides help-menu:create-about? in frame:standard-menus<%>.
+    Returns #t.
+
+drracket:frame:basics<%> : interface?
+  implements:  frame:standard-menus<%>
+This interface is the result of the drracket:frame:basics-mixin
+
+drracket:frame:<%> : interface?
+  implements:  frame:editor<%>
+               frame:text-info<%>
+               drracket:frame:basics<%>
+
+
+    (send a-drracket:frame: add-show-menu-items show-menu) → void?
+      show-menu : (is-a?/c menu%)
+    Specification: This method is called during the construction of the view
+    menu. This method is intended to be overridden. It is expected to add other
+    Show/Hide menu items to the show menu.
+
+    See also get-show-menu.
+
+    Default implementation: Does nothing.
+
+    (send a-drracket:frame: get-show-menu) → (is-a?/c menu%)
+   
+    returns the view menu, for use by the update-shown method.
+
+    See also add-show-menu-items.
+
+    The method (and others) uses the word show to preserve backwards
+    compatibility from when the menu itself was named the Show menu.
+
+    (send a-drracket:frame: not-running) → void?
+    updates the status pane at the bottom of the window to show that evaluation
+    is not taking place in the user’s program.
+
+    (send a-drracket:frame: running) → void?
+    updates the status pane at the bottom of the window to show that evaluation
+    is taking place in the user’s program.
+
+    (send a-drracket:frame: update-shown) → void?
+    Specification: This method is intended to be overridden. It’s job is to
+    update the "View" menu to match the state of the visible windows. In the
+    case of the standard DrRacket window, it change the menu items to reflect
+    the visibility of the definitions and interaction editor-canvas%s.
+
+    Call this method whenever the state of the show menu might need to change.
+
+    See also get-show-menu.
+
+    Default implementation: Does nothing.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

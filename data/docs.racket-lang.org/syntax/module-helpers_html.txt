@@ -1,0 +1,221 @@
+▼  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+► 2  Module-Processing Helpers
+2.1  Reading Module Source Code
+2.2  Getting Module Compiled Code
+2.3  Resolving Module Paths to File Paths
+2.4  Simplifying Module Paths
+2.5  Inspecting Modules and Module Dependencies
+On this page:
+2.1 Reading Module Source Code
+with-module-reading-parameterization
+check-module-form
+2.2 Getting Module Compiled Code
+get-module-code
+moddep-current-open-input-file
+exn: get-module-code
+2.3 Resolving Module Paths to File Paths
+resolve-module-path
+resolve-module-path-index
+2.4 Simplifying Module Paths
+collapse-module-path
+collapse-module-path-index
+2.5 Inspecting Modules and Module Dependencies
+show-import-tree
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Module-Processing Helpers
+
+2.1 Reading Module Source Code
+
+ (require syntax/modread)
+
+(with-module-reading-parameterization thunk) → any
+  thunk : (-> any)
+Calls thunk with all reader parameters reset to their default values.
+
+(check-module-form   stx                  
+                     expected-module-sym  
+                     source-v)            
+ → (or/c syntax? false/c)
+  stx : (or/c syntax? eof-object?)
+  expected-module-sym : symbol?
+  source-v : (or/c string? false/c)
+Inspects stx to check whether evaluating it will declare a module—at least if
+module is bound in the top-level to Racket’s module. The syntax object stx can
+contain a compiled expression. Also, stx can be an end-of-file, on the grounds
+that read-syntax can produce an end-of-file.
+
+The expected-module-sym argument is currently ignored. In previous versions,
+the module form stx was obliged to declare a module who name matched
+expected-module-sym.
+
+If stx can declare a module in an appropriate top-level, then the
+check-module-form procedure returns a syntax object that certainly will declare
+a module (adding explicit context to the leading module if necessary) in any
+top-level. Otherwise, if source-v is not #f, a suitable exception is raised
+using the write form of the source in the message; if source-v is #f, #f is
+returned.
+
+If stx is eof or eof wrapped as a syntax object, then an error is raised or #f
+is returned.
+
+2.2 Getting Module Compiled Code
+
+ (require syntax/modcode)
+
+(get-module-code    path                                      
+                  [ #:sub-path compiled-subdir0               
+                    compiled-subdir                           
+                    #:compile compile-proc0                   
+                    compile-proc                              
+                    #:extension-handler ext-proc0             
+                    ext-proc                                  
+                    #:choose choose-proc                      
+                    #:notify notify-proc                      
+                    #:source-reader read-syntax-proc])   →   any
+  path : path?
+   compiled-subdir0   :   (and/c path-string? relative-path?)
+                      =   "compiled"
+   compiled-subdir   :   (and/c path-string? relative-path?)
+                     =   compiled-subdir0
+  compile-proc0 : (any/c . -> . any) = compile
+  compile-proc : (any/c . -> . any) = compile-proc0
+  ext-proc0 : (or/c false/c (path? boolean? . -> . any)) = #f
+   ext-proc   :   (or/c false/c (path? boolean? . -> . any))
+              =   ext-proc0
+                     (path? path? path?
+   choose-proc   :    . -> .
+                      (or/c (symbols 'src 'zo 'so) false/c))
+                 =   (lambda (src zo so) #f)
+  notify-proc : (any/c . -> . any) = void
+   read-syntax-proc   :   (any/c input-port? . -> . (or/c syntax? eof-object?))
+                      =   read-syntax
+Returns a compiled expression for the declaration of the module specified by
+path.
+
+The compiled-subdir argument defaults to "compiled"; it specifies the
+sub-directory to search for a compiled version of the module.
+
+The compile-proc argument defaults to compile. This procedure is used to
+compile module source if an already-compiled version is not available.
+
+The ext-proc argument defaults to #f. If it is not #f, it must be a procedure
+of two arguments that is called when a native-code version of path is should be
+used. In that case, the arguments to ext-proc are the path for the extension,
+and a boolean indicating whether the extension is a _loader file (#t) or not (#
+f).
+
+The choose-proc argument is a procedure that takes three paths: a source path,
+a ".zo" file path, and an extension path (for a non-_loader extension). Some of
+the paths may not exist. The result should be either 'src, 'zo, 'so, or #f,
+indicating which variant should be used or (in the case of #f) that the default
+choice should be used.
+
+The default choice is computed as follows: if a ".zo" version of path is
+available and newer than path itself (in one of the directories specified by
+compiled-subdir), then it is used instead of the source. Native-code versions
+of path are ignored, unless only a native-code non-_loader version exists
+(i.e., path itself does not exist). A _loader extension is selected a last
+resort.
+
+If an extension is preferred or is the only file that exists, it is supplied to
+ext-proc when ext-proc is #f, or an exception is raised (to report that an
+extension file cannot be used) when ext-proc is #f.
+
+If notify-proc is supplied, it is called for the file (source, ".zo" or
+extension) that is chosen.
+
+If read-syntax-proc is provided, it is used to read the module from a source
+file (but not from a bytecode file).
+
+(moddep-current-open-input-file)
+ → (path-string? . -> . input-port?)
+(moddep-current-open-input-file proc) → void?
+  proc : (path-string? . -> . input-port?)
+A parameter whose value is used like open-input-file to read a module source or
+".zo" file.
+
+(struct   exn:get-module-code exn:fail (path)
+          #:extra-constructor-name make-exn:get-module-code)
+  path : path?
+An exception structure type for exceptions raised by get-module-code.
+
+2.3 Resolving Module Paths to File Paths
+
+ (require syntax/modresolve)
+
+(resolve-module-path   module-path-v         
+                       rel-to-path-v)   →   path?
+  module-path-v : module-path?
+  rel-to-path-v : (or/c path-string? (-> any) false/c)
+Resolves a module path to filename path. The module path is resolved relative
+to rel-to-path-v if it is a path string (assumed to be for a file), to the
+directory result of calling the thunk if it is a thunk, or to the current
+directory otherwise.
+
+(resolve-module-path-index   module-path-index        
+                             rel-to-path-v)      →   path?
+  module-path-index : module-path-index?
+  rel-to-path-v : (or/c path-string? (-> any) false/c)
+Like resolve-module-path but the input is a module path index; in this case,
+the rel-to-path-v base is used where the module path index contains the “self”
+index. If module-path-index depends on the “self” module path index, then an
+exception is raised unless rel-to-path-v is a path string.
+
+2.4 Simplifying Module Paths
+
+ (require syntax/modcollapse)
+
+(collapse-module-path   module-path-v          
+                        rel-to-module-path-v)  
+ → (or/c path? module-path?)
+  module-path-v : module-path?
+  rel-to-module-path-v : any/c
+Returns a “simplified” module path by combining module-path-v with
+rel-to-module-path-v, where the latter must have the form '(lib ....) or a
+symbol, '(file <string>), '(planet ....), a path, or a thunk to generate one of
+those.
+
+The result can be a path if module-path-v contains a path element that is
+needed for the result, or if rel-to-module-path-v is a non-string path that is
+needed for the result; otherwise, the result is a module path in the sense of
+module-path?.
+
+When the result is a 'lib or 'planet module path, it is normalized so that
+equivalent module paths are represented by equal? results.
+
+(collapse-module-path-index   module-path-index      
+                              rel-to-module-path-v)  
+ → (or/c path? module-path?)
+  module-path-index : module-path-index?
+  rel-to-module-path-v : any/c
+Like collapse-module-path, but the input is a module path index; in this case,
+the rel-to-module-path-v base is used where the module path index contains the
+“self” index.
+
+2.5 Inspecting Modules and Module Dependencies
+
+ (require syntax/moddep)
+
+Re-exports syntax/modread, syntax/modcode, syntax/modcollapse, and syntax/
+modresolve, in addition to the following:
+
+(show-import-tree module-path-v) → void?
+  module-path-v : module-path?
+A debugging aid that prints the import hierarchy starting from a given module
+path.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

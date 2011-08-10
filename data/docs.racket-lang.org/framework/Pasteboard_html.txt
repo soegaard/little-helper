@@ -1,0 +1,75 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+pasteboard: basic%
+pasteboard: standard-style-list%
+pasteboard: keymap%
+pasteboard: file%
+pasteboard: backup-autosave%
+pasteboard: info%
+[...search manuals...]
+  top← prev  up  next → 
+
+24 Pasteboard
+
+pasteboard:basic% : class?
+  superclass: (editor:basic-mixin pasteboard%)
+
+
+pasteboard:standard-style-list% : class?
+  superclass: (editor:standard-style-list-mixin pasteboard:basic%)
+
+
+pasteboard:keymap% : class?
+  superclass: (editor:keymap-mixin pasteboard:standard-style-list%)
+
+
+pasteboard:file% : class?
+  superclass: (editor:file-mixin pasteboard:keymap%)
+
+
+pasteboard:backup-autosave% : class?
+  superclass: (editor:backup-autosave-mixin pasteboard:file%)
+
+
+pasteboard:info% : class?
+  superclass: (editor:info-mixin pasteboard:backup-autosave%)
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

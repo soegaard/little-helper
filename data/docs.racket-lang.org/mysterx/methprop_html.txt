@@ -1,0 +1,188 @@
+►  Myster X: Using Windows COM Objects in Racket
+1  Overview
+2  COM
+3  Active X and DHTML
+4  Version
+   Index
+▼ 2  COM
+2.1  COM Methods and Properties
+2.2  COM Types
+2.3  COM Events
+On this page:
+com-all-coclasses
+com-all-controls
+cocreate-instance-from-coclass
+cci/ coclass
+cocreate-instance-from-progid
+cci/ progid
+com-get-active-object-from-coclass
+gao/ coclass
+coclass
+progid
+set-coclass!
+set-coclass-from-progid!
+com-methods
+com-method-type
+com-invoke
+com-get-properties
+com-get-property-type
+com-get-property
+com-set-properties
+com-set-property-type
+com-set-property!
+com-help
+com-object-eq?
+com-object?
+com-add-ref
+com-ref-count
+[...search manuals...]
+  top← prev  up  next → 
+
+2.1 COM Methods and Properties
+
+MysterX allows scripting of most COM components from Racket. A COM component
+can be scripted in MysterX if it supports OLE Automation via the IDispatch
+interface, and if it publishes type information using the ITypeInfo interface.
+
+(com-all-coclasses) → (listof string?)
+Returns a list of strings for all COM classes registered on a system.
+
+(com-all-controls) → (listof string?)
+Returns a list of strings for all COM classes registered on a system that have
+the "Control" subkey.
+
+(cocreate-instance-from-coclass    coclass        
+                                 [ where])   →   com-object?
+  coclass : string?
+  where : (or/c (one-of/c 'local 'remote) string?) = 'local
+(cci/coclass coclass [where]) → com-object?
+  coclass : string?
+  where : (or/c (one-of/c 'local 'remote) string?) = 'local
+Returns an instance of coclass. This is useful for COM classes without a visual
+representation, or when a visual representation is not needed.
+
+The optional argument where indicates a for running the instance, and may be
+'local, 'remote, or a string indicating a machine name. See Remote COM servers
+(DCOM) for more information.
+
+(cocreate-instance-from-progid    progid         
+                                [ where])   →   com-object?
+  progid : string?
+  where : (or/c (one-of/c 'local 'remote) string?) = 'local
+(cci/progid progid [where]) → com-object?
+  progid : string?
+  where : (or/c (one-of/c 'local 'remote) string?) = 'local
+Like cocreate-instance-from-coclass, but using a ProgID.
+
+(com-get-active-object-from-coclass coclass) → com-object?
+  coclass : string?
+(gao/coclass coclass) → com-object?
+  coclass : string?
+Like cocreate-instance-from-coclass, but gets an existing active object (always
+local) instead of creating a new one.
+
+(coclass obj) → string?
+  obj : com-object?
+Returns a string that is the name of the COM class instantiated by obj, or
+raises an error if the COM class is not known.
+
+(progid obj) → string?
+  obj : com-object?
+Returns a string that is the name of the ProgID instantiated by obj, or raises
+an error if the COM class is not known.
+
+(set-coclass! obj coclass) → void?
+  obj : com-object?
+  coclass : string?
+Sets the COM class for obj to coclass. This is useful when MysterX COM
+event-handling procedures can obtain only ambiguous information about the
+object’s COM class.
+
+(set-coclass-from-progid! obj progid) → void?
+  obj : com-object?
+  progid : string?
+Like set-coclass!, but using a ProgID.
+
+(com-methods obj/type) → (listof string?)
+  obj/type : (or/c com-object? com-type?)
+Returns a list of strings indicating the names of methods on obj/type.
+
+(com-method-type obj/type method-name) → (listof symbol?)
+  obj/type : (or/c com-object? com-type?)
+  method-name : string?
+Returns a list of symbols indicating the type of the specified method in obj/
+type. See COM Types for information on the symbols.
+
+(com-invoke obj method-name v) → any/c
+  obj : com-object?
+  method-name : string?
+  v : any/c
+Invokes method-name on obj with vs as the arguments. The special value com-omit
+may be used for optional arguments, which useful when values are supplied for
+arguments after the omitted argument(s).
+
+(com-get-properties obj/type) → (listof string?)
+  obj/type : (or/c com-object? com-type?)
+Returns a list of strings indicating the names of readable properties in obj/
+type.
+
+(com-get-property-type   obj/type              
+                         property-name)   →   (listof symbol?)
+  obj/type : (or/c com-object? com-type?)
+  property-name : string?
+Returns a list of symbols indicating the type of the specified property in obj/
+type. See COM Types for information on the symbols.
+
+(com-get-property obj property ...+) → any/c
+  obj : com-object?
+  property : string?
+Returns the value of the final property by following the indicated path of
+propertys, where each intermediate property is a COM object.
+
+(com-set-properties obj/type) → (listof string?)
+  obj/type : (or/c com-object? com-type?)
+Returns a list of strings indicating the names of writeable properties in obj/
+type.
+
+(com-set-property-type   obj/type              
+                         property-name)   →   (listof symbol?)
+  obj/type : (or/c com-object? com-type?)
+  property-name : strig?
+Returns a list of symbols indicating the type of the specified property in obj/
+type. See COM Types for information on the symbols.
+
+(com-set-property! obj string? ...+ v) → void?
+  obj : com-object?
+  string? : property
+  v : any/c
+Sets the value of the final property in obj to v by following the propertys,
+where the value of each intermediate property is a COM object.
+
+(com-help obj/type [topic]) → void?
+  obj/type : (or/c com-object? com-type?)
+  topic : string? = ""
+Starts the Window Help system with help about the COM object or COM type. The
+optional topic is typically a method or property name.
+
+(com-object-eq? obj1 obj2) → boolean?
+  obj1 : com-object?
+  obj2 : com-object?
+Returns #t if the two COM objects are the same, #f otherwise.
+
+(com-object? obj) → boolean?
+  obj : com-object?
+Returns #t if the argument is a COM object, #f otherwise.
+
+(com-add-ref obj) → void?
+  obj : com-object?
+Increments the reference count for obj. This procedure should only be called
+when system-level errors occur due to a mismanaged COM object. Ordinarily,
+MysterX handles all COM reference-counting automatically.
+
+(com-ref-count obj) → exact-nonnegative-integer?
+  obj : com-object?
+Returns a number indicating the current reference count for a COM object.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

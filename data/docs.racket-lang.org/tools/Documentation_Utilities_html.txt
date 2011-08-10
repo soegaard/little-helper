@@ -1,0 +1,102 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+► 21  Documentation Utilities
+21.1  Searching in the Docs
+21.2  Bug Reporting
+On this page:
+21.1 Searching in the Docs
+send-main-page
+perform-search
+21.2 Bug Reporting
+help-desk: report-bug
+saved-bug-report-titles/ ids
+discard-all-saved-bug-reports
+brinfo
+[...search manuals...]
+  top← prev  up  next → 
+
+21 Documentation Utilities
+
+This section describes a bunch of utilities designed for use by DrRacket and
+its tools to connect to the scribble documentation. See also scribble/xref.
+
+21.1 Searching in the Docs
+
+ (require help/search)
+
+(send-main-page  [ #:sub sub]                 
+                   #:notify notify            
+                 [ #:fragment fragment        
+                   #:query query])       →   any
+  sub : path-string? = "index.html"
+  notify : (-> path? void)
+  fragment : (or/c #f ??) = #f
+  query : (or/c #f ??) = #f
+Visits the documentation file sub in your browser.
+
+This function builds a url that points into the main collection documentation
+or into the user-specific documentation, depending on the sub argument. Once it
+finds the path, send-main-path passes the path to notify. The fragment and
+query arguments are passed to send-url/file, along with the url.
+
+(perform-search str [context]) → void?
+  str : string?
+                 (or/c #f
+   context   :         string?                    =   #f
+                       (list/c string? string))
+Searches for str in the documentation. The context argument supplies a context
+for the search or, if it is two strings, a context for the search and a label
+for that context.
+
+21.2 Bug Reporting
+
+ (require help/bug-report)
+
+(help-desk:report-bug  [ this-bug-id                        
+                         #:frame-mixin frame-mixin])   →   void?
+  this-bug-id : #f = (or/c #f exact-positive-integer?)
+  frame-mixin : (make-mixin-contract frame%) = values
+Opens a bug report window to edit the but report identified by this-bug-id. If
+this-bug-id is #f, then creates a new bug id and uses that one.
+
+The frame-mixin argument is passed the frame class before creating the window.
+
+(saved-bug-report-titles/ids) → (listof brinfo?)
+Returns a list of the saved bug reports.
+
+(discard-all-saved-bug-reports) → void?
+Deletes all of the saved bug reports, except those currently open in frames.
+
+(struct   brinfo (title id)
+          #:extra-constructor-name make-brinfo
+          #:transparent)
+  title : label-string?
+  id : number?
+A record representing a saved bug report. The id field is suitable for use with
+help-desk:report-bug and the label field is suitable for use in a GUI control.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

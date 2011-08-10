@@ -1,0 +1,41 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 5  Derived Utilities
+ 5.1  Safe Homogenous Vectors
+ 5.2  Safe C Vectors
+ 5.3  Tagged C Pointer Types
+ 5.4  Defining Bindings
+ 5.5  Allocation and Finalization
+ 5.6  Atomic Execution
+ 5.7  Speculatively Atomic Execution
+ 5.8  Objective-C FFI
+ 5.9  File Security-Guard Checks
+5.10  Windows API Helpers
+On this page:
+win64?
+winapi
+[...search manuals...]
+  top← prev  up  next → 
+
+5.10 Windows API Helpers
+
+ (require ffi/winapi)
+
+win64? : boolean?
+Indicates whether the current platform is 64-bit Windows: #t if so, #f
+otherwise.
+
+winapi : (or/c 'stdcall 'default)
+Suitable for use as an ABI specification for a Windows API function: 'stdcall
+on 32-bit Windows, 'default on 64-bit Windows or any other platform.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

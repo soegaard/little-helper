@@ -1,0 +1,158 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 10
+
+Expansion process
+
+Macro uses (see section 9.2) are expanded into core formsat the start of
+evaluation (before compilation or interpretation) by a syntax expander. The set
+of core forms is implementation-dependent, as is the representation of these
+forms in the expander’s output. If the expander encounters a syntactic
+abstraction, it invokes the associated transformer to expand the syntactic
+abstraction, then repeats the expansion process for the form returned by the
+transformer. If the expander encounters a core form, it recursively processes
+its subforms that are in expression or definition context, if any, and
+reconstructs the form from the expanded subforms. Information about identifier
+bindings is maintained during expansion to enforce lexical scoping for
+variables and keywords.
+
+To handle definitions, the expander processes the initial forms in a <body>
+(see section 11.3) or <library body> (see section 7.1) from left to right. How
+the expander processes each form encountered depends upon the kind of form.
+
+macro use
+    The expander invokes the associated transformer to transform the macro use,
+    then recursively performs whichever of these actions are appropriate for
+    the resulting form.
+
+define-syntax form
+    The expander expands and evaluates the right-hand-side expression and binds
+    the keyword to the resulting transformer.
+
+define form
+    The expander records the fact that the defined identifier is a variable but
+    defers expansion of the right-hand-side expression until after all of the
+    definitions have been processed.
+
+begin form
+    The expander splices the subforms into the list of body forms it is
+    processing. (See section 11.4.7.)
+
+let-syntax or letrec-syntax form
+    The expander splices the inner body forms into the list of (outer) body
+    forms it is processing, arranging for the keywords bound by the let-syntax
+    and letrec-syntax to be visible only in the inner body forms.
+
+expression, i.e., nondefinition
+    The expander completes the expansion of the deferred right-hand-side
+    expressions and the current and remaining expressions in the body, and then
+    creates the equivalent of a letrec* form from the defined variables,
+    expanded right-hand-side expressions, and expanded body expressions.
+
+For the right-hand side of the definition of a variable, expansion is deferred
+until after all of the definitions have been seen. Consequently, each keyword
+and variable reference within the right-hand side resolves to the local
+binding, if any.
+
+A definition in the sequence of forms must not define any identifier whose
+binding is used to determine the meaning of the undeferred portions of the
+definition or any definition that precedes it in the sequence of forms. For
+example, the bodies of the following expressions violate this restriction.
+
+(let ()
+  (define define 17)
+  (list define))
+
+(let-syntax ([def0 (syntax-rules ()
+                     [(_ x) (define x 0)])])
+  (let ([z 3])
+    (def0 z)
+    (define def0 list)
+    (list z)))
+
+(let ()
+  (define-syntax foo
+    (lambda (e)
+      (+ 1 2)))
+  (define + 2)
+  (foo))
+
+The following do not violate the restriction.
+
+(let ([x 5])
+  (define lambda list)
+  (lambda x x))                 ⇒  (5 5)
+
+(let-syntax ([def0 (syntax-rules ()
+                     [(_ x) (define x 0)])])
+  (let ([z 3])
+    (define def0 list)
+    (def0 z)
+    (list z)))                  ⇒  (3)
+
+(let ()
+  (define-syntax foo
+    (lambda (e)
+      (let ([+ -]) (+ 1 2))))
+  (define + 2)
+  (foo))                        ⇒  -1
+
+The implementation should treat a violation of the restriction as a syntax
+violation.
+
+Note that this algorithm does not directly reprocess any form. It requires a
+single left-to-right pass over the definitions followed by a single pass (in
+any order) over the body expressions and deferred right-hand sides.
+
+Example:
+
+(lambda (x)
+  (define-syntax defun
+    (syntax-rules ()
+      [(_ x a e) (define x (lambda a e))]))
+  (defun even? (n) (or (= n 0) (odd? (- n 1))))
+  (define-syntax odd?
+    (syntax-rules () [(_ n) (not (even? n))]))
+  (odd? (if (odd? x) (* x x) x)))
+
+In the example, the definition of defun is encountered first, and the keyword
+defun is associated with the transformer resulting from the expansion and
+evaluation of the corresponding right-hand side. A use of defun is encountered
+next and expands into a define form. Expansion of the right-hand side of this
+define form is deferred. The definition of odd? is next and results in the
+association of the keyword odd? with the transformer resulting from expanding
+and evaluating the corresponding right-hand side. A use of odd? appears next
+and is expanded; the resulting call to not is recognized as an expression
+because not is bound as a variable. At this point, the expander completes the
+expansion of the current expression (the call to not) and the deferred
+right-hand side of the even? definition; the uses of odd? appearing in these
+expressions are expanded using the transformer associated with the keyword
+odd?. The final output is the equivalent of
+
+(lambda (x)
+  (letrec* ([even?
+              (lambda (n)
+                (or (= n 0)
+                    (not (even? (- n 1)))))])
+    (not (even? (if (not (even? x)) (* x x) x)))))
+
+although the structure of the output is implementation-dependent.
+
+Because definitions and expressions can be interleaved in a <top-level body>
+(see chapter 8), the expander’s processing of a <top-level body> is somewhat
+more complicated. It behaves as described above for a <body> or <library body>
+with the following exceptions: When the expander finds a nondefinition, it
+defers its expansion and continues scanning for definitions. Once it reaches
+the end of the set of forms, it processes the deferred right-hand-side and body
+expressions, then generates the equivalent of a letrec* form from the defined
+variables, expanded right-hand-side expressions, and expanded body expressions.
+For each body expression <expression> that appears before a variable definition
+in the body, a dummy binding is created at the corresponding place within the
+set of letrec* bindings, with a fresh temporary variable on the left-hand side
+and the equivalent of (begin <expression> <unspecified>), where <unspecified>
+is a side-effect-free expression returning an unspecified value, on the
+right-hand side, so that left-to-right evaluation order is preserved. The begin
+wrapper allows <expression> to evaluate to an arbitrary number of values.
+
+                        [Go to first, previous, next page;   contents;   index]
+

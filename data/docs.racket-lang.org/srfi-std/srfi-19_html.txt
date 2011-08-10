@@ -1,0 +1,513 @@
+Title
+
+SRFI 19: Time Data Types and Procedures
+
+Author
+
+Will Fitzgerald
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. You can access the discussion via the
+archive of the mailing list.
+
+  • Draft: 2000-02-28 to 2000-08-28
+  • Final: 2000-08-31
+  • Fixed reference implementation: 2003-02-28
+  • Documentation bug for ~D fixed: 2003-05-30
+  • Various Documentation bugs fixed: 2004-03-15
+
+Abstract
+
+Points in time are represented a the number of seconds (with nanosecond
+precision) since "the epoch," a zero point in time. Several standard variants
+are defined, including UTC (universal coordinated time), TAI (international
+atomic time), and monotonic time. A point in time can also be represented as a
+Julian Day or Modified Julian Day number. Time durations, including time spent
+in a process or thread, are defined. Conversion routines are provided. The
+procedure CURRENT-TIME queries the current time in a specified variant, with a
+system-dependent resolution. Procedures for time arithmetic and time
+comparisons are also provided.
+
+A date is a representation of a point in time in the Gregorian calendar, a 24
+hour clock (with nanosecond precision) and a time zone offset from UTC.
+Procedures for converting between time and dates are provided, as well as for
+reading and writing string representations of dates.
+
+Issues
+
+[None currently]
+
+Rationale
+
+R5RS Scheme does not provide standard data types for time. This SRFI addresses
+this lack by specifying data types for time and associated procedures.
+
+Specification
+
+A Time object, which is distinct from all existing types, defines a point in
+time or a time duration in some standard time system. The standard time systems
+are:
+
+  • Universal Coordinated Time (UTC),
+  • International Atomic Time (TAI),
+  • monotonic time (a monotonically increasing point in time from some epoch,
+    which is implementation-dependent),
+  • CPU time in current thread (implementation dependent),
+  • CPU time in current process (implementation dependent),
+  • Time duration.
+
+Implementations are required to implement UTC, monotonic time, CPU time in
+current process, and time duration. Implementations are allowed to create
+extensions (for example, amount of time spent in garbage collection).
+
+A time object consists of three components:
+
+  • Time type, a symbol representing the time system representation used. The
+    constants TIME-TAI, TIME-UTC, TIME-MONOTONIC, TIME-THREAD, TIME-PROCESS,
+    and TIME-DURATION must be provided for these symbols. Implementations
+    should provide constants for time type extensions.
+  • Second, an integer representing the number of whole seconds from "the
+    epoch."
+  • Nanosecond, an integer of the number of nanoseconds in the fractional
+    portion. Although a time object has nanosecond precision, clocks may have a
+    lower resolution.
+
+A Date object, which is distinct from all existing types, represents a point in
+time as represented by the Gregorian calendar as well as by a time zone. Dates
+are immutable. A date consists of the following components:
+
+  • Nanosecond, an integer between 0 and 9,999,999, inclusive.
+  • Second, an integer 0 and 60, inclusive, (60 represents a leap second)
+  • Minute, an integer between 0 and 59, inclusive,
+  • Hour, an integer between 0 and 23, inclusive,
+  • Day, an integer between 0 and 31, inclusive, the upper limit depending on
+    the month and year of the point in time,
+  • Month, an integer between 1 and 12, inclusive; in which 1 means January, 2
+    February, and so on.
+  • Year, an integer representing the year.
+  • Time zone, an integer representing the number of seconds east of GMT for
+    this timezone.
+
+A Julian Day represents a point in time as a real number of days since
+-4714-11-24T12:00:00Z (November 24, -4714 at noon, UTC).
+
+A Modified Julian Day represents a point in time as a real number of days since
+1858-11-17T00:00:00Z (November 17, 1858 at midnight, UTC).
+
+Constants
+
+The following constants are required:
+
+time-duration
+    Symbol representing Time duration.
+time-monotonic
+    Symbol representing monotonic time.
+time-process
+    Symbol representing time spent in current process.
+time-tai
+    Symbol representing TAI time.
+time-thread
+    Symbol representing time spent in current thread.
+time-utc
+    Symbol representting UTC time.
+
+Current time and clock resolution
+
+The following procedures are required:
+
+current-date [tz-offset] -> date
+    Date corresponding to the current UTC time.
+current-julian-day -> jdn
+    Current Julian Day.
+current-modified-julian-day -> mjdn
+    Current Modified Julian Day.
+current-time [time-type] -> time
+    Current time, of type time-type system, which defaults to TIME-UTC.
+time-resolution [time-type] -> integer
+    Clock resolution, in nanoseconds, of the system clock of type type
+    time-type system, which defaults to TIME-UTC.
+
+Time object and accessors
+
+The following procedures are required:
+
+make-time type nanosecond second -> time
+    Creates a time object.
+time? object -> boolean
+    #t if object is a time object, otherwise, #f.
+time-type time -> time-type
+    Time type.
+time-nanosecond time -> integer
+    Time nanosecond.
+time-second time -> integer
+    Time second.
+set-time-type! time time-type
+    Changes time type. Note: This changes the semantics of the time object. To
+    convert a time to another system of representation, use one of the
+    conversion procedures.
+set-time-nanosecond! time integer
+    Changes time nanosecond.
+set-time-second! time integer
+    Changes time second.
+copy-time time1 -> time2
+    Creates a new time object, with the same time type, nanosecond, and second
+    as time1.
+
+Time comparison procedures
+
+All of the time comparison procedures require the time objects to be of the
+same type. It is an error to use these procedures on time objects of different
+types. For the point-in-time measurements (e.g., TIME-TAI and TIME-UTC), the
+semantics are described in plain text. For durations, (e.g., TIME-DURATION,
+TIME-CPU, the semantics are described in parentheses.
+
+The following procedures are required:
+
+time<=? time1 time2 -> boolean
+    #t if time1 is before or at (less than or equal to) time2, #f otherwise.
+time<? time1 time2 -> boolean
+    #t if time1 is before (less than) time2, #f otherwise.
+time=? time1 time2 -> boolean
+    #t if time1 at (equal) time2, #f otherwise.
+time>=? time1 time2 -> boolean
+    #t if time1 is at or after (greater than or equal to) time2, #f otherwise.
+time>? time1 time2 -> boolean
+    #t if time1 is after (greater than) time2, #f otherwise.
+
+Time arithmetic procedures
+
+The following procedures are required.
+
+time-difference time1 time2 -> time-duration
+    The TIME-DURATION between time1 and time2. It is an error if time1 and
+    time2 are of different time types. A new time object is created.
+time-difference! time1 time2 -> time-duration
+    The TIME-DURATION between time1 and time2. It is an error if time1 and
+    time2 are of different time types. Time1 may be used to create the
+    resulting TIME-DURATION object.
+add-duration time1 time-duration -> time
+    The time resulting from adding time-duration to time1, which is a time
+    object of the same time type as time1. A new time object is created.
+add-duration! time1 time-duration -> time
+    The time resulting from adding time-duration to time1, which is a time
+    object of the same time type as time1. Time1 may used to create the
+    resulting time object.
+subtract-duration time1 time-duration -> time
+    The time resulting from subtracting time-duration to time1, which is a time
+    object of the same time type as time1. A new time object is created.
+subtract-duration! time1 time-duration -> time
+    The time resulting from subtracting time-duration to time1, which is a time
+    object of the same time type as time1. Time1 may used to create the
+    resulting time object.
+
+Date object and accessors
+
+Date objects are immutable once created. The following procedures are required.
+
+make-date nanosecond second minute hour day month year zone-offset -> date
+    Creates a date object.
+date? date -> boolean
+    #t if object is a time object, otherwise, #f.
+date-nanosecond date -> integer
+    Date nanosecond.
+date-second date -> integer
+    Date second.
+date-minute date -> integer
+    Date minute.
+date-hour date -> integer
+    Date hour.
+date-day date -> integer
+    Date day.
+date-month date -> integer
+    Date month.
+date-year date -> integer
+    Date year.
+date-zone-offset date -> integer
+    Date time zone offset.
+date-year-day date -> integer
+    The ordinal day of the year of this date. January 1 is 1, etc.
+date-week-day date -> integer
+    The day of the week of this date, where Sunday=0, Monday=1, etc.
+date-week-number date day-of-week-starting-week -> integer
+    The ordinal week of the year which holds this date, ignoring a first
+    partial week. 'Day-of-week-starting-week' is the integer corresponding to
+    the day of the week which is to be considered the first day of the week
+    (Sunday=0, Monday=1, etc.).
+
+Time/Date/Julian Day/Modified Julian Day Converters
+
+The following conversion procedures are required.
+
+date->julian-day date -> jd
+    Convert date to Julian Day.
+date->modified-julian-day date -> mjd
+    Convert date to Modified Julian Day.
+date->time-monotonic date -> time-monotonic
+    Convert date to monotonic time.
+date->time-tai date -> time-tai
+    Convert date to TAI time.
+date->time-utc date -> time-utc
+    Convert date to UTC time.
+julian-day->date jd [tz-offset] -> date
+    Convert Julian Day to date, , using time zone offset, which defaults to the
+    local time zone.
+julian-day->time-monotonic jd -> time-monotonic
+    Convert Julian Day to monotonic time.
+julian-day->time-tai jd -> time-tai
+    Convert Julian Day to TAI time.
+julian-day->time-utc jd -> time-utc
+    Convert Julian Day to UTC time.
+modified-julian-day->date mjd [tz-offset] -> date
+    Convert Modified Julian Day to date, using time zone offset, which defaults
+    to the local time zone.
+modified-julian-day->time-monotonic mjd -> time-monotonic
+    Convert Modified Julian Day to monotonic time.
+modified-julian-day->time-tai mjd -> time-tai
+    Convert Modified Julian Day to TAI time.
+modified-julian-day->time-utc mjd -> time-utc
+    Convert Modified Julian Day to UTC time.
+time-monotonic->date time-monotonic [tz-offset] -> date
+    Convert monotonic time to date, using time zone offset, which defaults to
+    the local time zone.
+time-monotonic->julian-day time-monotonic -> jd
+    Convert monotonic time to Julian Day.
+time-monotonic->modified-julian-day time-monotonic -> mjd
+    Convert monotonic time to Modified Julian Day.
+time-monotonic->time-tai time-monotonic -> time-tai
+    Convert monotonic time to TAI time.
+time-monotonic->time-tai! time-monotonic -> time-tai
+    Convert monotonic time to TAI time. The time structure may be reused.
+time-monotonic->time-utc time-monotonic -> time-utc
+    Convert monotonic time to UTC time.
+time-monotonic->time-utc! time-monotonic -> time-utc
+    Convert monotonic time to UTC time. The time structure may be reused.
+time-tai->date time-tai [tz-offset] -> date
+    Convert TAI time to date, using time zone offset, which defaults to the
+    local time zone.
+time-tai->julian-day time-tai -> jd
+    Convert TAI time to Julian Day.
+time-tai->modified-julian-day time-tai -> mjd
+    Convert TAI time to Modified Julian Day.
+time-tai->time-monotonic time-tai -> time-monotonic
+    Convert TAI time to monotonic time.
+time-tai->time-monotonic! time-tai -> time-monotonic
+    Convert TAI time to monotonic time. The time structure may be reused.
+time-tai->time-utc time-tai -> time-utc
+    Convert TAI time to monotonic time.
+time-tai->time-utc! time-tai -> time-utc
+    Convert TAI time to monotonic time. The time structure may be reused.
+time-utc->date time-utc [tz-offset] -> time-utc
+    Convert UTC time to date, using time zone offset, which defaults to the
+    local time zone.
+time-utc->julian-day time-utc -> jd
+    Convert UTC time to Julian Day
+time-utc->modified-julian-day time-utc -> mjd
+    Convert UTC time to Modified Julian Day.
+time-utc->time-monotonic time-utc -> time-monotonic
+    Convert UTC time to monotonic time.
+time-utc->time-monotonic! time-utc -> time-monotonic
+    Convert UTC time to monotonic time. The time structure may be reused.
+time-utc->time-tai time-utc -> time-tai
+    Convert UTC time to TAI time.
+time-utc->time-tai! time-utc -> time-tai
+    Convert UTC time to TAI time. The time structure may be reused.
+
+Date to String/String to Date Converters
+
+These procedures provide conversion to and from strings. They are required. The
+specification below describes a 'locale;' the specification of locales is
+beyond this SRFI.
+
+date->string date [format-string] -> string
+    Converts a date to a string, using the format string. The format string is
+    copied as is; except escape characters (indicated by the tilde) are
+    replaced with specific conversions. Table 1 lists the required conversion
+    specifiers; implementations are free to extend this list.
+string->date input-string template-string -> date
+    Converts an input string to a date, using the template string. The input
+    string must match the template sting as is; except escape characters
+    (indicate by the tilde) indicate special converters which (1) move to the
+    next character in the input string fulfilling a criterion; (2) read a
+    value, and (3) act on this value in some way. Table 2 lists the required
+    converters; implementations are free to extend this list.
+
+PLT-specific extensions
+
+The ~? wildcard is specific to the PLT implementation of string->date: it
+parses 1 and 2 digit years like ~y and 3 and 4 digit years like ~Y.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Ch                          Conversion
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+~~  a literal ~
+~a  locale's abbreviated weekday name (Sun...Sat)
+~A  locale's full weekday name (Sunday...Saturday)
+~b  locale's abbreviate month name (Jan...Dec)
+~B  locale's full month day (January...December)
+~c  locale's date and time (e.g., "Fri Jul 14 20:28:42-0400
+    2000")
+~d  day of month, zero padded (01...31)
+~D  date (mm/dd/yy)
+~e  day of month, blank padded ( 1...31)
+~f  seconds+fractional seconds, using locale's decimal
+    separator (e.g. 5.2).
+~h  same as ~b
+~H  hour, zero padded, 24-hour clock (00...23)
+~I  hour, zero padded, 12-hour clock (01...12)
+~j  day of year, zero padded
+~k  hour, blank padded, 24-hour clock (00...23)
+~l  hour, blank padded, 12-hour clock (01...12)
+~m  month, zero padded (01...12)
+~M  minute, zero padded (00...59)
+~n  new line
+~N  nanosecond, zero padded
+~p  locale's AM or PM
+~r  time, 12 hour clock, same as "~I:~M:~S ~p"
+~s  number of full seconds since "the epoch" (in UTC)
+~S  second, zero padded (00...60)
+~t  horizontal tab
+~T  time, 24 hour clock, same as "~H:~M:~S"
+~U  week number of year with Sunday as first day of week
+    (00...53)
+~V  week number of year with Monday as first day of week
+    (01...52)
+~w  day of week (0...6)
+~W  week number of year with Monday as first day of week
+    (01...52)
+~x  week number of year with Monday as first day of week
+    (00...53)
+~X  locale's date representation, for example: "07/31/00"
+~y  last two digits of year (00...99)
+~Y  year
+~z  time zone in RFC-822 style
+~Z  symbol time zone (not-implemented)
+~1  ISO-8601 year-month-day format
+~2  ISO-8601 hour-minute-second-timezone format
+~3  ISO-8601 hour-minute-second format
+~4  ISO-8601 year-month-day-hour-minute-second-timezone format
+~5  ISO-8601 year-month-day-hour-minute-second format
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          Table 1: DATE->STRING conversion specifiers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Ch      Skip to                 Read                   Set
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+~~  any              read literal ~              nothing
+~a  char-alphabetic? abbreviated weekday in      nothing
+                     locale
+~A  char-alphabetic? full weekday in locale      nothing
+~b  char-alphabetic? abbreviated month name in   nothing
+                     locale
+~B  char-alphabetic? full month name in locale   nothing
+~d  char-numeric?    day of month                date-day
+~e  any              day of month, blank padded  date-day
+~h  char-alphabetic? same as ~b                  nothing
+~H  char-numeric?    hour                        date-hour
+~k  any              hour, blank padded          date-hour
+~m  char-numeric?    month                       date-month
+~M  char-numeric?    minute                      date-minute
+~S  char-numeric?    second                      date-second
+~y  any              2-digit year                date-year within
+                                                 50 years
+~Y  char-numeric?    year                        date-year
+~z  any              time zone                   date-zone-offset
+~?  char-numeric?    2-digit or 4-digit year     date-year
+                     (PLT-specific extension)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+           Table 2: STRING->DATE conversion specifiers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implementation
+
+This SRFI cannot be written in completely standard Scheme. In particular, there
+must be some system-independent method of finding the values for CURRENT-TIME.
+The GNU C function, gettimeofday might prove useful to implementors.
+
+The difference between TAI and UTC is not determinate, and implementations must
+provide some method for getting TAI. A procedure is provided in the accompany
+implmentation for reading the leap second table provided by the Time Service of
+the US Naval Observatory (available at ftp://maia.usno.navy.mil/ser7/
+tai-utc.dat).
+
+The accompanying implementation assumes SRFI 6 Basic String Ports. The
+accompanying implementation also assumes an error procedure. The accompanying
+implementation also assumes SRFI 8 RECEIVE: Binding to multiple values. which
+is easy to implement with the following syntax:
+
+(define-syntax receive
+  (syntax-rules ()
+    ((receive formals expression body ...)
+     (call-with-values (lambda () expression)
+                       (lambda formals body ...)))))
+
+Note that it contains TAI-UTC.DAT reader.
+
+The accompanying implementation is written in MzScheme. MzScheme provides the
+procedure current-seconds, which returns the number of seconds (UTC) since
+1970-01-01T00:00:00Z+00:00, and current-milliseconds, which is a monotonic time
+clock. Combining these provides an implementation of (current-time time-utc).
+Monontonic time, in this implementation, is the same as TAI time; differences
+between TAI and UTC are resolved through a leap second table. According to the
+International Earth Rotation Service, there will be no leap second in December,
+2000. Thus, the leap second table is guaranteed to be correct through June,
+2000.
+
+Also, MzScheme (as of version 102, I believe) provides a method for returning
+the current time zone offset, via its SECONDS->DATE and CURRENT-DATE
+procedures.
+
+MzScheme's DEFINE-STRUCT was used to define the time and date objects. SRFI 9,
+Defining Record Types, could be used instead.
+
+Procedures meant to be used internally have names beginning with TM:.
+Locale-related constants and procedures have locale in their name; if a
+'locale' SRFI is ever written, it might be good to use that code instead.
+
+From this, the rest of the implementation was built.
+
+There is also a test suite.
+
+Acknowledgements
+
+Claus T ndering's Frequently Asked Questions about calendars was a very useful
+resource. The implementation of Julian Day, Modified Julian Day, and Year Day
+comes from his FAQ. Markus Kuhn has a useful description of the ISO Standard
+8601 for Date/Time notation; The W3 Consortium also has a useful Note.
+
+Mike Sperber, Marc Feely, Dave Mason, and "Prfnoff" all made useful comments on
+previous versions of this draft. Thanks to Shriram Krishnamurthi for his
+editing help.
+
+The DATE->STRING procedure uses a format string, based on GNU C's date
+procedure, as well as scsh's FORMAT-DATE procedure.
+
+Copyright
+
+Copyright (C) Neodesic Corporation (2000). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: Shriram Krishnamurthi
+Last modified by the author:
+(display (date->string (current-date 0) "~4")): 2004-03-15T02:21:15Z

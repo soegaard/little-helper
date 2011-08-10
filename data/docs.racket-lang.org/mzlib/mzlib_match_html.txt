@@ -1,0 +1,186 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+match
+match-lambda
+match-lambda*
+match-let
+match-let*
+match-letrec
+match-define
+define-match-expander
+match-equality-test
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/match)
+
+The mzlib/match library provides a match form similar to that of racket/match,
+but with an different (older and less extensible) syntax of patterns.
+
+(match val-expr clause ...)
+ 
+clause   =   [pat expr ...+]
+         |   [pat (=> id) expr ...+]
+See match from racket/match for a description of matching. The grammar of pat
+for this match is as follows:
+
+pat       ::=   id                      match anything, bind identifier
+
+           |    _                       match anything
+
+           |    literal                 match literal
+
+           |    'datum                  match equal? datum
+
+           |    (lvp ...)               match sequence of lvps
+
+           |    (lvp ... . pat)         match lvps consed onto a pat
+
+           |    #(lvp ...)              match vector of pats
+
+           |    #&pat                   match boxed pat
+
+           |    ($ struct-id pat ...)   match struct-id instance
+
+           |    (and pat ...)           match when all pats match
+
+           |    (or pat ...)            match when any pat match
+
+           |    (not pat ...)           match when no pat match
+
+           |    (= expr pat)            match (expr value) to pat
+
+           |    (? pred-expr pat ...)   match if (expr value) and pats
+
+           |    `qp                     match quasipattern
+
+literal   ::=   #t                      match true
+
+           |    #f                      match false
+
+           |    string                  match equal? string
+
+           |    number                  match equal? number
+
+           |    character               match equal? character
+
+           |    bytes                   match equal? byte string
+
+           |    keyword                 match equal? keyword
+
+           |    regexp                  match equal? regexp literal
+
+           |    pregexp                 match equal? pregexp literal
+
+lvp       ::=   pat                     greedily match pat instances
+
+           |    pat                     match pat
+
+ooo       ::=   ...                     zero or more; ... is literal
+
+           |    ___                     zero or more
+
+           |    ..k                     k or more
+
+           |    __k                     k or more
+
+qp        ::=   literal                 match literal
+
+           |    id                      match equal? symbol
+
+           |    (qp ...)                match sequences of qps
+
+           |    (qp ... . qp)           match sequence of qps consed onto a qp
+
+           |    (qp ... qp ooo)         match qps consed onto a repeated qp
+
+           |    #(qp ...)               match vector of qps
+
+           |    #&qp                    match boxed qp
+
+           |    ,pat                    match pat
+
+           |    ,@pat                   match pat, spliced
+
+
+(match-lambda clause ...)
+(match-lambda* clause ...)
+(match-let ([pat expr] ...) body ...+)
+(match-let* ([pat expr] ...) body ...+)
+(match-letrec ([pat expr] ...) body ...+)
+(match-define pat expr)
+Analogous to the combined forms from racket/match.
+
+(define-match-expander id proc-expr)
+(define-match-expander id proc-expr proc-expr)
+(define-match-expander id proc-expr proc-expr proc-expr)
+(match-equality-test) → (any/c any/c . -> . any)
+(match-equality-test comp-proc) → void?
+  comp-proc : (any/c any/c . -> . any)
+Analogous to the form and parameter from racket/match. The
+define-match-expander form, however, supports an extra proc-expr as the middle
+one: an expander for use with match from mzlib/match.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

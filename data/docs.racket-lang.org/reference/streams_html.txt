@@ -1,0 +1,209 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+► 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+▼ 3.14  Sequences and Streams
+3.14.1  Sequences
+3.14.2  Streams
+3.14.3  Generators
+On this page:
+stream?
+stream-empty?
+stream-first
+stream-rest
+stream-cons
+in-stream
+empty-stream
+stream->list
+stream-length
+stream-ref
+stream-tail
+stream-append
+stream-map
+stream-andmap
+stream-ormap
+stream-for-each
+stream-fold
+stream-count
+stream-filter
+stream-add-between
+prop: stream
+[...search manuals...]
+  top← prev  up  next → 
+
+3.14.2 Streams
+
+A stream is a kind of sequence that supports functional iteration via
+stream-first and stream-rest. The stream-cons form constructs a lazy stream,
+but plain lists can be used as stream, and functions such as in-range and
+in-naturals also create streams.
+
+ (require racket/stream)
+The bindings documented in this section are provided by the racket/stream and
+racket libraries, but not racket/base.
+
+(stream? v) → boolean?
+  v : any/c
+Returns #t if v can be used as a stream, #f otherwise.
+
+(stream-empty? s) → boolean?
+  s : stream?
+Returns #f if s has no elements, #f otherwise.
+
+(stream-first s) → any
+  s : (and/c stream? (not/c stream-empty?))
+Returns the value(s) of the first element in s.
+
+(stream-rest s) → stream?
+  s : (and/c stream? (not/c stream-empty?))
+Returns a stream that is equivalent to s without its first element.
+
+(stream-cons first-expr rest-expr)
+Produces a lazy stream for which stream-first forces the evaluation of
+first-expr to produce the first element of the stream, and stream-rest forces
+the evaluation of rest-expr to produce a stream for the rest of the returned
+stream.
+
+The first element of the stream as produced by first-expr must be a single
+value. The rest-expr must produce a stream when it is evaluated, otherwise the
+exn:fail:contract? exception is raised.
+
+(in-stream s) → sequence?
+  s : stream?
+Returns a sequence that is equivalent to s.
+An in-stream application can provide better performance for streams iteration
+when it appears directly in a for clause.
+
+empty-stream : stream?
+A stream with no elements.
+
+(stream->list s) → list?
+  s : stream?
+Returns a list whose elements are the elements of s, each of which must be a
+single value. If s is infinite, this function does not terminate.
+
+(stream-length s) → exact-nonnegative-integer?
+  s : stream?
+Returns the number of elements of s. If s is infinite, this function does not
+terminate.
+
+In the case of lazy streams, this function forces evaluation only of the
+sub-streams, and not the stream’s elements.
+
+(stream-ref s i) → any
+  s : stream?
+  i : exact-nonnegative-integer?
+Returns the ith element of s (which may be multiple values).
+
+(stream-tail s i) → stream?
+  s : stream?
+  i : exact-nonnegative-integer?
+Returns a stream equivalent to s, except that the first i elements are omitted.
+
+In case extracting elements from s involves a side effect, they will not be
+extracted until the first element is extracted from the resulting stream.
+
+(stream-append s ...) → stream?
+  s : stream?
+Returns a stream that contains all elements of each stream in the order they
+appear in the original streams. The new stream is constructed lazily.
+
+(stream-map f s) → stream?
+  f : procedure?
+  s : stream?
+Returns a stream that contains f applied to each element of s. The new stream
+is constructed lazily.
+
+(stream-andmap f s) → boolean?
+  f : (-> any/c ... boolean?)
+  s : stream?
+Returns #t if f returns a true result on every element of s. If s is infinite
+and f never returns a false result, this function does not terminate.
+
+(stream-ormap f s) → boolean?
+  f : (-> any/c ... boolean?)
+  s : stream?
+Returns #t if f returns a true result on some element of s. If s is infinite
+and f never returns a true result, this function does not terminate.
+
+(stream-for-each f s) → (void)
+  f : (-> any/c ... any)
+  s : stream?
+Applies f to each element of s. If s is infinite, this function does not
+terminate.
+
+(stream-fold f i s) → (void)
+  f : (-> any/c any/c ... any/c)
+  i : any/c
+  s : stream?
+Folds f over each element of s with i as the initial accumulator. If s is
+infinite, this function does not terminate.
+
+(stream-count f s) → exact-nonnegative-integer?
+  f : procedure?
+  s : stream?
+Returns the number of elements in s for which f returns a true result. If s is
+infinite, this function does not terminate.
+
+(stream-filter f s) → stream?
+  f : (-> any/c ... boolean?)
+  s : stream?
+Returns a stream whose elements are the elements of s for which f returns a
+true result. Although the new stream is constructed lazily, if s has an
+infinite number of elements where f returns a false result in between two
+elements where f returns a true result, then operations on this stream will not
+terminate during the infinite sub-stream.
+
+(stream-add-between s e) → stream?
+  s : stream?
+  e : any/c
+Returns a stream whose elements are the elements of s, but with e between each
+pair of elements in s. The new stream is constructed lazily.
+
+prop:stream : struct-type-property?
+Associates three procedures to a structure type to implement stream operations
+for instances of the structure type.
+
+The property value must be a vector of three procedures: a stream-empty?
+implementation, a stream-first implementation, and a stream-rest
+implementation. The procedures are applied only to instances of the structure
+type that has the property value.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

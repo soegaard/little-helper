@@ -1,0 +1,97 @@
+▼  Inside: Racket C API
+ 1  Overview
+ 2  Values and Types
+ 3  Memory Allocation
+ 4  Namespaces and Modules
+ 5  Procedures
+ 6  Evaluation
+ 7  Exceptions and Escape Continuations
+ 8  Threads
+ 9  Parameterizations
+10  Continuation Marks
+11  String Encodings
+12  Bignums, Rationals, and Complex Numbers
+13  Ports and the Filesystem
+14  Structures
+15  Security Guards
+16  Custodians
+17  Miscellaneous Utilities
+18  Flags and Hooks
+    Index
+[...search manuals...]
+  top← prev  up  next → 
+
+18 Flags and Hooks
+
+The following flags and hooks are available when Racket is embedded:
+
+  • scheme_exit — This pointer can be set to a function that takes an integer
+    argument and returns void; the function will be used as the default exit
+    handler. The default is NULL.
+
+  • scheme_make_stdin, scheme_make_stdout, scheme_make_stderr, — These pointers
+    can be set to a function that takes no arguments and returns a Racket port
+    Scheme_Object * to be used as the starting standard input, output, and/or
+    error port. The defaults are NULL. Setting the initial error port is
+    particularly important for seeing unexpected error messages if stderr
+    output goes nowhere.
+
+  • scheme_console_output — This pointer can be set to a function that takes a
+    string and a intptr_t string length; the function will be called to display
+    internal Racket warnings and messages that possibly contain non-terminating
+    nuls. The default is NULL.
+
+  • scheme_check_for_break — This points to a function of no arguments that
+    returns an integer. It is used as the default user-break polling procedure
+    in the main thread. A non-zero return value indicates a user break, and
+    each time the function returns a non-zero value, it counts as a new break
+    signal (though the break signal may be ignored if a previous signal is
+    still pending). The default is NULL.
+
+  • scheme_case_sensitive — If this flag is set to a non-zero value before
+    scheme_basic_env is called, then Racket will not ignore capitalization for
+    symbols and global variable names. The value of this flag should not change
+    once it is set. The default is zero.
+
+  • scheme_allow_set_undefined — This flag determines the initial value of
+    compile-allow-set!-undefined. The default is zero.
+
+  • scheme_console_printf — This function pointer was left for backward
+    compatibility. The default builds a string and calls scheme_console_output.
+
+void   scheme_set_collects_path ( Scheme_Object* path)
+
+Sets the path to be returned by (find-system-path 'collects-dir).
+
+void   scheme_set_addon_path ( Scheme_Object* path)
+
+Sets the path to be returned by (find-system-path 'addon-dir).
+
+void
+
+scheme_init_collection_paths_post ( Scheme_Env* env,
+
+                                    Scheme_Object* pre_extra_paths,
+
+                                    Scheme_Object* post_extra_paths)
+
+Initializes the current-library-collection-paths parameter using
+find-library-collection-paths. The pre_extra_paths and post_extra-paths
+arguments are propagated to find-library-collection-paths.
+
+The function calls scheme_seal_parameters automatically.
+
+void   scheme_init_collection_paths ( Scheme_Env* env,
+
+                                      Scheme_Object* pre_extra_paths)
+
+Like scheme_init_collection_paths_post, but with null as the last argument.
+
+void   scheme_seal_parameters ( )
+
+Takes a snapshot of the current values of built-in parameters. These values are
+used for privileged actions, such as installing a PLaneT package.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

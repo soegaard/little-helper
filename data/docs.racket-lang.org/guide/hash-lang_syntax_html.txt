@@ -1,0 +1,81 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 17  Creating Languages
+17.1  Module Languages
+17.2  Reader Extensions
+17.3  Defining new #lang Languages
+▼ 17.3  Defining new #lang Languages
+17.3.1  Designating a #lang Language
+17.3.2  Using #lang reader
+17.3.3  Using #lang s-exp syntax/ module-reader
+17.3.4  Installing a Language
+17.3.5  Source-Handling Configuration
+17.3.6  Module-Handling Configuration
+[...search manuals...]
+  top← prev  up  next → 
+
+17.3.1 Designating a #lang Language
+
+The syntax of a language intentionally overlaps with the syntax of a module
+path as used in require or as a module language, so that names like racket,
+racket/base, slideshow, or scribble/manual can be used both as #lang languages
+and as module paths.
+
+At the same time, the syntax of language is far more restricted than a module
+path, because only a-z, A-Z, 0-9, / (not at the start or end), _, -, and + are
+allowed in a language name. These restrictions keep the syntax of #lang as
+simple as possible. Keeping the syntax of #lang simple, in turn, is important
+because the syntax is inherently inflexible and non-extensible; the #lang
+protocol allows a language to refine and define syntax in a practically
+unconstrained way, but the #lang protocol itself must remain fixed so that
+various different tools can “boot” into the extended world.
+
+Fortunately, the #lang protocol provides a natural way to refer to languages in
+ways other than the rigid language syntax: by defining a language that
+implements its own nested protocol. We have already seen one example (in Using
+#lang s-exp): the s-exp language allows a programmer to specify a module
+language using the general module path syntax. Meanwhile, s-exp takes care of
+the reader-level responsibilities of a #lang language.
+
+Unlike racket, s-exp cannot be used as a module path with require. Although the
+syntax of language for #lang overlaps with the syntax of module paths, a
+language is not used directly as a module path. Instead, a language is suffixed
+with /lang/reader to obtain a module path, and the resulting module supplies
+read and read-syntax functions using a protocol that is similar to the one for
+#reader.
+
+            +Reader Extensions introduces #reader.
+
+A consequence of the way that a #lang language is turned into a module path is
+that the language must be installed in a collection, similar to the way that
+"racket" or "slideshow" are collections that are distributed with Racket.
+Again, however, there’s an escape from this restriction: the reader language
+lets you specify a reader-level implementation of a language using a general
+module path.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

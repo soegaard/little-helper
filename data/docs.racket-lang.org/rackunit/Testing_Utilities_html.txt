@@ -1,0 +1,43 @@
+▼  Rack Unit: Unit Testing
+1  Quick Start Guide for Rack Unit
+2  The Philosophy of Rack Unit
+3  Rack Unit API
+4  Testing Utilities
+5  Rack Unit Internals and Extension API
+6  Release Notes
+7  Acknowlegements
+   Index
+► 4  Testing Utilities
+4.1  Checking documentation completeness
+On this page:
+4.1 Checking documentation completeness
+check-docs
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Testing Utilities
+
+4.1 Checking documentation completeness
+
+ (require rackunit/docs-complete)
+
+(check-docs lib [#:skip skip]) → any
+  lib : symbol?
+              (or/c regexp?
+                    symbol?
+   skip   :         (listof (or/c regexp? symbol?))   =   #f
+                    (-> symbol? any)
+                    #f)
+Checks to see if the module path named by lib (e.g. 'racket/list) has
+documented all of its exports and prints an error message to (
+current-error-port) if not.
+
+If skip is a regexp, then exporting matching that regexp are ignored. If it is
+a symbol, then that export is ignored. If it is a list of symbols and regexps,
+then any exporting matching any of the symbols or regexps are ignored. If it is
+a function, the function is treated as a predicate and passed each export of
+the module. If skip is #f, no exports are skipped.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

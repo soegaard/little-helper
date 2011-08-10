@@ -1,0 +1,205 @@
+                        [Go to first, previous, next page;   contents;   index]
+
+Chapter 14
+
+Enumerations
+
+This chapter describes the (rnrs enums (6))library for dealing with enumerated
+values and sets of enumerated values. Enumerated values are represented by
+ordinary symbols, while finite sets of enumerated values form a separate type,
+known as the enumeration sets. The enumeration sets are further partitioned
+into sets that share the same universe and enumeration type. These universes
+and enumeration types are created by the make-enumeration procedure. Each call
+to that procedure creates a new enumeration type.
+
+This library interprets each enumeration set with respect to its specific
+universe of symbols and enumeration type. This facilitates efficient
+implementation of enumeration sets and enables the complement operation.
+
+In the descriptions of the following procedures, enum-set ranges over the
+enumeration sets, which are defined as the subsets of the universes that can be
+defined using make-enumeration.
+
+(make-enumeration symbol-list)    procedure 
+
+Symbol-list must be a list of symbols. The make-enumeration procedure creates a
+new enumeration type whose universe consists of those symbols (in canonical
+order of their first appearance in the list) and returns that universe as an
+enumeration set whose universe is itself and whose enumeration type is the
+newly created enumeration type.
+
+(enum-set-universe enum-set)    procedure 
+
+Returns the set of all symbols that comprise the universe of its argument, as
+an enumeration set.
+
+(enum-set-indexer enum-set)    procedure 
+
+Returns a unary procedure that, given a symbol that is in the universe of
+enum-set, returns its 0-origin index within the canonical ordering of the
+symbols in the universe; given a value not in the universe, the unary procedure
+returns #f.
+
+(let* ((e (make-enumeration ’(red green blue)))
+       (i (enum-set-indexer e)))
+  (list (i ’red) (i ’green) (i ’blue) (i ’yellow))) 
+                ⇒ (0 1 2 #f)
+
+The enum-set-indexer procedure could be defined as follows using the memq
+procedure from the (rnrs lists (6)) library:
+
+(define (enum-set-indexer set)
+  (let* ((symbols (enum-set->list
+                    (enum-set-universe set)))
+         (cardinality (length symbols)))
+    (lambda (x)
+      (cond
+       ((memq x symbols)
+        => (lambda (probe)
+             (- cardinality (length probe))))
+       (else #f)))))
+
+(enum-set-constructor enum-set)    procedure 
+
+Returns a unary procedure that, given a list of symbols that belong to the
+universe of enum-set, returns a subset of that universe that contains exactly
+the symbols in the list. The values in the list must all belong to the
+universe.
+
+(enum-set->list enum-set)    procedure 
+
+Returns a list of the symbols that belong to its argument, in the canonical
+order of the universe of enum-set.
+
+(let* ((e (make-enumeration ’(red green blue)))
+       (c (enum-set-constructor e)))
+  (enum-set->list (c ’(blue red)))) 
+                ⇒ (red blue)
+
+(enum-set-member? symbol enum-set)    procedure 
+(enum-set-subset? enum-set[1] enum-set[2])    procedure 
+(enum-set=? enum-set[1] enum-set[2])    procedure 
+
+The enum-set-member? procedure returns #t if its first argument is an element
+of its second argument, #f otherwise.
+
+The enum-set-subset? procedure returns #t if the universe of enum-set[1] is a
+subset of the universe of enum-set[2] (considered as sets of symbols) and every
+element of enum-set[1] is a member of enum-set[2]. It returns #f otherwise.
+
+The enum-set=? procedure returns #t if enum-set[1] is a subset of enum-set[2]
+and vice versa, as determined by the enum-set-subset? procedure. This implies
+that the universes of the two sets are equal as sets of symbols, but does not
+imply that they are equal as enumeration types. Otherwise, #f is returned.
+
+(let* ((e (make-enumeration ’(red green blue)))
+       (c (enum-set-constructor e)))
+  (list
+   (enum-set-member? ’blue (c ’(red blue)))
+   (enum-set-member? ’green (c ’(red blue)))
+   (enum-set-subset? (c ’(red blue)) e)
+   (enum-set-subset? (c ’(red blue)) (c ’(blue red)))
+   (enum-set-subset? (c ’(red blue)) (c ’(red)))
+   (enum-set=? (c ’(red blue)) (c ’(blue red)))))
+        ⇒ (#t #f #t #t #f #t)
+
+(enum-set-union enum-set[1] enum-set[2])    procedure 
+(enum-set-intersection enum-set[1] enum-set[2])    procedure 
+(enum-set-difference enum-set[1] enum-set[2])    procedure 
+
+Enum-set[1] and enum-set[2] must be enumeration sets that have the same
+enumeration type.
+
+The enum-set-union procedure returns the union of enum-set[1] and enum-set[2].
+The enum-set-intersection procedure returns the intersection of enum-set[1] and
+enum-set[2]. The enum-set-difference procedure returns the difference of
+enum-set[1] and enum-set[2].
+
+(let* ((e (make-enumeration ’(red green blue)))
+       (c (enum-set-constructor e)))
+  (list (enum-set->list
+         (enum-set-union (c ’(blue)) (c ’(red))))
+        (enum-set->list
+         (enum-set-intersection (c ’(red green))
+                                (c ’(red blue))))
+        (enum-set->list
+         (enum-set-difference (c ’(red green))
+                              (c ’(red blue))))))
+
+                ⇒ ((red blue) (red) (green))
+
+(enum-set-complement enum-set)    procedure 
+
+Returns enum-set’s complement with respect to its universe.
+
+(let* ((e (make-enumeration ’(red green blue)))
+       (c (enum-set-constructor e)))
+  (enum-set->list
+    (enum-set-complement (c ’(red)))))
+        ⇒ (green blue)
+
+(enum-set-projection enum-set[1] enum-set[2])    procedure 
+
+Projects enum-set[1] into the universe of enum-set[2], dropping any elements of
+enum-set[1] that do not belong to the universe of enum-set[2]. (If enum-set[1]
+is a subset of the universe of its second, no elements are dropped, and the
+injection is returned.)
+
+(let ((e1 (make-enumeration
+            ’(red green blue black)))
+      (e2 (make-enumeration
+            ’(red black white))))
+  (enum-set->list
+    (enum-set-projection e1 e2))))
+        ⇒ (red black)
+
+(define-enumeration <type-name>    syntax 
+(<symbol> ...)
+<constructor-syntax>)
+
+The define-enumeration form defines an enumeration type and provides two macros
+for constructing its members and sets of its members.
+
+A define-enumeration form is a definition and can appear anywhere any other
+<definition> can appear.
+
+<Type-name> is an identifier that is bound as a syntactic keyword; <symbol> ...
+are the symbols that comprise the universe of the enumeration (in order).
+
+(<type-name> <symbol>) checks at macro-expansion time whether the name of
+<symbol> is in the universe associated with <type-name>. If it is, (<type-name>
+<symbol>) is equivalent to <symbol>. It is a syntax violation if it is not.
+
+<Constructor-syntax> is an identifier that is bound to a macro that, given any
+finite sequence of the symbols in the universe, possibly with duplicates,
+expands into an expression that evaluates to the enumeration set of those
+symbols.
+
+(<constructor-syntax> <symbol> ...) checks at macro-expansion time whether
+every <symbol> ... is in the universe associated with <type-name>. It is a
+syntax violation if one or more is not. Otherwise
+
+(<constructor-syntax> <symbol> ...)
+
+is equivalent to
+
+((enum-set-constructor (<constructor-syntax>))
+ ’(<symbol> ...)).
+
+Example:
+
+(define-enumeration color
+  (black white purple maroon)
+  color-set)
+
+(color black)                              ⇒ black
+(color purpel)                             ⇒  &syntax exception
+(enum-set->list (color-set))               ⇒ ()
+(enum-set->list
+  (color-set maroon white))                ⇒ (white maroon)
+
+    Note:   In (<type-name> <symbol>) and (<constructor-syntax> <symbol> ...)
+    forms, only the names of the <symbol>s are significant.
+
+                        [Go to first, previous, next page;   contents;   index]
+

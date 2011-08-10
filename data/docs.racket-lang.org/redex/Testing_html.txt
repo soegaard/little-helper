@@ -1,0 +1,555 @@
+▼  Redex: Practical Semantics Engineering
+1  Patterns
+2  Terms
+3  Languages
+4  Reduction Relations
+5  Metafunctions and Relations
+6  Testing
+7  GUI
+8  Typesetting
+   Index
+On this page:
+test-equal
+test-->>
+test-->
+test-->>∃
+test-->>E
+test-predicate
+test-results
+make-coverage
+coverage?
+relation-coverage
+covered-cases
+generate-term
+redex-check
+counterexample
+exn: fail: redex: test
+check-reduction-relation
+check-metafunction
+default-attempt-size
+default-check-attempts
+redex-pseudo-random-generator
+exn: fail: redex: generation-failure?
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Testing
+
+(test-equal e1 e2)
+Tests to see if e1 is equal to e2.
+
+(test-->> rel-expr option ... e1-expr e2-expr ...)
+ 
+option   =   #:cycles-ok
+         |   #:equiv pred-expr
+         |   #:pred pred-expr
+ 
+       rel-expr   :   reduction-relation?
+       pred-expr   :   (--> any/c any)
+       e1-expr    :   any/c
+       e2-expr    :   any/c
+
+Tests to see if the term e1-expr, reduces to the terms e2-expr under rel-expr,
+using pred-expr to determine equivalence.
+
+If #:pred is specified, it is applied to each reachable term until one of the
+terms fails to satify the predicate (i.e., the predicate returns #f). If that
+happens, then the test fails and a message is printed with the term that failed
+to satisfy the predicate.
+
+This test uses apply-reduction-relation*, so it does not terminate when the
+resulting reduction graph is infinite, although it does terminate if there are
+cycles in the (finite) graph.
+
+If #:cycles-ok is not supplied then any cycles detected are treated as a test
+failure. If a pred-expr is supplied, then it is used to compare the expected
+and actual results.
+
+(test--> rel-expr option ... e1-expr e2-expr ...)
+ 
+option   =   #:equiv pred-expr
+ 
+       rel-expr   :   reduction-relation?
+       pred-expr   :   (--> any/c any/c anyc)
+       e1-expr    :   any/c
+       e2-expr    :   any/c
+
+Tests to see if the term e1-expr, reduces to the terms e2-expr in a single
+rel-expr step, using pred-expr to determine equivalence.
+
+Examples:
+
+    > (define-language L
+        (i integer))
+    > (define R
+        (reduction-relation
+         L
+         (--> i i)
+         (--> i ,(add1 (term i)))))
+    > (define (mod2=? i j)
+        (= (modulo i 2) (modulo j 2)))
+    > (test--> R #:equiv mod2=? 7 1)
+    FAILED :9.0
+
+    expected: 1
+
+      actual: 8
+
+      actual: 7
+
+    > (test--> R #:equiv mod2=? 7 1 0)
+    > (test-results)
+    1 test failed (out of 2 total).
+
+
+
+(test-->>∃ option ... rel-expr start-expr goal-expr)
+ 
+option   =   #:steps steps-expr
+ 
+       rel-expr   :   reduction-relation?
+       start-expr    :   any/c
+       goal-expr   :   (or/c (-> any/c any/c)
+                             (not/c procedure?))
+       steps-expr   :   (or/c natural-number/c +inf.0)
+
+Tests to see if the term start-expr reduces according to the reduction relation
+rel-expr to a term specified by goal-expr in steps-expr or fewer steps (default
+1,000). The specification goal-expr may be either a predicate on terms or a
+term itself.
+test-->>E
+An alias for test-->>∃.
+
+Examples:
+
+    > (define-language L
+        (n natural))
+    > (define succ-mod8
+        (reduction-relation
+         L
+         (--> n ,(modulo (add1 (term n)) 8))))
+    > (test-->>∃ succ-mod8 6 2)
+    > (test-->>∃ succ-mod8 6 even?)
+    > (test-->>∃ succ-mod8 6 8)
+    FAILED :16.0
+
+    term 8 not reachable from 6
+
+    > (test-->>∃ #:steps 6 succ-mod8 6 5)
+    FAILED :17.0
+
+    term 5 not reachable from 6 (within 6 steps)
+
+    > (test-results)
+    2 tests failed (out of 4 total).
+
+
+
+(test-predicate p? e)
+Tests to see if the value of e matches the predicate p?.
+
+(test-results) → void?
+Prints out how many tests passed and failed, and resets the counters so that
+next time this function is called, it prints the test results for the next
+round of tests.
+
+(make-coverage subject)
+ 
+subject   =   metafunction
+          |   relation-expr
+Constructs a structure (recognized by coverage?) to contain per-case test
+coverage of the supplied metafunction or reduction relation. Use with
+relation-coverage and covered-cases.
+
+(coverage? v) → boolean?
+  v : any/c
+Returns #t for a value produced by make-coverage and #f for any other.
+
+(relation-coverage) → (listof coverage?)
+(relation-coverage tracked) → void?
+  tracked : (listof coverage?)
+Redex populates the coverage records in tracked (default null), counting the
+times that tests exercise each case of the associated metafunction and
+relations.
+
+(covered-cases c) → (listof (cons/c string? natural-number/c))
+  c : coverage?
+Extracts the coverage information recorded in c, producing an association list
+mapping names (or source locations, in the case of metafunctions or unnamed
+reduction-relation cases) to application counts.
+
+Examples:
+
+    > (define-language empty-lang)
+    > (define-metafunction empty-lang
+        [(plus number_1 number_2)
+         ,(+ (term number_1) (term number_2))])
+    > (define equals
+        (reduction-relation
+         empty-lang
+         (--> (+) 0 "zero")
+         (--> (+ number) number)
+         (--> (+ number_1 number_2 number ...)
+              (+ (plus number_1 number_2)
+                 number ...)
+              "add")))
+    > (let ([equals-coverage (make-coverage equals)]
+            [plus-coverage (make-coverage plus)])
+        (parameterize ([relation-coverage (list equals-coverage
+                                                plus-coverage)])
+          (apply-reduction-relation* equals (term (+ 1 2 3)))
+          (values (covered-cases equals-coverage)
+                  (covered-cases plus-coverage))))
+    '(("add" . 2) ("eval:21:0" . 1) ("zero" . 0))
+
+    '(("eval:20:0" . 2))
+
+
+
+(generate-term term-spec size-expr kw-args ...)
+(generate-term term-spec)
+ 
+term-spec   =   language pattern
+            |   #:source metafunction
+            |   #:source relation-expr
+                 
+  kw-args   =   #:attempt-num attempts-expr
+            |   #:retries retries-expr
+ 
+       size-expr   :   natural-number/c
+       attempt-num-expr   :   natural-number/c
+       retries-expr   :   natural-number/c
+
+In its first form, generate-term produces a random term according to term-spec,
+which is either a language and a pattern, the name of a metafunction, or an
+expression producing a reduction relation. In the first of these cases, the
+produced term matches the given pattern (interpreted according to the
+definition of the given language). In the second and third cases, the produced
+term matches one of the clauses of the specified metafunction or reduction
+relation.
+
+In its second form, generate-term produces a procedure for constructing terms
+according to term-spec. This procedure expects size-expr (below) as its sole
+positional argument and allows the same optional keyword arguments as the first
+form. The second form may be more efficient when generating many terms.
+
+The argument size-expr bounds the height of the generated term (measured as the
+height of its parse tree).
+
+Examples:
+
+    > (define-language L
+        (n number))
+    > (generate-term L (+ n_1 n_2) 5)
+    '(+ 2 0)
+
+    > (define R
+        (reduction-relation
+         L
+         (--> (one-clause n) ())
+         (--> (another-clause n) ())))
+    > (random-seed 0)
+    > (generate-term #:source R 5)
+    '(another-clause 2)
+
+    > (define R-left-hand-sides
+        (generate-term #:source R))
+    > (R-left-hand-sides 0)
+    '(one-clause 1)
+
+    > (R-left-hand-sides 1)
+    '(another-clause 1)
+
+    > (define-metafunction L
+        [(F one-clause n) ()]
+        [(F another-clause n) ()])
+    > (generate-term #:source F 5)
+    '(another-clause 2)
+
+
+
+The optional keyword argument attempt-num-expr (default 1) provides coarse
+grained control over the random decisions made during generation; increasing
+attempt-num-expr tends to increase the complexity of the result. For example,
+the absolute values of numbers chosen for integer patterns increase with
+attempt-num-expr.
+
+The random generation process does not actively consider the constraints
+imposed by side-condition or _!_ patterns; instead, it uses a “guess and check”
+strategy in which it freely generates candidate terms then tests whether they
+happen to satisfy the constraints, repeating as necessary. The optional keyword
+argument retries-expr (default 100) bounds the number of times that
+generate-term retries the generation of any pattern. If generate-term is unable
+to produce a satisfying term after retries-expr attempts, it raises an
+exception recognized by exn:fail:redex:generation-failure?.
+
+(redex-check language pattern property-expr kw-arg ...)
+ 
+kw-arg   =   #:attempts attempts-expr
+         |   #:source metafunction
+         |   #:source relation-expr
+         |   #:retries retries-expr
+         |   #:print? print?-expr
+         |   #:attempt-size attempt-size-expr
+         |   #:prepare prepare-expr
+ 
+       property-expr    :   any/c
+       attempts-expr   :   natural-number/c
+       relation-expr   :   reduction-relation?
+       retries-expr   :   natural-number/c
+       print?-expr    :   any/c
+       attempt-size-expr   :   (-> natural-number/c natural-number/c)
+       prepare-expr   :   (-> any/c any/c)
+
+Searches for a counterexample to property-expr, interpreted as a predicate
+universally quantified over the pattern variables bound by pattern. redex-check
+constructs and tests a candidate counterexample by choosing a random term t
+that matches pattern then evaluating property-expr using the match-bindings
+produced by matching t against pattern.
+
+redex-check generates at most attempts-expr (default (default-check-attempts))
+random terms in its search. The size and complexity of these terms tend to
+increase with each failed attempt. The #:attempt-size keyword determines the
+rate at which terms grow by supplying a function that bounds term size based on
+the number of failed attempts (see generate-term’s size-expr argument). By
+default, the bound grows according to the default-attempt-size function.
+
+When print?-expr produces any non-#f value (the default), redex-check prints
+the test outcome on current-output-port. When print?-expr produces #f,
+redex-check prints nothing, instead
+
+  • returning a counterexample structure when the test reveals a
+    counterexample,
+
+  • returning #t when all tests pass, or
+
+  • raising a exn:fail:redex:test when checking the property raises an
+    exception.
+
+The optional #:prepare keyword supplies a function that transforms each
+generated example before redex-check checks property-expr. This keyword may be
+useful when property-expr takes the form of a conditional, and a term chosen
+freely from the grammar is unlikely to satisfy the conditional’s hypothesis. In
+some such cases, the prepare keyword can be used to increase the probability
+that an example satifies the hypothesis.
+
+When passed a metafunction or reduction relation via the optional #:source
+argument, redex-check distributes its attempts across the left-hand sides of
+that metafunction/relation by using those patterns, rather than pattern, as the
+basis of its generation. It is an error if any left-hand side generates a term
+that does not match pattern.
+
+Examples:
+
+    > (define-language empty-lang)
+    > (random-seed 0)
+    > (redex-check
+       empty-lang
+       ((number_1 ...)
+        (number_2 ...))
+       (equal? (reverse (append (term (number_1 ...))
+                                (term (number_2 ...))))
+               (append (reverse (term (number_1 ...)))
+                       (reverse (term (number_2 ...))))))
+    redex-check: counterexample found after 5 attempts:
+
+    ((1 0) (0))
+
+    > (redex-check
+       empty-lang
+       ((number_1 ...)
+        (number_2 ...))
+       (equal? (reverse (append (term (number_1 ...))
+                                (term (number_2 ...))))
+               (append (reverse (term (number_2 ...)))
+                       (reverse (term (number_1 ...)))))
+       #:attempts 200)
+    redex-check: no counterexamples in 200 attempts
+
+    > (let ([R (reduction-relation
+                empty-lang
+                (--> (Σ) 0)
+                (--> (Σ number) number)
+                (--> (Σ number_1 number_2 number_3 ...)
+                     (Σ ,(+ (term number_1) (term number_2))
+                        number_3 ...)))])
+        (redex-check
+         empty-lang
+         (Σ number ...)
+         (printf "~s\n" (term (number ...)))
+         #:attempts 3
+         #:source R))
+    ()
+
+    (1)
+
+    (3 0)
+
+    redex-check: no counterexamples in 1 attempt (with each clause)
+
+    > (redex-check
+       empty-lang
+       number
+       (begin
+         (printf "checking ~s\n" (term number))
+         (positive? (term number)))
+       #:prepare (λ (n)
+                   (printf "preparing ~s; " n)
+                   (add1 (abs n)))
+       #:attempts 3)
+    preparing 0; checking 1
+
+    preparing 0; checking 1
+
+    preparing 1; checking 2
+
+    redex-check: no counterexamples in 3 attempts
+
+
+
+(struct   counterexample (term)
+          #:extra-constructor-name make-counterexample
+          #:transparent)
+  term : any/c
+Produced by redex-check, check-reduction-relation, and check-metafunction when
+testing falsifies a property.
+
+(struct   exn:fail:redex:test exn:fail:redex (source term)
+          #:extra-constructor-name make-exn:fail:redex:test)
+  source : exn:fail?
+  term : any/c
+Raised by redex-check, check-reduction-relation, and check-metafunction when
+testing a property raises an exception. The exn:fail:redex:test-source
+component contains the exception raised by the property, and the
+exn:fail:redex:test-term component contains the term that induced the
+exception.
+
+(check-reduction-relation relation property kw-args ...)
+ 
+kw-arg   =   #:attempts attempts-expr
+         |   #:retries retries-expr
+         |   #:print? print?-expr
+         |   #:attempt-size attempt-size-expr
+         |   #:prepare prepare-expr
+ 
+       property   :   (-> any/c any/c)
+       attempts-expr   :   natural-number/c
+       retries-expr   :   natural-number/c
+       print?-expr    :   any/c
+       attempt-size-expr   :   (-> natural-number/c natural-number/c)
+       prepare-expr   :   (-> any/c any/c)
+
+Tests relation as follows: for each case of relation, check-reduction-relation
+generates attempts random terms that match that case’s left-hand side and
+applies property to each random term.
+
+This form provides a more convenient notation for
+
+    (redex-check L any (property (term any))
+                 #:attempts (* n attempts)
+                 #:source relation)
+
+when relation is a relation on L with n rules.
+
+(check-metafunction metafunction property kw-args ...)
+ 
+kw-arg   =   #:attempts attempts-expr
+         |   #:retries retries-expr
+         |   #:print? print?-expr
+         |   #:attempt-size attempt-size-expr
+         |   #:prepare prepare-expr
+ 
+       property   :   (-> (listof any/c) any/c)
+       attempts-expr   :   natural-number/c
+       retries-expr   :   natural-number/c
+       print?-expr    :   any/c
+       attempt-size-expr   :   (-> natural-number/c natural-number/c)
+       prepare-expr   :   (-> (listof any/c) (listof any/c))
+
+Like check-reduction-relation but for metafunctions. check-metafunction calls
+property with lists containing arguments to the metafunction. Similarly,
+prepare-expr produces and consumes argument lists.
+
+Examples:
+
+    > (define-language empty-lang)
+    > (random-seed 0)
+    > (define-metafunction empty-lang
+        Σ : number ... -> number
+        [(Σ) 0]
+        [(Σ number) number]
+        [(Σ number_1 number_2 number_3 ...)
+         (Σ ,(+ (term number_1) (term number_2)) number_3 ...)])
+    > (check-metafunction Σ (λ (args) (printf "~s\n" args)) #:attempts 2)
+    ()
+
+    ()
+
+    (0)
+
+    (0)
+
+    (2 1)
+
+    (0 1)
+
+    check-metafunction: no counterexamples in 2 attempts (with each clause)
+
+
+
+(default-attempt-size n) → natural-number/c
+  n : natural-number/c
+The default value of the #:attempt-size argument to redex-check and the other
+randomized testing forms, this procedure computes an upper bound on the size of
+the next test case from the number of previously attempted tests n. Currently,
+this procedure computes the base 5 logarithm, but that behavior may change in
+future versions.
+
+(default-check-attempts) → natural-number/c
+(default-check-attempts attempts) → void?
+  attempts : natural-number/c
+Determines the default value for redex-check’s optional #:attempts argument. By
+default, attempts is 1,000.
+
+(redex-pseudo-random-generator) → pseudo-random-generator?
+(redex-pseudo-random-generator generator) → void?
+  generator : pseudo-random-generator?
+generate-term and the randomized testing forms (e.g., redex-check) use the
+parameter generator to construct random terms. The parameter’s initial value is
+(current-pseudo-random-generator).
+
+(exn:fail:redex:generation-failure? v) → boolean?
+  v : any/c
+Recognizes the exceptions raised by generate-term, redex-check, etc. when those
+forms are unable to produce a term matching some pattern.
+
+Debugging PLT Redex Programs
+
+It is easy to write grammars and reduction rules that are subtly wrong.
+Typically such mistakes result in examples that get stuck when viewed in a
+traces window.
+
+The best way to debug such programs is to find an expression that looks like it
+should reduce, but doesn’t, then try to find out which pattern is failing to
+match. To do so, use the redex-match form.
+
+In particular, first check if the term in question matches the your system’s
+main non-terminal (typically the expression or program non-terminal). If it
+does not match, simplify the term piece by piece to determine whether the
+problem is in the term or the grammar.
+
+If the term does match your system’s main non-terminal, determine by inspection
+which reduction rules should apply. For each such rule, repeat the above
+term-pattern debugging procedure, this time using the rule’s left-hand side
+pattern instead of the system’s main non-terminal. In addition to simplifying
+the term, also consider simplifying the pattern.
+
+If the term matches the left-hand side, but the rule does not apply, then one
+of the rule’s side-condition or where clauses is not satisfied. Using the
+bindings reported by redex-match, check each side-condition expression and each
+where pattern-match to discover which clause is preventing the rule’s
+application.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

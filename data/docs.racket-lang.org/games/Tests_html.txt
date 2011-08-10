@@ -1,0 +1,1039 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+On this page:
+<test-infrastructure>
+<lookup-in-table-tests>
+<build-bfs-table-tests>2
+<neighbors-tests>4
+<adjacent-tests>2
+<on-boundary?-tests>
+<in-bounds?-tests>
+<on-cats-path?-tests>2
+<+/f-tests>
+<render-world-tests>
+<chop-whiskers-tests>2
+<render-board-tests>
+<render-cell-tests>
+<world-size-tests>
+<cell-center-x-tests>3
+<cell-center-y-tests>2
+<clack-tests>
+<update-world-posn-tests>
+<move-cat-tests>
+<change-tests>
+<release-tests>
+<point-in-this-circle?-tests>3
+<find-best-positions-tests>
+<lt/f-tests>
+<circle-at-point-tests>
+<blocked-cells-tests>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18.9 Tests
+
+This section consists of some infrastructure for maintaining tests, plus a pile
+of additional tests for the other functions in this document.
+
+The test and test/set macros package up their arguments into thunks and then
+simply call test/proc, supplying information about the source location of the
+test case. The test/proc function runs the tests and reports the results.
+
+<test-infrastructure> ::=
+
+    (define-syntax (test stx)
+      (syntax-case stx ()
+        [(_ actual expected)
+         (with-syntax ([line (syntax-line stx)]
+                       [pos (syntax-position stx)])
+           #'(test/proc (λ () actual)
+                        (λ () expected)
+                        equal?
+                        line
+                        'actual))]))
+     
+    (define-syntax (test/set stx)
+      (syntax-case stx ()
+        [(_ actual expected)
+         (with-syntax ([line (syntax-line stx)]
+                       [pos (syntax-position stx)])
+           #'(test/proc (λ () actual)
+                        (λ () expected)
+                        (λ (x y) (same-sets? x y))
+                        line
+                        'actual))]))
+     
+    (define test-count 0)
+     
+    (define (test/proc actual-thunk expected-thunk cmp line sexp)
+      (set! test-count (+ test-count 1))
+      (let ([actual (actual-thunk)]
+            [expected (expected-thunk)])
+        (unless (cmp actual expected)
+          (error 'check-expect "test #~a~a\n  ~s\n  ~s\n"
+                 test-count
+                 (if line
+                     (format " on line ~a failed:" line)
+                     (format " failed: ~s" sexp))
+                 actual
+                 expected))))
+     
+     
+    (define (same-sets? l1 l2)
+      (and (andmap (lambda (e1) (member e1 l2)) l1)
+           (andmap (lambda (e2) (member e2 l1)) l2)
+           #t))
+     
+    (test (same-sets? (list) (list)) #t)
+    (test (same-sets? (list) (list 1)) #f)
+    (test (same-sets? (list 1) (list)) #f)
+    (test (same-sets? (list 1 2) (list 2 1)) #t)
+
+<lookup-in-table-tests> ::=
+
+    (test (lookup-in-table empty (make-posn 1 2)) '∞)
+    (test (lookup-in-table (list (make-dist-cell (make-posn 1 2) 3))
+                           (make-posn 1 2))
+          3)
+    (test (lookup-in-table (list (make-dist-cell (make-posn 2 1) 3))
+                           (make-posn 1 2))
+          '∞)
+
+<build-bfs-table-tests> ::=
+
+    (test/set (build-bfs-table
+               (make-world (empty-board 3) (make-posn 1 1)
+                           'playing 3 (make-posn 0 0) #f)
+               (make-posn 1 1))
+              (list
+               (make-dist-cell 'boundary 2)
+     
+               (make-dist-cell (make-posn 1 0) 1)
+               (make-dist-cell (make-posn 2 0) 1)
+     
+               (make-dist-cell (make-posn 0 1) 1)
+               (make-dist-cell (make-posn 1 1) 0)
+               (make-dist-cell (make-posn 2 1) 1)
+     
+               (make-dist-cell (make-posn 1 2) 1)
+               (make-dist-cell (make-posn 2 2) 1)))
+     
+    (test/set (build-bfs-table
+               (make-world
+                (list
+                 (make-cell (make-posn 0 1) #t)
+                 (make-cell (make-posn 1 0) #t)
+                 (make-cell (make-posn 1 1) #f)
+                 (make-cell (make-posn 1 2) #t)
+                 (make-cell (make-posn 2 0) #t)
+                 (make-cell (make-posn 2 1) #t)
+                 (make-cell (make-posn 2 2) #t))
+                (make-posn 1 1)
+                'playing
+                3
+                (make-posn 0 0)
+                #f)
+               'boundary)
+              (list
+               (make-dist-cell 'boundary 0)))
+     
+    (test/set (build-bfs-table
+               (make-world (empty-board 5)
+                           (make-posn 2 2)
+                           'playing
+                           5
+                           (make-posn 0 0)
+                           #f)
+               'boundary)
+              (list
+               (make-dist-cell 'boundary 0)
+     
+               (make-dist-cell (make-posn 1 0) 1)
+               (make-dist-cell (make-posn 2 0) 1)
+               (make-dist-cell (make-posn 3 0) 1)
+               (make-dist-cell (make-posn 4 0) 1)
+     
+               (make-dist-cell (make-posn 0 1) 1)
+               (make-dist-cell (make-posn 1 1) 2)
+               (make-dist-cell (make-posn 2 1) 2)
+               (make-dist-cell (make-posn 3 1) 2)
+               (make-dist-cell (make-posn 4 1) 1)
+     
+               (make-dist-cell (make-posn 0 2) 1)
+               (make-dist-cell (make-posn 1 2) 2)
+               (make-dist-cell (make-posn 2 2) 3)
+               (make-dist-cell (make-posn 3 2) 2)
+               (make-dist-cell (make-posn 4 2) 1)
+     
+               (make-dist-cell (make-posn 0 3) 1)
+               (make-dist-cell (make-posn 1 3) 2)
+               (make-dist-cell (make-posn 2 3) 2)
+               (make-dist-cell (make-posn 3 3) 2)
+               (make-dist-cell (make-posn 4 3) 1)
+     
+               (make-dist-cell (make-posn 1 4) 1)
+               (make-dist-cell (make-posn 2 4) 1)
+               (make-dist-cell (make-posn 3 4) 1)
+               (make-dist-cell (make-posn 4 4) 1)))
+     
+    (test/set (build-bfs-table
+               (make-world (block-cell
+                            (make-posn 4 2)
+                            (empty-board 5))
+                           (make-posn 2 2)
+                           'playing
+                           5
+                           (make-posn 0 0)
+                           #f)
+               'boundary)
+              (list
+               (make-dist-cell 'boundary 0)
+     
+               (make-dist-cell (make-posn 1 0) 1)
+               (make-dist-cell (make-posn 2 0) 1)
+               (make-dist-cell (make-posn 3 0) 1)
+               (make-dist-cell (make-posn 4 0) 1)
+     
+               (make-dist-cell (make-posn 0 1) 1)
+               (make-dist-cell (make-posn 1 1) 2)
+               (make-dist-cell (make-posn 2 1) 2)
+               (make-dist-cell (make-posn 3 1) 2)
+               (make-dist-cell (make-posn 4 1) 1)
+     
+               (make-dist-cell (make-posn 0 2) 1)
+               (make-dist-cell (make-posn 1 2) 2)
+               (make-dist-cell (make-posn 2 2) 3)
+               (make-dist-cell (make-posn 3 2) 3)
+     
+               (make-dist-cell (make-posn 0 3) 1)
+               (make-dist-cell (make-posn 1 3) 2)
+               (make-dist-cell (make-posn 2 3) 2)
+               (make-dist-cell (make-posn 3 3) 2)
+               (make-dist-cell (make-posn 4 3) 1)
+     
+               (make-dist-cell (make-posn 1 4) 1)
+               (make-dist-cell (make-posn 2 4) 1)
+               (make-dist-cell (make-posn 3 4) 1)
+               (make-dist-cell (make-posn 4 4) 1)))
+     
+    (test/set (build-bfs-table
+               (make-world (empty-board 5)
+                           (make-posn 2 2)
+                           'playing
+                           5
+                           (make-posn 0 0)
+                           #f)
+               (make-posn 2 2))
+              (list
+               (make-dist-cell 'boundary 3)
+     
+               (make-dist-cell (make-posn 1 0) 2)
+               (make-dist-cell (make-posn 2 0) 2)
+               (make-dist-cell (make-posn 3 0) 2)
+               (make-dist-cell (make-posn 4 0) 3)
+     
+               (make-dist-cell (make-posn 0 1) 2)
+               (make-dist-cell (make-posn 1 1) 1)
+               (make-dist-cell (make-posn 2 1) 1)
+               (make-dist-cell (make-posn 3 1) 2)
+               (make-dist-cell (make-posn 4 1) 3)
+     
+               (make-dist-cell (make-posn 0 2) 2)
+               (make-dist-cell (make-posn 1 2) 1)
+               (make-dist-cell (make-posn 2 2) 0)
+               (make-dist-cell (make-posn 3 2) 1)
+               (make-dist-cell (make-posn 4 2) 2)
+     
+               (make-dist-cell (make-posn 0 3) 2)
+               (make-dist-cell (make-posn 1 3) 1)
+               (make-dist-cell (make-posn 2 3) 1)
+               (make-dist-cell (make-posn 3 3) 2)
+               (make-dist-cell (make-posn 4 3) 3)
+     
+               (make-dist-cell (make-posn 1 4) 2)
+               (make-dist-cell (make-posn 2 4) 2)
+               (make-dist-cell (make-posn 3 4) 2)
+               (make-dist-cell (make-posn 4 4) 3)))
+     
+    (test (lookup-in-table
+           (build-bfs-table (make-world (empty-board 5)
+                                        (make-posn 2 2)
+                                        'playing
+                                        5
+                                        (make-posn 0 0)
+                                        #f)
+                            (make-posn 2 2))
+           (make-posn 1 4))
+          2)
+
+<neighbors-tests> ::=
+
+    (test ((neighbors (empty-world 11))  (make-posn 1 1))
+          (adjacent (make-posn 1 1)))
+    (test ((neighbors (empty-world 11)) (make-posn 2 2))
+          (adjacent (make-posn 2 2)))
+    (test ((neighbors (empty-world 3)) 'boundary)
+          (list (make-posn 0 1)
+                (make-posn 1 0)
+                (make-posn 1 2)
+                (make-posn 2 0)
+                (make-posn 2 1)
+                (make-posn 2 2)))
+    (test ((neighbors (make-world (list
+                                   (make-cell (make-posn 0 1) #f)
+                                   (make-cell (make-posn 1 0) #f)
+                                   (make-cell (make-posn 1 1) #t)
+                                   (make-cell (make-posn 1 2) #f)
+                                   (make-cell (make-posn 2 0) #f)
+                                   (make-cell (make-posn 2 1) #f)
+                                   (make-cell (make-posn 2 2) #f))
+                                  (make-posn 1 1)
+                                  'playing
+                                  3
+                                  (make-posn 0 0)
+                                  #f))
+           (make-posn 1 1))
+          '())
+    (test ((neighbors (make-world (list
+                                   (make-cell (make-posn 0 1) #f)
+                                   (make-cell (make-posn 1 0) #f)
+                                   (make-cell (make-posn 1 1) #t)
+                                   (make-cell (make-posn 1 2) #f)
+                                   (make-cell (make-posn 2 0) #f)
+                                   (make-cell (make-posn 2 1) #f)
+                                   (make-cell (make-posn 2 2) #f))
+                                  (make-posn 1 1)
+                                  'playing
+                                  3
+                                  (make-posn 0 0)
+                                  #f))
+           (make-posn 1 0))
+          (list 'boundary (make-posn 2 0) (make-posn 0 1)))
+
+<adjacent-tests> ::=
+
+    (test (adjacent (make-posn 1 1))
+          (list (make-posn 1 0)
+                (make-posn 2 0)
+                (make-posn 0 1)
+                (make-posn 2 1)
+                (make-posn 1 2)
+                (make-posn 2 2)))
+    (test (adjacent (make-posn 2 2))
+          (list (make-posn 1 1)
+                (make-posn 2 1)
+                (make-posn 1 2)
+                (make-posn 3 2)
+                (make-posn 1 3)
+                (make-posn 2 3)))
+
+<on-boundary?-tests> ::=
+
+    (test (on-boundary? (make-posn 0 1) 13) #t)
+    (test (on-boundary? (make-posn 1 0) 13) #t)
+    (test (on-boundary? (make-posn 12 1) 13) #t)
+    (test (on-boundary? (make-posn 1 12) 13) #t)
+    (test (on-boundary? (make-posn 1 1) 13) #f)
+    (test (on-boundary? (make-posn 10 10) 13) #f)
+
+<in-bounds?-tests> ::=
+
+    (test (in-bounds? (make-posn 0 0) 11) #f)
+    (test (in-bounds? (make-posn 0 1) 11) #t)
+    (test (in-bounds? (make-posn 1 0) 11) #t)
+    (test (in-bounds? (make-posn 10 10) 11) #t)
+    (test (in-bounds? (make-posn 0 -1) 11) #f)
+    (test (in-bounds? (make-posn -1 0) 11) #f)
+    (test (in-bounds? (make-posn 0 11) 11) #f)
+    (test (in-bounds? (make-posn 11 0) 11) #f)
+    (test (in-bounds? (make-posn 10 0) 11) #t)
+    (test (in-bounds? (make-posn 0 10) 11) #f)
+
+<on-cats-path?-tests> ::=
+
+    (test ((on-cats-path? (make-world (empty-board 5)
+                                      (make-posn 1 1)
+                                      'playing
+                                      5
+                                      (make-posn 0 0)
+                                      #t))
+           (make-posn 1 0))
+          #t)
+    (test ((on-cats-path? (make-world (empty-board 5)
+                                      (make-posn 1 1)
+                                      'playing
+                                      5
+                                      (make-posn 0 0)
+                                      #f))
+           (make-posn 1 0))
+          #f)
+     
+    (test ((on-cats-path? (make-world (empty-board 5) (make-posn 1 1)
+                                      'playing 5 (make-posn 0 0) #t))
+           (make-posn 2 1))
+          #f)
+    (test ((on-cats-path?
+            (make-world (list
+                         (make-cell (make-posn 0 1) #t)
+                         (make-cell (make-posn 1 0) #t)
+                         (make-cell (make-posn 1 1) #f)
+                         (make-cell (make-posn 1 2) #t)
+                         (make-cell (make-posn 2 0) #t)
+                         (make-cell (make-posn 2 1) #t)
+                         (make-cell (make-posn 2 2) #t))
+                        (make-posn 1 1)
+                        'cat-lost
+                        3
+                        (make-posn 0 0)
+                        #t))
+           (make-posn 0 1))
+          #f)
+
+<+/f-tests> ::=
+
+    (test (+/f '∞ '∞) '∞)
+    (test (+/f '∞ 1) '∞)
+    (test (+/f 1 '∞) '∞)
+    (test (+/f 1 2) 3)
+
+<render-world-tests> ::=
+
+    (test
+     (render-world
+      (make-world (list (make-cell (make-posn 0 1) #f))
+                  (make-posn 0 1)
+                  'playing
+                  3
+                  (make-posn 0 0)
+                  #f))
+     (overlay
+      (render-board (list (make-cell (make-posn 0 1) #f))
+                    3
+                    (lambda (x) #t)
+                    #f)
+      (move-pinhole thinking-cat
+                    (- (cell-center-x (make-posn 0 1)))
+                    (- (cell-center-y (make-posn 0 1))))))
+     
+    (test
+     (render-world
+      (make-world (list (make-cell (make-posn 0 1) #f))
+                  (make-posn 0 1)
+                  'cat-won
+                  3
+                  #f
+                  #f))
+     (overlay
+      (render-board (list (make-cell (make-posn 0 1) #f))
+                    3
+                    (lambda (x) #t)
+                    #f)
+      (move-pinhole happy-cat
+                    (- (cell-center-x (make-posn 0 1)))
+                    (- (cell-center-y (make-posn 0 1))))))
+     
+    (test
+     (render-world
+      (make-world (list (make-cell (make-posn 0 1) #f))
+                  (make-posn 0 1)
+                  'cat-lost
+                  3
+                  #f
+                  #f))
+     (overlay
+      (render-board (list (make-cell (make-posn 0 1) #f))
+                    3
+                    (lambda (x) #t)
+                    #f)
+      (move-pinhole mad-cat
+                    (- (cell-center-x (make-posn 0 1)))
+                    (- (cell-center-y (make-posn 0 1))))))
+     
+    (test
+     (render-world
+      (make-world (list
+                   (make-cell (make-posn 0 1) #t)
+                   (make-cell (make-posn 1 0) #t)
+                   (make-cell (make-posn 1 1) #f)
+                   (make-cell (make-posn 1 2) #t)
+                   (make-cell (make-posn 2 0) #t)
+                   (make-cell (make-posn 2 1) #t)
+                   (make-cell (make-posn 2 2) #t))
+                  (make-posn 1 1)
+                  'cat-lost
+                  3
+                  #f
+                  #f))
+     (overlay
+      (render-board (list
+                     (make-cell (make-posn 0 1) #t)
+                     (make-cell (make-posn 1 0) #t)
+                     (make-cell (make-posn 1 1) #f)
+                     (make-cell (make-posn 1 2) #t)
+                     (make-cell (make-posn 2 0) #t)
+                     (make-cell (make-posn 2 1) #t)
+                     (make-cell (make-posn 2 2) #t))
+                    3
+                    (lambda (x) #f)
+                    #f)
+      (move-pinhole mad-cat
+                    (- (cell-center-x (make-posn 1 1)))
+                    (- (cell-center-y (make-posn 1 1))))))
+     
+    (test
+     (render-world
+      (make-world (list
+                   (make-cell (make-posn 0 1) #f)
+                   (make-cell (make-posn 1 0) #f)
+                   (make-cell (make-posn 1 1) #f)
+                   (make-cell (make-posn 1 2) #f)
+                   (make-cell (make-posn 2 0) #f)
+                   (make-cell (make-posn 2 1) #f)
+                   (make-cell (make-posn 2 2) #f))
+                  (make-posn 1 1)
+                  'cat-lost
+                  3
+                  (make-posn (cell-center-x (make-posn 0 1))
+                             (cell-center-y (make-posn 0 1)))
+                  #t))
+     
+     (overlay
+      (render-board (list
+                     (make-cell (make-posn 0 1) #f)
+                     (make-cell (make-posn 1 0) #f)
+                     (make-cell (make-posn 1 1) #f)
+                     (make-cell (make-posn 1 2) #f)
+                     (make-cell (make-posn 2 0) #f)
+                     (make-cell (make-posn 2 1) #f)
+                     (make-cell (make-posn 2 2) #f))
+                    3
+                    (lambda (x) #t)
+                    (make-posn (cell-center-x (make-posn 0 1))
+                               (cell-center-y (make-posn 0 1))))
+      (move-pinhole mad-cat
+                    (- (cell-center-x (make-posn 1 1)))
+                    (- (cell-center-y (make-posn 1 1))))))
+
+<chop-whiskers-tests> ::=
+
+    (test (chop-whiskers (rectangle 6 6 'solid 'black))
+          (put-pinhole (rectangle 3 3 'solid 'black) 0 0))
+     
+    (test
+     (pinhole-x
+      (render-world
+       (make-world
+        (empty-board 3)
+        (make-posn 0 0)
+        'playing
+        3
+        (make-posn 0 0)
+        #f)))
+     0)
+    (test
+     (pinhole-x
+      (render-world
+       (make-world
+        (empty-board 3)
+        (make-posn 0 1)
+        'playing
+        3
+        (make-posn 0 0)
+        #f)))
+     0)
+
+<render-board-tests> ::=
+
+    (test (render-board (list (make-cell (make-posn 0 0) #f))
+                        3
+                        (lambda (x) #f)
+                        #f)
+          (overlay
+           (nw:rectangle (world-width 3)
+                         (world-height 3)
+                         'solid
+                         'white)
+           (render-cell (make-cell (make-posn 0 0) #f)
+                        #f
+                        #f)))
+     
+    (test (render-board (list (make-cell (make-posn 0 0) #f))
+                        3
+                        (lambda (x) #t)
+                        #f)
+          (overlay
+           (nw:rectangle (world-width 3)
+                         (world-height 3)
+                         'solid
+                         'white)
+           (render-cell (make-cell (make-posn 0 0) #f)
+                        #t
+                        #f)))
+     
+     
+    (test (render-board (list (make-cell (make-posn 0 0) #f))
+                        3
+                        (lambda (x) #f)
+                        #f)
+          (overlay
+           (nw:rectangle (world-width 3)
+                         (world-height 3)
+                         'solid
+                         'white)
+           (render-cell (make-cell (make-posn 0 0) #f)
+                        #f
+                        #f)))
+     
+    (test (render-board (list (make-cell (make-posn 0 0) #f)
+                              (make-cell (make-posn 0 1) #f))
+                        3
+                        (lambda (x) (equal? x (make-posn 0 1)))
+                        #f)
+          (overlay
+           (nw:rectangle (world-width 3)
+                         (world-height 3)
+                         'solid
+                         'white)
+           (render-cell (make-cell (make-posn 0 0) #f)
+                        #f
+                        #f)
+           (render-cell (make-cell (make-posn 0 1) #f)
+                        #t
+                        #f)))
+     
+    (test (render-board (list (make-cell (make-posn 0 0) #f)
+                              (make-cell (make-posn 0 1) #f))
+                        3
+                        (lambda (x) (equal? x (make-posn 0 1)))
+                        (make-posn 0 0))
+          (overlay
+           (nw:rectangle (world-width 3)
+                         (world-height 3)
+                         'solid
+                         'white)
+           (render-cell (make-cell (make-posn 0 0) #f)
+                        #f
+                        #t)
+           (render-cell (make-cell (make-posn 0 1) #f)
+                        #t
+                        #f)))
+
+<render-cell-tests> ::=
+
+    (test (render-cell (make-cell (make-posn 0 0) #f) #f #f)
+          (move-pinhole (circle circle-radius 'solid normal-color)
+                        (- circle-radius)
+                        (- circle-radius)))
+    (test (render-cell (make-cell (make-posn 0 0) #t) #f #f)
+          (move-pinhole (circle circle-radius 'solid 'black)
+                        (- circle-radius)
+                        (- circle-radius)))
+    (test (render-cell (make-cell (make-posn 0 0) #f) #t #f)
+          (move-pinhole (overlay (circle circle-radius 'solid normal-color)
+                                 (circle (quotient circle-radius 2) 'solid
+                                         on-shortest-path-color))
+                        (- circle-radius)
+                        (- circle-radius)))
+    (test (render-cell (make-cell (make-posn 0 0) #f) #t #t)
+          (move-pinhole (overlay (circle circle-radius 'solid normal-color)
+                                 (circle (quotient circle-radius 2) 'solid
+                                         under-mouse-color))
+                        (- circle-radius)
+                        (- circle-radius)))
+
+<world-size-tests> ::=
+
+    (test (world-width 3) 150)
+    (test (world-height 3) 117)
+
+<cell-center-x-tests> ::=
+
+    (test (cell-center-x (make-posn 0 0))
+          circle-radius)
+    (test (cell-center-x (make-posn 1 0))
+          (+ (* 2 circle-spacing) circle-radius))
+    (test (cell-center-x (make-posn 1 1))
+          (+ (* 3 circle-spacing) circle-radius))
+
+<cell-center-y-tests> ::=
+
+    (test (cell-center-y (make-posn 1 1))
+          (+ circle-radius (* 2 circle-spacing 433/500)))
+
+<clack-tests> ::=
+
+    (test (clack
+           (make-world '() (make-posn 0 0) 'playing 3 #f #f)
+           1 1 "button-down")
+          (make-world '() (make-posn 0 0) 'playing 3 #f #f))
+    (test (clack
+           (make-world '() (make-posn 0 0) 'playing 3 #f #f)
+           1 1 'drag)
+          (make-world '() (make-posn 0 0) 'playing 3 #f #f))
+    (test (clack
+           (make-world (list (make-cell (make-posn 0 0) #f))
+                       (make-posn 0 1)
+                       'playing
+                       3
+                       #f
+                       #f)
+           (cell-center-x (make-posn 0 0))
+           (cell-center-y (make-posn 0 0))
+           'move)
+          (make-world
+           (list (make-cell (make-posn 0 0) #f))
+           (make-posn 0 1)
+           'playing
+           3
+           (make-posn 0 0)
+           #f))
+    (test (clack
+           (make-world (list (make-cell (make-posn 0 0) #f))
+                       (make-posn 0 1)
+                       'playing
+                       3
+                       #f
+                       #f)
+           (cell-center-x (make-posn 0 0))
+           (cell-center-y (make-posn 0 0))
+           'enter)
+          (make-world
+           (list (make-cell (make-posn 0 0) #f))
+           (make-posn 0 1)
+           'playing
+           3
+           (make-posn 0 0)
+           #f))
+    (test (clack
+           (make-world '() (make-posn 0 0)
+                       'playing 3 (make-posn 0 0) #f)
+                 1 1 'leave)
+          (make-world '() (make-posn 0 0) 'playing 3 #f #f))
+     
+    (test (clack (make-world '() (make-posn 0 0)
+                             'playing 3 (make-posn 0 0) #f)
+                 10
+                 10
+                 "button-down")
+          (make-world '() (make-posn 0 0) 'playing 3 #f #f))
+     
+    (test (clack (make-world (list (make-cell (make-posn 0 0) #f)
+                                   (make-cell (make-posn 1 1) #f))
+                             (make-posn 1 1)
+                             'playing
+                             3
+                             (make-posn 0 0)
+                             #f)
+                 (cell-center-x (make-posn 0 0))
+                 (cell-center-y (make-posn 0 0))
+                 "button-up")
+          (make-world (list (make-cell (make-posn 0 0) #t)
+                            (make-cell (make-posn 1 1) #f))
+                      (make-posn 1 1)
+                      'cat-lost
+                      3
+                      #f
+                      #f))
+     
+     
+    (test (clack (make-world '() (make-posn 0 0)
+                             'cat-lost 3 (make-posn 0 0) #f)
+                 10
+                 10
+                 "button-up")
+          (make-world '() (make-posn 0 0)
+                      'cat-lost 3 #f #f))
+    (test (clack
+           (make-world
+            (list (make-cell (make-posn 1 0) #f)
+                  (make-cell (make-posn 2 0) #t)
+                  (make-cell (make-posn 0 1) #t)
+                  (make-cell (make-posn 1 1) #f)
+                  (make-cell (make-posn 2 1) #t)
+                  (make-cell (make-posn 1 2) #t)
+                  (make-cell (make-posn 2 2) #t))
+            (make-posn 1 1)
+            'playing
+            3
+            #f
+            #f)
+           (cell-center-x (make-posn 1 0))
+           (cell-center-y (make-posn 1 0))
+           "button-up")
+          (make-world
+           (list (make-cell (make-posn 1 0) #t)
+                 (make-cell (make-posn 2 0) #t)
+                 (make-cell (make-posn 0 1) #t)
+                 (make-cell (make-posn 1 1) #f)
+                 (make-cell (make-posn 2 1) #t)
+                 (make-cell (make-posn 1 2) #t)
+                 (make-cell (make-posn 2 2) #t))
+           (make-posn 1 1)
+           'cat-lost
+           3
+           #f
+           #f))
+     
+    (test (clack
+           (make-world
+            (list (make-cell (make-posn 1 0) #f)
+                  (make-cell (make-posn 2 0) #f)
+                  (make-cell (make-posn 0 1) #t)
+                  (make-cell (make-posn 1 1) #f)
+                  (make-cell (make-posn 2 1) #t)
+                  (make-cell (make-posn 1 2) #t)
+                  (make-cell (make-posn 2 2) #t))
+            (make-posn 1 1)
+            'playing
+            3
+            #f
+            #f)
+           (cell-center-x (make-posn 1 0))
+           (cell-center-y (make-posn 1 0))
+           "button-up")
+          (make-world
+           (list (make-cell (make-posn 1 0) #t)
+                 (make-cell (make-posn 2 0) #f)
+                 (make-cell (make-posn 0 1) #t)
+                 (make-cell (make-posn 1 1) #f)
+                 (make-cell (make-posn 2 1) #t)
+                 (make-cell (make-posn 1 2) #t)
+                 (make-cell (make-posn 2 2) #t))
+           (make-posn 2 0)
+           'cat-won
+           3
+           #f
+           #f))
+
+<update-world-posn-tests> ::=
+
+    (test (update-world-posn
+           (make-world (list (make-cell (make-posn 0 0) #f))
+                       (make-posn 0 1) 'playing 3 #f #f)
+           (make-posn (cell-center-x (make-posn 0 0))
+                      (cell-center-y (make-posn 0 0))))
+          (make-world (list (make-cell (make-posn 0 0) #f))
+                      (make-posn 0 1) 'playing 3 (make-posn 0 0) #f))
+     
+    (test (update-world-posn
+           (make-world (list (make-cell (make-posn 0 0) #f))
+                       (make-posn 0 0) 'playing 3 #f #f)
+           (make-posn (cell-center-x (make-posn 0 0))
+                      (cell-center-y (make-posn 0 0))))
+          (make-world (list (make-cell (make-posn 0 0) #f))
+                      (make-posn 0 0) 'playing 3 #f #f))
+     
+    (test (update-world-posn
+           (make-world (list (make-cell (make-posn 0 0) #f))
+                       (make-posn 0 1) 'playing 3 (make-posn 0 0) #f)
+           (make-posn 0 0))
+          (make-world (list (make-cell (make-posn 0 0) #f))
+                      (make-posn 0 1) 'playing 3 #f #f))
+
+<move-cat-tests> ::=
+
+    (test
+     (move-cat
+      (make-world (list (make-cell (make-posn 1 0) #f)
+                        (make-cell (make-posn 2 0) #f)
+                        (make-cell (make-posn 3 0) #f)
+                        (make-cell (make-posn 4 0) #f)
+     
+                        (make-cell (make-posn 0 1) #f)
+                        (make-cell (make-posn 1 1) #t)
+                        (make-cell (make-posn 2 1) #t)
+                        (make-cell (make-posn 3 1) #f)
+                        (make-cell (make-posn 4 1) #f)
+     
+                        (make-cell (make-posn 0 2) #f)
+                        (make-cell (make-posn 1 2) #t)
+                        (make-cell (make-posn 2 2) #f)
+                        (make-cell (make-posn 3 2) #t)
+                        (make-cell (make-posn 4 2) #f)
+     
+                        (make-cell (make-posn 0 3) #f)
+                        (make-cell (make-posn 1 3) #t)
+                        (make-cell (make-posn 2 3) #f)
+                        (make-cell (make-posn 3 3) #f)
+                        (make-cell (make-posn 4 3) #f)
+     
+                        (make-cell (make-posn 1 4) #f)
+                        (make-cell (make-posn 2 4) #f)
+                        (make-cell (make-posn 3 4) #f)
+                        (make-cell (make-posn 4 4) #f))
+                  (make-posn 2 2)
+                  'playing
+                  5
+                  (make-posn 0 0)
+                  #f))
+     (make-world (list (make-cell (make-posn 1 0) #f)
+                       (make-cell (make-posn 2 0) #f)
+                       (make-cell (make-posn 3 0) #f)
+                       (make-cell (make-posn 4 0) #f)
+     
+                       (make-cell (make-posn 0 1) #f)
+                       (make-cell (make-posn 1 1) #t)
+                       (make-cell (make-posn 2 1) #t)
+                       (make-cell (make-posn 3 1) #f)
+                       (make-cell (make-posn 4 1) #f)
+     
+                       (make-cell (make-posn 0 2) #f)
+                       (make-cell (make-posn 1 2) #t)
+                       (make-cell (make-posn 2 2) #f)
+                       (make-cell (make-posn 3 2) #t)
+                       (make-cell (make-posn 4 2) #f)
+     
+                       (make-cell (make-posn 0 3) #f)
+                       (make-cell (make-posn 1 3) #t)
+                       (make-cell (make-posn 2 3) #f)
+                       (make-cell (make-posn 3 3) #f)
+                       (make-cell (make-posn 4 3) #f)
+     
+                       (make-cell (make-posn 1 4) #f)
+                       (make-cell (make-posn 2 4) #f)
+                       (make-cell (make-posn 3 4) #f)
+                       (make-cell (make-posn 4 4) #f))
+                 (make-posn 2 3)
+                 'playing
+                 5
+                 (make-posn 0 0)
+                 #f))
+
+<change-tests> ::=
+
+    (test (change (make-world '() (make-posn 1 1)
+                              'playing 3 (make-posn 0 0) #f)
+                  "h")
+          (make-world '() (make-posn 1 1)
+                      'playing 3 (make-posn 0 0) #t))
+    (test (change (make-world '() (make-posn 1 1)
+                              'playing 3 (make-posn 0 0) #f)
+                  "n")
+          (make-world '() (make-posn 1 1)
+                      'playing 3 (make-posn 0 0) #f))
+    (test (world-state (change (make-world '() (make-posn 1 1)
+                                           'cat-lost 3 (make-posn 0 0) #f)
+                               "n"))
+          'playing)
+
+<release-tests> ::=
+
+    (test (release (make-world '() (make-posn 1 1)
+                               'playing 3 (make-posn 0 0) #t)
+                   "h")
+          (make-world '() (make-posn 1 1)
+                      'playing 3 (make-posn 0 0) #f))
+
+<point-in-this-circle?-tests> ::=
+
+    (test (point-in-this-circle? (make-posn 0 0)
+                                 (cell-center-x (make-posn 0 0))
+                                 (cell-center-y (make-posn 0 0)))
+          #t)
+    (test (point-in-this-circle? (make-posn 0 0) 0 0)
+          #f)
+
+<find-best-positions-tests> ::=
+
+    (test (find-best-positions (list (make-posn 0 0)) (list 1))
+          (list (make-posn 0 0)))
+    (test (find-best-positions (list (make-posn 0 0)) (list '∞))
+          #f)
+    (test (find-best-positions (list (make-posn 0 0)
+                                     (make-posn 1 1))
+                               (list 1 2))
+          (list (make-posn 0 0)))
+    (test (find-best-positions (list (make-posn 0 0)
+                                     (make-posn 1 1))
+                               (list 1 1))
+          (list (make-posn 0 0)
+                (make-posn 1 1)))
+    (test (find-best-positions (list (make-posn 0 0)
+                                     (make-posn 1 1))
+                               (list '∞ 2))
+          (list (make-posn 1 1)))
+    (test (find-best-positions (list (make-posn 0 0)
+                                     (make-posn 1 1))
+                               (list '∞ '∞))
+          #f)
+
+<lt/f-tests> ::=
+
+    (test (<=/f 1 2) #t)
+    (test (<=/f 2 1) #f)
+    (test (<=/f '∞ 1) #f)
+    (test (<=/f 1 '∞) #t)
+    (test (<=/f '∞ '∞) #t)
+
+<circle-at-point-tests> ::=
+
+    (test (circle-at-point empty 0 0) #f)
+    (test (circle-at-point (list (make-cell (make-posn 0 0) #f))
+                           (cell-center-x (make-posn 0 0))
+                           (cell-center-y (make-posn 0 0)))
+          (make-posn 0 0))
+    (test (circle-at-point (list (make-cell (make-posn 0 0) #f)
+                                 (make-cell (make-posn 0 1) #f))
+                           (cell-center-x (make-posn 0 1))
+                           (cell-center-y (make-posn 0 1)))
+          (make-posn 0 1))
+    (test (circle-at-point (list (make-cell (make-posn 0 0) #f))
+                           0 0)
+          #f)
+
+<blocked-cells-tests> ::=
+
+    (test (block-cell (make-posn 1 1)
+                      (list (make-cell (make-posn 0 0) #f)
+                            (make-cell (make-posn 1 1) #f)
+                            (make-cell (make-posn 2 2) #f)))
+          (list (make-cell (make-posn 0 0) #f)
+                (make-cell (make-posn 1 1) #t)
+                (make-cell (make-posn 2 2) #f)))
+     
+    (test (add-n-random-blocked-cells 0 (list (make-cell (make-posn 0 0)
+                                                         #t))
+                                      3)
+          (list (make-cell (make-posn 0 0) #t)))
+    (test (add-n-random-blocked-cells 1 (list (make-cell (make-posn 0 0)
+                                                         #f))
+                                      3)
+          (list (make-cell (make-posn 0 0) #t)))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

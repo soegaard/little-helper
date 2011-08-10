@@ -1,0 +1,34 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 7  Low-Level Scribble API
+ 7.1  Scribble Layers
+ 7.2  @ Reader Internals
+ 7.3  Structures And Processing
+ 7.4  Renderer
+ 7.5  Decoding Text
+ 7.6  Document Language
+ 7.7  Document Reader
+ 7.8  Cross-Reference Utilities
+ 7.9  Extending and Configuring Scribble Output
+7.10  Connecting to "racket"
+[...search manuals...]
+  top← prev  up  next → 
+
+7.7 Document Reader
+
+ #lang scribble/doc
+The scribble/doc language is the same as scribble/doclang, except that
+read-syntax-inside is used to read the body of the module. In other words, the
+module body starts in Scribble “text” mode instead of S-expression mode.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,253 @@
+▼  Extending Dr Racket
+ 1  Implementing Dr Racket Plugins
+ 2  Adding Languages to Dr Racket
+ 3  Creating New Kinds of Dr Racket Frames
+ 4  Extending the Existing Dr Racket Classes
+ 5  Expanding the User’s Program Text and Breaking
+ 6  Editor Modes
+ 7  Language-specific capabilities
+ 8  Check Syntax
+ 9  drracket: get/ extend
+10  drracket: unit
+11  drracket: language
+12  drracket: language-configuration
+13  drracket: debug
+14  drracket: rep
+15  drracket: frame
+16  drracket: help-desk
+17  drracket: eval
+18  drracket: modes
+19  drracket: module-language-tools
+20  drracket: module-language
+21  Documentation Utilities
+22  Backwards compatibility
+    Index
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Implementing DrRacket Plugins
+
+Plugins are designed for major extensions in DrRacket’s functionality. To
+extend the appearance or the functionality the DrRacket window (say, to
+annotate programs in certain ways, to add buttons to the DrRacket frame or to
+add additional languages to DrRacket) use a tool. The Macro Stepper, the Syntax
+Checker, the Stepper, and the teaching languages are all implemented as tools.
+
+When DrRacket starts up, it looks for tools by reading fields in the info.rkt
+file of each collection and the newest version of each PLaneT package installed
+on the system. (Technically, DrRacket looks in a cache of the "info.rkt" files
+contents created by raco setup. Be sure to re-run raco setup if you change the
+contents of the info.rkt files). DrRacket checks for these fields:
+
+  • drracket-tools: (listof (listof string [subcollection-name]))
+
+  • drracket-tool-names: (listof (or/c #f string))
+
+  • 
+    drracket-tool-icons:
+
+        (listof (or/c #f
+                      string[relative-pathname]
+                      (cons string[filename]
+                            (listof string[collection-name]))))
+
+  • drracket-tool-urls: (listof (or/c #f string [url]))
+
+The drracket-tools field names a list of tools in this collection. Each tool is
+specified as a collection path, relative to the collection where the info.rkt
+file resides. As an example, if there is only one tool named tool.rkt, this
+suffices:
+
+
+    (define drracket-tools (list (list "tool.rkt")))
+
+If the drracket-tool-icons or drracket-tool-names fields are present, they must
+be the same length as drracket-tools. The drracket-tool-icons field specifies
+the path to an icon for each tool and the name of each tool. If it is #f, no
+tool is shown. If it is a relative pathname, it must refer to a bitmap and if
+it is a list of strings, it is treated the same as the arguments to lib, inside
+require.
+
+This bitmap and the name show up in the about box, the bug report form, and the
+splash screen as the tool is loaded at DrRacket’s startup.
+
+Each of the drracket-tools files must contain a module that provides tool@,
+which must be bound to a unit. The unit must import the drracket:tool^
+signature, which is provided by the tool.rkt library in the drscheme
+collection. The drracket:tool^ signature contains all of the names listed in
+this manual. The unit must export the drracket:tool-exports^ signature.
+
+The drracket:tool-exports^ signature contains two names: phase1 and phase2.
+These names must be bound to thunks. After all of the tools are loaded, all of
+the phase1 functions are called and then all of the phase2 functions are
+called. Certain primitives can only be called during the dynamic extent of
+those calls.
+
+This mechanism is designed to support DrRacket’s drracket:language:language<%>
+extension capabilities. That is, this mechanism enables two tools to cooperate
+via new capabilities of languages. The first phase is used for adding
+functionality that each language must support and the second is used for
+creating instances of languages. As an example, a tool may require certain
+specialized language-specific information. It uses phase1 to extend the
+drracket:language:language<%> interface and supply a default implementation of
+the interface extension. Then, other languages that are aware of the extension
+can supply non-default implementations of the additional functionality.
+
+Phase 1 functions:
+
+  • drracket:language:extend-language-interface
+
+  • drracket:unit:add-to-program-editor-mixin
+
+Phase 2 functions:
+
+  • drracket:language-configuration:add-language
+
+  • drracket:language:get-default-mixin
+
+  • drracket:language:get-language-extensions
+
+If the tool raises an error as it is loaded, invoked, or as the phase1 or
+phase2 thunks are called, DrRacket catches the error and displays a message
+box. Then, DrRacket continues to start up, without the tool.
+
+For example, if the info.rkt file in a collection contains:
+
+    #lang setup/infotab
+    (define drracket-name "Tool Name")
+    (define drracket-tools (list (list "tool.rkt")))
+
+then the same collection would be expected to contain a tool.rkt file. It might
+contain something like this:
+
+    #lang racket/gui
+    (require drracket/tool)
+     
+    (provide tool@)
+     
+    (define tool@
+      (unit
+        (import drracket:tool^)
+        (export drracket:tool-exports^)
+        (define (phase1) (message-box "tool example" "phase1"))
+        (define (phase2) (message-box "tool example" "phase2"))
+        (message-box "tool example" "unit invoked")))
+
+This tool just opens a few windows to indicate that it has been loaded and that
+the phase1 and phase2 functions have been called.
+
+Finally, here is a more involved example. This module defines a plugin that
+adds a button to the DrRacket frame that, when clicked, reverses the contents
+of the definitions window. It also adds an easter egg. Whenever the definitions
+text is modified, it checks to see if the definitions text contains the text
+“egg”. If so, it adds “easter ” just before.
+
+    #lang racket/base
+    (require drracket/tool
+             racket/class
+             racket/gui/base
+             racket/unit
+             mrlib/switchable-button)
+    (provide tool@)
+     
+    (define secret-key "egg")
+    (define to-insert "easter ")
+     
+    (define tool@
+      (unit
+        (import drracket:tool^)
+        (export drracket:tool-exports^)
+     
+        (define easter-egg-mixin
+          (mixin ((class->interface text%)) ()
+     
+            (inherit begin-edit-sequence
+                     end-edit-sequence
+                     insert
+                     get-text)
+     
+            (define/augment (on-insert start len)
+              (begin-edit-sequence))
+            (define/augment (after-insert start len)
+              (check-range (max 0 (- start (string-length secret-key)))
+                           (+ start len))
+              (end-edit-sequence))
+     
+            (define/augment (on-delete start len)
+              (begin-edit-sequence))
+            (define/augment (after-delete start len)
+              (check-range (max 0 (- start (string-length secret-key)))
+                           start)
+              (end-edit-sequence))
+     
+            (define/private (check-range start stop)
+              (let/ec k
+                (for ((x (in-range start stop)))
+                  (define after-x
+                    (get-text x (+ x (string-length secret-key))))
+                  (when (string=? after-x secret-key)
+                    (define before-x
+                      (get-text (max 0 (- x (string-length to-insert))) x))
+                    (unless (string=? before-x to-insert)
+                      (insert to-insert x x)
+                      (k (void)))))))
+     
+            (super-new)))
+     
+        (define reverse-button-mixin
+          (mixin (drracket:unit:frame<%>) ()
+            (super-new)
+            (inherit get-button-panel
+                     get-definitions-text)
+            (inherit register-toolbar-button)
+     
+            (let ((btn
+                   (new switchable-button%
+                        (label "Reverse Definitions")
+                        (callback (λ (button)
+                                    (reverse-content
+                                     (get-definitions-text))))
+                        (parent (get-button-panel))
+                        (bitmap reverse-content-bitmap))))
+              (register-toolbar-button btn)
+              (send (get-button-panel) change-children
+                    (λ (l)
+                      (cons btn (remq btn l)))))))
+     
+        (define reverse-content-bitmap
+          (let* ((bmp (make-bitmap 16 16))
+                 (bdc (make-object bitmap-dc% bmp)))
+            (send bdc erase)
+            (send bdc set-smoothing 'smoothed)
+            (send bdc set-pen "black" 1 'transparent)
+            (send bdc set-brush "blue" 'solid)
+            (send bdc draw-ellipse 2 2 8 8)
+            (send bdc set-brush "red" 'solid)
+            (send bdc draw-ellipse 6 6 8 8)
+            (send bdc set-bitmap #f)
+            bmp))
+     
+        (define (reverse-content text)
+          (for ((x (in-range 1 (send text last-position))))
+            (send text split-snip x))
+          (define snips
+            (let loop ((snip (send text find-first-snip)))
+              (if snip
+                  (cons snip (loop (send snip next)))
+                  '())))
+          (define released-snips
+            (for/list ((snip (in-list snips))
+                       #:when (send snip release-from-owner))
+              snip))
+          (for ((x (in-list released-snips)))
+            (send text insert x 0 0)))
+     
+        (define (phase1) (void))
+        (define (phase2) (void))
+     
+        (drracket:get/extend:extend-definitions-text easter-egg-mixin)
+        (drracket:get/extend:extend-unit-frame reverse-button-mixin)))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

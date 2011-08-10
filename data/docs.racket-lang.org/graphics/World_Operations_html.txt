@@ -1,0 +1,57 @@
+▼  Graphics: Legacy Library
+ 1  Basic Commands
+ 2  Position Operations
+ 3  Color Operations
+ 4  Draw, Clear, and Flip Operations
+ 5  World Operations
+ 6  Miscellaneous Operations
+ 7  An Example
+ 8  A More Complicated Example
+ 9  Protecting Graphics Operations
+10  Mouse Operations
+11  Keyboard Operations
+12  Flushing
+13  Graphics Library as a Unit
+On this page:
+init-world
+set-on-tick-event
+stop-tick
+set-on-key-event
+[...search manuals...]
+  top← prev  up  next → 
+
+5 World Operations
+
+Every canvas comes with an associated world. A client program can set the
+world, start the world’s clock, stop the world’s clock, and deal with tick
+events (the clock ticks) and keyboard inputs (keyevents).
+
+((init-world viewport) v) → void?
+  viewport : viewport?
+  v : any/c
+Sets the initial value of viewport’s world to v.
+
+((set-on-tick-event   viewport)               
+                      secs                    
+                      update-callback)   →   void?
+  viewport : viewport?
+  secs : real?
+  update-callback : (any/c . -> . any/c)
+For viewport, sets update-callback to be invoked to transform the world value
+every secs seconds. Only one callback is installed at a time.
+
+((stop-tick viewport)) → void?
+  viewport : viewport?
+Stops updating viewport’s world via a callback installed with set-on-tick-event
+.
+
+((set-on-key-event viewport) key-callback) → void?
+  viewport : viewport?
+  key-callback : (any/c any/c . -> . any/c)
+Sets key-callback as the function to call whenever a key event is received for
+viewport. The key-callback is given a key event and the current world, and it
+produces an updated world.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

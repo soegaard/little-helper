@@ -1,0 +1,336 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+► 4  Scribbling Documentation
+4.1  Getting Started with Documentation
+4.2  Style Guide
+4.3  Manual Forms
+4.4  Racket
+4.5  Evaluation and Examples
+4.6  In-Source Documentation
+4.7  BNF Grammars
+4.8  Compatibility Libraries
+▼ 4.3  Manual Forms
+ 4.3.1  Typesetting Code
+ 4.3.2  Documenting Modules
+ 4.3.3  Documenting Forms, Functions, Structure Types, and Values
+ 4.3.4  Documenting Classes and Interfaces
+ 4.3.5  Documenting Signatures
+ 4.3.6  Various String Forms
+ 4.3.7  Links
+ 4.3.8  Indexing
+ 4.3.9  Images
+4.3.10  Bibliography
+4.3.11  Miscellaneous
+4.3.12  Index-Entry Descriptions
+On this page:
+defproc
+defproc*
+defform
+defform*
+defform/ subs
+defform*/ subs
+defform/ none
+defidform
+defidform/ inline
+specform
+specsubform
+specsubform/ subs
+specspecsubform
+specspecsubform/ subs
+defparam
+defboolparam
+defthing
+defstruct*
+defstruct
+deftogether
+racketgrammar
+racketgrammar*
+defidentifier
+schemegrammar
+schemegrammar*
+[...search manuals...]
+  top← prev  up  next → 
+
+4.3.3 Documenting Forms, Functions, Structure Types, and Values
+
+(defproc prototype
+         result-contract-expr-datum
+         pre-flow ...)
+ 
+prototype   =   (id arg-spec ...)
+            |   (prototype arg-spec ...)
+                 
+ arg-spec   =   (arg-id contract-expr-datum)
+            |   (arg-id contract-expr-datum default-expr)
+            |   (keyword arg-id contract-expr-datum)
+            |   (keyword arg-id contract-expr-datum default-expr)
+            |   ellipses
+            |   ellipses+
+                 
+ ellipses   =   ...
+                 
+ellipses+   =   ...+
+Produces a sequence of flow elements (encapsulated in a splice) to document a
+procedure named id. Nesting prototypes corresponds to a curried function, as in
+define. The id is indexed, and it also registered so that racket-typeset uses
+of the identifier (with the same for-label binding) are hyperlinked to this
+documentation.
+
+A defmodule or declare-exporting form (or one of the variants) in an enclosing
+section determines the id binding that is being defined. The id should also
+have a for-label binding (as introduced by (require (for-label ....))) that
+matches the definition binding; otherwise, the defined id will not typeset
+correctly within the definition.
+
+Each arg-spec must have one of the following forms:
+
+    (arg-id contract-expr-datum)
+
+    An argument whose contract is specified by contract-expr-datum which is
+    typeset via racketblock0.
+
+    (arg-id contract-expr-datum default-expr)
+
+    Like the previous case, but with a default value. All arguments with a
+    default value must be grouped together, but they can be in the middle of
+    required arguments.
+
+    (keyword arg-id contract-expr-datum)
+
+    Like the first case, but for a keyword-based argument.
+
+    (keyword arg-id contract-expr-datum default-expr)
+
+    Like the previous case, but with a default value.
+
+    ...
+
+    Any number of the preceding argument. This form is normally used at the
+    end, but keyword-based arguments can sensibly appear afterward. See also
+    the documentation for append for a use of ... before the last argument.
+
+    ...+
+
+    One or more of the preceding argument (normally at the end, like ...).
+
+The result-contract-expr-datum is typeset via racketblock0, and it represents a
+contract on the procedure’s result.
+
+The decoded pre-flow documents the procedure. In this description, references
+to arg-ids using racket, racketblock, etc. are typeset as procedure arguments.
+
+The typesetting of all information before the pre-flows ignores the source
+layout, except that the local formatting is preserved for contracts and
+default-values expressions.
+
+(defproc* ([prototype
+            result-contract-expr-datum] ...)
+          pre-flow ...)
+Like defproc, but for multiple cases with the same id.
+
+When an id has multiple calling cases, they must be defined with a single
+defproc*, so that a single definition point exists for the id. However,
+multiple distinct ids can also be defined by a single defproc*, for the case
+that it’s best to document a related group of procedures at once.
+
+(defform maybe-id maybe-literals form-datum maybe-contracts
+  pre-flow ...)
+ 
+       maybe-id   =  
+                  |   #:id id
+                  |   #:id [id id-expr]
+                       
+ maybe-literals   =  
+                  |   #:literals (literal-id ...)
+                       
+maybe-contracts   =  
+                  |   #:contracts ([subform-datum contract-expr-datum]
+                                   ...)
+Produces a sequence of flow elements (encapsulated in a splice) to document a
+syntatic form named by id (or the result of id-expr) whose syntax is described
+by form-datum. If no #:id is used to specify id, then form-datum must have the
+form (id . datum).
+
+If #:id [id id-expr] is supplied, then id is the identifier as it appears in
+the form-datum (to be replaced by a defining instance), and id-expr produces
+the identifier to be documented. This split between id and id-expr roles is
+useful for functional abstraction of defform.
+
+The id (or result of id-expr) is indexed, and it is also registered so that
+racket-typeset uses of the identifier (with the same for-label binding) are
+hyperlinked to this documentation. The defmodule or declare-exporting
+requirements, as well as the binding requirements for id (or result of
+id-expr), are the same as for defproc.
+
+The decoded pre-flow documents the form. In this description, a reference to
+any identifier in form-datum via racket, racketblock, etc. is typeset as a
+sub-form non-terminal. If #:literals clause is provided, however, instances of
+the literal-ids are typeset normally (i.e., as determined by the enclosing
+context).
+
+If a #:contracts clause is provided, each subform-datum (typically an
+identifier that serves as a meta-variable in form-datum) is shown as producing
+a value that must satisfy the contract described by contract-expr-datum. Use
+#:contracts only to specify constraints on a value produced by an expression;
+for constraints on the syntax of a subform-datum, use grammar notation instead,
+possibly through an auxiliary grammar specified using defform/subs.
+
+The typesetting of form-datum, subform-datum, and contract-expr-datum preserves
+the source layout, like racketblock.
+
+(defform* maybe-id maybe-literals [form-datum ...+] maybe-contracts
+  pre-flow ...)
+Like defform, but for multiple forms using the same id.
+
+(defform/subs maybe-id maybe-literals form-datum
+  ([nonterm-id clause-datum ...+] ...)
+  maybe-contracts
+  pre-flow ...)
+Like defform, but including an auxiliary grammar of non-terminals shown with
+the id form. Each nonterm-id is specified as being any of the corresponding
+clause-datums, where the formatting of each clause-datum is preserved.
+
+(defform*/subs maybe-id maybe-literals [form-datum ...]
+  maybe-contracts
+  pre-flow ...)
+Like defform/subs, but for multiple forms for id.
+
+(defform/none maybe-literal form-datum maybe-contracts
+  pre-flow ...)
+Like defform, but without registering a definition.
+
+(defidform id pre-flow ...)
+Like defform, but with a plain id as the form.
+
+(defidform/inline id)
+(defidform/inline (unsyntax id-expr))
+Like defidform, but id (or the result of id-expr, analogous to defform) is
+typeset as an inline element. Use this form sparingly, because the typeset form
+does not stand out to the reader as a specification of id.
+
+(specform maybe-literals datum maybe-contracts
+  pre-flow ...)
+Like defform, but without indexing or registering a definition, and with
+indenting on the left for both the specification and the pre-flows.
+
+(specsubform maybe-literals datum maybe-contracts
+  pre-flow ...)
+Similar to defform, but without any specific identifier being defined, and the
+table and flow are typeset indented. This form is intended for use when
+refining the syntax of a non-terminal used in a defform or other specsubform.
+For example, it is used in the documentation for defproc in the itemization of
+possible shapes for arg-spec.
+
+The pre-flows list is parsed as a flow that documents the procedure. In this
+description, a reference to any identifier in datum is typeset as a sub-form
+non-terminal.
+
+(specsubform/subs maybe-literals datum
+  ([nonterm-id clause-datum ...+] ...)
+  maybe-contracts
+  pre-flow ...)
+Like specsubform, but with a grammar like defform/subs.
+
+(specspecsubform maybe-literals datum maybe-contracts
+  pre-flow ...)
+Like specsubform, but indented an extra level. Since using specsubform within
+the body of specsubform already nests indentation, specspecsubform is for extra
+indentation without nesting a description.
+
+(specspecsubform/subs maybe-literals datum
+ ([nonterm-id clause-datum ...+] ...)
+ maybe-contracts
+ pre-flow ...)
+Like specspecsubform, but with a grammar like defform/subs.
+
+(defparam id arg-id contract-expr-datum pre-flow ...)
+Like defproc, but for a parameter. The contract-expr-datum serves as both the
+result contract on the parameter and the contract on values supplied for the
+parameter. The arg-id refers to the parameter argument in the latter case.
+
+(defboolparam id arg-id pre-flow ...)
+Like defparam, but the contract on a parameter argument is any/c, and the
+contract on the parameter result is boolean?.
+
+(defthing id contract-expr-datum pre-flow ...)
+Like defproc, but for a non-procedure binding.
+
+(defstruct* struct-name ([field-name contract-expr-datum] ...)
+  maybe-mutable maybe-non-opaque maybe-constructor
+  pre-flow ...)
+(defstruct struct-name ([field-name contract-expr-datum] ...)
+  maybe-mutable maybe-non-opaque maybe-constructor
+  pre-flow ...)
+ 
+      struct-name   =   id
+                    |   (id super-id)
+                         
+    maybe-mutable   =  
+                    |   #:mutable
+                         
+ maybe-non-opaque   =  
+                    |   #:prefab
+                    |   #:transparent
+                         
+maybe-constructor   =  
+                    |   #:constructor-name constructor-id
+                    |   #:extra-constructor-name constructor-id
+Similar to defform or defproc, but for a structure definition. The defstruct*
+form corresponds to struct, while defstruct corresponds to define-struct.
+
+(deftogether [def-expr ...] pre-flow ...)
+Combines the definitions created by the def-exprs into a single definition box.
+Each def-expr should produce a definition point via defproc, defform, etc. Each
+def-expr should have an empty pre-flow; the decoded pre-flow sequence for the
+deftogether form documents the collected bindings.
+
+(racketgrammar maybe-literals id clause-datum ...+)
+ 
+maybe-literals   =  
+                 |   #:literals (literal-id ...)
+Creates a table to define the grammar of id. Each identifier mentioned in a
+clause-datum is typeset as a non-terminal, except for the identifiers listed as
+literal-ids, which are typeset as with racket.
+
+(racketgrammar* maybe-literals [id clause-datum ...+] ...)
+Like racketgrammar, but for typesetting multiple productions at once, aligned
+around the = and |.
+
+(defidentifier    id                               
+                [ #:form? form?                    
+                  #:index? index?                  
+                  #:show-libs? show-libs?])   →   element?
+  id : identifier?
+  form? : boolean? = #f
+  index? : boolean? = #t
+  show-libs? : boolean? = #t
+Typesets id as a Racket identifier, and also establishes the identifier as the
+definition of a binding in the same way as defproc, defform, etc. As always,
+the library that provides the identifier must be declared via defmodule or
+declare-exporting for an enclosing section.
+
+If form? is a true value, then the identifier is documented as a syntactic
+form, so that uses of the identifier (normally including id itself) are typeset
+as a syntactic form.
+
+If index? is a true value, then the identifier is registered in the index.
+
+If show-libs? is a true value, then the identifier’s defining module may be
+exposed in the typeset form (e.g., when viewing HTML and the mouse hovers over
+the identifier).
+
+(schemegrammar maybe-literals id clause-datum ...+)
+(schemegrammar* maybe-literals [id clause-datum ...+] ...)
+Compatibility aliases for racketgrammar and racketgrammar*.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

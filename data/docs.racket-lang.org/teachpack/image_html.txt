@@ -1,0 +1,450 @@
+►  How to Design Programs Teachpacks
+1  Ht DP Teachpacks
+2  Ht DP/ 2e Teachpacks
+▼ 1  Ht DP Teachpacks
+ 1.1  Manipulating Images: "image.ss"
+ 1.2  Simulations and Animations: "world.ss"
+ 1.3  Converting Temperatures: "convert.ss"
+ 1.4  Guessing Numbers: "guess.ss"
+ 1.5  Master Minding: "master.ss"
+ 1.6  Playing Master Mind: "master-play.ss"
+ 1.7  Simple Drawing: "draw.ss"
+ 1.8  Hangman: "hangman.ss"
+ 1.9  Playing Hangman: "hangman-play.ss"
+1.10  Managing Control Arrows: "arrow.ss"
+1.11  Manipulating Simple HTML Documents: "docs.ss"
+1.12  Working with Files and Directories: "dir.ss"
+1.13  Graphing Functions: "graphing.ss"
+1.14  Simple Graphical User Interfaces: "gui.ss"
+1.15  An Arrow GUI: "arrow-gui.ss"
+1.16  Controlling an Elevator: "elevator.ss"
+1.17  Lookup GUI: "lkup-gui.ss"
+1.18  Guess GUI: "guess-gui.ss"
+1.19  Queens: "show-queen.ss"
+1.20  Matrix Functions: "matrix.ss"
+► 1.1  Manipulating Images: "image.ss"
+1.1.1  Images
+1.1.2  Modes and Colors
+1.1.3  Creating Basic Shapes
+1.1.4  Basic Image Properties
+1.1.5  Composing Images
+1.1.6  Manipulating Images
+1.1.7  Scenes
+1.1.8  Miscellaneous Image Manipulation and Creation
+On this page:
+1.1.1 Images
+image?
+image=?
+1.1.2 Modes and Colors
+color
+image-color?
+1.1.3 Creating Basic Shapes
+rectangle
+circle
+ellipse
+triangle
+star
+regular-polygon
+line
+text
+1.1.4 Basic Image Properties
+image-width
+image-height
+pinhole-x
+pinhole-y
+put-pinhole
+move-pinhole
+1.1.5 Composing Images
+add-line
+overlay
+overlay/ xy
+image-inside?
+find-image
+1.1.6 Manipulating Images
+shrink-tl
+shrink-tr
+shrink-bl
+shrink-br
+shrink
+1.1.7 Scenes
+scene?
+empty-scene
+place-image
+nw: rectangle
+scene+ line
+1.1.8 Miscellaneous Image Manipulation and Creation
+List-of-color
+image->color-list
+color-list->image
+alpha-color
+image->alpha-color-list
+alpha-color-list->image
+[...search manuals...]
+  top← prev  up  next → 
+
+1.1 Manipulating Images: "image.ss"
+
+ (require htdp/image)
+
+The teachpack provides functions for constructing and manipulating images.
+Basic, colored images are created as outlines or solid shapes. Additional
+functions allow for the composition of images.
+
+1.1.1 Images
+
+(image? x) → boolean?
+  x : any/c
+Is x an image?
+
+(image=? x y) → boolean?
+  x : image?
+  y : image?
+Are x and y the same image?
+
+1.1.2 Modes and Colors
+
+Mode (one-of/c 'solid 'outline "solid" "outline")
+
+A Mode is used to specify whether painting a shape fills or outlines the form.
+
+(struct   color (red green blue)
+          #:extra-constructor-name make-color)
+  red : (and/c natural-number/c (<=/c 255))
+  green : (and/c natural-number/c (<=/c 255))
+  blue : (and/c natural-number/c (<=/c 255))
+
+RGB color?
+
+A RGB describes a color via a shade of red, blue, and green colors (e.g., (
+make-color 100 200 30)).
+
+Color (or/c symbol? string? color?)
+
+A Color is a color-symbol (e.g., 'blue) or a color-string (e.g., "blue") or an
+RGB structure.
+
+(image-color? x) → boolean?
+  x : any
+Determines if the input is a valid image Color.
+
+1.1.3 Creating Basic Shapes
+
+In DrRacket, you can insert images from your file system. Use PNG images
+whenever possible. In addition, you can create basic shapes with the following
+functions.
+
+(rectangle w h m c) → image?
+  w : (and/c number? (or/c zero? positive?))
+  h : (and/c number? (or/c zero? positive?))
+  m : Mode
+  c : Color
+Creates a w by h rectangle, filled in according to m and painted in color c
+
+(circle r m c) → image?
+  r : (and/c number? (or/c zero? positive?))
+  m : Mode
+  c : Color
+Creates a circle or disk of radius r, filled in according to m and painted in
+color c
+
+(ellipse w h m c) → image?
+  w : (and/c number? (or/c zero? positive?))
+  h : (and/c number? (or/c zero? positive?))
+  m : Mode
+  c : Color
+Creates a w by h ellipse, filled in according to m and painted in color c
+
+(triangle s m c) → image?
+  s : number?
+  m : Mode
+  c : Color
+Creates an upward pointing equilateral triangle whose side is s pixels long,
+filled in according to m and painted in color c
+
+(star n outer inner m c) → image?
+  n : (and/c number? (>=/c 2))
+  outer : (and/c number? (>=/c 1))
+  inner : (and/c number? (>=/c 1))
+  m : Mode
+  c : Color
+Creates a multi-pointed star with n points, an outer radius for the max
+distance of the points to the center, and an inner radius for the min distance
+to the center.
+
+(regular-polygon s r m c [angle]) → image?
+  s : side
+  r : number?
+  m : Mode
+  c : Color
+  angle : real? = 0
+Creates a regular polygon with s sides inscribed in a circle of radius r, using
+mode m and color c. If an angle is specified, the polygon is rotated by that
+angle.
+
+(line x y c) → image?
+  x : number?
+  y : number?
+  c : Color
+Creates a line colored c from (0,0) to (x ,y). See add-line below.
+
+(text s f c) → Image
+  s : string?
+  f : (and/c number? positive?)
+  c : Color
+Creates an image of the text s at point size f and painted in color c.
+
+1.1.4 Basic Image Properties
+
+To understand how images are manipulated, you need to understand the basic
+properties of images.
+
+(image-width i) → integer?
+  i : image?
+Obtain i’s width in pixels
+
+(image-height i) → integer?
+  i : image?
+Obtain i’s height in pixels
+
+For the composition of images, you must know about pinholes. Every image come
+with a pinhole. For images created with the above functions, the pinhole is at
+the center of the shape except for those created from line and text. The text
+function puts the pinhole at the upper left corner of the image, and line puts
+the pinhole at the beginning of the line (meaning that if the first two
+arguments to line are positive, the pinhole is also in the upper left corner).
+The pinhole can be moved, of course, and compositions locate pinholes according
+to their own rules. When in doubt you can always find out where the pinhole is
+and place it where convenient.
+
+(pinhole-x i) → integer?
+  i : image?
+Determines the x coordinate of the pinhole, measuring from the left of the
+image.
+
+(pinhole-y i) → integer?
+  i : image?
+Determines the y coordinate of the pinhole, measuring from the top (down) of
+the image.
+
+(put-pinhole i x y) → image?
+  i : image?
+  x : number?
+  y : number?
+Creates a new image with the pinhole in the location specified by x and y,
+counting from the left and top (down), respectively.
+
+(move-pinhole i delta-x delta-y) → image?
+  i : image?
+  delta-x : number?
+  delta-y : number?
+Creates a new image with the pinhole moved down and right by delta-x and
+delta-y with respect to its current location. Use negative numbers to move it
+up or left.
+
+1.1.5 Composing Images
+
+Images can be composed, and images can be found within compositions.
+
+(add-line i x1 y1 x2 y2 c) → image?
+  i : image?
+  x1 : number?
+  y1 : number?
+  x2 : number?
+  y2 : number?
+  c : Color
+Creates an image by adding a line (colored c) from (x1,y1) to (x2,y2) to image
+i.
+
+(overlay img img2 img* ...) → image?
+  img : image?
+  img2 : image?
+  img* : image?
+Creates an image by overlaying all images on their pinholes. The pinhole of the
+resulting image is the same place as the pinhole in the first image.
+
+(overlay/xy img delta-x delta-y other) → image?
+  img : image?
+  delta-x : number?
+  delta-y : number?
+  other : image?
+Creates an image by adding the pixels of other to img.
+
+Instead of lining the two images up on their pinholes, other’s pinhole is lined
+up on the point:
+
+    (make-posn (+ (pinhole-x img) delta-x)
+               (+ (pinhole-y img) delta-y))
+
+The pinhole of the resulting image is the same place as the pinhole in the
+first image.
+
+The same effect can be had by combining move-pinhole and overlay,
+
+    (overlay img
+             (move-pinhole other
+                           (- delta-x)
+                           (- delta-y)))
+
+(image-inside? img other) → boolean?
+  img : image?
+  other : image?
+Determines whether the pixels of the second image appear in the first.
+
+Be careful when using this function with jpeg images. If you use an
+image-editing program to crop a jpeg image and then save it, image-inside? does
+not recognize the cropped image, due to standard compression applied to JPEG
+images.
+
+(find-image img other) → posn?
+  img : image?
+  other : image?
+Determines where the pixels of the second image appear in the first, with
+respect to the pinhole of the first image. If (image-inside? img other) isn’t
+true, find-image signals an error.
+
+1.1.6 Manipulating Images
+
+Images can also be shrunk. These “shrink” functions trim an image by
+eliminating extraneous pixels.
+
+(shrink-tl img width height) → image?
+  img : image?
+  width : number?
+  height : number?
+Shrinks the image to a width by height image, starting from the top-left
+corner. The pinhole of the resulting image is in the center of the image.
+
+(shrink-tr img width height) → image?
+  img : image?
+  width : number?
+  height : number?
+Shrinks the image to a width by height image, starting from the top-right
+corner. The pinhole of the resulting image is in the center of the image.
+
+(shrink-bl img width height) → image?
+  img : image?
+  width : number?
+  height : number?
+Shrinks the image to a width by height image, starting from the bottom-left
+corner. The pinhole of the resulting image is in the center of the image.
+
+(shrink-br img width height) → image?
+  img : image?
+  width : number?
+  height : number?
+Shrinks the image to a width by height image, starting from the bottom-right
+corner. The pinhole of the resulting image is in the center of the image.
+
+(shrink img left above right below) → image?
+  img : image?
+  left : number?
+  above : number?
+  right : number?
+  below : number?
+Shrinks an image around its pinhole. The numbers are the pixels to save to
+left, above, to the right, and below the pinhole, respectively. The pixel
+directly on the pinhole is always saved.
+
+1.1.7 Scenes
+
+A scene is an image, but with the pinhole in the upper-left corner, i.e. an
+image where pinhole-x and pinhole-y both return 0.
+
+Scenes are particularly useful with the 2htdp/universe and htdp/world
+teachpacks, since it displays only scenes in its canvas.
+
+(scene? x) → boolean?
+  x : any/c
+Is x an scene?
+
+(empty-scene width height) → scene?
+  width : natural-number/c
+  height : natural-number/c
+creates a plain white, width x height scene.
+
+(place-image img x y s) → scene?
+  img : image?
+  x : number?
+  y : number?
+  s : scene?
+creates a scene by placing img at (x, y) into s; (x, y) are computer graphics
+coordinates, i.e., they count right and down from the upper-left corner.
+
+(nw:rectangle   width                   
+                height                  
+                solid-or-outline        
+                c)                 →   image?
+  width : natural-number/c
+  height : natural-number/c
+  solid-or-outline : Mode
+  c : Color
+creates a width by height rectangle, solid or outlined as specified by
+solid-or-outline and colored according to c, with a pinhole at the upper left
+corner.
+
+(scene+line s x0 y0 x1 y1 c) → scene?
+  s : scene?
+  x0 : number?
+  y0 : number?
+  x1 : number?
+  y1 : number?
+  c : Color
+creates a scene by placing a line of color c from (x0, y0) to (x1, y1) using
+computer graphics coordinates. In contrast to the add-line function, scene+line
+cuts off those portions of the line that go beyond the boundaries of the given
+s.
+
+1.1.8 Miscellaneous Image Manipulation and Creation
+
+The last group of functions extracts the constituent colors from an image and
+converts a list of colors into an image.
+
+List-of-color : list?
+is one of:
+
+    ; – empty
+    ; – (cons Color List-of-color)
+    ; Interpretation: represents a list of colors.
+
+(image->color-list img) → List-of-color
+  img : image?
+Converts an image to a list of colors.
+
+(color-list->image l width height x y) → image?
+  l : List-of-color
+  width : natural-number/c
+  height : natural-number/c
+  x : natural-number/c
+  y : natural-number/c
+Converts a list of colors l to an image with the given width and height and
+pinhole (x,y) coordinates, specified with respect to the top-left of the image.
+
+The remaining functions provide alpha-channel information as well. Alpha
+channels are a measure of transparency; 0 indicates fully opaque and 255
+indicates fully transparent.
+
+(struct   alpha-color (alpha red green blue)
+          #:extra-constructor-name make-alpha-color)
+  alpha : (and/c natural-number/c (<=/c 255))
+  red : (and/c natural-number/c (<=/c 255))
+  green : (and/c natural-number/c (<=/c 255))
+  blue : (and/c natural-number/c (<=/c 255))
+A structure representing an alpha color.
+
+(image->alpha-color-list img) → (list-of alpha-color?)
+  img : image?
+to convert an image to a list of alpha colors
+
+(alpha-color-list->image l width height x y) → image?
+  l : (list-of alpha-color?)
+  width : integer?
+  height : integer?
+  x : integer?
+  y : integer?
+Converts a list of alpha-colors l to an image with the given width and height
+and pinhole (x,y) coordinates, specified with respect to the top-left of the
+image.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

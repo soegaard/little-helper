@@ -1,0 +1,66 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+render-image
+image?
+un/ cache-image
+compute-image-cache
+[...search manuals...]
+  top← prev  up  next → 
+
+14 Image Core
+
+ (require mrlib/image-core)
+
+This library is the core part of the 2htdp/image library that DrRacket links
+into the namespace of all languages that it runs. This ensures that minimal
+support for these images are the same in all languages, specifically including
+support for printing the images and constructing the core data structures
+making up an image.
+
+(render-image image dc dx dy) → void?
+  image : image?
+  dc : (is-a?/c dc<%>)
+  dx : number?
+  dy : number?
+Draws image in dc at the position (dx,dy).
+
+(image? v) → boolean?
+  v : any/c
+Recognizes the images that library handles.
+
+(un/cache-image image b) → image?
+  image : image?
+  b : any/c
+Returns an image that either caches its drawing in the snip draw method or
+doesn’t, depending on b.
+
+(compute-image-cache image) → void?
+  image : image?
+When the image has a bitmap-cache (which it does by default, although un/
+cache-image can disable it), this function fills in the bitmap, doing the work
+to draw image into the bitmap.
+
+Ordinarily, the image’s bitmap cache is computed the first time the image is
+actually rendered.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

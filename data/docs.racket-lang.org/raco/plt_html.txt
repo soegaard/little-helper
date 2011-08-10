@@ -1,0 +1,326 @@
+▼  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+► 4  raco pack: Packaging Library Collections
+4.1  API for Packaging
+On this page:
+4.1 API for Packaging
+pack-collections-plt
+pack-collections
+pack-plt
+pack
+std-filter
+mztar
+[...search manuals...]
+  top← prev  up  next → 
+
+4 raco pack: Packaging Library Collections
+
+            Before creating a ".plt" archive to distribute, consider instead
+            posting your package on PLaneT.
+
+The raco pack command creates an archive for distributing library files to
+Racket users. A distribution archive usually has the suffix ".plt", which
+DrRacket recognizes as an archive to provide automatic unpacking facilities.
+The raco setup command also supports ".plt" unpacking.
+
+An archive contains the following elements:
+
+  • A set of files and directories to be unpacked, and flags indicating whether
+    they are to be unpacked relative to the Racket add-ons directory (which is
+    user-specific), the Racket installation directory, or a user-selected
+    directory.
+
+    The files and directories for an archive are provided on the command line
+    to raco pack, either directly or in the form of collection names when the
+    --collect flag is used.
+
+    The --at-plt flag indicates that the files and directories should be
+    unpacked relative to the user’s add-ons directory, unless the user
+    specifies the Racket installation directory when unpacking. The 
+    --collection-plt flag implies --at-plt. The --all-users flag overrides
+    --at-plt, and it indicates that the files and directories should be
+    unpacked relative to the Racket installation directory, always.
+
+  • A flag for each file indicating whether it overwrites an existing file when
+    the archive is unpacked; the default is to leave the old file in place, but
+    the --replace flag enables replacing for all files in the archive.
+
+  • A list of collections to be set-up (via raco setup) after the archive is
+    unpacked; the ++setup flag adds a collection name to the archive’s list,
+    but each collection for --collection-plt is added automatically.
+
+  • A name for the archive, which is reported to the user by the unpacking
+    interface; the --plt-name flag sets the archive’s name, but a default name
+    is determined automatically when using --collect.
+
+  • A list of required collections (with associated version numbers) and a list
+    of conflicting collections; the raco pack command always names the "racket"
+    collection in the required list (using the collection’s pack-time version),
+    raco pack names each packed collection in the conflict list (so that a
+    collection is not unpacked on top of a different version of the same
+    collection), and raco pack extracts other requirements and conflicts from
+    the "info.rkt" files of collections when using --collect.
+
+Specify individual directories and files for the archive when not using
+--collect. Each file and directory must be specified with a relative path. By
+default, if the archive is unpacked with DrRacket, the user will be prompted
+for a target directory, and if raco setup is used to unpack the archive, the
+files and directories will be unpacked relative to the current directory. If
+the --at-plt flag is provided, the files and directories will be unpacked
+relative to the user’s Racket add-ons directory, instead. Finally, if the
+--all-users flag is provided, the files and directories will be unpacked
+relative to the Racket installation directory, instead.
+
+Use the --collect flag to pack one or more collections; sub-collections can be
+designated by using a / as a path separator on all platforms. In this mode,
+raco pack automatically uses paths relative to the Racket installation or
+add-ons directory for the archived files, and the collections will be set-up
+after unpacking. In addition, raco pack consults each collection’s "info.rkt"
+file, as described below, to determine the set of required and conflicting
+collections. Finally, raco pack consults the first collection’s "info.rkt" file
+to obtain a default name for the archive. For example, the following command
+creates a "sirmail.plt" archive for distributing a "sirmail" collection:
+
+  raco pack --collect sirmail.plt sirmail
+
+When packing collections, raco pack checks the following fields of each
+collection’s "info.rkt" file (see "info.rkt" File Format):
+
+  • requires — A list of the form (list (list coll vers) ...) where each coll
+    is a non-empty list of relative-path strings, and each vers is a (possibly
+    empty) list of exact integers. The indicated collections must be installed
+    at unpacking time, with version sequences that match as much of the version
+    sequence specified in the corresponding vers.
+
+    A collection’s version is indicated by a version field in its "info.rkt"
+    file, and the default version is the empty list. The version sequence
+    generalized major and minor version numbers. For example, version '(2 5 4
+    7) of a collection can be used when any of '(), '(2), '(2 5), '(2 5 4), or
+    '(2 5 4 7) is required.
+
+  • conflicts — A list of the form (list coll ...) where each coll is a
+    non-empty list of relative-path strings. The indicated collections must not
+    be installed at unpacking time.
+
+For example, the "info.rkt" file in the "sirmail" collection might contain the
+following info declaration:
+
+    #lang setup/infotab
+    (define name "SirMail")
+    (define mred-launcher-libraries (list "sirmail.rkt"))
+    (define mred-launcher-names (list "SirMail"))
+    (define requires (list (list "mred")))
+
+Then, the "sirmail.plt" file (created by the command-line example above) will
+contain the name “SirMail.” When the archive is unpacked, the unpacker will
+check that the "mred" collection is installed, and that "mred" has the same
+version as when "sirmail.plt" was created.
+
+4.1 API for Packaging
+
+ (require setup/pack)
+Although the raco pack command can be used to create most ".plt" files, the
+setup/pack library provides a more general API for making ".plt" archives.
+
+(pack-collections-plt                           
+     dest                                       
+     name                                       
+     collections                                
+   [ #:replace? replace?                        
+     #:at-plt-home? at-home?                    
+     #:test-plt-collects? test?                 
+     #:extra-setup-collections collection-list  
+     #:file-filter filter-proc])                
+ → void?
+  dest : path-string?
+  name : string?
+  collections : (listof (listof path-string?))
+  replace? : boolean? = #f
+  at-home? : boolean? = #f
+  test? : boolean? = #t
+  collection-list : (listof path-string?) = null
+  filter-proc : (path-string? . -> . boolean?) = std-filter
+Creates the ".plt" file specified by the pathname dest, using the name as the
+name reported to raco setup as the archive’s description.
+
+The archive contains the collections listed in collections, which should be a
+list of collection paths; each collection path is, in turn, a list of
+relative-path strings.
+
+If the #:replace? argument is #f, then attempting to unpack the archive will
+report an error when any of the collections exist already, otherwise unpacking
+the archive will overwrite an existing collection.
+
+If the #:at-plt-home? argument is #t, then the archived collections will be
+installed into the Racket installation directory instead of the user’s
+directory if the main "collects" directory is writable by the user. If the
+#:test-plt-collects? argument is #f (the default is #t) and the #:at-plt-home?
+argument is #t, then installation fails if the main "collects" directory is not
+writable.
+
+The optional #:extra-setup-collections argument is a list of collection paths
+that are not included in the archive, but are set-up when the archive is
+unpacked.
+
+The optional #:file-filter argument is the same as for pack-plt.
+
+(pack-collections    dest                           
+                     name                           
+                     collections                    
+                     replace?                       
+                     extra-setup-collections        
+                   [ filter                         
+                     at-plt-home?])            →   void?
+  dest : path-string?
+  name : string?
+  collections : (listof (listof path-string?))
+  replace? : boolean?
+  extra-setup-collections : (listof path-string?)
+  filter : (path-string? . -> . boolean?) = std-filter
+  at-plt-home? : boolean? = #f
+Old, keywordless variant of pack-collections-plt for backward compatibility.
+
+(pack-plt    dest                                   
+             name                                   
+             paths                                  
+           [ #:file-filter filter-proc              
+             #:encode? encode?                      
+             #:file-mode file-mode-sym              
+             #:unpack-unit unit200-expr             
+             #:collections collection-list          
+             #:plt-relative? plt-relative?          
+             #:at-plt-home? at-plt-home?            
+             #:test-plt-dirs dirs                   
+             #:requires mod-and-version-list        
+             #:conflicts mod-list])            →   void?
+  dest : path-string?
+  name : string?
+  paths : (listof path-string?)
+  filter-proc : (path-string? . -> . boolean?) = std-filter
+  encode? : boolean? = #t
+  file-mode-sym : symbol? = 'file
+  unit200-expr : any/c = #f
+  collection-list : (listof path-string?) = null
+  plt-relative? : any/c = #f
+  at-plt-home? : any/c = #f
+  dirs : (or/c (listof path-string?) false/c) = #f
+   mod-and-version-list   :   (listof (listof path-string?)      =   null
+                                      (listof exact-integer?))
+  mod-list : (listof (listof path-string?)) = null
+Creates the ".plt" file specified by the pathname dest, using the string name
+as the name reported to raco setup as the archive’s description. The paths
+argument must be a list of relative paths for directories and files; the
+contents of these files and directories will be packed into the archive.
+
+The #:file-filter procedure is called with the relative path of each candidate
+for packing. If it returns #f for some path, then that file or directory is
+omitted from the archive. If it returns 'file or 'file-replace for a file, the
+file is packed with that mode, rather than the default mode. The default is
+std-filter.
+
+If the #:encode? argument is #f, then the output archive is in raw form, and
+still must be gzipped and mime-encoded (in that order). The default value is #
+t.
+
+The #:file-mode argument must be 'file or 'file-replace, indicating the default
+mode for a file in the archive. The default is 'file.
+
+The #:unpack-unit argument is usually #f. Otherwise, it must be an S-expression
+for a mzlib/unit200-style unit that performs the work of unpacking; see Format
+of ".plt" Archives more information about the unit. If the #:unpack-unit
+argument is #f, an appropriate unpacking unit is generated.
+
+The #:collections argument is a list of collection paths to be compiled after
+the archive is unpacked. The default is the null.
+
+If the #:plt-relative? argument is true (the default is #f), the archive’s
+files and directories are to be unpacked relative to the user’s add-ons
+directory or the Racket installation directories, depending on whether the
+#:at-plt-home? argument is true and whether directories specified by
+#:test-plt-dirs are writable by the user.
+
+If the #:at-plt-home? argument is true (the default is #f), then
+#:plt-relative? must be true, and the archive is unpacked relative to the
+Racket installation directory. In that case, a relative path that starts with
+"collects" is mapped to the installation’s main "collects" directory, and so
+on, for the following the initial directory names:
+
+  • "collects"
+
+  • "doc"
+
+  • "lib"
+
+  • "include"
+
+If #:test-plt-dirs is a list, then #:at-plt-home? must be #t. In that case,
+when the archive is unpacked, if any of the relative directories in the
+#:test-plt-dirs list is unwritable by the current user, then the archive is
+unpacked in the user’s add-ons directory after all.
+
+The #:requires argument should have the shape (list (list coll-path version)
+...) where each coll-path is a non-empty list of relative-path strings, and
+each version is a (possibly empty) list of exact integers. The indicated
+collections must be installed at unpacking time, with version sequences that
+match as much of the version sequence specified in the corresponding version. A
+collection’s version is indicated by the version field of its "info.rkt" file.
+
+The #:conflicts argument should have the shape (list coll-path ...) where each
+coll-path is a non-empty list of relative-path strings. The indicated
+collections must not be installed at unpacking time.
+
+(pack    dest                  
+         name                  
+         paths                 
+         collections           
+       [ filter                
+         encode?               
+         file-mode             
+         unpack-unit           
+         plt-relative?         
+         requires              
+         conflicts             
+         at-plt-home?])   →   void?
+  dest : path-string?
+  name : string?
+  paths : (listof path-string?)
+  collections : (listof path-string?)
+  filter : (path-string? . -> . boolean?) = std-filter
+  encode? : boolean? = #t
+  file-mode : symbol? = 'file
+  unpack-unit : boolean? = #f
+  plt-relative? : boolean? = #t
+   requires   :   (listof (listof path-string?)      =   null
+                          (listof exact-integer?))
+  conflicts : (listof (listof path-string?)) = null
+  at-plt-home? : boolean? = #f
+Old, keywordless variant of pack-plt for backward compatibility.
+
+(std-filter p) → boolean?
+  p : path-string?
+Returns #t unless p, after stripping its directory path and converting to a
+byte string, matches one of the following regular expressions: ^[.]git, ^[.]
+svn$, ^CVS$, ^[.]cvsignore, ^compiled$, ^doc, ~$, ^#.*#$, ^[.]#, or [.]plt$.
+
+(mztar path output filter file-mode) → void?
+  path : path-string?
+  output : output-port?
+  filter : (path-string? . -> . boolean?)
+  file-mode : (symbols 'file 'file-replace)
+Called by pack to write one directory/file path to the output port output using
+the filter procedure filter (see pack for a description of filter). The
+file-mode argument specifies the default mode for packing a file, either 'file
+or 'file-replace.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

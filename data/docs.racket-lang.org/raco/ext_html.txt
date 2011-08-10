@@ -1,0 +1,49 @@
+►  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+▼ 9  raco ctool: Working with C Code
+9.1  Compiling and Linking C Extensions
+9.2  Embedding Modules via C
+9.3  Compiling to Native Code via C
+9.4  API for Raw Compilation
+[...search manuals...]
+  top← prev  up  next → 
+
+9.3 Compiling to Native Code via C
+
+The --extension/-e mode for raco ctool is similar to the raco make --zo (see
+Compiling to Raw Bytecode), except that the compiled form of the module is a
+native-code shared library instead of bytecode. Native code is generated with
+the help of the host system’s C compiler. This mode is rarely useful, because
+the just-in-time (JIT) compiler that is built into Racket provides better
+performance with lower overhead on the platforms where it is supported (see
+Performance).
+
+As with --zo mode, the generated shared library by default is placed in the
+same directory as the source file—which is not where it will be found
+automatically when loading the source. Use the --auto-dir flag to redirect the
+output to a (build-path "compiled" "native" (system-library-subpath))
+subdirectory, where it will be found automatically when loading the source
+file.
+
+The --c-source/-c mode for raco ctool is like the --extension/-e mode, except
+that compilation stops with the generation of C code.
+
+All of the C compiler and linker flags that apply to --cc and --ld mode also
+apply to --extension mode; see Compiling and Linking C Extensions. In addition,
+a few flag provide some control over the Racket-to-C compiler: --no-prop, 
+--inline, --no-prim, --stupid, --unsafe-disable-interrupts, 
+--unsafe-skip-tests, and --unsafe-fixnum-arithmetic. Use mzc --help for an
+explanation of each flag.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

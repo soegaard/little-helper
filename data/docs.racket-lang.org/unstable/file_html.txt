@@ -1,0 +1,55 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+make-directory*/ ignore-exists-exn
+[...search manuals...]
+  top← prev  up  next → 
+
+11 Filesystem
+
+Jay McCarthy <jay@racket-lang.org>
+
+ (require unstable/file)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+(make-directory*/ignore-exists-exn pth) → void
+  pth : path-string?
+Like make-directory*, except it ignores errors when the path already exists.
+Useful to deal with race conditions on processes that create directories.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

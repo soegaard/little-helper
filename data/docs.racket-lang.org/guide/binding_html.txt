@@ -1,0 +1,119 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 4  Expressions and Definitions
+ 4.1  Notation
+ 4.2  Identifiers and Binding
+ 4.3  Function Calls (Procedure Applications)
+ 4.4  Functions (Procedures): lambda
+ 4.5  Definitions: define
+ 4.6  Local Binding
+ 4.7  Conditionals
+ 4.8  Sequencing
+ 4.9  Assignment: set!
+4.10  Quoting: quote and ’
+4.11  Quasiquoting: quasiquote and `
+4.12  Simple Dispatch: case
+4.13  Dynamic Binding: parameterize
+[...search manuals...]
+  top← prev  up  next → 
+
+4.2 Identifiers and Binding
+
+The context of an expression determines the meaning of identifiers that appear
+in the expression. In particular, starting a module with the language racket,
+as in
+
+    #lang racket
+
+means that, within the module, the identifiers described in this guide start
+with the meaning described here: cons refers to the function that creates a
+pair, car refers to the function that extracts the first element of a pair, and
+so on.
+
+            +Symbols introduces the syntax of identifiers.
+
+Forms like define, lambda, and let associate a meaning with one or more
+identifiers; that is, they bind identifiers. The part of the program for which
+the binding applies is the scope of the binding. The set of bindings in effect
+for a given expression is the expression’s environment.
+
+For example, in
+
+    #lang racket
+     
+    (define f
+      (lambda (x)
+        (let ([y 5])
+          (+ x y))))
+     
+    (f 10)
+
+the define is a binding of f, the lambda has a binding for x, and the let has a
+binding for y. The scope of the binding for f is the entire module; the scope
+of the x binding is (let ([y 5]) (+ x y)); and the scope of the y binding is
+just (+ x y). The environment of (+ x y) includes bindings for y, x, and f, as
+well as everything in racket.
+
+A module-level define can bind only identifiers that are not already bound
+within the module. For example, (define cons 1) is a syntax error in a racket
+module, since cons is provided by racket. A local define or other binding
+forms, however, can give a new local binding for an identifier that already has
+a binding; such a binding shadows the existing binding.
+
+Examples:
+
+    (define f
+      (lambda (append)
+        (define cons (append "ugly" "confusing"))
+        (let ([append 'this-was])
+          (list append cons))))
+    > (f list)
+    '(this-was ("ugly" "confusing"))
+
+
+
+Even identifiers like define and lambda get their meanings from bindings,
+though they have transformer bindings (which means that they indicate syntactic
+forms) instead of value bindings. Since define has a transformer binding, the
+identifier define cannot be used by itself to get a value. However, the normal
+binding for define can be shadowed.
+
+Examples:
+
+    > define
+    eval:1:0: define: bad syntax in: define
+
+    > (let ([define 5]) define)
+    5
+
+
+
+Shadowing standard bindings in this way is rarely a good idea, but the
+possibility is an inherent part of Racket’s flexibility.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

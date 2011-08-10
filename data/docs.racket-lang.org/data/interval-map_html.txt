@@ -1,0 +1,182 @@
+▼  Data: Data Structures
+1  Imperative Queues
+2  Growable Vectors
+3  Orders and Ordered Dictionaries
+4  Splay Trees
+5  Skip Lists
+6  Interval Maps
+7  Binary Heaps
+On this page:
+make-interval-map
+interval-map?
+interval-map-ref
+interval-map-set!
+interval-map-update*!
+interval-map-remove!
+interval-map-contract!
+interval-map-expand!
+interval-map-cons*!
+interval-map-iterate-first
+interval-map-iterate-next
+interval-map-iterate-key
+interval-map-iterate-value
+interval-map-iter?
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+6 Interval Maps
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require data/interval-map)
+
+An interval-map is a mutable data structure that maps half-open intervals of
+exact integers to values. An interval-map is queried at a discrete point, and
+the result of the query is the value mapped to the interval containing the
+point.
+
+Internally, interval-maps use a splay-tree (data/splay-tree) of intervals for
+efficient query and update, including efficient contraction and expansion of
+intervals.
+
+Interval-maps implement the dictionary (racket/dict) interface to a limited
+extent. Only dict-ref and the iteration-based methods (dict-iterate-first,
+dict-map, etc) are supported. For the iteration-based methods, the mapping’s
+keys are considered the pairs of the start and end positions of the mapping’s
+intervals.
+
+Examples:
+
+    > (define r (make-interval-map))
+    > (interval-map-set! r 1 5 'apple)
+    > (interval-map-set! r 6 10 'pear)
+    > (interval-map-set! r 3 7 'banana)
+    > (dict-map r list)
+    '(((1 . 3) apple) ((3 . 7) banana) ((7 . 10) pear))
+
+
+
+(make-interval-map  [ #:key-contract key-contract        
+                      #:value-contract value-contract])  
+ → interval-map?
+  key-contract : contract? = any/c
+  value-contract : contract? = any/c
+Makes a new empty interval-map.
+
+(interval-map? v) → boolean?
+  v : any/c
+Returns #t if v is an interval-map, #f otherwise.
+
+(interval-map-ref    interval-map        
+                     position            
+                   [ default])      →   any/c
+  interval-map : interval-map?
+  position : exact-integer?
+  default : any/c = (lambda () (error ....))
+Return the value associated with position in interval-map. If no mapping is
+found, default is applied if it is a procedure, or returned otherwise.
+
+(interval-map-set!   interval-map        
+                     start               
+                     end                 
+                     value)         →   void?
+  interval-map : interval-map?
+  start : exact-integer?
+  end : exact-integer?
+  value : any/c
+Updates interval-map, associating every position in [start, end) with value.
+
+Existing interval mappings contained in [start, end) are destroyed, and partly
+overlapping intervals are truncated. See interval-map-update*! for an updating
+procedure that preserves distinctions within [start, end).
+
+(interval-map-update*!    interval-map        
+                          start               
+                          end                 
+                          updater             
+                        [ default])      →   void?
+  interval-map : interval-map?
+  start : exact-integer?
+  end : exact-integer?
+  updater : (-> any/c any/c)
+  default : any/c = (lambda () (error ....))
+Updates interval-map, associating every position in [start, end) with the
+result of applying updater to the position’s previously associated value, or to
+the default value produced by default if no mapping exists.
+
+Unlike interval-map-set!, interval-map-update*! preserves existing distinctions
+within [start, end).
+
+(interval-map-remove!   interval-map        
+                        start               
+                        end)           →   void?
+  interval-map : interval-map?
+  start : (or/c exact-integer? -inf.0)
+  end : (or/c exact-integer? +inf.0)
+Removes the value associated with every position in [start, end).
+
+(interval-map-contract!   interval-map        
+                          start               
+                          end)           →   void?
+  interval-map : interval-map?
+  start : exact-integer?
+  end : exact-integer?
+Contracts interval-map’s domain by removing all mappings on the interval
+[start, end) and decreasing intervals initally after end by (- end start).
+
+If start is not less than end, an exception is raised.
+
+(interval-map-expand!   interval-map        
+                        start               
+                        end)           →   void?
+  interval-map : interval-map?
+  start : exact-integer?
+  end : exact-integer?
+Expands interval-map’s domain by introducing a gap [start, end) and increasing
+intervals initially after start by (- end start).
+
+If start is not less than end, an exception is raised.
+
+(interval-map-cons*!    interval-map        
+                        start               
+                        end                 
+                        v                   
+                      [ default])      →   void?
+  interval-map : interval-map?
+  start : any/c
+  end : any/c
+  v : any/c
+  default : any/c = null
+Same as the following:
+
+    (interval-map-update*! interval-map start end
+                           (lambda (old) (cons v old))
+                           default)
+
+(interval-map-iterate-first interval-map)
+ → (or/c interval-map-iter? #f)
+  interval-map : interval-map?
+(interval-map-iterate-next   interval-map  
+                             iter)         
+ → (or/c interval-map-iter? #f)
+  interval-map : interval-map?
+  iter : interval-map-iter?
+(interval-map-iterate-key   interval-map        
+                            iter)          →   pair?
+  interval-map : interval-map?
+  iter : interval-map-iter?
+(interval-map-iterate-value   interval-map        
+                              iter)          →   any
+  interval-map : interval-map?
+  iter : interval-map-iter?
+Implementations of dict-iterate-first, dict-iterate-next, dict-iterate-key, and
+dict-iterate-value, respectively.
+
+(interval-map-iter? v) → boolean?
+  v : any/c
+Returns #t if v represents a position in an interval-map, #f otherwise.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

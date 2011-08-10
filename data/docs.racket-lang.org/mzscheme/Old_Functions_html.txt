@@ -1,0 +1,198 @@
+▼  Mz Scheme: Legacy Language
+1  Old Syntactic Forms
+2  Old Functions
+3  Extra Libraries
+4  Omitted Functions
+On this page:
+apply
+prop: procedure
+open-input-file
+open-output-file
+open-input-output-file
+with-input-from-file
+with-output-to-file
+call-with-input-file
+call-with-output-file
+syntax-object->datum
+datum->syntax-object
+module-identifier=?
+module-transformer-identifier=?
+module-template-identifier=?
+module-label-identifier=?
+free-identifier=?
+make-namespace
+namespace-transformer-require
+transcript-on
+transcript-off
+hash-table?
+make-hash-table
+make-immutable-hash-table
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Old Functions
+
+(apply proc v ... lst) → any
+  proc : procedure?
+  v : any/c
+  lst : list?
+Like apply from scheme/base, but without support for keyword arguments.
+
+prop:procedure : struct-type-property?
+Like prop:procedure from scheme/base, but even if the property’s value for a
+structure type is a procedure that accepts keyword arguments, then instances of
+the structure type still do not accept keyword arguments. (In contrast, if the
+property’s value is an integer for a field index, then a keyword-accepting
+procedure in the field for an instance causes the instance to accept keyword
+arguments.)
+
+(open-input-file file [mode]) → input-port?
+  file : path-string?
+  mode : (one-of/c 'text 'binary) = 'binary
+(open-output-file file [mode exists]) → input-port?
+  file : path-string?
+  mode : (one-of/c 'text 'binary) = 'binary
+   exists   :   (one-of/c 'error 'append 'update
+                          'replace 'truncate 'truncate/replace)
+            =   'error
+(open-input-output-file file [mode exists])
+  →   input-port?   output-port?
+  file : path-string?
+  mode : (one-of/c 'text 'binary) = 'binary
+   exists   :   (one-of/c 'error 'append 'update
+                          'replace 'truncate 'truncate/replace)
+            =   'error
+(with-input-from-file file thunk [mode]) → any
+  file : path-string?
+  thunk : (-> any)
+  mode : (one-of/c 'text 'binary) = 'binary
+(with-output-to-file file thunk [mode exists]) → any
+  file : path-string?
+  thunk : (-> any)
+  mode : (one-of/c 'text 'binary) = 'binary
+   exists   :   (one-of/c 'error 'append 'update
+                          'replace 'truncate 'truncate/replace)
+            =   'error
+(call-with-input-file file proc [mode]) → any
+  file : path-string?
+  proc : (input-port? -> any)
+  mode : (one-of/c 'text 'binary) = 'binary
+(call-with-output-file file proc [mode exists]) → any
+  file : path-string?
+  proc : (output-port? -> any)
+  mode : (one-of/c 'text 'binary) = 'binary
+   exists   :   (one-of/c 'error 'append 'update
+                          'replace 'truncate 'truncate/replace)
+            =   'error
+Like open-input-file, etc. from scheme/base, but mode and exists arguments are
+not keyword arguments. When both mode and exists are accepted, they are
+accepted in either order.
+
+(syntax-object->datum stx) → any
+  stx : syntax?
+(datum->syntax-object ctxt v srcloc [prop cert]) → syntax?
+  ctxt : (or/c syntax? false/c)
+  v : any/c
+                (or/c syntax? false/c
+                      (list/c any/c
+                              (or/c exact-positive-integer? false/c)
+                              (or/c exact-nonnegative-integer? false/c)
+                              (or/c exact-nonnegative-integer? false/c)
+   srcloc   :                 (or/c exact-positive-integer? false/c))
+                      (vector/c any/c
+                                (or/c exact-positive-integer? false/c)
+                                (or/c exact-nonnegative-integer? false/c)
+                                (or/c exact-nonnegative-integer? false/c)
+                                (or/c exact-positive-integer? false/c)))
+  prop : (or/c syntax? false/c) = #f
+  cert : (or/c syntax? false/c) = #f
+The same as syntax->datum and datum->syntax.
+
+(module-identifier=? a-id b-id) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+(module-transformer-identifier=? a-id b-id) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+(module-template-identifier=? a-id b-id) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+(module-label-identifier=? a-id b-id) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+(free-identifier=? a-id b-id) → boolean?
+  a-id : syntax?
+  b-id : syntax?
+The module-identifier=?, etc. functions are the same as free-identifier=?, etc.
+in scheme/base.
+
+The free-identifier=? procedure returns
+
+    (and (eq? (syntax-e a) (syntax-e b))
+         (module-identifier=? a b))
+
+(make-namespace [mode]) → namespace?
+  mode : (one-of/c 'initial 'empty) = 'initial
+Creates a namespace with mzscheme attached. If the mode is empty, the
+namespace’s top-level environment is left empty. If mode is 'initial, then the
+namespace’s top-level environment is initialized with (namespace-require/copy
+'mzscheme). See also make-base-empty-namespace.
+
+(namespace-transformer-require req) → void?
+  req : any/c
+Equivalent to (namespace-require `(for-syntax ,req)).
+
+(transcript-on filename) → any
+  filename : any/c
+(transcript-off) → any
+Raises exn:fail, because the operations are not supported.
+
+(hash-table? v) → hash-table?
+  v : any/c
+(hash-table? v flag) → hash-table?
+  v : any/c
+  flag : (one-of/c 'weak 'equal 'eqv)
+(hash-table? v flag flag) → hash-table?
+  v : any/c
+  flag : (one-of/c 'weak 'equal 'eqv)
+  flag : (one-of/c 'weak 'equal 'eqv)
+Returns #t if v like a hash table created by make-hash-table or
+make-immutable-hash-table with the given flags (or more), #f otherwise. Each
+provided flag must be distinct and 'equal cannot be used with 'eqv, otherwise
+the exn:fail:contract exception is raised.
+
+(make-hash-table) → hash-table?
+(make-hash-table flag) → hash-table?
+  flag : (one-of/c 'weak 'equal 'eqv)
+(make-hash-table flag flag) → hash-table?
+  flag : (one-of/c 'weak 'equal 'eqv)
+  flag : (one-of/c 'weak 'equal 'eqv)
+Creates and returns a new hash table. If provided, each flag must one of the
+following:
+
+  • 'weak — creates a hash table with weakly-held keys via make-weak-hash,
+    make-weak-hasheq, or make-weak-hasheqv.
+
+  • 'equal — creates a hash table that compares keys using equal? instead of
+    eq? using make-hash or make-weak-hash.
+
+  • 'eqv — creates a hash table that compares keys using eqv? instead of eq?
+    using make-hasheqv or make-weak-hasheqv.
+
+By default, key comparisons use eq? (i.e., the hash table is created with
+make-hasheq). If the second flag is redundant or 'equal is provided with 'eqv,
+the exn:fail:contract exception is raised.
+
+(make-immutable-hash-table assocs)
+ → (and/c hash-table? immutable?)
+  assocs : (listof pair?)
+(make-immutable-hash-table assocs flag)
+ → (and/c hash-table? immutable?)
+  assocs : (listof pair?)
+  flag : (one-of/c 'equal 'eqv)
+Like make-immutable-hash, make-immutable-hasheq, or make-immutable-hasheqv,
+depending on whether an 'equal or 'eqv flag is provided.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,87 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 5  Snip and Style Classes
+ 5.1  add-color<%>
+ 5.2  image-snip%
+ 5.3  mult-color<%>
+ 5.4  readable-snip<%>
+ 5.5  snip%
+ 5.6  snip-admin%
+ 5.7  snip-class%
+ 5.8  snip-class-list<%>
+ 5.9  string-snip%
+5.10  style<%>
+5.11  style-delta%
+5.12  style-list%
+5.13  tab-snip%
+On this page:
+get
+get-b
+get-g
+get-r
+set
+set-b
+set-g
+set-r
+[...search manuals...]
+  top← prev  up  next → 
+
+add-color<%> : interface?
+An add-color<%> object is used to additively change the RGB values of a color%
+object. An add-color<%> object only exists within a style-delta% object.
+
+See also get-foreground-add and get-background-add.
+
+(send an-add-color get r g b) → void?
+  r : (box/c (integer-in -1000 1000))
+  g : (box/c (integer-in -1000 1000))
+  b : (box/c (integer-in -1000 1000))
+Gets all of the additive values.
+
+The r box is filled with the additive value for the red component of the color.
+The g box is filled with the additive value for the green component of the
+color. The b box is filled with the additive value for the blue component of
+the color.
+
+(send an-add-color get-b) → (integer-in -1000 1000)
+Gets the additive value for the blue component of the color.
+
+(send an-add-color get-g) → (integer-in -1000 1000)
+Gets the additive value for the green component of the color.
+
+(send an-add-color get-r) → (integer-in -1000 1000)
+Gets the additive value for the red component of the color.
+
+(send an-add-color set r g b) → void?
+  r : (integer-in -1000 1000)
+  g : (integer-in -1000 1000)
+  b : (integer-in -1000 1000)
+Sets all of the additive values.
+
+(send an-add-color set-b v) → void?
+  v : (integer-in -1000 1000)
+Sets the additive value for the blue component of the color.
+
+(send an-add-color set-g v) → void?
+  v : (integer-in -1000 1000)
+Sets the additive value for the green component of the color.
+
+(send an-add-color set-r v) → void?
+  v : (integer-in -1000 1000)
+Sets the additive value for the red component of the color.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

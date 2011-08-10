@@ -1,0 +1,178 @@
+▼  Mr Lib: Extra GUI Libraries
+ 1  Aligned Pasteboard
+ 2  Bitmap Label
+ 3  Cache-image Snip
+ 4  Close Icon
+ 5  GIF and Animated GIF Writing
+ 6  Graphs
+ 7  Hierarchical List Control
+ 8  Include Bitmap
+ 9  Interactive Value Port
+10  Name Message
+11  Path Dialog
+12  Plot
+13  Switchable Button
+14  Image Core
+15  Matrix Snip
+16  Te X Table
+17  Acknowledgments
+    Index
+On this page:
+cache-image-snip%
+equal-to?
+get-argb
+get-argb-proc
+get-argb/ no-compute
+get-bitmap
+get-dc-proc
+get-pinhole
+get-size
+other-equal-to?
+snip-class
+make-argb
+argb-vector
+argb-width
+argb-height
+argb?
+overlay-bitmap
+build-bitmap
+flatten-bitmap
+argb->cache-image-snip
+argb->bitmap
+[...search manuals...]
+  top← prev  up  next → 
+
+3 Cache-image Snip
+
+ (require mrlib/cache-image-snip)
+The mrlib/cache-image-snip library provides the core data structure for
+DrRacket’s "image.rkt" teachpack. Images in the "image.rkt" teachpack are
+instances of the cache-image-snip% class.
+
+The library also defines a new type, argb, that represents a bitmap, but with
+alpha values. It has a maker, two selectors, and a predicate.
+
+cache-image-snip% : class?
+  superclass: image-snip%
+
+The cache-image-snip% class is a subclass of image-snip% simply so that its
+instances can be compared with image-snip% using equal?. All image-snip%
+functionality is overridden or ignored.
+
+
+    (send a-cache-image-snip equal-to?   snip           
+                                         equal?)   →   boolean?
+      snip : (is-a?/c image-snip%)
+      equal? : (any/c any/c . -> . boolean?)
+    Calls the other-equal-to? method of snip if it is also a cache-image-snip%
+    instance, otherwise calls the other-equal-to? of a-cache-image-snip.
+
+    (send a-cache-image-snip get-argb) → argb?
+    Returns a pixel array for this image, forcing it to be computed.
+
+    (send a-cache-image-snip get-argb-proc)
+     → (argb? exact-integer? exact-integer? . -> . void?)
+    Returns a procedure that fills in an argb with the contents of this image
+    at the given offset
+
+    (send a-cache-image-snip get-argb/no-compute)
+     → (or/c false/c argb?)
+    Returns a pixel array for this image or #f if it has not been computed yet.
+
+    (send a-cache-image-snip get-bitmap)
+     → (or/c false/c (is-a?/c bitmap%))
+    Overrides get-bitmap in image-snip%.
+    Builds (if not yet built) a bitmap corresponding to this snip and returns
+    it.
+
+    If the width or the height of the snip is 0, this method return #f.
+
+    (send a-cache-image-snip get-dc-proc)
+     → (or/c false/c ((is-a?/c dc<%>) real? real? -> void?))
+    Either returns false, or a procedure that draws the contents of this snip
+    into a dc.
+
+    (send a-cache-image-snip get-pinhole)   →   real?   real?
+    Returns the pinhole coordinates for this image, counting from the top-left
+    of the image.
+
+    (send a-cache-image-snip get-size)
+      →   exact-nonnegative-integer?
+          exact-nonnegative-integer?
+    Returns the width and height for the image.
+
+    (send a-cache-image-snip other-equal-to?   snip           
+                                               equal?)   →   boolean?
+      snip : (is-a?/c image-snip%)
+      equal? : (any/c any/c . -> . boolean?)
+    Overrides other-equal-to? in image-snip%.
+    Refines the comparison of other-equal-to? in image-snip% to exactly match
+    alpha channels.
+
+snip-class : (is-a?/c snip-class%)
+This snipclass is used for saved cache image snips.
+
+(make-argb vectorof width height) → argb?
+  vectorof : (integer-in 0 255)
+  width : exact-nonnegative-integer?
+  height : exact-nonnegative-integer?
+Constructs a new argb value. The vector has four entries for each pixel, an
+alpha, red, green, and blue value. The int specifies the width of the image;
+the height is the size of the vector, divided by 4, divided by the width.
+
+(argb-vector argb) → (vectorof (integer-in 0 255))
+  argb : argb?
+Extracts the vector from argb.
+
+(argb-width argb) → exact-nonnegative-integer?
+  argb : argb?
+Extracts the width from argb.
+
+(argb-height argb) → exact-nonnegative-integer?
+  argb : argb?
+Extracts the height from argb.
+
+(argb? v) → boolean?
+  v : any/c
+Returns #t if v is an argb, #f otherwise.
+
+(overlay-bitmap dest dx dy img mask) → void?
+  dest : argb?
+  dx : exact-integer?
+  dy : exact-integer?
+  img : (is-a?/c bitmap%)
+  mask : (is-a?/c bitmap%)
+Changes argb, overlaying img with masking based on mask at (dx, dy) from the
+top-left.
+
+(build-bitmap draw width height) → (is-a?/c bitmap%)
+  draw : ((is-a?/c dc<%>) . -> . any)
+  width : (integer-in 1 10000)
+  height : (integer-in 1 10000)
+Builds a bitmap of size width by height, using the procedure draw to render the
+bitmap content into the given dc<%>.
+
+(flatten-bitmap bitmap) → (is-a?/c bitmap%)
+  bitmap : (is-a?/c bitmap%)
+Builds a new bitmap that flattens the original bitmap with its mask (as
+determined by get-loaded-mask in bitmap%), producing a bitmap that has no mask,
+and looks the way that bitmap would draw (when drawn with the mask) onto a
+white background.
+
+(argb->cache-image-snip argb dx dy) → (is-a?/c cache-image-snip%)
+  argb : argb?
+  dx : real?
+  dy : real?
+Builds a new cache-image-snip% based on the contents of argb, using dx and dy
+as the pinhole.
+
+(argb->bitmap argb) → (or/c false/c (is-a?/c bitmap%))
+  argb : argb?
+Builds a bitmap that draws the same way as argb; the alpha pixels are put into
+the bitmap’s get-loaded-mask bitmap.
+
+If the width or height of argb is 0, this returns #f.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,93 @@
+►  Myster X: Using Windows COM Objects in Racket
+1  Overview
+2  COM
+3  Active X and DHTML
+4  Version
+   Index
+▼ 2  COM
+2.1  COM Methods and Properties
+2.2  COM Types
+2.3  COM Events
+On this page:
+com-object-type
+com-is-a?
+com-currency?
+com-currency->number
+number->com-currency
+com-date?
+com-date->date
+date->com-date
+com-scode?
+com-scode->number
+number->com-scode
+com-iunknown?
+com-omit
+[...search manuals...]
+  top← prev  up  next → 
+
+2.2 COM Types
+
+In the result of a function like com-method-type, a type 'mx-any standards for
+a character, real number, string, boolean, COM currency (as in com-currency?),
+COM date (as in com-date?), COM scode value (as in com-scode?), COM IUnknown
+value (as in com-iunknown?, or COM object (as in com-object?).}
+
+(com-object-type obj) → com-type?
+  obj : com-object?
+Returns a type for a COM object.
+
+(com-is-a? obj type) → boolean?
+  obj : com-object?
+  type : com-type?
+Return #t if obj is of the type type.
+
+(com-currency? v) → boolean?
+  v : any/c
+Returns #t if v is a COM currency value, #f otherwise.
+
+(com-currency->number curr) → real?
+  curr : com-currency?
+Returns a number for curr.
+
+(number->com-currency n) → com-currency?
+  n : real?
+Converts a number to a COM currency value. A currency value is repsented with a
+64-bit two’s-complement integer, though n may contain decimal digits. If n is
+too large, an exception is raised.
+
+(com-date? v) → boolean?
+  v : any/c
+Returns #t if v is a COM date value, #f otherwise.
+
+(com-date->date d) → date?
+  d : com-date?
+Converts a COM date to an instance of the date structure type. In the result,
+the dst? field is always #f, and the time-zone-offset field is 0.
+
+(date->com-date d) → com-date?
+  d : date?
+Converts a date instance to a COM date value.
+
+(com-scode? v) → boolean?
+  v : any/c
+Returns #t if v is a COM scode value, #f otherwise.
+
+(com-scode->number sc) → integer?
+  sc : com-scode?
+Converts a COM scode value to an integer.
+
+(number->com-scode n) → com-scode?
+  n : integer?
+Converts a number to a COM scode value. The number must be representable as a
+32-bit two’s-complement number, otherwise an exception is raised.
+
+(com-iunknown? v) → boolean?
+  v : any/c
+Returns #t if v is a COM IUnknown value, #f otherwise.
+
+com-omit : any/c
+Used with com-invoke to represent an argument that is not provided.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

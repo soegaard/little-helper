@@ -1,0 +1,63 @@
+▼  R6RS: Scheme
+1  Using R6RS with Dr Racket
+2  Running Top-Level Programs
+3  Installing Libraries
+4  R6RS Module Language
+5  Libraries and Collections
+6  Language Interoperability
+7  R6RS Conformance
+8  R6RS Libraries
+   Index
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Libraries and Collections
+
+An R6RS library name is sequence of symbols, optionally followed by a version
+as a sequence of exact, non-negative integers. Roughly, such a name is
+converted to a Racket module pathname (see Module Paths) by concatenating the
+symbols with a / separator, and then appending the version integers each with a
+preceding -. As a special case, when an R6RS path contains a single symbol
+(optionally followed by a version), a main symbol is effectively inserted after
+the initial symbol. See below for further encoding considerations.
+
+When an R6RS library or top-level program refers to another library, it can
+supply version constraints rather than naming a specific version. Version
+constraints are always resolved at compile time by searching the set of
+installed files.
+
+In addition, when an R6RS library path is converted, a file extension is
+selected at compile time based on installed files. The search order for file
+extensions is ".mzscheme.ss", ".mzscheme.sls", ".ss", ".sls", and ".rkt". When
+resolving version constraints, these extensions are all tried when looking for
+matches.
+
+To ensure that all R6RS library names can be converted to a unique and distinct
+library module path, the following conversions are applied to each symbol
+before concatenating them:
+
+  • The symbol is encoded using UTF-8, and the resulting bytes are treated as
+    Latin-1 encoded characters. ASCII letters, digits, +, -, and _ are left
+    as-is; other characters are replaced by % followed by two lowercase
+    hexadecimal digits. Note that UTF-8 encodes ASCII letters, digits, etc. as
+    themselves, so typical library names correspond to readable module paths.
+
+  • If the R6RS library reference has two symbol elements and the second one is
+    main followed by any number of underscores, then an extra underscore is
+    added to that symbol. This conversion avoids a collision between an
+    explicit main and the implicit main when a library path has a single symbol
+    element.
+
+Examples (assuming a typical Racket installation):
+
+    (rnrs io simple (6))  means  (lib "rnrs/io/simple-6.rkt")
+    (rnrs)                means  (lib "rnrs/main-6.rkt")
+    (rnrs main)           means  (lib "rnrs/main_.rkt")
+    (rnrs (6))            means  (lib "rnrs/main-6.rkt")
+    (racket base)         means  (lib "racket/base.rkt")
+    (achtung!)            means  (lib "achtung%21/main.rkt")
+    (funco new-λ)         means  (lib "funco/new-%ce%bb.rkt")
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

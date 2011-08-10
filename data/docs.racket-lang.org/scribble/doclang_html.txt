@@ -1,0 +1,41 @@
+►  Scribble: The Racket Documentation Tool
+1  Getting Started
+2  @ Syntax
+3  High-Level Scribble API
+4  Scribbling Documentation
+5  Literate Programming
+6  Text Generation
+7  Low-Level Scribble API
+8  Running scribble
+   Index
+▼ 7  Low-Level Scribble API
+ 7.1  Scribble Layers
+ 7.2  @ Reader Internals
+ 7.3  Structures And Processing
+ 7.4  Renderer
+ 7.5  Decoding Text
+ 7.6  Document Language
+ 7.7  Document Reader
+ 7.8  Cross-Reference Utilities
+ 7.9  Extending and Configuring Scribble Output
+7.10  Connecting to "racket"
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+7.6 Document Language
+
+ #lang scribble/doclang
+The scribble/doclang language provides everything from racket/base, except that
+it replaces the #%module-begin form.
+
+The scribble/doclang #%module-begin essentially packages the body of the module
+into a call to decode, binds the result to doc, and exports doc.
+
+Any module-level form other than an expression (e.g., a require or define)
+remains at the top level, and the doc binding is put at the end of the module.
+As usual, a module-top-level begin slices into the module top level.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

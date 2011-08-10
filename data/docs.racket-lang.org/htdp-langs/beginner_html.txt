@@ -1,0 +1,882 @@
+▼  How to Design Programs Languages
+1  Beginning Student
+2  Beginning Student with List Abbreviations
+3  Intermediate Student
+4  Intermediate Student with Lambda
+5  Advanced Student
+   Index
+► 1  Beginning Student
+1.1  Pre-Defined Variables
+1.2  Syntax
+1.3  Pre-defined Functions
+On this page:
+1.1 Pre-Defined Variables
+empty
+true
+false
+1.2 Syntax
+define
+lambda
+quote
+define-struct
+cond
+else
+if
+or
+and
+check-expect
+check-within
+check-error
+check-member-of
+check-range
+require
+1.3 Pre-defined Functions
+1.3.1 Numbers: Integers, Rationals, Reals, Complex, Exacts, Inexacts
+*
++
+-
+/
+<
+<=
+=
+>
+>=
+abs
+acos
+add1
+angle
+asin
+atan
+ceiling
+complex?
+conjugate
+cos
+cosh
+current-seconds
+denominator
+e
+even?
+exact->inexact
+exact?
+exp
+expt
+floor
+gcd
+imag-part
+inexact->exact
+inexact?
+integer->char
+integer-sqrt
+integer?
+lcm
+log
+magnitude
+make-polar
+make-rectangular
+max
+min
+modulo
+negative?
+number->string
+number?
+numerator
+odd?
+pi
+positive?
+quotient
+random
+rational?
+real-part
+real?
+remainder
+round
+sgn
+sin
+sinh
+sqr
+sqrt
+sub1
+tan
+zero?
+1.3.2 Booleans
+boolean=?
+boolean?
+false?
+not
+1.3.3 Symbols
+symbol->string
+symbol=?
+symbol?
+1.3.4 Lists
+append
+assq
+caaar
+caadr
+caar
+cadar
+cadddr
+caddr
+cadr
+car
+cdaar
+cdadr
+cdar
+cddar
+cdddr
+cddr
+cdr
+cons
+cons?
+eighth
+empty?
+fifth
+first
+fourth
+length
+list
+list*
+list-ref
+make-list
+member
+member?
+memq
+memv
+null
+null?
+remove
+rest
+reverse
+second
+seventh
+sixth
+third
+1.3.5 Posns
+make-posn
+posn
+posn-x
+posn-y
+posn?
+1.3.6 Characters
+char->integer
+char-alphabetic?
+char-ci<=?
+char-ci<?
+char-ci=?
+char-ci>=?
+char-ci>?
+char-downcase
+char-lower-case?
+char-numeric?
+char-upcase
+char-upper-case?
+char-whitespace?
+char<=?
+char<?
+char=?
+char>=?
+char>?
+char?
+1.3.7 Strings
+explode
+format
+implode
+int->string
+list->string
+make-string
+replicate
+string
+string->int
+string->list
+string->number
+string->symbol
+string-alphabetic?
+string-append
+string-ci<=?
+string-ci<?
+string-ci=?
+string-ci>=?
+string-ci>?
+string-copy
+string-ith
+string-length
+string-lower-case?
+string-numeric?
+string-ref
+string-upper-case?
+string-whitespace?
+string<=?
+string<?
+string=?
+string>=?
+string>?
+string?
+substring
+1.3.8 Images
+image=?
+image?
+1.3.9 Misc
+=~
+eof
+eof-object?
+eq?
+equal?
+equal~?
+eqv?
+error
+exit
+identity
+struct?
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Beginning Student
+
+          program   =   def-or-expr ...
+                         
+      def-or-expr   =   definition
+                    |   expr
+                    |   test-case
+                    |   library-require
+                         
+       definition   =   (define (name variable variable ...) expr)
+                    |   (define name expr)
+                    |   (define name (lambda (variable variable ...) expr))
+                    |   (define-struct name (name ...))
+                         
+             expr   =   (name expr expr ...)
+                    |   (cond [expr expr] ... [expr expr])
+                    |   (cond [expr expr] ... [else expr])
+                    |   (if expr expr expr)
+                    |   (and expr expr expr ...)
+                    |   (or expr expr expr ...)
+                    |   name
+                    |   ’name
+                    |   number
+                    |   string
+                    |   character
+                         
+        test-case   =   (check-expect expr expr)
+                    |   (check-within expr expr expr)
+                    |   (check-member-of expr expr ...)
+                    |   (check-range expr expr expr)
+                    |   (check-error expr expr)
+                    |   (check-error expr)
+                         
+  library-require   =   (require string)
+                    |   (require (lib string string ...))
+                    |   (require (planet string package))
+                         
+          package   =   (string string number number)
+
+An name or a variable is a sequence of characters not including a space or one
+of the following:
+   " , ' ` ( ) [ ] { } | ; #
+A number is a number such as 123, 3/2, or 5.5.
+A symbol is a quote character followed by a name. A symbol is a value, just
+like 0 or empty.
+A string is enclosed by a pair of ". Unlike symbols, strings may be split into
+characters and manipulated by a variety of functions. For example, "abcdef",
+"This is a string", and "This is a string with \" inside" are all strings.
+A character begins with #\ and has the name of the character. For example, #\a,
+#\b, and #\space are characters.
+In function calls, the function appearing immediatly after the open parenthesis
+can be any functions defined with define or define-struct, or any one of the
+pre-defined functions.
+
+1.1 Pre-Defined Variables
+
+empty : empty?
+The empty list.
+true : boolean?
+The true value.
+false : boolean?
+The false value.
+
+1.2 Syntax
+
+(define (name variable variable ...) expression)
+Defines a function named name. The expression is the body of the function. When
+the function is called, the values of the arguments are inserted into the body
+in place of the variables. The function returns the value of that new
+expression.
+
+The function name’s cannot be the same as that of another function or variable.
+(define name expression)
+Defines a variable called name with the the value of expression. The variable
+name’s cannot be the same as that of another function or variable, and name
+itself must not appear in expression.
+(define name (lambda (variable variable ...) expression))
+An alternate way on defining functions. The name is the name of the function,
+which cannot be the same as that of another function or variable.
+
+A lambda cannot be used outside of this alternate syntax.
+
+’name
+(quote name)
+A quoted name is a symbol. A symbol is a value, just like 0 or empty.
+
+(define-struct structure-name (field-name ...))
+Defines a new structure called structure-name. The structure’s fields are named
+by the field-names. After the define-struct, the following new functions are
+available:
+
+  • make-structure-name : takes a number of arguments equal to the number of
+    fields in the structure, and creates a new instance of that structure.
+
+  • structure-name-field-name : takes an instance of the structure and returns
+    the value in the field named by field-name.
+
+  • structure-name? : takes any value, and returns true if the value is an
+    instance of the structure.
+
+The name of the new functions introduced by define-struct must not be the same
+as that of other functions or variables, otherwise define-struct reports an
+error.
+
+(name expression expression ...)
+Calls the function named name. The value of the call is the value of name’s
+body when every one of the function’s variables are replaced by the values of
+the corresponding expressions.
+
+The function named name must defined before it can be called. The number of
+argument expressions must be the same as the number of arguments expected by
+the function.
+(cond [question-expression answer-expression] ...)
+(cond [question-expression answer-expression]
+      ...
+      [else answer-expression])
+Chooses a clause based on some condition. cond finds the first
+question-expression that evaluates to true, then evaluates the corresponding
+answer-expression.
+
+If none of the question-expressions evaluates to true, cond’s value is the
+answer-expression of the else clause. If there is no else, cond reports an
+error. If the result of a question-expression is neither true nor false, cond
+also reports an error.
+
+else cannot be used outside of cond.
+(if test-expression then-expression else-expression)
+When the value of the test-expression is true, if evaluates the
+then-expression. When the test is false, if evaluates the else-expression.
+
+If the test-expression is neither true nor false, if reports an error.
+(or expression expression expression ...)
+Evaluates to true if all the expressions are true. If any expression is false,
+the or expression immediately evaluates to false (and the expressions to the
+right of that expression are not evaluated.)
+
+If any of the expressions evaluate to a value other than true or false, or
+reports an error.
+(and expression expression expression ...)
+Evaluates to true as soon as one of the expressions is true (and the
+expressions to the right of that expression are not evaluated.) If all of the
+expressions are false, the and expression evaluates to false.
+
+If any of the expressions evaluate to a value other than true or false, and
+reports an error.
+(check-expect expression expected-expression)
+Checks that the first expression evaluates to the same value as the
+expected-expression.
+(check-within expression expected-expression delta-expression)
+Checks that the first expression evaluates to a value within delta-expression
+of the expected-expression. If delta-expression is not a number, check-within
+reports an error.
+(check-error expression match-expression)
+(check-error expression)
+Checks that the expression reports an error, where the error messages matches
+the value of matchexpression, if it is present.
+(check-member-of expression expression expression ...)
+Checks that the value of the first expression as that of one of the following
+expressions.
+(check-range expression low-expression high-expression)
+Checks that the value of the first expression is a number in between the value
+of the low-expression and the high-expression, inclusive.
+(require string)
+Makes the definitions of the module specified by string available in the
+current module (i.e., the current file), where string refers to a file relative
+to the current file.
+
+The string is constrained in several ways to avoid problems with different path
+conventions on different platforms: a / is a directory separator, . always
+means the current directory, .. always means the parent directory, path
+elements can use only a through z (uppercase or lowercase), 0 through 9, -, _,
+and ., and the string cannot be empty or contain a leading or trailing /.
+(require module-name)
+Accesses a file in an installed library. The library name is an identifier with
+the same constraints as for a relative-path string (though without the quotes),
+with the additional constraint that it must not contain a ..
+(require (lib string string ...))
+Accesses a file in an installed library, making its definitions available in
+the current module (i.e., the current file). The first string names the library
+file, and the remaining strings name the collection (and sub-collection, and so
+on) where the file is installed. Each string is constrained in the same way as
+for the (require string) form.
+(require (planet string (string string number number)))
+Accesses a library that is distributed on the internet via the PLaneT server,
+making it definitions available in the current module (i.e., current file).
+
+1.3 Pre-defined Functions
+
+1.3.1 Numbers: Integers, Rationals, Reals, Complex, Exacts, Inexacts
+
+* : (number number number ... -> number)
+Evaluates the product of all of the input numbers.
++ : (number number number ... -> number)
+Evaluates the sum of the input numbers.
+- : (number number ... -> number)
+subtracts the second (and following) number(s) from the first; negate the
+number if there is only one argument.
+/ : (number number number ... -> number)
+Divides the first by the second (and all following) number(s); try (/ 3 4) and
+(/ 3 2 2) only the first number can be zero.
+< : (real real real ... -> boolean)
+Compares real numbers for less-than.
+<= : (real real real ... -> boolean)
+Compares real numbers for less-than or equality.
+= : (number number number ... -> boolean)
+Compares numbers for equality.
+> : (real real real ... -> boolean)
+Compares real numbers for greater-than.
+>= : (real real ... -> boolean)
+Compares real numbers for greater-than or equality.
+abs : (real -> real)
+Evaluates the absolute value of a real number.
+acos : (number -> number)
+Evaluates the arccosine (inverse of cos) of a number.
+add1 : (number -> number)
+Evaluates a number one larger than a given number.
+angle : (number -> real)
+Extracts the angle from a complex number.
+asin : (number -> number)
+Evaluates the arcsine (inverse of sin) of a number.
+atan : (number (number) -> number)
+Evaluates the arctan of the given number or the ratio of the two given numbers.
+ceiling : (real -> integer)
+Determines the closest integer (exact or inexact) above a real number.
+complex? : (any -> boolean)
+Determines whether some value is complex.
+conjugate : (number -> number)
+Evaluates the conjugate of a complex number.
+cos : (number -> number)
+Evaluates the cosine of a number (radians).
+cosh : (number -> number)
+Evaluates the hyperbolic cosine of a number.
+current-seconds : (-> integer)
+Evaluates the current time in seconds elapsed (since a platform-specific
+starting date).
+denominator : (rat -> integer)
+Evaluates the denominator of a rational.
+e : real
+Euler’s number.
+even? : (integer -> boolean)
+Determines if some integer (exact or inexact) is even or not.
+exact->inexact : (number -> number)
+Converts an exact number to an inexact one.
+exact? : (number -> boolean)
+Determines whether some number is exact.
+exp : (number -> number)
+Evaluates e raised to a number.
+expt : (number number -> number)
+Evaluates the power of the first to the second number.
+floor : (real -> integer)
+Determines the closest integer (exact or inexact) below a real number.
+gcd : (integer integer ... -> integer)
+Evaluates the greatest common divisior of two integers (exact or inexact).
+imag-part : (number -> real)
+Extracts the imaginary part from a complex number.
+inexact->exact : (number -> number)
+Approximates an inexact number by an exact one.
+inexact? : (number -> boolean)
+Determines whether some number is inexact.
+integer->char : (integer -> char)
+Lookups the character that corresponds to the given integer (exact only!) in
+the ASCII table (if any).
+integer-sqrt : (number -> integer)
+Evaluates the integer (exact or inexact) square root of a number.
+integer? : (any -> boolean)
+Determines whether some value is an integer (exact or inexact).
+lcm : (integer integer ... -> integer)
+Evaluates the least common multiple of two integers (exact or inexact).
+log : (number -> number)
+Evaluates the base-e logarithm of a number.
+magnitude : (number -> real)
+Determines the magnitude of a complex number.
+make-polar : (real real -> number)
+Creates a complex from a magnitude and angle.
+make-rectangular : (real real -> number)
+Creates a complex from a real and an imaginary part.
+max : (real real ... -> real)
+Determines the largest number.
+min : (real real ... -> real)
+Determines the smallest number.
+modulo : (integer integer -> integer)
+Finds the remainder of the division of the first number by the second; try
+(modulo 4 3) (modulo 4 -3).
+negative? : (number -> boolean)
+Determines if some value is strictly smaller than zero.
+number->string : (number -> string)
+Converts a number to a string.
+number? : (any -> boolean)
+Determines whether some value is a number.
+numerator : (rat -> integer)
+Evaluates the numerator of a rational.
+odd? : (integer -> boolean)
+Determines if some integer (exact or inexact) is odd or not.
+pi : real
+The ratio of a circle’s circumference to its diameter.
+positive? : (number -> boolean)
+Determines if some value is strictly larger than zero.
+quotient : (integer integer -> integer)
+Divides the first integer (exact or inexact) into the second; try (quotient 3
+4) and (quotient 4 3).
+random : (integer -> integer)
+Generates a random natural number less than some given integer (exact only!).
+rational? : (any -> boolean)
+Determines whether some value is a rational number.
+real-part : (number -> real)
+Extracts the real part from a complex number.
+real? : (any -> boolean)
+Determines whether some value is a real number.
+remainder : (integer integer -> integer)
+Determines the remainder of dividing the first by the second integer (exact or
+inexact).
+round : (real -> integer)
+Rounds a real number to an integer (rounds to even to break ties).
+sgn : (real -> (union 1 1.0 0 0.0 -1 -1.0))
+Evaluates the sign of a real number.
+sin : (number -> number)
+Evaluates the sine of a number (radians).
+sinh : (number -> number)
+Evaluates the hyperbolic sine of a number.
+sqr : (number -> number)
+Evaluates the square of a number.
+sqrt : (number -> number)
+Evaluates the square root of a number.
+sub1 : (number -> number)
+Evaluates a number one smaller than a given number.
+tan : (number -> number)
+Evaluates the tangent of a number (radians).
+zero? : (number -> boolean)
+Determines if some value is zero or not.
+
+1.3.2 Booleans
+
+boolean=? : (boolean boolean -> boolean)
+Determines whether two booleans are equal.
+boolean? : (any -> boolean)
+Determines whether some value is a boolean.
+false? : (any -> boolean)
+Determines whether a value is false.
+not : (boolean -> boolean)
+Evaluates the negation of a boolean value.
+
+1.3.3 Symbols
+
+symbol->string : (symbol -> string)
+Converts a symbol to a string.
+symbol=? : (symbol symbol -> boolean)
+Determines whether two symbols are equal.
+symbol? : (any -> boolean)
+Determines whether some value is a symbol.
+
+1.3.4 Lists
+
+           ((listof any)
+            (listof any)
+append  :   (listof any)
+            ...
+            ->
+            (listof any))
+Creates a single list from several, by juxtaposition of the items.
+         (X
+assq  :   (listof (cons X Y))
+          ->
+          (union false (cons X Y)))
+Determines whether some item is the first item of a pair in a list of pairs.
+          ((cons
+            (cons (cons W (listof Z)) (listof Y))
+caaar  :    (listof X))
+           ->
+           W)
+Selects the first item of the first list in the first list of a list.
+          ((cons
+            (cons (cons W (listof Z)) (listof Y))
+caadr  :    (listof X))
+           ->
+           (listof Z))
+Selects the rest of the first list in the first list of a list.
+caar : ((cons (cons Z (listof Y)) (listof X)) -> Z)
+Selects the first item of the first list in a list.
+          ((cons (cons W (cons Z (listof Y))) (listof X))
+cadar  :   ->
+           Z)
+Selects the second item of the first list of a list.
+cadddr : ((listof Y) -> Y)
+Selects the fourth item of a non-empty list.
+caddr : ((cons W (cons Z (cons Y (listof X)))) -> Y)
+Selects the third item of a non-empty list.
+cadr : ((cons Z (cons Y (listof X))) -> Y)
+Selects the second item of a non-empty list.
+car : ((cons Y (listof X)) -> Y)
+Selects the first item of a non-empty list.
+          ((cons
+            (cons (cons W (listof Z)) (listof Y))
+cdaar  :    (listof X))
+           ->
+           (listof Z))
+Selects the rest of the first list in the first list of a list.
+          ((cons W (cons (cons Z (listof Y)) (listof X)))
+cdadr  :   ->
+           (listof Y))
+Selects the rest of the first list in the rest of a list.
+         ((cons (cons Z (listof Y)) (listof X))
+cdar  :   ->
+          (listof Y))
+Selects the rest of a non-empty list in a list.
+          ((cons (cons W (cons Z (listof Y))) (listof X))
+cddar  :   ->
+           (listof Y))
+Selects the rest of the rest of the first list of a list.
+          ((cons W (cons Z (cons Y (listof X))))
+cdddr  :   ->
+           (listof X))
+Selects the rest of the rest of the rest of a list.
+cddr : ((cons Z (cons Y (listof X))) -> (listof X))
+Selects the rest of the rest of a list.
+cdr : ((cons Y (listof X)) -> (listof X))
+Selects the rest of a non-empty list.
+cons : (X (listof X) -> (listof X))
+Constructs a list.
+cons? : (any -> boolean)
+Determines whether some value is a constructed list.
+eighth : ((listof Y) -> Y)
+Selects the eighth item of a non-empty list.
+empty? : (any -> boolean)
+Determines whether some value is the empty list.
+fifth : ((listof Y) -> Y)
+Selects the fifth item of a non-empty list.
+first : ((cons Y (listof X)) -> Y)
+Selects the first item of a non-empty list.
+fourth : ((listof Y) -> Y)
+Selects the fourth item of a non-empty list.
+length : ((listof any) -> number)
+Evaluates the number of items on a list.
+list : (any ... -> (listof any))
+Constructs a list of its arguments.
+list* : (any ... (listof any) -> (listof any))
+Constructs a list by adding multiple items to a list.
+list-ref : ((listof X) natural-number -> X)
+Extracts the indexed item from the list.
+make-list : (natural-number any -> (listof any))
+Constructs a list of k (the first argument) copies of x (the second argument).
+member : (any (listof any) -> boolean)
+Determines whether some value is on the list (comparing values with equal?).
+member? : (any (listof any) -> boolean)
+Determines whether some value is on the list (comparing values with equal?).
+memq : (any (listof any) -> (union false list))
+Determines whether some value is on some list if so, it produces the suffix of
+the list that starts with x if not, it produces false. (It compares values with
+the eq? predicate.)
+memv : (any (listof any) -> (union false list))
+Determines whether some value is on the list if so, it produces the suffix of
+the list that starts with x if not, it produces false. (It compares values with
+the eqv? predicate.)
+null : empty
+The empty list.
+null? : (any -> boolean)
+Determines whether some value is the empty list.
+remove : (any (listof any) -> (listof any))
+Constructs a list like the given one with the first occurrence of the given
+item removed (comparing values with equal?).
+rest : ((cons Y (listof X)) -> (listof X))
+Selects the rest of a non-empty list.
+reverse : ((listof any) -> list)
+Creates a reversed version of a list.
+second : ((cons Z (cons Y (listof X))) -> Y)
+Selects the second item of a non-empty list.
+seventh : ((listof Y) -> Y)
+Selects the seventh item of a non-empty list.
+sixth : ((listof Y) -> Y)
+Selects the sixth item of a non-empty list.
+third : ((cons W (cons Z (cons Y (listof X)))) -> Y)
+Selects the third item of a non-empty list.
+
+1.3.5 Posns
+
+make-posn : (number number -> posn)
+Constructs a posn.
+posn : signature
+Signature for posns.
+posn-x : (posn -> number)
+Extracts the x component of a posn.
+posn-y : (posn -> number)
+Extracts the y component of a posn.
+posn? : (anything -> boolean)
+Determines if its input is a posn.
+
+1.3.6 Characters
+
+char->integer : (char -> integer)
+Lookups the number that corresponds to the given character in the ASCII table
+(if any).
+char-alphabetic? : (char -> boolean)
+Determines whether a character represents an alphabetic character.
+char-ci<=? : (char char char ... -> boolean)
+Determines whether a character precedes another (or is equal to it) in a
+case-insensitive manner.
+char-ci<? : (char char char ... -> boolean)
+Determines whether a character precedes another in a case-insensitive manner.
+char-ci=? : (char char char ... -> boolean)
+Determines whether two characters are equal in a case-insensitive manner.
+char-ci>=? : (char char char ... -> boolean)
+Determines whether a character succeeds another (or is equal to it) in a
+case-insensitive manner.
+char-ci>? : (char char char ... -> boolean)
+Determines whether a character succeeds another in a case-insensitive manner.
+char-downcase : (char -> char)
+Determines the equivalent lower-case character.
+char-lower-case? : (char -> boolean)
+Determines whether a character is a lower-case character.
+char-numeric? : (char -> boolean)
+Determines whether a character represents a digit.
+char-upcase : (char -> char)
+Determines the equivalent upper-case character.
+char-upper-case? : (char -> boolean)
+Determines whether a character is an upper-case character.
+char-whitespace? : (char -> boolean)
+Determines whether a character represents space.
+char<=? : (char char char ... -> boolean)
+Determines whether a character precedes another (or is equal to it).
+char<? : (char char char ... -> boolean)
+Determines whether a character precedes another.
+char=? : (char char char ... -> boolean)
+Determines whether two characters are equal.
+char>=? : (char char char ... -> boolean)
+Determines whether a character succeeds another (or is equal to it).
+char>? : (char char char ... -> boolean)
+Determines whether a character succeeds another.
+char? : (any -> boolean)
+Determines whether a value is a character.
+
+1.3.7 Strings
+
+explode : (string -> (listof string))
+Translates a string into a list of 1-letter strings.
+format : (string any ... -> string)
+Formats a string, possibly embedding values.
+implode : ((listof string) -> string)
+Concatenates the list of 1-letter strings into one string.
+int->string : (integer -> string)
+Converts an integer in [0,55295] or [57344 1114111] to a 1-letter string.
+list->string : ((listof char) -> string)
+Converts a s list of characters into a string.
+make-string : (nat char -> string)
+Produces a string of given length from a single given character.
+replicate : (nat string -> string)
+Replicates the given string.
+string : (char ... -> string)
+Builds a string of the given characters.
+string->int : (string -> integer)
+Converts a 1-letter string to an integer in [0,55295] or [57344, 1114111].
+string->list : (string -> (listof char))
+Converts a string into a list of characters.
+string->number : (string -> (union number false))
+Converts a string into a number, produce false if impossible.
+string->symbol : (string -> symbol)
+Converts a string into a symbol.
+string-alphabetic? : (string -> boolean)
+Determines whether all ’letters’ in the string are alphabetic.
+string-append : (string ... -> string)
+Juxtaposes the characters of several strings.
+string-ci<=? : (string string string ... -> boolean)
+Determines whether one string alphabetically precedes another (or is equal to
+it) in a case-insensitive manner.
+string-ci<? : (string string string ... -> boolean)
+Determines whether one string alphabetically precedes another in a
+case-insensitive manner.
+string-ci=? : (string string string ... -> boolean)
+Compares two strings character-wise in a case-insensitive manner.
+string-ci>=? : (string string string ... -> boolean)
+Determines whether one string alphabetically succeeds another (or is equal to
+it) in a case-insensitive manner.
+string-ci>? : (string string string ... -> boolean)
+Determines whether one string alphabetically succeeds another in a
+case-insensitive manner.
+string-copy : (string -> string)
+Copies a string.
+string-ith : (string nat -> string)
+Extracts the ith 1-letter substring from the given one.
+string-length : (string -> nat)
+Determines the length of a string.
+string-lower-case? : (string -> boolean)
+Determines whether all ’letters’ in the string are lower case.
+string-numeric? : (string -> boolean)
+Determines whether all ’letters’ in the string are numeric.
+string-ref : (string nat -> char)
+Extracts the i-the character from a string.
+string-upper-case? : (string -> boolean)
+Determines whether all ’letters’ in the string are upper case.
+string-whitespace? : (string -> boolean)
+Determines whether all ’letters’ in the string are white space.
+string<=? : (string string string ... -> boolean)
+Determines whether one string alphabetically precedes another (or is equal to
+it).
+string<? : (string string string ... -> boolean)
+Determines whether one string alphabetically precedes another.
+string=? : (string string string ... -> boolean)
+Compares two strings character-wise.
+string>=? : (string string string ... -> boolean)
+Determines whether one string alphabetically succeeds another (or is equal to
+it).
+string>? : (string string string ... -> boolean)
+Determines whether one string alphabetically succeeds another.
+string? : (any -> boolean)
+Determines whether a value is a string.
+substring : (string nat nat -> string)
+Extracts the substring starting at a 0-based index up to the second 0-based
+index (exclusive).
+
+1.3.8 Images
+
+image=? : (image image -> boolean)
+Determines whether two images are equal.
+image? : (any -> boolean)
+Determines whether a value is an image.
+
+1.3.9 Misc
+
+=~ : (number number non-negative-real -> boolean)
+Checks whether two numbers are within some amount (the third argument) of
+either other.
+eof : eof
+The end-of-file value.
+eof-object? : (any -> boolean)
+Determines whether some value is the end-of-file value.
+eq? : (any any -> boolean)
+Determines whether two values are equivalent from the computer’s perspective
+(intensional).
+equal? : (any any -> boolean)
+Determines whether two values are structurally equal where basic values are
+compared with the eqv? predicate.
+equal~? : (any any non-negative-real -> boolean)
+Compares like equal? on the first two arguments, except using =~ in the case of
+numbers.
+eqv? : (any any -> boolean)
+Determines whether two values are equivalent from the perspective of all
+functions that can be applied to it (extensional).
+error : (any ... -> void)
+signals an error, combining the given values into an error message. If any of
+the values’ printed representations is too long, it is truncated and “...” is
+put into the string. If the first value is a symbol, it is treated specially;
+it is suffixed with a colon and a space (the intention is that the symbol is
+the name of the function signalling the error).
+exit : (-> void)
+Exits the running program.
+identity : (any -> any)
+Returns the argument unchanged.
+struct? : (any -> boolean)
+Determines whether some value is a structure.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

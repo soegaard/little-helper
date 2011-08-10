@@ -1,0 +1,623 @@
+Title
+
+SRFI 69: Basic hash tables
+
+Author
+
+Panu Kalliokoski
+
+Status
+
+This SRFI is currently in ``final'' status. To see an explanation of each
+status that a SRFI can hold, see here. It will remain in draft status until
+2005/09/09, or as amended. To provide input on this SRFI, please
+mailto:srfi-69@srfi.schemers.org. See instructions here to subscribe to the
+list. You can access previous messages via the archive of the mailing list.
+
+  • Received: 2005/04/25
+  • Revised: 2005/05/09
+  • Revised: 2005/08/03
+  • Revised: 2005/08/10
+  • Draft extended: 2005/08/10 - 2005/09/09
+  • Revised: 2005/08/30
+  • Final: 2005/09/14
+
+Abstract
+
+This SRFI defines basic hash tables. Hash tables are widely recognised as a
+fundamental data structure for a wide variety of applications. A hash table is
+a data structure that:
+
+ 1. provides a mapping from some set of keys to some set of values associated
+    to those keys
+ 2. has no intrinsic order for the (key, value) associations it contains
+ 3. supports in-place modification as the primary means of setting the contents
+    of a hash table
+ 4. provides key lookup and destructive update in amortised constant time,
+    provided that a good hash function is used.
+
+This SRFI aims to accomplish these goals:
+
+ 1. to provide a consistent, generic and widely applicable API for hash tables
+ 2. to improve code portability by providing a standard hash table facility
+    with guaranteed behaviour
+ 3. to help the programmer by defining utility routines that account for the
+    most common situations of using hash tables.
+
+Issues
+
+There is no single best way to make hash tables. The tables presented in this
+SRFI aim at being both conceptually simple and usable for a wide variety of
+applications. Even though a portable implementation is provided, Scheme
+implementations can speed things up considerably by e.g. providing an internal
+hash function for symbols. Moreover, almost every Scheme implementation already
+has some kind of low-level hash table functionality, because that's the natural
+way to implement the global environment, and specifically, to provide support
+for string->symbol. There might be some benefit in integration between
+implementation-specific environment data types and the hash table API presented
+here; however, these issues are left open.
+
+This SRFI does not conform to the interface of maps presented in SRFI 44.
+Following SRFI 44 would seriously cripple the interface of hash tables. The
+naming of the operations for maps in SRFI 44 goes against common use and is
+unnatural. However, this SRFI has been written so that it does not prevent a
+SRFI-44 API to hash tables. An implementation supporting both SRFI 44 and this
+SRFI is encouraged to provide a SRFI 44 interface to hash tables in addition to
+the one presented here.
+
+Rationale
+
+Hash tables are widely recognised as a fundamental data structure for many
+kinds of computational tasks. Thus far, there is no existing standard for
+Scheme hash tables; however, almost every non-minimal Scheme implementation
+provides some kind of hash table functionality.
+
+Alas, although somewhat similar, these hash table APIs have many differences:
+some trivial, like the naming of certain functions; some complex, like
+revealing different aspects of the internal implementation to the user; some
+coarse, like requiring keys to be of some specific type(s); some subtle, like
+requiring the user to guess the size of the hash table in advance to get
+optimal performance. As a result, the existing hash table facilities cannot be
+used to write portable programs.
+
+The primary aim of this SRFI is to establish a standard API for hash tables so
+that portable programs can be written that make efficient use of common hash
+table functionality. The SRFI resolves discrepancies that exist between the
+various hash table API's with respect to naming and semantics of hash table
+operations. A lot of effort has been put into making the API consistent, simple
+and generic. The SRFI also defines some of the most common utility routines
+that would otherwise need to be written and rewritten for various applications.
+
+Incorporating this SRFI as a standard feature in Scheme implementations makes
+it possible to write efficient and portable programs that use hash tables.
+
+Specification
+
+Names defined in this SRFI:
+
+Type constructors and predicate
+    make-hash-table, hash-table?, alist->hash-table
+Reflective queries
+    hash-table-equivalence-function, hash-table-hash-function
+Dealing with single elements
+    hash-table-ref, hash-table-ref/default, hash-table-set!, hash-table-delete!
+    , hash-table-exists?, hash-table-update!, hash-table-update!/default
+Dealing with the whole contents
+    hash-table-size, hash-table-keys, hash-table-values, hash-table-walk,
+    hash-table-fold, hash-table->alist, hash-table-copy, hash-table-merge!
+Hashing
+    hash, string-hash, string-ci-hash, hash-by-identity
+
+An implementation that does not provide hash-table-ref, hash-table-set!,
+hash-table-delete!, hash-table-update!, hash-table-exists?, and hash-table-size
+in amortised constant time (when a good hash function is used), or fails to
+provide good hash function definitions for hash, string-hash, string-ci-hash,
+and hash-by-identity, does not conform to this SRFI.
+
+Hash table implementations are allowed to rely on the fact that the hash value
+of a key in hash table does not change. In most cases, modifying a key in-place
+after it has been inserted into the hash table will violate this constraint and
+thus leads to unspecified behaviour.
+
+Type constructors and predicate
+
+Procedure: make-hash-table [ equal? [ hash [ args … ]]] → hash-table
+
+Create a new hash table with no associations. equal? is a predicate that should
+accept two keys and return a boolean telling whether they denote the same key
+value; it defaults to equal?.
+
+hash is a hash function, and defaults to an appropriate hash function for the
+given equal? predicate (see section Hashing). However, an acceptable default is
+not guaranteed to be given for any equivalence predicate coarser than equal?,
+except for string-ci=?.[1] The function hash must be acceptable for equal?, so
+if you use coarser equivalence than equal? other than string-ci=?, you must
+always provide the function hash yourself.
+[1] An equivalence predicate c1 is coarser than a equivalence predicate c2 iff
+there exist values x and y such that (and (c1 x y) (not (c2 x y))).
+
+Implementations are allowed to use the rest args for implementation-specific
+extensions. Be warned, though, that using these extensions will make your
+program less portable.
+
+Procedure: hash-table? obj → boolean
+
+A predicate to test whether a given object obj is a hash table. The hash table
+type should be disjoint from all other types, if possible.
+
+Procedure: alist->hash-table alist [ equal? [ hash [ args … ]]] → hash-table
+
+Takes an `association list' alist and creates a hash table hash-table which
+maps the car of every element in alist to the cdr of corresponding elements in
+alist. equal?, hash, and args are interpreted as in make-hash-table. If some
+key occurs multiple times in alist, the value in the first association will
+take precedence over later ones. (Note: the choice of using cdr (instead of
+cadr) for values tries to strike balance between the two approaches: using cadr
+would render this procedure unusable for cdr alists, but not vice versa.)
+
+The rest args are passed to make-hash-table and can thus be used for
+implementation-specific extensions.
+
+Reflective queries
+
+Procedure: hash-table-equivalence-function hash-table
+
+Returns the equivalence predicate used for keys of hash-table.
+
+Procedure: hash-table-hash-function hash-table
+
+Returns the hash function used for keys of hash-table.
+
+Dealing with single elements
+
+Procedure: hash-table-ref hash-table key [ thunk ] → value
+
+This procedure returns the value associated to key in hash-table. If no value
+is associated to key and thunk is given, it is called with no arguments and its
+value is returned; if thunk is not given, an error is signalled. Given a good
+hash function, this operation should have an (amortised) complexity of O(1)
+with respect to the number of associations in hash-table. (Note: this rules out
+implementation by association lists or fixed-length hash tables.)
+
+Procedure: hash-table-ref/default hash-table key default → value
+
+Evaluates to the same value as (hash-table-ref hash-table key (lambda ()
+default)). Given a good hash function, this operation should have an
+(amortised) complexity of O(1) with respect to the number of associations in
+hash-table. (Note: this rules out implementation by association lists or
+fixed-length hash tables.)
+
+Procedure: hash-table-set! hash-table key value → undefined
+
+This procedure sets the value associated to key in hash-table. The previous
+association (if any) is removed. Given a good hash function, this operation
+should have an (amortised) complexity of O(1) with respect to the number of
+associations in hash-table. (Note: this rules out implementation by association
+lists or fixed-length hash tables.)
+
+Procedure: hash-table-delete! hash-table key → undefined
+
+This procedure removes any association to key in hash-table. It is not an error
+if no association for that key exists; in this case, nothing is done. Given a
+good hash function, this operation should have an (amortised) complexity of O
+(1) with respect to the number of associations in hash-table. (Note: this rules
+out implementation by association lists or fixed-length hash tables.)
+
+Procedure: hash-table-exists? hash-table key → boolean
+
+This predicate tells whether there is any association to key in hash-table.
+Given a good hash function, this operation should have an (amortised)
+complexity of O(1) with respect to the number of associations in hash-table.
+(Note: this rules out implementation by association lists or fixed-length hash
+tables.)
+
+Procedure: hash-table-update! hash-table key function [ thunk ] → undefined
+
+Semantically equivalent to, but may be implemented more efficiently than, the
+following code:
+
+(hash-table-set! hash-table key
+                 (function (hash-table-ref hash-table key thunk)))
+
+Procedure: hash-table-update!/default hash-table key function default →
+undefined
+
+Behaves as if it evaluates to (hash-table-update! hash-table key function
+(lambda () default)).
+
+Dealing with the whole contents
+
+Procedure: hash-table-size hash-table → integer
+
+Returns the number of associations in hash-table. This operation must have a
+complexity of O(1) with respect to the number of associations in hash-table.
+
+Procedure: hash-table-keys hash-table → list
+
+Returns a list of keys in hash-table. The order of the keys is unspecified.
+
+Procedure: hash-table-values hash-table → list
+
+Returns a list of values in hash-table. The order of the values is unspecified,
+and is not guaranteed to match the order of keys in the result of
+hash-table-keys.
+
+Procedure: hash-table-walk hash-table proc → unspecified
+
+proc should be a function taking two arguments, a key and a value. This
+procedure calls proc for each association in hash-table, giving the key of the
+association as key and the value of the association as value. The results of
+proc are discarded. The order in which proc is called for the different
+associations is unspecified.
+
+(Note: in some implementations, there is a procedure called hash-table-map
+which does the same as this procedure. However, in other implementations,
+hash-table-map does something else. In no implementation that I know of,
+hash-table-map does a real functorial map that lifts an ordinary function to
+the domain of hash tables. Because of these reasons, hash-table-map is left
+outside this SRFI.)
+
+Procedure: hash-table-fold hash-table f init-value → final-value
+
+This procedure calls f for every association in hash-table with three
+arguments: the key of the association key, the value of the association value,
+and an `accumulated value', val. val is init-value for the first invocation of
+f, and for subsequent invocations of f, the return value of the previous
+invocation of f. The value final-value returned by hash-table-fold is the
+return value of the last invocation of f. The order in which f is called for
+different associations is unspecified.
+
+Procedure: hash-table->alist hash-table → alist
+
+Returns an association list such that the car of each element in alist is a key
+in hash-table and the corresponding cdr of each element in alist is the value
+associated to the key in hash-table. The order of the elements is unspecified.
+
+The following should always produce a hash table with the same mappings as a
+hash table h:
+
+(alist->hash-table (hash-table->alist h)
+                        (hash-table-equivalence-function h)
+                        (hash-table-hash-function h))
+
+Procedure: hash-table-copy hash-table → hash-table
+
+Returns a new hash table with the same equivalence predicate, hash function and
+mappings as in hash-table.
+
+Procedure: hash-table-merge! hash-table1 hash-table2 → hash-table
+
+Adds all mappings in hash-table2 into hash-table1 and returns the resulting
+hash table. This function may modify hash-table1 destructively.
+
+Hashing
+
+Hashing means the act of taking some value and producing a number from the
+value. A hash function is a function that does this. Every equivalence
+predicate e has a set of acceptable hash functions for that predicate; a hash
+function hash is acceptable iff (e obj1 obj2) → (= (hash obj1) (hash obj2)).
+
+A hash function h is good for a equivalence predicate e if it distributes the
+result numbers (hash values) for non-equal objects (by e) as uniformly as
+possible over the numeric range of hash values, especially in the case when
+some (non-equal) objects resemble each other by e.g. having common
+subsequences. This definition is vague but should be enough to assert that e.g.
+a constant function is not a good hash function.
+
+When the definition of make-hash-table above talks about an `appropriate'
+hashing function for e, it means a hashing function that gives decent
+performance (for the hashing operation) while being both acceptable and good
+for e. This definition, too, is intentionally vague.
+
+Procedure: hash object [ bound ] → integer
+
+Produces a hash value for object in the range ( 0, bound (. If bound is not
+given, the implementation is free to choose any bound, given that the default
+bound is greater than the size of any imaginable hash table in a normal
+application. (This is so that the implementation may choose some very big value
+in fixnum range for the default bound.) This hash function is acceptable for
+equal?.
+
+Procedure: string-hash string [ bound ] → integer
+
+The same as hash, except that the argument string must be a string.
+
+Procedure: string-ci-hash string [ bound ] → integer
+
+The same as string-hash, except that the case of characters in string does not
+affect the hash value produced.
+
+Procedure: hash-by-identity object [ bound ] → integer
+
+The same as hash, except that this function is only guaranteed to be acceptable
+for eq?. The reason for providing this function is that it might be implemented
+significantly more efficiently than hash. Implementations are encouraged to
+provide this function as a builtin.
+
+Implementation
+
+This implementation relies on SRFI-9 for distinctness of the hash table type,
+and on SRFI-23 for error reporting. Otherwise, the implementation is pure R5RS.
+
+
+(define *default-bound* (- (expt 2 29) 3))
+
+(define (%string-hash s ch-conv bound)
+  (let ((hash 31)
+        (len (string-length s)))
+    (do ((index 0 (+ index 1)))
+      ((>= index len) (modulo hash bound))
+      (set! hash (modulo (+ (* 37 hash)
+                            (char->integer (ch-conv (string-ref s index))))
+                         *default-bound*)))))
+
+(define (string-hash s . maybe-bound)
+  (let ((bound (if (null? maybe-bound) *default-bound* (car maybe-bound))))
+    (%string-hash s (lambda (x) x) bound)))
+
+(define (string-ci-hash s . maybe-bound)
+  (let ((bound (if (null? maybe-bound) *default-bound* (car maybe-bound))))
+    (%string-hash s char-downcase bound)))
+
+(define (symbol-hash s . maybe-bound)
+  (let ((bound (if (null? maybe-bound) *default-bound* (car maybe-bound))))
+    (%string-hash (symbol->string s) (lambda (x) x) bound)))
+
+(define (hash obj . maybe-bound)
+  (let ((bound (if (null? maybe-bound) *default-bound* (car maybe-bound))))
+    (cond ((integer? obj) (modulo obj bound))
+          ((string? obj) (string-hash obj bound))
+          ((symbol? obj) (symbol-hash obj bound))
+          ((real? obj) (modulo (+ (numerator obj) (denominator obj)) bound))
+          ((number? obj)
+           (modulo (+ (hash (real-part obj)) (* 3 (hash (imag-part obj))))
+                   bound))
+          ((char? obj) (modulo (char->integer obj) bound))
+          ((vector? obj) (vector-hash obj bound))
+          ((pair? obj) (modulo (+ (hash (car obj)) (* 3 (hash (cdr obj))))
+                               bound))
+          ((null? obj) 0)
+          ((not obj) 0)
+          ((procedure? obj) (error "hash: procedures cannot be hashed" obj))
+          (else 1))))
+
+(define hash-by-identity hash)
+
+(define (vector-hash v bound)
+  (let ((hashvalue 571)
+        (len (vector-length v)))
+    (do ((index 0 (+ index 1)))
+      ((>= index len) (modulo hashvalue bound))
+      (set! hashvalue (modulo (+ (* 257 hashvalue) (hash (vector-ref v index)))
+                              *default-bound*)))))
+
+(define %make-hash-node cons)
+(define %hash-node-set-value! set-cdr!)
+(define %hash-node-key car)
+(define %hash-node-value cdr)
+
+(define-record-type <srfi-hash-table>
+  (%make-hash-table size hash compare associate entries)
+  hash-table?
+  (size hash-table-size hash-table-set-size!)
+  (hash hash-table-hash-function)
+  (compare hash-table-equivalence-function)
+  (associate hash-table-association-function)
+  (entries hash-table-entries hash-table-set-entries!))
+
+(define *default-table-size* 64)
+
+(define (appropriate-hash-function-for comparison)
+  (or (and (eq? comparison eq?) hash-by-identity)
+      (and (eq? comparison string=?) string-hash)
+      (and (eq? comparison string-ci=?) string-ci-hash)
+      hash))
+
+(define (make-hash-table . args)
+  (let* ((comparison (if (null? args) equal? (car args)))
+         (hash
+           (if (or (null? args) (null? (cdr args)))
+             (appropriate-hash-function-for comparison) (cadr args)))
+         (size
+           (if (or (null? args) (null? (cdr args)) (null? (cddr args)))
+             *default-table-size* (caddr args)))
+         (association
+           (or (and (eq? comparison eq?) assq)
+               (and (eq? comparison eqv?) assv)
+               (and (eq? comparison equal?) assoc)
+               (letrec
+                 ((associate
+                    (lambda (val alist)
+                      (cond ((null? alist) #f)
+                            ((comparison val (caar alist)) (car alist))
+                            (else (associate val (cdr alist)))))))
+                 associate))))
+    (%make-hash-table 0 hash comparison association (make-vector size '()))))
+
+(define (make-hash-table-maker comp hash)
+  (lambda args (apply make-hash-table (cons comp (cons hash args)))))
+(define make-symbol-hash-table
+  (make-hash-table-maker eq? symbol-hash))
+(define make-string-hash-table
+  (make-hash-table-maker string=? string-hash))
+(define make-string-ci-hash-table
+  (make-hash-table-maker string-ci=? string-ci-hash))
+(define make-integer-hash-table
+  (make-hash-table-maker = modulo))
+
+(define (%hash-table-hash hash-table key)
+  ((hash-table-hash-function hash-table)
+     key (vector-length (hash-table-entries hash-table))))
+
+(define (%hash-table-find entries associate hash key)
+  (associate key (vector-ref entries hash)))
+
+(define (%hash-table-add! entries hash key value)
+  (vector-set! entries hash
+               (cons (%make-hash-node key value)
+                     (vector-ref entries hash))))
+
+(define (%hash-table-delete! entries compare hash key)
+  (let ((entrylist (vector-ref entries hash)))
+    (cond ((null? entrylist) #f)
+          ((compare key (caar entrylist))
+           (vector-set! entries hash (cdr entrylist)) #t)
+          (else
+            (let loop ((current (cdr entrylist)) (previous entrylist))
+              (cond ((null? current) #f)
+                    ((compare key (caar current))
+                     (set-cdr! previous (cdr current)) #t)
+                    (else (loop (cdr current) current))))))))
+
+(define (%hash-table-walk proc entries)
+  (do ((index (- (vector-length entries) 1) (- index 1)))
+    ((< index 0)) (for-each proc (vector-ref entries index))))
+
+(define (%hash-table-maybe-resize! hash-table)
+  (let* ((old-entries (hash-table-entries hash-table))
+         (hash-length (vector-length old-entries)))
+    (if (> (hash-table-size hash-table) hash-length)
+      (let* ((new-length (* 2 hash-length))
+             (new-entries (make-vector new-length '()))
+             (hash (hash-table-hash-function hash-table)))
+        (%hash-table-walk
+          (lambda (node)
+            (%hash-table-add! new-entries
+                              (hash (%hash-node-key node) new-length)
+                              (%hash-node-key node) (%hash-node-value node)))
+          old-entries)
+        (hash-table-set-entries! hash-table new-entries)))))
+
+(define (hash-table-ref hash-table key . maybe-default)
+  (cond ((%hash-table-find (hash-table-entries hash-table)
+                           (hash-table-association-function hash-table)
+                           (%hash-table-hash hash-table key) key)
+         => %hash-node-value)
+        ((null? maybe-default)
+         (error "hash-table-ref: no value associated with" key))
+        (else ((car maybe-default)))))
+
+(define (hash-table-ref/default hash-table key default)
+  (hash-table-ref hash-table key (lambda () default)))
+
+(define (hash-table-set! hash-table key value)
+  (let ((hash (%hash-table-hash hash-table key))
+        (entries (hash-table-entries hash-table)))
+    (cond ((%hash-table-find entries
+                             (hash-table-association-function hash-table)
+                             hash key)
+           => (lambda (node) (%hash-node-set-value! node value)))
+          (else (%hash-table-add! entries hash key value)
+                (hash-table-set-size! hash-table
+                                       (+ 1 (hash-table-size hash-table)))
+                (%hash-table-maybe-resize! hash-table)))))
+
+(define (hash-table-update! hash-table key function . maybe-default)
+  (let ((hash (%hash-table-hash hash-table key))
+        (entries (hash-table-entries hash-table)))
+    (cond ((%hash-table-find entries
+                             (hash-table-association-function hash-table)
+                             hash key)
+           => (lambda (node)
+                (%hash-node-set-value!
+                  node (function (%hash-node-value node)))))
+          ((null? maybe-default)
+           (error "hash-table-update!: no value exists for key" key))
+          (else (%hash-table-add! entries hash key
+                                  (function ((car maybe-default))))
+                (hash-table-set-size! hash-table
+                                       (+ 1 (hash-table-size hash-table)))
+                (%hash-table-maybe-resize! hash-table)))))
+
+(define (hash-table-update!/default hash-table key function default)
+  (hash-table-update! hash-table key function (lambda () default)))
+
+(define (hash-table-delete! hash-table key)
+  (if (%hash-table-delete! (hash-table-entries hash-table)
+                           (hash-table-equivalence-function hash-table)
+                           (%hash-table-hash hash-table key) key)
+    (hash-table-set-size! hash-table (- (hash-table-size hash-table) 1))))
+
+(define (hash-table-exists? hash-table key)
+  (and (%hash-table-find (hash-table-entries hash-table)
+                         (hash-table-association-function hash-table)
+                         (%hash-table-hash hash-table key) key) #t))
+
+(define (hash-table-walk hash-table proc)
+  (%hash-table-walk
+    (lambda (node) (proc (%hash-node-key node) (%hash-node-value node)))
+    (hash-table-entries hash-table)))
+
+(define (hash-table-fold hash-table f acc)
+  (hash-table-walk hash-table
+                       (lambda (key value) (set! acc (f key value acc))))
+  acc)
+
+(define (alist->hash-table alist . args)
+  (let* ((comparison (if (null? args) equal? (car args)))
+         (hash
+           (if (or (null? args) (null? (cdr args)))
+             (appropriate-hash-function-for comparison) (cadr args)))
+         (size
+           (if (or (null? args) (null? (cdr args)) (null? (cddr args)))
+             (max *default-table-size* (* 2 (length alist))) (caddr args)))
+         (hash-table (make-hash-table comparison hash size)))
+    (for-each
+      (lambda (elem)
+        (hash-table-update!/default
+          hash-table (car elem) (lambda (x) x) (cdr elem)))
+      alist)
+    hash-table))
+
+(define (hash-table->alist hash-table)
+  (hash-table-fold hash-table
+                   (lambda (key val acc) (cons (cons key val) acc)) '()))
+
+(define (hash-table-copy hash-table)
+  (let ((new (make-hash-table (hash-table-equivalence-function hash-table)
+                              (hash-table-hash-function hash-table)
+                              (max *default-table-size*
+                                   (* 2 (hash-table-size hash-table))))))
+    (hash-table-walk hash-table
+                     (lambda (key value) (hash-table-set! new key value)))
+    new))
+
+(define (hash-table-merge! hash-table1 hash-table2)
+  (hash-table-walk
+    hash-table2
+    (lambda (key value) (hash-table-set! hash-table1 key value)))
+  hash-table1)
+
+(define (hash-table-keys hash-table)
+  (hash-table-fold hash-table (lambda (key val acc) (cons key acc)) '()))
+
+(define (hash-table-values hash-table)
+  (hash-table-fold hash-table (lambda (key val acc) (cons val acc)) '()))
+
+
+
+Copyright
+
+Copyright (C) Panu Kalliokoski (2005). All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the `Software'), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED `AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Editor: David Van Horn
+Last modified: Wed Sep 14 09:54:51 EDT 2005

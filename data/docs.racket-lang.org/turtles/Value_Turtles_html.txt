@@ -1,0 +1,164 @@
+▼  Turtle Graphics
+1  Traditional Turtles
+2  Value Turtles
+► 2  Value Turtles
+2.1  Examples
+On this page:
+turtles
+turtles?
+move
+draw
+erase
+move-offset
+draw-offset
+erase-offset
+turn
+turn/ radians
+merge
+clean
+2.1 Examples
+radial-turtles
+spaced-turtles
+neato
+regular-poly
+regular-polys
+spokes
+spyro-gyra
+[...search manuals...]
+  top← prev  up  next → 
+
+2 Value Turtles
+
+ (require graphics/value-turtles)
+
+The value turtles are a variation on traditional turtles. Rather than having
+just a single window where each operation changes the state of that window, in
+the graphics/value-turtles library, the entire turtles window is treated as a
+value. This means that each of the primitive operations accepts, in addition to
+the usual arguments, a turtles-window value; instead of returning nothing, each
+returns a turtles-window value.
+
+(turtles    width               
+            height              
+          [ init-x              
+            init-y              
+            init-angle])   →   turtles?
+  width : real?
+  height : real?
+  init-x : real? = (/ width 2)
+  init-y : real? = (/ height 2)
+  init-angle : real? = 0
+Creates a new turtles window with the given width and height. The remaining
+arguments specify position of the initial turtle and the direction in radians
+(where 0 is to the right).
+
+(turtles? v) → boolean?
+  v : any/c
+Determines if v is a turtles drawing.
+
+(move n turtles) → turtles?
+  n : real?
+  turtles : turtles?
+Moves the turtle n pixels, returning a new turtles window.
+
+(draw n turtles) → turtles?
+  n : real?
+  turtles : turtles?
+Moves the turtle n pixels and draws a line along the path, returning a new
+turtles window.
+
+(erase n turtles) → turtles?
+  n : real?
+  turtles : turtles?
+Moves the turtle n pixels and erases a line along the path, returning a new
+turtles window.
+
+(move-offset h v turtles) → turtles?
+  h : real?
+  v : real?
+  turtles : turtles?
+(draw-offset h v turtles) → turtles?
+  h : real?
+  v : real?
+  turtles : turtles?
+(erase-offset h v turtles) → turtles?
+  h : real?
+  v : real?
+  turtles : turtles?
+Like move, draw, and erase, but using a horizontal and vertical offset from the
+turtle’s current position.
+
+(turn theta turtles) → turtles?
+  theta : real?
+  turtles : turtles?
+Turns the turtle theta degrees counter-clockwise, returning a new turtles
+window.
+
+(turn/radians theta turtles) → turtles?
+  theta : real?
+  turtles : turtles?
+Turns the turtle theta radians counter-clockwise, returning a new turtles
+window.
+
+(merge turtles1 turtles2) → turtles?
+  turtles1 : turtles?
+  turtles2 : turtles?
+The split and tprompt forms provided by graphics/turtles isn’t needed for
+graphics/value-turtles, since the turtles window is a value.
+
+Instead, the merge accepts two turtles windows and combines the state of the
+two turtles windows into a single window. The new window contains all of the
+turtles of the previous two windows, but only the line drawings of the first
+turtles argument.
+
+(clean turtles) → turtles?
+  turtles : turtles?
+Produces a turtles like turtles, but with only a single turtle, positioned in
+the center.
+
+2.1 Examples
+
+ (require graphics/value-turtles-examples)
+
+The graphics/turtle-examples library’s source is meant to be read, but it also
+exports the following examples.
+
+(radial-turtles n turtles) → turtles?
+  n : exact-nonnegative-integer?
+  turtles : turtles?
+Places 2n turtles spaced evenly pointing radially outward.
+
+(spaced-turtles n turtles) → turtles?
+  n : exact-nonnegative-integer?
+  turtles : turtles?
+Places 2n turtles evenly spaced in a line and pointing in the same direction as
+the original turtle.
+
+(neato turtles) → turtles?
+  turtles : turtles?
+As the name says...
+
+(regular-poly sides radius turtles) → turtles?
+  sides : exact-nonnegative-integer?
+  radius : real?
+  turtles : turtles?
+Draws a regular poly centered at the turtle with sides sides and with radius
+radius.
+
+(regular-polys n s turtles) → turtles?
+  n : exact-nonnegative-integer?
+  s : any/c
+  turtles : turtles?
+Draws n regular polys each with n sides centered at the turtle.
+
+(spokes turtles) → turtles?
+  turtles : turtles?
+Draws some spokes, using radial-turtles and spaced-turtles.
+
+(spyro-gyra turtles) → turtles?
+  turtles : turtles?
+Draws a spyro-grya reminiscent shape.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

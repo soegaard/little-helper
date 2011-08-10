@@ -1,0 +1,1606 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+text: basic<%>
+highlight-range
+unhighlight-range
+get-highlighted-ranges
+get-styles-fixed
+get-fixed-style
+set-styles-fixed
+move/ copy-to-edit
+initial-autowrap-bitmap
+get-port-name
+port-name-matches?
+get-edition-number
+get-start-of-line
+text: basic-mixin
+on-paint
+on-insert
+after-insert
+put-file
+text: first-line<%>
+highlight-first-line
+first-line-currently-drawn-specially?
+get-first-line-height
+is-special-first-line?
+text: first-line-mixin
+on-paint
+on-event
+scroll-editor-to
+text: foreground-color<%>
+text: foreground-color-mixin
+default-style-name
+get-fixed-style
+text: hide-caret/ selection<%>
+text: hide-caret/ selection-mixin
+after-set-position
+text: nbsp->space<%>
+text: nbsp->space-mixin
+on-insert
+after-insert
+text: normalize-paste<%>
+ask-normalize?
+string-normalize
+text: normalize-paste-mixin
+do-paste
+on-insert
+after-insert
+text: searching<%>
+set-searching-state
+set-search-anchor
+get-search-hit-count
+set-replace-start
+get-search-bubbles
+text: searching-mixin
+get-keymaps
+after-insert
+after-delete
+on-focus
+text: return<%>
+text: return-mixin
+on-local-char
+text: wide-snip<%>
+add-wide-snip
+add-tall-snip
+text: wide-snip-mixin
+text: delegate<%>
+get-delegate
+set-delegate
+text: 1-pixel-string-snip%
+split
+copy
+get-extent
+insert
+draw
+text: 1-pixel-tab-snip%
+split
+copy
+get-extent
+draw
+text: delegate-mixin
+highlight-range
+unhighlight-range
+on-paint
+on-edit-sequence
+after-edit-sequence
+resized
+after-insert
+after-delete
+after-change-style
+on-load-file
+after-load-file
+text: info<%>
+text: info-mixin
+set-anchor
+set-overwrite-mode
+after-set-position
+after-insert
+after-delete
+text: clever-file-format<%>
+text: clever-file-format-mixin
+on-save-file
+text: file<%>
+get-read-write?
+while-unlocked
+text: file-mixin
+can-insert?
+can-delete?
+after-save-file
+after-load-file
+text: ports<%>
+delete/ io
+get-insertion-point
+set-insertion-point
+get-unread-start-point
+set-unread-start-point
+set-allow-edits
+get-allow-edits
+insert-between
+insert-before
+submit-to-port?
+on-submit
+send-eof-to-in-port
+send-eof-to-box-in-port
+reset-input-box
+clear-output-ports
+clear-input-port
+clear-box-input-port
+get-out-style-delta
+get-err-style-delta
+get-value-style-delta
+get-in-port
+get-in-box-port
+get-out-port
+get-err-port
+get-value-port
+after-io-insertion
+get-box-input-editor-snip%
+get-box-input-text%
+text: ports-mixin
+can-insert?
+can-delete?
+on-local-char
+on-display-size
+text: input-box<%>
+text: input-box-mixin
+on-default-char
+text: autocomplete<%>
+auto-complete
+get-autocomplete-border-color
+get-autocomplete-background-color
+get-autocomplete-selected-color
+completion-mode-key-event?
+get-all-words
+get-word-at
+text: autocomplete-mixin
+on-paint
+on-char
+on-event
+text: basic%
+text: hide-caret/ selection%
+text: nbsp->space%
+text: normalize-paste%
+text: delegate%
+text: wide-snip%
+text: standard-style-list%
+text: input-box%
+text: keymap%
+text: return%
+text: autowrap%
+text: file%
+text: clever-file-format%
+text: backup-autosave%
+text: searching%
+text: info%
+text: line-numbers<%>
+show-line-numbers!
+show-line-numbers?
+set-line-numbers-color
+text: line-numbers-mixin
+on-paint
+show-line-numbers!
+show-line-numbers?
+set-line-numbers-color
+text: range?
+text: range-start
+text: range-end
+text: range-caret-space?
+text: range-style
+text: range-color
+text: autocomplete-append-after
+text: autocomplete-limit
+text: get-completions/ manuals
+text: lookup-port-name
+[...search manuals...]
+  top← prev  up  next → 
+
+29 Text
+
+text:basic<%> : interface?
+  implements:  editor:basic<%>
+               text%
+Classes matching this interface are expected to implement the basic
+functionality needed by the framework.
+
+
+    (send a-text:basic highlight-range    start              
+                                          end                
+                                          color              
+                                        [ caret-space        
+                                          priority           
+                                          style])       →   (-> void?)
+      start : exact-nonnegative-integer?
+      end : exact-nonnegative-integer?
+      color : (or/c string? (is-a?/c color%))
+      caret-space : boolean? = #f
+      priority : (symbols 'high 'low) = 'low
+       style   :   (symbols 'rectangle 'ellipse 'hollow-ellipse 'dot)
+               =   'rectangle
+    This function highlights a region of text in the buffer.
+
+    The range between start and end will be highlighted with the color in
+    color, if the style is 'rectangle (the default). If the style is 'ellipse,
+    then an ellipse is drawn around the range in the editor, using the color.
+    If the style is 'hollow-ellipse, then the outline of an ellipse is drawn
+    around the range in the editor, using the color.
+
+    If the style is 'dot, then start and end must be the same, and a dot is
+    drawn at the bottom of that position in the editor.
+
+    If caret-space? is not #f, the left edge of the range will be one pixel
+    short, to leave space for the caret. The caret does not interfere with the
+    right hand side of the range. Note that under some platforms, the caret is
+    drawn with XOR, which means almost anything can happen. So if the caret is
+    in the middle of the range it may be hard to see, or if it is on the left
+    of the range and caret-space? is #f it may also be hard to see.
+
+    The priority argument indicates the relative priority for drawing
+    overlapping regions. If two regions overlap and have different priorities,
+    the region with 'high priority will be drawn second and only it will be
+    visible in the overlapping region.
+
+    This method returns a thunk, which, when invoked, will turn off the
+    highlighting from this range.
+
+    See also unhighlight-range.
+
+    (send a-text:basic unhighlight-range    start              
+                                            end                
+                                            color              
+                                          [ caret-space        
+                                            style])       →   void?
+      start : exact-nonnegative-integer?
+      end : exact-nonnegative-integer?
+      color : (or/c string? (is-a?/c color%))
+      caret-space : boolean? = #f
+       style   :   (symbols 'rectangle 'ellipse 'hollow-ellipse)
+               =   'rectangle
+    This method removes the highlight from a region of text in the buffer.
+
+    The region must match up to a region specified from an earlier call to
+    highlight-range.
+
+    (send a-text:basic get-highlighted-ranges)
+     → (listof text:range?)
+    Returns a list of (opaque) values representing the active ranges in the
+    editor.
+
+    (send a-text:basic get-styles-fixed) → boolean?
+    If the result of this function is #t, the styles in this text:basic<%> will
+    be fixed. This means that any text inserted to this editor has its style
+    set to this editor’s style-list%’s "Standard" style.
+
+    See also set-styles-fixed.
+
+    (send a-text:basic get-fixed-style) → (is-a?/c style<%>)
+    Returns the style used by set-styles-fixedwhen setting the styles.
+
+    (send a-text:basic set-styles-fixed fixed?) → void?
+      fixed? : boolean?
+    Sets the styles fixed parameter of this text%. See also get-styles-fixed
+    and get-fixed-style.
+
+    (send a-text:basic move/copy-to-edit   dest-text        
+                                           start            
+                                           end              
+                                           dest-pos)   →   void?
+      dest-text : (is-a?/c text%)
+      start : exact-integer?
+      end : exact-integer?
+      dest-pos : exact-integer?
+    This moves or copies text and snips to another edit.
+
+    Moves or copies from the edit starting at start and ending at end. It puts
+    the copied text and snips in dest-text starting at location dest-pos.
+
+    If a snip refused to be moved, it will be copied, otherwise it will be
+    moved. A snip may refuse to be moved by returning #f from
+    release-from-owner.
+
+    (send a-text:basic initial-autowrap-bitmap)
+     → (or/c #f (is-a?/c bitmap%))
+    The result of this method is used as the initial autowrap bitmap. Override
+    this method to change the initial bitmap%. See also set-autowrap-bitmap
+
+    Returns the result of icon:get-autowrap-bitmap by default.
+
+    (send a-text:basic get-port-name)
+     → (or/c path-string? symbol? #f)
+    The result of this method is a symbol that identifies this editor and that
+    is used as the port-name of a port that is read from this editor if this
+    editor is used in DrRacket. See also port-name-matches?.
+
+    (send a-text:basic port-name-matches? id) → boolean?
+      id : any/c
+    Indicates if id matches the port name of this file. If the file is saved,
+    the port name matches when the save file is the path as id. If the file has
+    not been saved, the port name matches if the symbol is the same as the
+    result of get-port-name.
+
+    This method calls normalize-path and thus can be very expensive on some
+    filesystems. If it is called many times in a loop, cache the results to
+    avoid calling it too often.
+
+    (send a-text:basic get-edition-number)
+     → exact-nonnegative-integer?
+    Returns a number that increments every time something in the editor
+    changes.
+
+    The number is updated in after-insert in text% and after-delete in text%.
+
+    (send a-text:basic get-start-of-line pos)
+     → exact-nonnegative-integer?
+      pos : exact-nonnegative-integer?
+    This method is used by keymap:setup-global to implement a keybinding for
+    the "home" key and for "c:a".
+
+    Its default implementation is (line-start-position (position-line pos)).
+
+text:basic-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:basic<%>
+                                text%
+  result implements:  text:basic<%>
+This mixin implements the basic functionality needed for text% objects in the
+framework.
+The class that this mixin produces uses the same initialization arguments as
+its input.
+
+
+    (send a-text:basic on-paint   before?            
+                                  dc                 
+                                  left               
+                                  top                
+                                  right              
+                                  bottom             
+                                  dx                 
+                                  dy                 
+                                  draw-caret)   →   void?
+      before? : any/c
+      dc : (is-a?/c dc<%>)
+      left : real?
+      top : real?
+      right : real?
+      bottom : real?
+      dx : real?
+      dy : real?
+      draw-caret : (one-of/c 'no-caret  'show-inactive-caret  'show-caret)
+    Overrides on-paint in editor<%>.
+    Draws the rectangles installed by highlight-range.
+
+    (send a-text:basic on-insert start end) → void?
+      start : exact-nonnegative-integer?
+      end : exact-nonnegative-integer?
+    Augments on-insert in text%.
+    See set-styles-fixed.
+
+    (send a-text:basic after-insert start len) → void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-insert in text%.
+    See set-styles-fixed.
+
+    (send a-text:basic put-file   directory            
+                                  default-name)   →   (or/c path? #f)
+      directory : (or/c path? #f)
+      default-name : string?
+    Overrides put-file in editor<%>.
+    Like put-file but uses finder:put-file instead of put-file.
+
+text:first-line<%> : interface?
+  implements:  text%
+Objects implementing this interface, when highlight-first-line is invoked with
+#t, always show their first line, even with scrolled (as long as
+first-line-currently-drawn-specially? returns #t).
+
+
+    (send a-text:first-line highlight-first-line on?) → void?
+      on? : boolean?
+    Call this method to enable special treatment of the first line in the
+    editor.
+
+    (send a-text:first-line first-line-currently-drawn-specially?)
+     → boolean?
+    Returns #t if is-special-first-line? returned #t for the current first line
+    and if the buffer is scrolled down so that the first line would not
+    (ordinarily) be visible.
+
+    (send a-text:first-line get-first-line-height) → number?
+    Returns the height, in pixels, of the first line.
+
+    (send a-text:first-line is-special-first-line? line) → boolean?
+      line : string?
+    Override this method to control when the first line is always visible. The
+    argument is the first line, as a string.
+
+text:first-line-mixin : (class? . -> . class?)
+  argument extends/implements:  text%
+  result implements:  text:first-line<%>
+Provides the implementation of text:first-line<%>. Does so by just painting the
+text of the first line over top of what is already there and overriding
+scroll-editor-to to patch up scrolling and on-event to patch up mouse handling.
+
+
+    (send a-text:first-line on-paint   before?            
+                                       dc                 
+                                       left               
+                                       top                
+                                       right              
+                                       bottom             
+                                       dx                 
+                                       dy                 
+                                       draw-caret)   →   void?
+      before? : any/c
+      dc : (is-a?/c dc<%>)
+      left : real?
+      top : real?
+      right : real?
+      bottom : real?
+      dx : real?
+      dy : real?
+      draw-caret : (one-of/c 'no-caret 'show-inactive-caret 'show-caret)
+    Overrides on-paint in editor<%>.
+    Based on the various return values of the methods in text:first-line, draws
+    the first actual line of the editor over top of the first visible line in
+    the editor.
+
+    (send a-text:first-line on-event event) → void?
+      event : (is-a?/c mouse-event%)
+    Overrides on-event in editor<%>.
+    Clicks in the first line cause the editor to scroll to the actual first
+    line.
+
+    (send a-text:first-line scroll-editor-to   localx          
+                                               localy          
+                                               width           
+                                               height          
+                                               refresh?        
+                                               bias)      →   void?
+      localx : real?
+      localy : real?
+      width : (and/c real? (not/c negative?))
+      height : (and/c real? (not/c negative?))
+      refresh? : any/c
+      bias : (one-of/c 'start 'end 'none)
+    Overrides scroll-editor-to in editor<%>.
+    Scrolls a little bit more, when a scroll would be requested that scrolls
+    something so that it is line underneath the first line.
+
+text:foreground-color<%> : interface?
+  implements:  text:basic<%>
+               editor:standard-style-list<%>
+
+text:foreground-color-mixin : (class? . -> . class?)
+  argument extends/implements:  text:basic<%>
+                                editor:standard-style-list<%>
+  result implements:  text:foreground-color<%>
+This mixin changes the default text style to have the foreground color
+controlled by editor:set-default-font-color.
+
+
+    (send a-text:foreground-color default-style-name) → string?
+    Overrides default-style-name in editor<%>.
+    Returns the result of editor:get-default-color-style-name.
+
+    (send a-text:foreground-color get-fixed-style)
+     → (is-a?/c style<%>)
+    Overrides get-fixed-style in text:basic<%>.
+    Returns the style named by editor:get-default-color-style-name.
+
+text:hide-caret/selection<%> : interface?
+  implements:  text:basic<%>
+This class hides the caret, except when the selection is active.
+Instances of this class are useful for editors that used for displaying
+purposes, but still allow users to copy their text.
+
+text:hide-caret/selection-mixin : (class? . -> . class?)
+  argument extends/implements:  text:basic<%>
+  result implements:  text:hide-caret/selection<%>
+
+
+    (send a-text:hide-caret/selection after-set-position) → void?
+    Augments after-set-position in text%.
+    Calls hide-caret to hide the caret when there is only a caret and no
+    selection.
+
+text:nbsp->space<%> : interface?
+  implements:  text%
+Classes that implement this interface silently change non-breaking spaces, ie
+the character (integer->char 160), to regular spaces when inserted into the
+editor.
+
+text:nbsp->space-mixin : (class? . -> . class?)
+  argument extends/implements:  text%
+  result implements:  text:nbsp->space<%>
+
+
+    (send a-text:nbsp->space on-insert   start        
+                                         end)    →   void?
+      start : exact-nonnegative-integer?
+      end : exact-nonnegative-integer?
+    Augments on-insert in text%.
+    Starts an edit-sequence by calling begin-edit-sequence.
+
+    (send a-text:nbsp->space after-insert   start        
+                                            len)    →   void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-insert in text%.
+    Replaces all non-breaking space characters (integer->char 160) by #\space
+    characters.
+
+    Ends the edit sequence (by calling end-edit-sequence) started in on-insert.
+
+text:normalize-paste<%> : interface?
+  implements:  text:basic<%>
+
+
+    (send a-text:normalize-paste ask-normalize?) → boolean?
+    Prompts the user if the pasted text should be normalized (and updates
+    various preferences based on the response).
+
+    Override this method in the mixin to avoid all GUI and preferences
+    interactions.
+
+    (send a-text:normalize-paste string-normalize s) → string?
+      s : string?
+    Normalizes s. Defaults to string-normalize-nfkc.
+
+text:normalize-paste-mixin : (class? . -> . class?)
+  argument extends/implements:  text:basic<%>
+  result implements:  text:normalize-paste<%>
+
+
+    (send a-text:normalize-paste do-paste   start        
+                                            time)   →   void?
+      start : exact-nonnegative-integer?
+      time : exact-integer?
+    Overrides do-paste in text%.
+    Overridden to detect when insertions are due to pasting. Sets some internal
+    state and calls the super.
+
+    (send a-text:normalize-paste on-insert   start        
+                                             len)    →   void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments on-insert in text%.
+    Calls begin-edit-sequence.
+
+    (send a-text:normalize-paste after-insert   start        
+                                                len)    →   void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-insert in text%.
+    Normalizes any next text and calls end-edit-sequence.
+
+text:searching<%> : interface?
+  implements:  editor:keymap<%>
+               text:basic<%>
+Any object matching this interface can be searched.
+Searches using this class has a non-traditional feature for performance
+reasons. Specifically, multiple adjacent hits are coalesced into a single
+search results when bubbles are drawn. This means, for example, that searching
+for a space in a file with 80,000 spaces (as one file in the Racket code base
+has) is still tractable, since many of those spaces will be next to each other
+and thus there will be far fewer bubbles (the file in question has only 20,000
+such bubbles).
+
+
+    (send a-text:searching set-searching-state   str             
+                                                 cs?             
+                                                 replace-start)  
+     → void?
+      str : (or/c false/c string?)
+      cs? : boolean?
+      replace-start : (or/c false/c number?)
+    If str is not #f, then this method highlights every occurrence of str in
+    the editor. If str is #f, then it clears all of the highlighting in the
+    buffer.
+
+    If cs? is #f, the search is case-insensitive, and otherwise it is
+    case-sensitive.
+
+    If the replace-start argument is #f, then the search is not in replacement
+    mode. If it is a number, then the first search hit after that position in
+    the editor is where the next replacement will take place.
+
+    (send a-text:searching set-search-anchor position) → void?
+      position : (or/c false/c number?)
+    Sets the anchor’s position in the editor. Only takes effect if the
+    'framework:anchored-search preference is on.
+
+    (send a-text:searching get-search-hit-count) → number?
+    Returns the number of hits for the search in the buffer, based on the count
+    found last time that a search happened.
+
+    (send a-text:searching set-replace-start pos) → void?
+      pos : (or/c false/c number?)
+    Sets the position where replacement next occurs. This is equivalent to
+    calling set-searching-state with a new replace-start argument, but the
+    other arguments the same as the last call to set-searching-state, but is
+    more efficient (since set-searching-state will search the entire buffer and
+    re-build all of the bubbles).
+
+    (send a-text:searching get-search-bubbles)
+      →   (listof (list/c (cons/c number? number?)
+                          (list/c number? number? number?)))
+    Returns information about the search bubbles in the editor. Each item in
+    the outermost list corresponds to a single bubble. The pair of numbers is
+    the range of the bubble and the triple of numbers is the color of the
+    bubble, in RGB coordinates.
+
+    If replace-start has been set (via set-replace-start) and the closest
+    search hit following replace-start does not collapse with an adjacent
+    bubble,the result will include that bubble. If the closest search hit after
+    replace-start is collpased with another bubble, then the search hit is not
+    reflected in the result.
+
+    This method is intended for use in test suites.
+
+text:searching-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:keymap<%>
+                                text:basic<%>
+  result implements:  text:searching<%>
+This text% can be searched.
+The result of this mixin uses the same initialization arguments as the mixin’s
+argument.
+
+
+    (send a-text:searching get-keymaps)
+     → (listof (is-a?/c keymap%))
+    Overrides get-keymaps in editor:keymap<%>.
+    This returns a list containing the super-class’s keymaps, plus the result
+    of keymap:get-search
+
+    (send a-text:searching after-insert   start        
+                                          len)    →   void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-insert in text%.
+    Re-does any search now that the contents of the window have changed.
+
+    (send a-text:searching after-delete   start        
+                                          len)    →   void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-delete in text%.
+    Re-does any search now that the contents of the window have changed.
+
+    (send a-text:searching on-focus on?) → void?
+      on? : boolean?
+    Overrides on-focus in editor<%>.
+    Tells the frame containing the editor to search based on this editor via
+    the set-text-to-search method.
+
+text:return<%> : interface?
+  implements:  text%
+Objects supporting this interface were created by text:return-mixin.
+
+text:return-mixin : (class? . -> . class?)
+  argument extends/implements:  text%
+  result implements:  text:return<%>
+Use this buffer to perform some special action when return is typed.
+
+    (new text:return-mixin [return return])
+     → (is-a?/c text:return-mixin)
+      return : (-> boolean?)
+
+    (send a-text:return on-local-char event) → void?
+      event : (is-a?/c key-event%)
+    Overrides on-local-char in editor<%>.
+    If key is either return or newline, only invoke the return thunk
+    (initialization argument) and do nothing else.
+
+text:wide-snip<%> : interface?
+  implements:  text:basic<%>
+
+
+    (send a-text:wide-snip add-wide-snip snip) → void?
+      snip : (is-a?/c snip%)
+    Registers a snip in this editor to be resized when its viewing area
+    changes. Ensures the snip is as wide as the viewing area.
+
+    This method should only be called by add-wide-snip in canvas:wide-snip<%>.
+
+    (send a-text:wide-snip add-tall-snip snip) → void?
+      snip : (is-a?/c snip%)
+    Registers a snip in this editor. It is resized when the viewing area of the
+    editor changes.
+
+    This method should only be called by add-tall-snip in canvas:wide-snip<%>.
+
+text:wide-snip-mixin : (class? . -> . class?)
+  argument extends/implements:  text:basic<%>
+  result implements:  text:wide-snip<%>
+
+text:delegate<%> : interface?
+  implements:  text:basic<%>
+Implementations of this interface copy all of the changes to this editor to the
+result of get-delegate except instead of regular string and tab snips, instead
+instances of text:1-pixel-string-snip% and text:1-pixel-tab-snip% are created.
+The contents of the two editor are kept in sync, as modifications to this
+object happen.
+
+
+    (send a-text:delegate get-delegate)
+     → (or/c #f (is-a?/c text%))
+    The result of this method is the text% object that the contents of this
+    editor are being delegated to, or #f, if there is none.
+
+    (send a-text:delegate set-delegate delegate) → void?
+      delegate : (or/c #f (is-a?/c text%))
+    This method sets the current delegate.
+
+    When it is set, all of the snips are copied from this object to delegate.
+    Additionally, if this object implements scheme:text<%> the tab settings of
+    delegate are updated to match this objects.
+
+text:1-pixel-string-snip% : class?
+  superclass: string-snip%
+
+This class re-uses the implementation of string-snip% to implement a string
+snip that just draws a single pixel for each character in the string.
+See also text:1-pixel-tab-snip% for a similar extension to the tab-snip%class.
+This snip is used in conjunction with the frame:delegate<%> and text:delegate
+<%> interfaces.
+
+
+    (send a-text:1-pixel-string-snip split   position        
+                                             first           
+                                             second)    →   void?
+      position : exact
+      first : (box/c (is-a?/c snip%))
+      second : (box/c (is-a?/c snip%))
+    Overrides split in snip%.
+    Fills the boxes with instance of text:1-pixel-string-snip%s.
+
+    (send a-text:1-pixel-string-snip copy) → (is-a?/c snip%)
+    Overrides copy in snip%.
+    Creates and returns an instance of text:1-pixel-string-snip%.
+
+    (send a-text:1-pixel-string-snip get-extent    dc              
+                                                   x               
+                                                   y               
+                                                 [ w               
+                                                   h               
+                                                   descent         
+                                                   space           
+                                                   lspace          
+                                                   rspace])   →   void?
+      dc : (is-a?/c dc<%>)
+      x : real?
+      y : real?
+       w   :   (or/c (box/c (or/c (and/c real? (not/c negative?)))) #f)
+           =   #f
+       h   :   (or/c (box/c (or/c (and/c real? (not/c negative?)))) #f)
+           =   #f
+       descent   :   (or/c (box/c (or/c (and/c real? (not/c negative?)))) #f)
+                 =   #f
+       space   :   (or/c (box/c (or/c (and/c real? (not/c negative?)))) #f)
+               =   #f
+       lspace   :   (or/c (box/c (or/c (and/c real? (not/c negative?)))) #f)
+                =   #f
+       rspace   :   (or/c (box/c (or/c (and/c real? (not/c negative?)))) #f)
+                =   #f
+    Overrides get-extent in snip%.
+    Sets the descent, space, lspace, and rspace to zero. Sets the height to 1.
+    Sets the width to the number of characters in the string.
+
+    (send a-text:1-pixel-string-snip insert    s            
+                                               len          
+                                             [ pos])   →   void?
+      s : string?
+      len : exact-nonnegative-integer?
+      pos : exact-nonnegative-integer? = 0
+    Overrides insert in string-snip%.
+
+    (send a-text:1-pixel-string-snip draw   dc                 
+                                            x                  
+                                            y                  
+                                            left               
+                                            top                
+                                            right              
+                                            bottom             
+                                            dx                 
+                                            dy                 
+                                            draw-caret)   →   void?
+      dc : (is-a?/c dc<%>)
+      x : real?
+      y : real?
+      left : real?
+      top : real?
+      right : real?
+      bottom : real?
+      dx : real?
+      dy : real?
+      draw-caret : (or/c 'no-caret  'show-inactive-caret  'show-caret)
+    Overrides draw in snip%.
+    Draws black pixels for non-whitespace characters and draws nothing for
+    whitespace characters.
+
+text:1-pixel-tab-snip% : class?
+  superclass: tab-snip%
+
+This class re-uses the implementation of tab-snip% to implement a string snip
+that is always one pixel high.
+See also text:1-pixel-string-snip% for a similar extension to the string-snip%
+class.
+This snip is used in conjunction with the frame:delegate<%> and text:delegate
+<%> interfaces.
+
+
+    (send a-text:1-pixel-tab-snip split   position        
+                                          first           
+                                          second)    →   void?
+      position : exact
+      first : (box/c (is-a?/c snip%))
+      second : (box/c (is-a?/c snip%))
+    Overrides split in snip%.
+    Fills the boxes with instance of text:1-pixel-tab-snip%s.
+
+    (send a-text:1-pixel-tab-snip copy) → (is-a?/c snip%)
+    Overrides copy in snip%.
+    Creates and returns an instance of text:1-pixel-tab-snip%.
+
+    (send a-text:1-pixel-tab-snip get-extent    dc              
+                                                x               
+                                                y               
+                                              [ w               
+                                                h               
+                                                descent         
+                                                space           
+                                                lspace          
+                                                rspace])   →   void?
+      dc : (is-a?/c dc<%>)
+      x : real?
+      y : real?
+      w : (or/c (box/c (and/c real? (not/c negative?)) #f)) = #f
+      h : (or/c (box/c (and/c real? (not/c negative?)) #f)) = #f
+       descent   :   (or/c (box/c (and/c real? (not/c negative?)) #f))
+                 =   #f
+      space : (or/c (box/c (and/c real? (not/c negative?)) #f)) = #f
+       lspace   :   (or/c (box/c (and/c real? (not/c negative?)) #f))
+                =   #f
+       rspace   :   (or/c (box/c (and/c real? (not/c negative?)) #f))
+                =   #f
+    Overrides get-extent in snip%.
+    Sets the descent, space, lspace, and rspace to zero. Sets the height to 1.
+    Sets the width to the width of tabs as returned in the tab-width parameter
+    of the get-tabs method.
+
+    (send a-text:1-pixel-tab-snip draw   dc                 
+                                         x                  
+                                         y                  
+                                         left               
+                                         top                
+                                         right              
+                                         bottom             
+                                         dx                 
+                                         dy                 
+                                         draw-caret)   →   void?
+      dc : (is-a?/c dc<%>)
+      x : real?
+      y : real?
+      left : real?
+      top : real?
+      right : real?
+      bottom : real?
+      dx : real?
+      dy : real?
+      draw-caret : (or/c 'no-caret  'show-inactive-caret  'show-caret)
+    Overrides draw in snip%.
+    Draws nothing.
+
+text:delegate-mixin : (class? . -> . class?)
+  argument extends/implements:  text:basic<%>
+  result implements:  text:delegate<%>
+This mixin provides an implementation of the text:delegate<%> interface.
+
+
+    (send a-text:delegate highlight-range    start              
+                                             end                
+                                             color              
+                                           [ caret-space        
+                                             priority           
+                                             style])       →   (-> void?)
+      start : exact-integer?
+      end : exact-nonnegative-integer?
+      color : (or/c string? (is-a?/c color%))
+      caret-space : boolean? = #f
+      priority : (symbols 'high 'low) = 'low
+       style   :   (symbols 'rectangle 'ellipse 'hollow-ellipse 'dot)
+               =   'rectangle
+    Overrides highlight-range in text:basic<%>.
+    In addition to calling the super method, highlight-range, this method
+    forwards the highlighting to the delegatee.
+
+    (send a-text:delegate unhighlight-range    start              
+                                               end                
+                                               color              
+                                             [ caret-space        
+                                               style])       →   void?
+      start : exact-nonnegative-integer?
+      end : exact-nonnegative-integer?
+      color : (or/c string? (is-a?/c color%))
+      caret-space : boolean? = #f
+       style   :   (symbols 'rectangle 'ellipse 'hollow-ellipse)
+               =   'rectangle
+    Overrides unhighlight-range in text:basic<%>.
+    This method propagates the call to the delegate and calls the super method.
+    (send a-text:delegate on-paint   before?            
+                                     dc                 
+                                     left               
+                                     top                
+                                     right              
+                                     bottom             
+                                     dx                 
+                                     dy                 
+                                     draw-caret)   →   void?
+      before? : any/c
+      dc : (is-a?/c dc<%>)
+      left : real?
+      top : real?
+      right : real?
+      bottom : real?
+      dx : real?
+      dy : real?
+      draw-caret : (one-of/c 'no-caret 'show-inactive-caret 'show-caret)
+    Overrides on-paint in editor<%>.
+    Draws a blue region in the delegatee editor that shows where the visible
+    region of the delegate editor is.
+
+    (send a-text:delegate on-edit-sequence) → void?
+    Augments on-edit-sequence in editor<%>.
+    starts an edit sequence in the delegate.
+
+    (send a-text:delegate after-edit-sequence) → void?
+    Augments after-edit-sequence in editor<%>.
+    ends an edit sequence in the delegate.
+
+    (send a-text:delegate resized   snip                
+                                    redraw-now?)   →   void?
+      snip : (is-a?/c snip%)
+      redraw-now? : boolean?
+    Overrides resized in editor<%>.
+    Sends a message to the delegate to update the size of the copied snip, if
+    there is one.
+
+    (send a-text:delegate after-insert   start        
+                                         len)    →   void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-insert in text%.
+    forwards the change to the delegate
+
+    (send a-text:delegate after-delete   start        
+                                         len)    →   void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-delete in text%.
+    forwards the change to the delegate.
+
+    (send a-text:delegate after-change-style   start        
+                                               len)    →   void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-change-style in text%.
+    forwards the changed style to the delegate.
+
+    (send a-text:delegate on-load-file   filename        
+                                         format)    →   void?
+      filename : string?
+      format : symbol?
+    Augments on-load-file in editor<%>.
+    remembers the filename, for use in after-load-file.
+
+    (send a-text:delegate after-load-file success?) → void?
+      success? : boolean?
+    Augments after-load-file in editor<%>.
+    updates the delegate with the new contents of the text.
+
+text:info<%> : interface?
+  implements:  text:basic<%>
+Objects supporting this interface are expected to send information about
+themselves to the frame that is displaying them.
+
+text:info-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:keymap<%>
+                                text:basic<%>
+  result implements:  text:info<%>
+This mixin adds support for supplying information to objects created with
+frame:info-mixin. When this editor:basic<%> is displayed in a frame, that frame
+must have been created with frame:info-mixin.
+
+
+    (send a-text:info set-anchor on?) → void?
+      on? : any/c
+    Overrides set-anchor in text%.
+    Calls the anchor-status-changed method of the frame that is viewing this
+    object. It uses get-canvas to get the canvas for this frame, and uses that
+    canvas’s top-level-window<%> as the frame.
+
+    (send a-text:info set-overwrite-mode on?) → void?
+      on? : any/c
+    Overrides set-overwrite-mode in text%.
+    Calls the overwrite-status-changedmethod of the frame that is viewing this
+    object. It uses get-canvas to get the canvas for this frame, and uses that
+    canvas’s top-level-window<%> as the frame.
+
+    (send a-text:info after-set-position) → void?
+    Augments after-set-position in text%.
+    Calls the editor-position-changed method of the frame that is viewing this
+    object. It uses get-canvas to get the canvas for this frame, and uses that
+    canvas’s top-level-window<%> as the frame.
+
+    (send a-text:info after-insert start len) → void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-insert in text%.
+    Calls the editor-position-changed method of the frame that is viewing this
+    object. It uses get-canvas to get the canvas for this frame, and uses that
+    canvas’s top-level-window<%> as the frame.
+
+    (send a-text:info after-delete start len) → void?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments after-delete in text%.
+    Calls the editor-position-changed method of the frame that is viewing this
+    object. It uses get-canvas to get the canvas for this frame, and uses that
+    canvas’s top-level-window<%> as the frame.
+
+text:clever-file-format<%> : interface?
+  implements:   text%
+Objects supporting this interface are expected to support a clever file format
+when saving.
+
+text:clever-file-format-mixin : (class? . -> . class?)
+  argument extends/implements:  text%
+  result implements:  text:clever-file-format<%>
+The result of this mixin uses the same initialization arguments as the mixin’s
+argument.
+When files are saved from this text%, a check is made to see if there are any
+non-string-snip% objects in the text%. If so, it is saved using the file format
+'std. (see set-file-format for more information. If not, the file format passed
+to save-file is used.
+
+
+    (send a-text:clever-file-format on-save-file   filename        
+                                                   format)    →   void?
+      filename : path?
+      format : (one-of/c
+     'guess  'standard  'text  'text-force-cr  'same  'copy)
+    Augments on-save-file in editor<%>.
+    If the method get-file-format returns 'standard and the text has only
+    string-snip%s, the file format is set to 'text.
+
+    If the method get-file-format returns 'text and the text has some non
+    string-snip%s, the file format is set to 'standard.
+
+    Depending on the user’s preferences, the user may also be queried.
+
+    Also, the changes to the file format only happen if the argument
+    file-format is 'copy or 'same.
+
+text:file<%> : interface?
+  implements:  editor:file<%>
+               text:basic<%>
+Mixins that implement this interface lock themselves when the file they are
+editing is read only.
+
+
+    (send a-text:file get-read-write?) → boolean?
+    Indicates whether or not this editor is in read-write mode.
+
+    (send a-text:file while-unlocked thunk) → any/c
+      thunk : (-> any/c)
+    Unlocks the editor, calls the thunk, and then relocks the editor, all using
+    a dynamic-wind.
+
+text:file-mixin : (class? . -> . class?)
+  argument extends/implements:  editor:file<%>
+                                text:basic<%>
+  result implements:  text:file<%>
+
+
+    (send a-text:file can-insert? start len) → boolean?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments can-insert? in text%.
+    Returns false if the result of get-read-write? is true, otherwise returns
+    the result of calling inner.
+
+    (send a-text:file can-delete? start len) → boolean?
+      start : exact-nonnegative-integer?
+      len : exact-nonnegative-integer?
+    Augments can-delete? in text%.
+    Returns false if the result of get-read-write? is true, otherwise returns
+    the result of calling inner.
+
+    (send a-text:file after-save-file) → void?
+    Augments after-save-file in editor<%>.
+    Checks if the newly saved file is write-only in the filesystem. If so,
+    locks the editor with the lock method. Otherwise unlocks the buffer
+
+    For each canvas returned from get-canvases it checks to see if the canvas%
+    ’s get-top-level-window matches the frame:editor<%> interface. If so, it
+    calls set-label with the last part of the filename (ie, the name of the
+    file, not the directory the file is in).
+
+    (send a-text:file after-load-file) → void?
+    Augments after-load-file in editor<%>.
+    Checks if the newly loaded file is write-only in the filesystem. If so,
+    locks the editor with the lock method. Otherwise unlocks the buffer
+
+    For each canvas returned from get-canvases it checks to see if the canvas%
+    ’s get-top-level-window matches the frame:editor<%> interface. If so, it
+    calls set-label with the last part of the filename (ie, the name of the
+    file, not the directory the file is in).
+
+text:ports<%> : interface?
+Classes implementing this interface (via the associated mixin) support input
+and output ports that read from and to the editor.
+There are two input ports: the normal input port just reads from the editor’s
+contents directly and the box input port inserts an editor snip into this text
+and uses input typed into the box as input into the port.
+There are three output ports, designed to match stdout, stderr, and a special
+port for printing values. The only difference between them is the output is
+rendered in different colors when it comes in via the different ports.
+They create three threads to mediate access to the input and output ports (one
+for each input port and one for all of the output ports).
+
+
+    (send a-text:ports delete/io start end) → void?
+      start : exact-integer?
+      end : exact-integer?
+    Deletes the text between start and end without changing the behavior of the
+    ports (otherwise, deleting the text would break internal invariants of the
+    port).
+
+    Both start and end must be less than get-insertion-point (or else it is
+    safe to delete them so you don’t need this method).
+
+    (send a-text:ports get-insertion-point) → exact-integer?
+    Returns the position where characters put into the output port will appear.
+
+    (send a-text:ports set-insertion-point ip) → void?
+      ip : exact-integer?
+    Sets the position where the output port will insert characters. See also
+    get-insertion-point.
+
+    (send a-text:ports get-unread-start-point) → exact-integer?
+    Returns the position where input will be taken into the input port (after
+    the next time return is typed).
+
+    (send a-text:ports set-unread-start-point usp) → void?
+      usp : exact-integer?
+    Sets the position where input will be taken into the input port (after the
+    next time return is typed).
+
+    See also get-unread-start-point.
+
+    (send a-text:ports set-allow-edits allow-edits?) → void?
+      allow-edits? : boolean?
+    Enables or disables editing in the buffer. Be sure to update the unread
+    start point (via set-unread-start-point) and the insertion point (via
+    set-insertion-point) after making changes to the buffer.
+
+    (send a-text:ports get-allow-edits) → boolean?
+    Indicates if editing is allowed in the buffer at this point.
+
+    (send a-text:ports insert-between str) → void?
+      str : (or/c (is-a?/c snip%) string?)
+    Inserts some text between the unread start point and the insertion point
+    (and updates them properly). To insert before the two points, see
+    insert-before.
+
+    See also set-unread-start-point and set-insertion-point.
+
+    (send a-text:ports insert-before str) → void?
+      str : (or/c (is-a?/c snip%) string?)
+    Inserts some text before the unread start point and updates it and the
+    insertion point properly. To insert between the two points, see
+    insert-between.
+
+    See also set-unread-start-point and set-insertion-point.
+
+    (send a-text:ports submit-to-port? key) → boolean?
+      key : (is-a?/c key-event%)
+    Augment this method to help control when characters should be submitted to
+    the input port.
+
+    Return #t or the result of calling inner.
+
+    (send a-text:ports on-submit) → void?
+    This method is called when text is sent into the input port.
+
+    Does nothing.
+
+    (send a-text:ports send-eof-to-in-port) → void?
+    This method puts an eof into the input port.
+
+    (send a-text:ports send-eof-to-box-in-port) → void?
+    This method puts an eof into the box input port.
+
+    (send a-text:ports reset-input-box) → void?
+    This method removes the current input box from the editor (and all input in
+    it is lost).
+
+    (send a-text:ports clear-output-ports) → void?
+    Flushes all of the data in all of the output ports that hasn’t appeared in
+    the editor yet.
+
+    (send a-text:ports clear-input-port) → void?
+    Flushes all of the data in the input port that hasn’t yet been read.
+    Reading will now block.
+
+    (send a-text:ports clear-box-input-port) → void?
+    Flushes all of the data in the box input port that hasn’t yet been read.
+    Reading will now block.
+
+    (send a-text:ports get-out-style-delta)
+     → (or/c (is-a?/c style-delta%) string?)
+    The result of this method is the style that is used to color text submitted
+    to the result of get-out-port.
+
+    If the result is a string that is not mapped in the editor’s style list,
+    the style named "Standard" is used and if that isn’t mapped, the style
+    named "Basic" is used.
+
+    This method is called during the initialization of the class.
+
+    By default, returns "text:ports out" which is mapped to a blue style in the
+    style list returned by editor:get-standard-style-list.
+
+    (send a-text:ports get-err-style-delta)
+     → (or/c (is-a?/c style-delta%) string?)
+    The result of this method is the style that is used to color text submitted
+    to the result of get-err-port.
+
+    If the result is a string that is not mapped in the editor’s style list,
+    the style named "Standard" is used and if that isn’t mapped, the style
+    named "Basic" is used.
+
+    This method is called during the initialization of the class.
+
+    By default, returns "text:ports err" which is mapped to a red italic style
+    in the style list returned by editor:get-standard-style-list.
+
+    (send a-text:ports get-value-style-delta)
+     → (or/c (is-a?/c style-delta%) string?)
+    The result of this method is the style (or the name of the style) that is
+    used to color text submitted to the result of get-value-port.
+
+    If the result is a string that is not mapped in the editor’s style list,
+    the style named "Standard" is used and if that isn’t mapped, the style
+    named "Basic" is used.
+
+    This method is called during the initialization of the class.
+
+    By default, returns "text:ports value" which is mapped to a blue style in
+    the style list returned by editor:get-standard-style-list.
+
+    (send a-text:ports get-in-port) → input-port?
+    Returns the input port that data in this editor is sent to.
+
+    (send a-text:ports get-in-box-port) → input-port?
+    Returns the box input port that data in this editor is sent to.
+
+    (send a-text:ports get-out-port) → output-port?
+    Returns an output port that writes into this editor. The only difference
+    between this port and the ports returned by get-err-port and get-value-port
+    is the font style and color.
+
+    (send a-text:ports get-err-port) → output-port?
+    Returns an output port that writes into this editor. The only difference
+    between this port and the ports returned by get-err-port and get-out-port
+    is the font style and color.
+
+    (send a-text:ports get-value-port) → output-port?
+    Returns an output port that writes into this editor. The only difference
+    between this port and the ports returned by get-err-port and get-out-port
+    is the font style and color.
+
+    (send a-text:ports after-io-insertion) → void?
+    This method is called after an insertion due to IO occurs.
+
+    (send a-text:ports get-box-input-editor-snip%)
+     → (subclass?/c editor-snip%)
+    The result of this method is used as the class of editor snips that is
+    inserted by the box port in this editor.
+
+    (send a-text:ports get-box-input-text%)
+     → (is-a?/c text:input-box<%>)
+    The result of this method is instantiated and placed inside the result of
+    get-box-input-editor-snip%.
+
+text:ports-mixin : (class? . -> . class?)
+  argument extends/implements:  text:wide-snip<%>
+  result implements:  text:ports<%>
+
+
+    (send a-text:ports can-insert? start len) → boolean?
+      start : exact-integer?
+      len : exact-integer?
+    Augments can-insert? in text%.
+    Returns the results of the inner call, unless get-allow-edits returns #f.
+
+    (send a-text:ports can-delete? start len) → boolean?
+      start : exact-integer?
+      len : exact-integer?
+    Augments can-delete? in text%.
+    Returns the results of the inner call, unless get-allow-edits returns #f.
+
+    (send a-text:ports on-local-char event) → void?
+      event : (is-a?/c key-event%)
+    Overrides on-local-char in editor<%>.
+    Sends the data between the last position and the result of
+    get-unread-start-point to the input port, unless submit-to-port? returns #
+    f.
+
+    Also calls on-submit.
+
+    (send a-text:ports on-display-size) → void?
+    Augments on-display-size in editor<%>.
+    Adjusts the embedded editor-snip (used for reading input to the
+    get-in-box-port) to match the width of the editor.
+
+text:input-box<%> : interface?
+  implements:  text%
+Classes that implement this interface are used as the editors for the box input
+port in text:ports%.
+
+text:input-box-mixin : (class? . -> . class?)
+  argument extends/implements:  text%
+  result implements:  text:input-box<%>
+This mixin provides an implementation of text:input-box<%> for use with
+text:ports<%>.
+
+
+    (send a-text:input-box on-default-char event) → void?
+      event : (is-a?/c key-event%)
+    Overrides on-default-char in text%.
+    Notifies the text:ports<%> enclosing this editor that a new line of input
+    has been provided.
+
+text:autocomplete<%> : interface?
+  implements:  text%
+The mixin implementing this interface provides an unintrusive autocompletion
+menu when a particular (configurable) keystroke is pressed.
+
+
+    (send a-text:autocomplete auto-complete) → void?
+    Starts a completion.
+
+    (send a-text:autocomplete get-autocomplete-border-color)
+     → (or/c string? (is-a?/c color%))
+    The border color for the autocomplete menu. Defaults to "black".
+
+    (send a-text:autocomplete get-autocomplete-background-color)
+     → (or/c string? (is-a?/c color%))
+    The background color for the non-selected menu items. Defaults to
+    "lavender".
+
+    (send a-text:autocomplete get-autocomplete-selected-color)
+     → (or/c string? (is-a?/c color%))
+    The background color for the selected menu item. Defaults to (make-object
+    color% 204 153 255).
+
+    (send a-text:autocomplete completion-mode-key-event? key-event)
+     → boolean?
+      key-event : (is-a?/c key-event%)
+    Returns true when the key event passed to it should initiate the
+    completions menu.
+
+    (send a-text:autocomplete get-all-words) → (listof string?)
+    Returns the list of the words that autocompletion should choose from.
+
+    (send a-text:autocomplete get-word-at pos) → string?
+      pos : exact-positive-integer?
+    Given an editor location, returns the prefix ending at that location that
+    autocompletion should try to complete.
+
+text:autocomplete-mixin : (class? . -> . class?)
+  argument extends/implements:  text%
+  result implements:  text:autocomplete<%>
+
+
+    (send a-text:autocomplete on-paint) → void?
+    Overrides on-paint in editor<%>.
+    Draws the completion menu (when it is popped up).
+
+    (send a-text:autocomplete on-char) → void?
+    Overrides on-char in editor<%>.
+    Takes over the handling of key events when the completions menu is visible.
+    Also, when the completions menu is not visible, it calls the
+    completion-mode-key-event? method to see if it should start completing.
+
+    (send a-text:autocomplete on-event) → void?
+    Overrides on-event in editor<%>.
+    This method is overridden to allow mouse access of the completions menu. It
+    only handles events when there is a menu open and the mouse is in the menu,
+    in which case it makes the menu trace the mouse.
+
+    The only time it does not call the super method is when the mouse is button
+    is pushed.
+
+text:basic% : class?
+  superclass: (text:basic-mixin (editor:basic-mixin text%))
+
+
+text:hide-caret/selection% : class?
+  superclass: (text:hide-caret/selection-mixin text:basic%)
+
+
+text:nbsp->space% : class?
+  superclass: (text:nbsp->space-mixin text:basic%)
+
+
+text:normalize-paste% : class?
+  superclass: (text:normalize-paste-mixin text:basic%)
+
+
+text:delegate% : class?
+  superclass: (text:delegate-mixin text:basic%)
+
+
+text:wide-snip% : class?
+  superclass: (text:wide-snip-mixin text:basic%)
+
+
+text:standard-style-list% : class?
+  superclass: (editor:standard-style-list-mixin text:wide-snip%)
+
+
+text:input-box% : class?
+  superclass: (text:input-box-mixin text:standard-style-list%)
+
+
+text:keymap% : class?
+  superclass: (editor:keymap-mixin text:standard-style-list%)
+
+
+text:return% : class?
+  superclass: (text:return-mixin text:keymap%)
+
+
+text:autowrap% : class?
+  superclass: (editor:autowrap-mixin text:keymap%)
+
+
+text:file% : class?
+  superclass: (text:file-mixin (editor:file-mixin text:autowrap%))
+
+
+text:clever-file-format% : class?
+  superclass: (text:clever-file-format-mixin text:file%)
+
+
+text:backup-autosave% : class?
+  superclass: (editor:backup-autosave-mixin text:clever-file-format%)
+
+
+text:searching% : class?
+  superclass: (text:searching-mixin text:backup-autosave%)
+
+
+text:info% : class?
+  superclass: (text:info-mixin (editor:info-mixin text:searching%))
+
+
+text:line-numbers<%> : interface?
+
+
+    (send a-text:line-numbers show-line-numbers! show) → void?
+      show : boolean?
+    Enables or disables line number drawing.
+
+    (send a-text:line-numbers show-line-numbers?) → boolean?
+    Returns whether or not line drawing is enabled.
+
+    (send a-text:line-numbers set-line-numbers-color color) → void?
+      color : string?
+    Sets the color of the line numbers.
+
+text:line-numbers-mixin : (class? . -> . class?)
+  argument extends/implements:  text%
+  result implements:  text:line-numbers<%>
+
+
+    (send a-text:line-numbers on-paint) → void?
+    Overrides on-paint in editor<%>.
+    Draws the line numbers.
+
+    (send a-text:line-numbers show-line-numbers! show) → void?
+      show : boolean?
+    Enables or disables line number drawing.
+
+    (send a-text:line-numbers show-line-numbers?) → boolean?
+    Returns whether or not line drawing is enabled.
+
+    (send a-text:line-numbers set-line-numbers-color color) → void?
+      color : string?
+    Sets the color of the line numbers.
+
+(text:range? arg) → boolean?
+  arg : any/c
+Determines if arg is an instance of the range struct.
+(text:range-start range) → exact-nonnegative-integer?
+  range : text:range?
+Returns the start position of the range.
+(text:range-end range) → exact-nonnegative-integer?
+  range : text:range?
+Returns the end position of the range.
+(text:range-caret-space? range) → boolean?
+  range : text:range?
+Returns a boolean indicating where the caret-space in the range goes. See also
+highlight-range.
+(text:range-style range) → exact-nonnegative-integer?
+  range : text:range?
+Returns the style of the range. See also highlight-range.
+(text:range-color range) → (or/c string? (is-a?/c color%))
+  range : text:range?
+Returns the color of the highlighted range.
+(text:autocomplete-append-after) → string?
+(text:autocomplete-append-after suffix) → void?
+  suffix : string?
+A string that is inserted after a completion is inserted by a text:autocomplete
+instance.
+
+Defaults to "".
+(text:autocomplete-limit) → (and/c integer? exact? positive?)
+(text:autocomplete-limit count) → void?
+  count : (and/c integer? exact? positive?)
+Controls the number of completions visible at a time in the menu produced by
+text:autocomplete instances.
+
+Defaults to 15.
+(text:get-completions/manuals manuals) → (listof string?)
+  manuals : (or/c false/c (listof symbol?))
+Returns the list of keywords for the manuals from manuals by extracting all of
+the documented exports of the manuals. The symbols are meant to be module
+paths, e.g., the quoted form of the argument to require.
+
+If manuals is false, then all of the documented names are used.
+(text:lookup-port-name manuals)
+ → (or/c (is-a?/c editor:basic<%>) false/c)
+  manuals : symbol?
+Returns the editor instance whose port-name matches the given symbol. If no
+editor can be found, then returns false.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

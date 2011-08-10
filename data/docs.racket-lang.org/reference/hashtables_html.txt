@@ -1,0 +1,457 @@
+►  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+▼ 3  Datatypes
+ 3.1  Booleans and Equality
+ 3.2  Numbers
+ 3.3  Strings
+ 3.4  Byte Strings
+ 3.5  Characters
+ 3.6  Symbols
+ 3.7  Regular Expressions
+ 3.8  Keywords
+ 3.9  Pairs and Lists
+3.10  Mutable Pairs and Lists
+3.11  Vectors
+3.12  Boxes
+3.13  Hash Tables
+3.14  Sequences and Streams
+3.15  Dictionaries
+3.16  Sets
+3.17  Procedures
+3.18  Void and Undefined
+On this page:
+hash?
+hash-equal?
+hash-eqv?
+hash-eq?
+hash-weak?
+hash
+hasheq
+hasheqv
+make-hash
+make-hasheqv
+make-hasheq
+make-weak-hash
+make-weak-hasheqv
+make-weak-hasheq
+make-immutable-hash
+make-immutable-hasheqv
+make-immutable-hasheq
+hash-set!
+hash-set*!
+hash-set
+hash-set*
+hash-ref
+hash-ref!
+hash-has-key?
+hash-update!
+hash-update
+hash-remove!
+hash-remove
+hash-map
+hash-keys
+hash-values
+hash->list
+hash-for-each
+hash-count
+hash-iterate-first
+hash-iterate-next
+hash-iterate-key
+hash-iterate-value
+hash-copy
+eq-hash-code
+eqv-hash-code
+equal-hash-code
+equal-secondary-hash-code
+[...search manuals...]
+  top← prev  up  next → 
+
+3.13 Hash Tables
+
+            +Hash Tables in The Racket Guide introduces hash tables.
+
+A hash table (or simply hash) maps each of its keys to a single value. For a
+given hash table, keys are equivalent via equal?, eqv?, or eq?, and keys are
+retained either strongly or weakly (see Weak Boxes). A hash table is also
+either mutable or immutable. Immutable hash tables support effectively
+constant-time access and update, just like mutable hash tables; the constant on
+immutable operations is usually larger, but the functional nature of immutable
+hash tables can pay off in certain algorithms.
+
+            Immutable hash tables actually provide O(log N) access and update.
+            Since N is limited by the address space so that log N is limited to
+            less than 30 or 62 (depending on the platform), log N can be
+            treated reasonably as a constant.
+
+A hash table can be used as a two-valued sequence (see Sequences). The keys and
+values of the hash table serve as elements of the sequence (i.e., each element
+is a key and its associated value). If a mapping is added to or removed from
+the hash table during iteration, then an iteration step may fail with
+exn:fail:contract, or the iteration may skip or duplicate keys and values. See
+also in-hash, in-hash-keys, in-hash-values, and in-hash-pairs.
+
+Two hash tables cannot be equal? unless they use the same key-comparison
+procedure (equal?, eqv?, or eq?), both hold keys strongly or weakly, and have
+the same mutability.
+
+Caveats concerning concurrent modification: A mutable hash table can be
+manipulated with hash-ref, hash-set!, and hash-remove! concurrently by multiple
+threads, and the operations are protected by a table-specific semaphore as
+needed. Three caveats apply, however:
+
+  • If a thread is terminated while applying hash-ref, hash-set!, hash-remove!,
+    hash-ref!, or hash-update! to a hash table that uses equal? or eqv? key
+    comparisons, all current and future operations on the hash table may block
+    indefinitely.
+
+  • The hash-map and hash-for-each procedures do not use the table’s semaphore
+    to guard the traversal as a whole. Changes by one thread to a hash table
+    can affect the keys and values seen by another thread part-way through its
+    traversal of the same hash table.
+
+  • The hash-update! and hash-ref! functions use a table’s semaphore
+    independently for the hash-ref and hash-set! parts of their functionality,
+    which means that the update as a whole is not “atomic.”
+
+Caveat concerning mutable keys: If a key in an equal?-based hash table is
+mutated (e.g., a key string is modified with string-set!), then the hash
+table’s behavior for insertion and lookup operations becomes unpredictable.
+
+(hash? v) → boolean?
+  v : any/c
+Returns #t if v is a hash table, #f otherwise.
+
+(hash-equal? hash) → boolean?
+  hash : hash?
+Returns #t if hash compares keys with equal?, #f if it compares with eq? or
+eqv?.
+
+(hash-eqv? hash) → boolean?
+  hash : hash?
+Returns #t if hash compares keys with eqv?, #f if it compares with equal? or
+eq?.
+
+(hash-eq? hash) → boolean?
+  hash : hash?
+Returns #t if hash compares keys with eq?, #f if it compares with equal? or
+eqv?.
+
+(hash-weak? hash) → boolean?
+  hash : hash?
+Returns #t if hash retains its keys weakly, #f if it retains keys strongly.
+
+(hash key val ... ...) → (and/c hash? hash-equal? immutable?)
+  key : any/c
+  val : any/c
+(hasheq key val ... ...) → (and/c hash? hash-eq? immutable?)
+  key : any/c
+  val : any/c
+(hasheqv key val ... ...) → (and/c hash? hash-eqv? immutable?)
+  key : any/c
+  val : any/c
+Creates an immutable hash table with each given key mapped to the following
+val; each key must have a val, so the total number of arguments to hash must be
+even.
+
+The hash procedure creates a table where keys are compared with equal?, hasheq
+procedure creates a table where keys are compared with eq?, and hasheqv
+procedure creates a table where keys are compared with eqv?.
+
+The key to val mappings are added to the table in the order that they appear in
+the argument list, so later mappings can hide earlier mappings if the keys are
+equal.
+
+(make-hash [assocs]) → (and/c hash? hash-equal?)
+  assocs : (listof pair?) = null
+(make-hasheqv [assocs]) → (and/c hash? hash-eqv?)
+  assocs : (listof pair?) = null
+(make-hasheq [assocs]) → (and/c hash? hash-eq?)
+  assocs : (listof pair?) = null
+Creates a mutable hash table that holds keys strongly.
+
+The make-hash procedure creates a table where keys are compared with equal?,
+make-hasheq procedure creates a table where keys are compared with eq?, and
+make-hasheqv procedure creates a table where keys are compared with eqv?.
+
+The table is initialized with the content of assocs. In each element of assocs,
+the car is a key, and the cdr is the corresponding value. The mappings are
+added to the table in the order that they appear in assocs, so later mappings
+can hide earlier mappings.
+
+See also make-custom-hash.
+
+(make-weak-hash [assocs]) → (and/c hash? hash-equal? hash-weak?)
+  assocs : (listof pair?) = null
+(make-weak-hasheqv [assocs]) → (and/c hash? hash-eqv? hash-weak?)
+  assocs : (listof pair?) = null
+(make-weak-hasheq [assocs]) → (and/c hash? hash-eq? hash-weak?)
+  assocs : (listof pair?) = null
+Like make-hash, make-hasheq, and make-hasheqv, but creates a mutable hash table
+that holds keys weakly.
+
+(make-immutable-hash [assocs])
+ → (and/c hash? hash-equal? immutable?)
+  assocs : (listof pair?) = null
+(make-immutable-hasheqv [assocs])
+ → (and/c hash? hash-eqv? immutable?)
+  assocs : (listof pair?) = null
+(make-immutable-hasheq [assocs])
+ → (and/c hash? hash-eq? immutable?)
+  assocs : (listof pair?) = null
+Like hash, hasheq, and hasheqv, but accepts the key–value mapping in
+association-list form like make-hash, make-hasheq, and make-hasheqv.
+
+(hash-set! hash key v) → void?
+  hash : (and/c hash? (not/c immutable?))
+  key : any/c
+  v : any/c
+Maps key to v in hash, overwriting any existing mapping for key.
+
+See also the caveats concerning concurrent modification and the caveat
+concerning mutable keys above.
+
+(hash-set*! hash key v ... ...) → void?
+  hash : (and/c hash? (not/c immutable?))
+  key : any/c
+  v : any/c
+Maps each key to each v in hash, overwriting any existing mapping for each key.
+Mappings are added from the left, so later mappings overwrite earlier mappings.
+
+See also the caveats concerning concurrent modification and the caveat
+concerning mutable keys above.
+
+(hash-set hash key v) → (and/c hash? immutable?)
+  hash : (and/c hash? immutable?)
+  key : any/c
+  v : any/c
+Functionally extends hash by mapping key to v, overwriting any existing mapping
+for key, and returning the extended hash table.
+
+See also the caveat concerning mutable keys above.
+
+(hash-set* hash key v ... ...) → (and/c hash? immutable?)
+  hash : (and/c hash? immutable?)
+  key : any/c
+  v : any/c
+Functionally extends hash by mapping each key to v, overwriting any existing
+mapping for each key, and returning the extended hash table. Mappings are added
+from the left, so later mappings overwrite earlier mappings.
+
+See also the caveat concerning mutable keys above.
+
+(hash-ref hash key [failure-result]) → any
+  hash : hash?
+  key : any/c
+   failure-result   :   any/c
+                    =   (lambda ()
+                          (raise (make-exn:fail:contract ....)))
+Returns the value for key in hash. If no value is found for key, then
+failure-result determines the result:
+
+  • If failure-result is a procedure, it is called (through a tail call) with
+    no arguments to produce the result.
+
+  • Otherwise, failure-result is returned as the result.
+
+See also the caveats concerning concurrent modification and the caveat
+concerning mutable keys above.
+
+(hash-ref! hash key to-set) → any
+  hash : hash?
+  key : any/c
+  to-set : any/c
+Returns the value for key in hash. If no value is found for key, then to-set
+determines the result as in hash-ref (i.e., it is either a thunk that computes
+a value or a plain value), and this result is stored in hash for the key. (Note
+that if to-set is a thunk, it is not invoked in tail position.)
+
+See also the caveats concerning concurrent modification and the caveat
+concerning mutable keys above.
+
+(hash-has-key? hash key) → boolean?
+  hash : hash?
+  key : any/c
+Returns #t if hash contains a value for the given key, #f otherwise.
+
+(hash-update!    hash                    
+                 key                     
+                 updater                 
+               [ failure-result])   →   void?
+  hash : (and/c hash? (not/c immutable?))
+  key : any/c
+  updater : (any/c . -> . any/c)
+   failure-result   :   any/c
+                    =   (lambda ()
+                          (raise (make-exn:fail:contract ....)))
+Composes hash-ref and hash-set! to update an existing mapping in hash, where
+the optional failure-result argument is used as in hash-ref when no mapping
+exists for key already. See the caveat above about concurrent updates.
+
+See also the caveats concerning concurrent modification and the caveat
+concerning mutable keys above.
+
+(hash-update hash key updater [failure-result])
+ → (and/c hash? immutable?)
+  hash : (and/c hash? immutable?)
+  key : any/c
+  updater : (any/c . -> . any/c)
+   failure-result   :   any/c
+                    =   (lambda ()
+                          (raise (make-exn:fail:contract ....)))
+Composes hash-ref and hash-set to functionally update an existing mapping in
+hash, where the optional failure-result argument is used as in hash-ref when no
+mapping exists for key already.
+
+See also the caveat concerning mutable keys above.
+
+(hash-remove! hash key) → void?
+  hash : (and/c hash? (not/c immutable?))
+  key : any/c
+Removes any existing mapping for key in hash.
+
+See also the caveats concerning concurrent modification and the caveat
+concerning mutable keys above.
+
+(hash-remove hash key) → (and/c hash? immutable?)
+  hash : (and/c hash? immutable?)
+  key : any/c
+Functionally removes any existing mapping for key in hash, returning the fresh
+hash table.
+
+See also the caveat concerning mutable keys above.
+
+(hash-map hash proc) → (listof any/c)
+  hash : hash?
+  proc : (any/c any/c . -> . any/c)
+Applies the procedure proc to each element in hash in an unspecified order,
+accumulating the results into a list. The procedure proc is called each time
+with a key and its value.
+
+If a hash table is extended with new keys (either through proc or by another
+thread) while a hash-map or hash-for-each traversal is in process, arbitrary
+key–value pairs can be dropped or duplicated in the traversal. Key mappings can
+be deleted or remapped (by any thread) with no adverse affects; the change does
+not affect a traversal if the key has been seen already, otherwise the
+traversal skips a deleted key or uses the remapped key’s new value.
+
+See also the caveats concerning concurrent modification above.
+
+(hash-keys hash) → (listof any/c)
+  hash : hash?
+Returns a list of the keys of hash in an unspecified order.
+
+See hash-map for information about modifying hash during hash-keys.
+See also the caveats concerning concurrent modification above.
+
+(hash-values hash) → (listof any/c)
+  hash : hash?
+Returns a list of the values of hash in an unspecified order.
+
+See hash-map for information about modifying hash during hash-values.
+See also the caveats concerning concurrent modification above.
+
+(hash->list hash) → (listof (cons/c any/c any/c))
+  hash : hash?
+Returns a list of the key–value pairs of hash in an unspecified order.
+
+See hash-map for information about modifying hash during hash->list.
+See also the caveats concerning concurrent modification above.
+
+(hash-for-each hash proc) → void?
+  hash : hash?
+  proc : (any/c any/c . -> . any)
+Applies proc to each element in hash (for the side-effects of proc) in an
+unspecified order. The procedure proc is called each time with a key and its
+value.
+
+See hash-map for information about modifying hash within proc.
+See also the caveats concerning concurrent modification above.
+
+(hash-count hash) → exact-nonnegative-integer?
+  hash : hash?
+Returns the number of keys mapped by hash. Unless hash retains keys weakly, the
+result is computed in constant time and atomically. If hash retains it keys
+weakly, a traversal is required to count the keys.
+
+(hash-iterate-first hash)
+ → (or/c #f exact-nonnegative-integer?)
+  hash : hash?
+Returns #f if hash contains no elements, otherwise it returns an integer that
+is an index to the first element in the hash table; “first” refers to an
+unspecified ordering of the table elements, and the index values are not
+necessarily consecutive integers. For a mutable hash, this index is guaranteed
+to refer to the first item only as long as no items are added to or removed
+from hash.
+
+(hash-iterate-next hash pos)
+ → (or/c #f exact-nonnegative-integer?)
+  hash : hash?
+  pos : exact-nonnegative-integer?
+Returns either an integer that is an index to the element in hash after the
+element indexed by pos (which is not necessarily one more than pos) or #f if
+pos refers to the last element in hash. If pos is not a valid index, then the
+exn:fail:contract exception is raised. For a mutable hash, the result index is
+guaranteed to refer to its item only as long as no items are added to or
+removed from hash.
+
+(hash-iterate-key hash pos) → any
+  hash : hash?
+  pos : exact-nonnegative-integer?
+Returns the key for the element in hash at index pos. If pos is not a valid
+index for hash, the exn:fail:contract exception is raised.
+
+(hash-iterate-value hash pos) → any
+  hash : hash?
+  pos : exact-nonnegative-integer?
+Returns the value for the element in hash at index pos. If pos is not a valid
+index for hash, the exn:fail:contract exception is raised.
+
+(hash-copy hash) → (and/c hash? (not/c immutable?))
+  hash : hash?
+Returns a mutable hash table with the same mappings, same key-comparison mode,
+and same key-holding strength as hash.
+
+(eq-hash-code v) → fixnum?
+  v : any/c
+Returns a fixnum; for any two calls with eq? values, the returned number is the
+same.
+
+            Equal fixnums are always eq?.
+
+(eqv-hash-code v) → fixnum?
+  v : any/c
+Returns a fixnum; for any two calls with eqv? values, the returned number is
+the same.
+
+(equal-hash-code v) → fixnum?
+  v : any/c
+Returns a fixnum; for any two calls with equal? values, the returned number is
+the same. A hash code is computed even when v contains a cycle through pairs,
+vectors, boxes, and/or inspectable structure fields. See also prop:equal+hash.
+
+(equal-secondary-hash-code v) → fixnum?
+  v : any/c
+Like equal-hash-code, but computes a secondary value suitable for use in double
+hashing.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

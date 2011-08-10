@@ -1,0 +1,80 @@
+▼  Framework: Racket GUI Application Framework
+ 1  Framework Libraries Overview
+ 2  Application
+ 3  Autosave
+ 4  Canvas
+ 5  Color Model
+ 6  Color Prefs
+ 7  Color
+ 8  Comment Box
+ 9  Decorated Editor Snip
+10  Editor Snip
+11  Editor
+12  Exit
+13  Finder
+14  Frame
+15  Group
+16  GUI Utilities
+17  Handler
+18  Icon
+19  Keymap
+20  Menu
+21  Mode
+22  Number Snip
+23  Panel
+24  Pasteboard
+25  Path Utils
+26  Preferences
+27  Preferences, Textual
+28  Racket
+29  Text
+30  Splash
+31  Test
+32  Version
+33  Signatures
+34  Unit
+    Index
+On this page:
+number-snip: snip-class%
+read
+number-snip: make-repeating-decimal-snip
+number-snip: make-fraction-snip
+[...search manuals...]
+  top← prev  up  next → 
+
+22 Number Snip
+
+number-snip:snip-class% : class?
+  superclass: snip-class%
+
+
+
+    (send a-number-snip:snip-class read f)
+     → (or/c (is-a?/c snip%) #f)
+      f : (is-a?/c editor-stream-in%)
+    Overrides read in snip-class%.
+    Constructs a number snip from its input.
+
+(number-snip:make-repeating-decimal-snip   num            
+                                           show-prefix?)  
+ → (is-a?/c snip%)
+  num : number?
+  show-prefix? : boolean?
+Makes a number snip that shows the decimal expansion for number. The boolean
+indicates if a #e prefix appears on the number.
+
+See also number-snip:make-fraction-snip.
+(number-snip:make-fraction-snip   num                            
+                                  show-prefix-in-decimal-view?)  
+ → (is-a?/c snip%)
+  num : number?
+  show-prefix-in-decimal-view? : boolean?
+Makes a number snip that shows a fractional view of number. The boolean
+indicates if a #e prefix appears on the number, when shown in the decimal
+state.
+
+See also number-snip:make-repeating-decimal-snip.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

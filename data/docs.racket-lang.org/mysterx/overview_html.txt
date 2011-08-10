@@ -1,0 +1,114 @@
+▼  Myster X: Using Windows COM Objects in Racket
+1  Overview
+2  COM
+3  Active X and DHTML
+4  Version
+   Index
+► 1  Overview
+1.1  Installation
+1.2  Running a Demo
+1.3  Loading
+1.4  Remote COM servers (DCOM)
+On this page:
+1.1 Installation
+1.2 Running a Demo
+1.3 Loading
+1.4 Remote COM servers (DCOM)
+[...search manuals...]
+  top← prev  up  next → 
+
+1 Overview
+
+1.1 Installation
+
+MysterX requires Internet Explorer (IE) 4 or later to be installed. Distributed
+COM (DCOM) for your version of Windows is also required. Recent versions of
+Windows come with DCOM; DCOM packages for Windows 95 and 98 are made available
+separately.
+
+Two Windows DLLs support low-level operations in MysterX: "myspage.dll" and
+"myssink.dll". Both are installed in the registry (using regsvr32.exe) when
+raco setup runs the MysterX post-installer. If you move the location of your
+Racket installation, you may need to re-run raco setup to make MysterX work.
+Neither of these DLLs is specific to a Racket version, so it’s ok for one
+version of Racket to use the DLLs registered by another.
+
+            Prior to version 369.4, "myssink.dll" was version-specific. Its
+            GUID was changed when it was made version-independent.
+
+If you build a stand-alone executable that uses MysterX, you need to
+specifically include "myspage.dll" and "myssink.dll" with your distribution,
+and the DLLs will need to be registered on the end user’s machine. One way to
+do that is to include the following little setup program (as an executable) in
+your distribution:
+
+    (module setup scheme/base
+      (require mzlib/runtime-path
+               mzlib/process)
+     
+      ; Ensure that DLLs are included with the distribution:
+      (define-runtime-path myspage-dll '(so "myspage"))
+      (define-runtime-path myssink-dll '(so "myssink"))
+     
+      ; Register the DLLs:
+      (define regsvr32
+        (path->string (find-executable-path "regsvr32.exe" #f)))
+      (system* regsvr32 (path->string myspage-dll))
+      (system* regsvr32 (path->string myssink-dll)))
+
+1.2 Running a Demo
+
+Try
+
+    (require mysterx/mxdemo)
+
+The demo requires the MSCal Calendar control. The calendar control is normally
+installed with Microsoft Office, but it can also be downloaded from elsewhere;
+look for "mscal.ocx".
+
+1.3 Loading
+
+Load the MysterX module with
+
+    (require mysterx)
+
+Because some MysterX code relies on the scheme/class class system, you may also
+need
+
+    (require mzlib/class)
+
+Several MysterX procedures take HTML strings as input. The xml library provides
+procedures that convert Racket syntax into XML strings. You may find using
+these procedures useful in creating HTML strings for use by MysterX.
+
+1.4 Remote COM servers (DCOM)
+
+For the MysterX procedures cocreate-instance-from-coclass and
+cocreate-instance-from-progid, the optional where argument can be 'remote. In
+that case, the server instance is run at the location given by the Registry key
+
+    HKEY_CLASSES_ROOT\AppID\‹CLSID›\RemoteServerName
+
+where ‹CLSID› is the CLSID of the application. This key may be set using the
+dcomcnfg utility. From dcomcnfg, pick the application to be run on the
+Applications tab, then click on the Properties button. On the Location tab,
+choose Run application on the following computer, and enter the machine name.
+
+In order to run a COM remote server, the registry on the client machine must
+contain an entry at
+
+    HKEY_CLASSES_ROOT\CLSID\‹CLSID›
+
+where ‹CLSID› is the CLSID for the server. The server application itself need
+not be installed on the client machine.
+
+There are a number of configuration issues relating to DCOM, which MysterX uses
+to invoke remote COM servers. The Web page
+
+    http://www.distribucon.com/dcom95.html
+
+discusses how to setup client and server machines for DCOM.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

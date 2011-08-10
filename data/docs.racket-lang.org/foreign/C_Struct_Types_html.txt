@@ -1,0 +1,232 @@
+►  The Racket Foreign Interface
+1  Overview
+2  Loading Foreign Libraries
+3  C Types
+4  Pointer Functions
+5  Derived Utilities
+6  Miscellaneous Support
+7  Unexported Primitive Functions
+   Index
+▼ 3  C Types
+3.1  Type Constructors
+3.2  Numeric Types
+3.3  Other Atomic Types
+3.4  String Types
+3.5  Pointer Types
+3.6  Function Types
+3.7  C Struct Types
+3.8  Enumerations and Masks
+On this page:
+make-cstruct-type
+_ list-struct
+define-cstruct
+[...search manuals...]
+  top← prev  up  next → 
+
+3.7 C Struct Types
+
+(make-cstruct-type types [abi alignment]) → ctype?
+  types : (listof ctype?)
+  abi : (or/c #f 'default 'stdcall 'sysv) = #f
+  alignment : (or/c #f 1 2 4 8 16) = #f
+The primitive type constructor for creating new C struct types. These types are
+actually new primitive types; they have no conversion functions associated. The
+corresponding Racket objects that are used for structs are pointers, but when
+these types are used, the value that the pointer refers to is used, rather than
+the pointer itself. This value is basically made of a number of bytes that is
+known according to the given list of types list.
+
+If alignment is #f, then the natural alignment of each type in types is used
+for its alignment within the struct type. Otherwise, alignment is used for all
+struct type members.
+
+(_list-struct  [ #:alignment alignment]        
+                 type ...+)               →   ctype?
+  alignment : (or/c #f 1 2 4 8 16) = #f
+  type : ctype?
+A type constructor that builds a struct type using make-cstruct-type function
+and wraps it in a type that marshals a struct as a list of its components. Note
+that space for structs must to be allocated; the converter for a _list-struct
+type immediately allocates and uses a list from the allocated space, so it is
+inefficient. Use define-cstruct below for a more efficient approach.
+
+(define-cstruct id/sup ([field-id type-expr] ...) alignment)
+ 
+   id/sup   =   _id
+            |   (_id super-id)
+                 
+alignment   =  
+            |   #:alignment alignment-expr
+Defines a new C struct type, but unlike _list-struct, the resulting type deals
+with C structs in binary form, rather than marshaling them to Racket values.
+The syntax is similar to define-struct, providing accessor functions for raw
+struct values (which are pointer objects). The new type uses pointer tags to
+guarantee that only proper struct objects are used. The _id must start with _.
+
+The resulting bindings are as follows:
+
+  • _id : the new C type for this struct.
+
+  • _id-pointer: a pointer type that should be used when a pointer to values of
+    this struct are used.
+
+  • id?: a predicate for the new type.
+
+  • id-tag: the tag string object that is used with instances.
+
+  • make-id : a constructor, which expects an argument for each type.
+
+  • id-field-id : an accessor function for each field-id; if the field has a
+    cstruct type, then the result of the accessor is a pointer to the field
+    within the enclosing structure, rather than a copy of the field.
+
+  • set-id-field-id! : a mutator function for each field-id.
+
+  • id: structure-type information compatible with struct-out or match (but not
+    define-struct); currently, this information is correct only when no
+    super-id is specified.
+
+Objects of the new type are actually C pointers, with a type tag that is a list
+that contains the string form of id. Since structs are implemented as pointers,
+they can be used for a _pointer input to a foreign function: their address will
+be used. To make this a little safer, the corresponding cpointer type is
+defined as _id-pointer. The _id type should not be used when a pointer is
+expected, since it will cause the struct to be copied rather than use the
+pointer value, leading to memory corruption.
+
+If the first field is itself a cstruct type, its tag will be used in addition
+to the new tag. This feature supports common cases of object inheritance, where
+a sub-struct is made by having a first field that is its super-struct.
+Instances of the sub-struct can be considered as instances of the super-struct,
+since they share the same initial layout. Using the tag of an initial cstruct
+field means that the same behavior is implemented in Racket; for example,
+accessors and mutators of the super-cstruct can be used with the new
+sub-cstruct. See the example below.
+
+Providing a super-id is shorthand for using an initial field named super-id and
+using _super-id as its type. Thus, the new struct will use _super-id’s tag in
+addition to its own tag, meaning that instances of _id can be used as instances
+of _super-id. Aside from the syntactic sugar, the constructor function is
+different when this syntax is used: instead of expecting a first argument that
+is an instance of _super-id, the constructor will expect arguments for each of
+_super-id’s fields, in addition for the new fields. This adjustment of the
+constructor is, again, in analogy to using a supertype with define-struct.
+
+Note that structs are allocated as atomic blocks, which means that the garbage
+collector ignores their content. Thus, struct fields can hold only non-pointer
+values, pointers to memory outside the GC’s control, and otherwise-reachable
+pointers to immobile GC-managed values (such as those allocated with malloc and
+'internal or 'internal-atomic).
+
+As an example, consider the following C code:
+
+  typedef struct { int x; char y; } A;
+
+  typedef struct { A a; int z; } B;
+
+  
+
+  A* makeA() {
+
+    A *p = malloc(sizeof(A));
+
+    p->x = 1;
+
+    p->y = 2;
+
+    return p;
+
+  }
+
+  
+
+  B* makeB() {
+
+    B *p = malloc(sizeof(B));
+
+    p->a.x = 1;
+
+    p->a.y = 2;
+
+    p->z   = 3;
+
+    return p;
+
+  }
+
+  
+
+  char gety(A* a) {
+
+    return a->y;
+
+  }
+
+
+Using the simple _list-struct, you might expect this code to work:
+
+    (define makeB
+      (get-ffi-obj 'makeB "foo.so"
+        (_fun -> (_list-struct (_list-struct _int _byte) _int))))
+    (makeB) ; should return '((1 2) 3)
+
+The problem here is that makeB returns a pointer to the struct rather than the
+struct itself. The following works as expected:
+
+    (define makeB
+      (get-ffi-obj 'makeB "foo.so" (_fun -> _pointer)))
+    (ptr-ref (makeB) (_list-struct (_list-struct _int _byte) _int))
+
+As described above, _list-structs should be used in cases where efficiency is
+not an issue. We continue using define-cstruct, first define a type for A which
+makes it possible to use makeA:
+
+    (define-cstruct _A ([x _int] [y _byte]))
+    (define makeA
+      (get-ffi-obj 'makeA "foo.so"
+        (_fun -> _A-pointer))) ; using _A is a memory-corrupting bug!
+    (define a (makeA))
+    (list a (A-x a) (A-y a))
+    ; produces an A containing 1 and 2
+
+Using gety is also simple:
+
+    (define gety
+      (get-ffi-obj 'gety "foo.so"
+        (_fun _A-pointer -> _byte)))
+    (gety a) ; produces 2
+
+We now define another C struct for B, and expose makeB using it:
+
+    (define-cstruct _B ([a _A] [z _int]))
+    (define makeB
+      (get-ffi-obj 'makeB "foo.so"
+        (_fun -> _B-pointer)))
+    (define b (makeB))
+
+We can access all values of b using a naive approach:
+
+    (list (A-x (B-a b)) (A-y (B-a b)) (B-z b))
+
+but this is inefficient as it allocates and copies an instance of A on every
+access. Inspecting the tags (cpointer-tag b) we can see that A’s tag is
+included, so we can simply use its accessors and mutators, as well as any
+function that is defined to take an A pointer:
+
+    (list (A-x b) (A-y b) (B-z b))
+    (gety b)
+
+Constructing a B instance in Racket requires allocating a temporary A struct:
+
+    (define b (make-B (make-A 1 2) 3))
+
+To make this more efficient, we switch to the alternative define-cstruct
+syntax, which creates a constructor that expects arguments for both the super
+fields and the new ones:
+
+    (define-cstruct (_B _A) ([z _int]))
+    (define b (make-B 1 2 3))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

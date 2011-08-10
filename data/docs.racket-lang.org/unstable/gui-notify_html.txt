@@ -1,0 +1,215 @@
+►  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+▼ 32  GUI libraries
+32.1  Dr Racket Language Levels
+32.2  Notify-boxes
+32.3  Preferences
+32.4  Slideshow Presentations
+32.5  Progressive Picts and Slides
+On this page:
+notify-box%
+get
+set
+listen
+remove-listener
+remove-all-listeners
+notify-box/ pref
+define-notify
+menu-option/ notify-box
+check-box/ notify-box
+choice/ notify-box
+menu-group/ notify-box
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+32.2 Notify-boxes
+
+Ryan Culpepper <ryanc@racket-lang.org>
+
+ (require unstable/gui/notify)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+notify-box% : class?
+  superclass: object%
+
+A notify-box contains a mutable cell. The notify-box notifies its listeners
+when the contents of the cell is changed.
+Examples:
+
+    > (define nb (new notify-box% (value 'apple)))
+    > (send nb get)
+    'apple
+
+    > (send nb set 'orange)
+    > (send nb listen (lambda (v) (printf "New value: ~s\n" v)))
+    > (send nb set 'potato)
+    New value: potato
+
+
+
+
+    (new notify-box% [value value]) → (is-a?/c notify-box%)
+      value : any/c
+    Creates a notify-box initially containing value.
+    (send a-notify-box get) → any/c
+    Gets the value currently stored in the notify-box.
+    (send a-notify-box set v) → void?
+      v : any/c
+    Updates the value stored in the notify-box and notifies the listeners.
+    (send a-notify-box listen listener) → void?
+      listener : (-> any/c any)
+    Adds a callback to be invoked on the new value when the notify-box’s
+    contents change.
+    (send a-notify-box remove-listener listener) → void?
+      listener : (-> any/c any)
+    Removes a previously-added callback.
+    (send a-notify-box remove-all-listeners) → void?
+    Removes all previously registered callbacks.
+
+(notify-box/pref    proc                           
+                  [ #:readonly? readonly?])   →   (is-a?/c notify-box%)
+  proc : (case-> (-> any/c) (-> any/c void?))
+  readonly? : boolean? = #f
+Creates a notify-box with an initial value of (proc). Unless readonly? is true,
+proc is invoked on the new value when the notify-box is updated.
+
+Useful for tying a notify-box to a preference or parameter. Of course, changes
+made directly to the underlying parameter or state are not reflected in the
+notify-box.
+
+Examples:
+
+    > (define animal (make-parameter 'ant))
+    > (define nb (notify-box/pref animal))
+    > (send nb listen (lambda (v) (printf "New value: ~s\n" v)))
+    > (send nb set 'bee)
+    New value: bee
+
+    > (animal 'cow)
+    > (send nb get)
+    'bee
+
+    > (send nb set 'deer)
+    New value: deer
+
+    > (animal)
+    'deer
+
+
+
+(define-notify name value-expr)
+ 
+   value-expr   :   (is-a?/c notify-box%)
+Class-body form. Declares name as a field and get-name, set-name, and
+listen-name as methods that delegate to the get, set, and listen methods of
+value.
+
+The value-expr argument must evaluate to a notify-box, not just the initial
+contents for a notify box.
+
+Useful for aggregating many notify-boxes together into one “configuration”
+object.
+
+Examples:
+
+    > (define config%
+        (class object%
+          (define-notify food (new notify-box% (value 'apple)))
+          (define-notify animal (new notify-box% (value 'ant)))
+          (super-new)))
+    > (define c (new config%))
+    > (send c listen-food
+              (lambda (v) (when (eq? v 'honey) (send c set-animal 'bear))))
+    > (let ([food (get-field food c)])
+        (send food set 'honey))
+    > (send c get-animal)
+    'bear
+
+
+
+(menu-option/notify-box   parent       
+                          label        
+                          notify-box)  
+ → (is-a?/c checkable-menu-item%)
+  parent : (or/c (is-a?/c menu%) (is-a?/c popup-menu%))
+  label : label-string?
+  notify-box : (is-a?/c notify-box%)
+Creates a checkable-menu-item% tied to notify-box. The menu item is checked
+whenever (send notify-box get) is true. Clicking the menu item toggles the
+value of notify-box and invokes its listeners.
+
+(check-box/notify-box   parent             
+                        label              
+                        notify-box)   →   (is-a?/c check-box%)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+  label : label-string?
+  notify-box : (is-a?/c notify-box%)
+Creates a check-box% tied to notify-box. The check-box is checked whenever (
+send notify-box get) is true. Clicking the check box toggles the value of
+notify-box and invokes its listeners.
+
+(choice/notify-box   parent             
+                     label              
+                     choices            
+                     notify-box)   →   (is-a?/c choice%)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+  label : label-string?
+  choices : (listof label-string?)
+  notify-box : (is-a?/c notify-box%)
+Creates a choice% tied to notify-box. The choice control has the value (send
+notify-box get) selected, and selecting a different choice updates notify-box
+and invokes its listeners.
+
+If the value of notify-box is not in choices, either initially or upon an
+update, an error is raised.
+
+(menu-group/notify-box   parent       
+                         labels       
+                         notify-box)  
+ → (listof (is-a?/c checkable-menu-item%))
+  parent : (or/c (is-a?/c menu%) (is-a?/c popup-menu%))
+  labels : (listof label-string?)
+  notify-box : (is-a?/c notify-box%)
+Returns a list of checkable-menu-item% controls tied to notify-box. A menu item
+is checked when its label is (send notify-box get). Clicking a menu item
+updates notify-box to its label and invokes notify-box’s listeners.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

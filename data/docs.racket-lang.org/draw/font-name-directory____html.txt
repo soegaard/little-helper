@@ -1,0 +1,162 @@
+▼  The Racket Drawing Toolkit
+ 1  Overview
+ 2  bitmap%
+ 3  bitmap-dc%
+ 4  brush%
+ 5  brush-list%
+ 6  color%
+ 7  color-database<%>
+ 8  dc<%>
+ 9  dc-path%
+10  font%
+11  font-list%
+12  font-name-directory<%>
+13  gl-config%
+14  gl-context<%>
+15  linear-gradient%
+16  pdf-dc%
+17  pen%
+18  pen-list%
+19  point%
+20  post-script-dc%
+21  ps-setup%
+22  radial-gradient%
+23  region%
+24  svg-dc%
+25  Drawing Functions
+26  Signature and Unit
+27  Platform Dependencies
+    Bibliography
+    Index
+On this page:
+find-family-default-font-id
+find-or-create-font-id
+get-face-name
+get-family
+get-font-id
+get-post-script-name
+get-screen-name
+set-post-script-name
+set-screen-name
+[...search manuals...]
+  top← prev  up  next → 
+
+font-name-directory<%> : interface?
+There is one font-name-directory<%> object: the-font-name-directory. It
+implements a mapping from font specifications (face, family, style, and weight)
+to information for rendering text on a specific device. Programmers rarely need
+to directly invoke methods of the-font-name-directory. It is used automatically
+when drawing text to a dc<%> object. Nevertheless, the-font-name-directory is
+available so that programmers can query or modify the mapping manually. A
+programmer may also need to understand how the face-and-family mapping works.
+
+To extract mapping information from the-font-name-directory, first obtain a
+font ID, which is an index based on a family and optional face string. Font IDs
+are returned by find-or-create-font-id and get-font-id . A Font ID can be
+combined with a weight and style to obtain a specific mapping value via
+get-screen-name or get-post-script-name.
+
+For a family without a face string, the corresponding font ID has a useful
+built-in mapping for every platform and device. For a family with a face
+string, the-font-name-directory interprets the string (in a platform-specific
+way) to generate a mapping for “screen” drawing (to a canvas’s dc<%>, a
+bitmap-dc%, or a printer-dc%). When drawing to a post-script-dc% object, the
+face-specific mapping defaults to the family’s mapping.
+
+(send a-font-name-directory find-family-default-font-id family)
+ → exact-integer?
+   family   :   (one-of/c 'default 'decorative 'roman 'script
+                          'swiss 'modern 'symbol 'system)
+Gets the font ID representing the default font for a family. See font% for
+information about font families.
+
+(send a-font-name-directory find-or-create-font-id   name     
+                                                     family)  
+ → exact-integer?
+  name : string?
+   family   :   (one-of/c 'default 'decorative 'roman 'script
+                          'swiss 'modern 'symbol 'system)
+Gets the face name for a font ID, initializing the mapping for the face name if
+necessary.
+
+Font ID are useful only as mapping indices for the-font-name-directory.
+
+(send a-font-name-directory get-face-name font-id)
+ → (or/c string? false/c)
+  font-id : exact-integer?
+Gets the face name for a font ID. If the font ID corresponds to the default
+font for a particular family, #f is returned.
+
+(send a-font-name-directory get-family font-id)
+  →   (one-of/c 'default 'decorative 'roman 'script
+                'swiss 'modern 'symbol 'system)
+  font-id : exact-integer?
+Gets the family for a font ID. See font% for information about font families.
+
+(send a-font-name-directory get-font-id   name     
+                                          family)  
+ → exact-integer?
+  name : string?
+   family   :   (one-of/c 'default 'decorative 'roman 'script
+                          'swiss 'modern 'symbol 'system)
+Gets the font ID for a face name paired with a default family. If the mapping
+for the given pair is not already initialized, 0 is returned. See also
+find-or-create-font-id.
+
+Font ID are useful only as mapping indices for the-font-name-directory.
+
+(send a-font-name-directory get-post-script-name   font-id  
+                                                   weight   
+                                                   style)   
+ → (or/c string? false/c)
+  font-id : exact-integer?
+  weight : (one-of/c 'normal 'bold 'light)
+  style : (one-of/c 'normal 'italic 'slant)
+Gets a PostScript font name for a font ID, weight, and style combination.
+
+See font% for information about weight and style.
+
+(send a-font-name-directory get-screen-name   font-id  
+                                              weight   
+                                              style)   
+ → (or/c string? false/c)
+  font-id : exact-integer?
+  weight : (one-of/c 'normal 'bold 'light)
+  style : (one-of/c 'normal 'italic 'slant)
+Gets a platform-dependent screen font name (used for drawing to a canvas’s dc
+<%>, a bitmap-dc%, or a printer-dc%) for a font ID, weight, and style
+combination.
+
+See font% for information about weight and style.
+
+(send a-font-name-directory set-post-script-name   font-id  
+                                                   weight   
+                                                   style    
+                                                   name)    
+ → void?
+  font-id : exact-integer?
+  weight : (one-of/c 'normal 'bold 'light)
+  style : (one-of/c 'normal 'italic 'slant)
+  name : string?
+Sets a PostScript font name for a font ID, weight, and style combination. See
+also get-post-script-name.
+
+See font% for information about weight and style.
+
+(send a-font-name-directory set-screen-name   font-id        
+                                              weight         
+                                              style          
+                                              name)     →   void?
+  font-id : exact-integer?
+  weight : (one-of/c 'normal 'bold 'light)
+  style : (one-of/c 'normal 'italic 'slant)
+  name : string?
+Sets a platform-dependent screen font name (used for drawing to a canvas’s dc
+<%>, a bitmap-dc%, or a printer-dc%) for a font ID, weight, and style
+combination.
+
+See font% for information about weight and style.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

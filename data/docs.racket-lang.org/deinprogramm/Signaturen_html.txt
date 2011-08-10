@@ -1,0 +1,174 @@
+►  Sprachebenen und Material zu Die Macht der Abstraktion
+ 1  Die Macht der Abstraktion - Anfa:nger
+ 2  Die Macht der Abstraktion
+ 3  Die Macht der Abstraktion mit Zuweisungen
+ 4  Die Macht der Abstraktion fortgeschritten
+ 5  Konstruktionsanleitungen 1 bis 10
+ 6  Bilder konstruieren: "image.ss"
+ 7  Animationen: "world.ss"
+ 8  Turtle-Grafik: "turtle.ss"
+ 9  Abspielen von Audio-Dateien: "sound.ss"
+10  3D-Liniengraphik: "line3d.ss"
+11  DMd A: Sprachen als Libraries
+    Index
+▼ 1  Die Macht der Abstraktion - Anfa:nger
+ 1.1  Definitionen
+ 1.2  Record-Typ-Definitionen
+ 1.3  Prozedurapplikation
+ 1.4  #t and #f
+ 1.5  lambda
+ 1.6  Bezeichner
+ 1.7  cond
+ 1.8  if
+ 1.9  and
+1.10  or
+1.11  Signaturen
+1.12  Testfa:lle
+1.13  Parametrische Record-Typ-Definitionen
+1.14  Eigenschaften
+1.15  Primitive Operationen
+► 1.11  Signaturen
+1.11.1  signature
+1.11.2  Signaturdeklaration
+1.11.3  Eingebaute Signaturen
+1.11.4  predicate
+1.11.5  one-of
+1.11.6  mixed
+1.11.7  Prozedur-Signatur
+1.11.8  Signatur-Variablen
+1.11.9  combined
+On this page:
+1.11.1 signature
+signature
+1.11.2 Signaturdeklaration
+:
+1.11.3 Eingebaute Signaturen
+number
+real
+rational
+integer
+natural
+boolean
+true
+false
+string
+empty-list
+any
+property
+1.11.4 predicate
+predicate
+1.11.5 one-of
+one-of
+1.11.6 mixed
+mixed
+1.11.7 Prozedur-Signatur
+->
+1.11.8 Signatur-Variablen
+1.11.9 combined
+combined
+[...search manuals...]
+  top← prev  up  next → 
+
+1.11 Signaturen
+
+Signaturen ko:nnen statt der Vertra:ge aus dem Buch geschrieben werden:
+Wa:hrend Vertra:ge reine Kommentare sind, u:berpru:ft DrRacket Signaturen und
+meldet etwaige Verletzungen.
+
+1.11.1 signature
+
+(signature sig)
+Diese Form liefert die Signatur mit der Notation sig.
+
+1.11.2 Signaturdeklaration
+
+(: id sig)
+Diese Form erkla:rt sig zur gu:ltigen Signatur fu:r id.
+
+1.11.3 Eingebaute Signaturen
+
+number
+Signatur fu:r beliebige Zahlen.
+
+real
+Signatur fu:r reelle Zahlen.
+
+rational
+Signatur fu:r rationale Zahlen.
+
+integer
+Signatur fu:r ganze Zahlen.
+
+natural
+Signatur fu:r ganze, nichtnegative Zahlen.
+
+boolean
+Signatur fu:r boolesche Werte.
+
+true
+Signatur fu:r \scheme[#t].
+
+false
+Signatur fu:r \scheme[#f].
+
+string
+Signatur fu:r Zeichenketten.
+
+empty-list
+Signatur fu:r die leere Liste.
+
+any
+Signatur, die auf alle Werte gu:ltig ist.
+
+signature
+Signatur fu:r Signaturen.
+
+property
+Signatur fu:r Eigenschaften.
+
+1.11.4 predicate
+
+(predicate expr)
+Bei dieser Signatur muss expr als Wert ein Pra:dikat haben, also eine Prozedur,
+die einen beliebigen Wert akzeptiert und entweder #t oder #f zuru:ckgibt. Die
+Signatur ist dann fu:r einen Wert gu:ltig, wenn das Pra:dikat, darauf
+angewendet, #t ergibt.
+
+1.11.5 one-of
+
+(one-of expr ...)
+Diese Signatur ist fu:r einen Wert gu:ltig, wenn er gleich dem Wert eines der
+expr ist.
+
+1.11.6 mixed
+
+(mixed sig ...)
+Diese Signatur ist fu:r einen Wert gu:ltig, wenn er fu:r eine der Signaturen
+sig gu:ltig ist.
+
+1.11.7 Prozedur-Signatur
+
+->
+(sig ... -> sig)
+Diese Signatur ist dann fu:r einen Wert gu:ltig, wenn dieser eine Prozedur ist.
+Er erkla:rt ausserdem, dass die Signaturen vor dem -> fu:r die Argumente der
+Prozedur gelten und die Signatur nach dem -> fu:r den Ru:ckgabewert. }
+
+1.11.8 Signatur-Variablen
+
+%a
+%b
+%c
+...
+Dies ist eine Signaturvariable: sie steht fu:r eine Signatur, die fu:r jeden
+Wert gu:ltig ist.
+
+1.11.9 combined
+
+(combined sig ...)
+Diese Signatur ist fu:r einen Wert gu:ltig, wenn sie fu:r alle der Signaturen
+sig gu:ltig ist.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

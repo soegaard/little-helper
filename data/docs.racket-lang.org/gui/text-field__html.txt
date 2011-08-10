@@ -1,0 +1,258 @@
+►  The Racket Graphical Interface Toolkit
+ 1  Windowing
+ 2  Windowing Classes
+ 3  Windowing Functions
+ 4  Editors
+ 5  Snip and Style Classes
+ 6  Editor Classes
+ 7  Editor Functions
+ 8  WXME Decoding
+ 9  Preferences
+10  Dynamic Loading
+11  Startup Actions
+12  Platform Dependencies
+    Index
+▼ 2  Windowing Classes
+ 2.1  area<%>
+ 2.2  area-container<%>
+ 2.3  area-container-window<%>
+ 2.4  button%
+ 2.5  canvas<%>
+ 2.6  canvas%
+ 2.7  check-box%
+ 2.8  checkable-menu-item%
+ 2.9  choice%
+2.10  clipboard-client%
+2.11  clipboard<%>
+2.12  combo-field%
+2.13  control<%>
+2.14  column-control-event%
+2.15  control-event%
+2.16  cursor%
+2.17  dialog%
+2.18  event%
+2.19  frame%
+2.20  gauge%
+2.21  group-box-panel%
+2.22  grow-box-spacer-pane%
+2.23  horizontal-pane%
+2.24  horizontal-panel%
+2.25  key-event%
+2.26  labelled-menu-item<%>
+2.27  list-box%
+2.28  list-control<%>
+2.29  menu%
+2.30  menu-bar%
+2.31  menu-item<%>
+2.32  menu-item%
+2.33  menu-item-container<%>
+2.34  message%
+2.35  mouse-event%
+2.36  pane%
+2.37  panel%
+2.38  popup-menu%
+2.39  printer-dc%
+2.40  radio-box%
+2.41  selectable-menu-item<%>
+2.42  separator-menu-item%
+2.43  scroll-event%
+2.44  slider%
+2.45  subarea<%>
+2.46  subwindow<%>
+2.47  tab-panel%
+2.48  text-field%
+2.49  timer%
+2.50  top-level-window<%>
+2.51  vertical-pane%
+2.52  vertical-panel%
+2.53  window<%>
+On this page:
+get-editor
+get-field-background
+get-value
+set-field-background
+set-value
+Inherited methods:
+from control<%>
+command
+from subwindow<%>
+reparent
+from window<%>
+accept-drop-files
+client->screen
+enable
+focus
+get-client-handle
+get-client-size
+get-cursor
+get-handle
+get-height
+get-label
+get-plain-label
+get-size
+get-width
+get-x
+get-y
+has-focus?
+is-enabled?
+is-shown?
+on-drop-file
+on-focus
+on-move
+on-size
+on-subwindow-char
+on-subwindow-event
+on-superwindow-enable
+on-superwindow-show
+popup-menu
+refresh
+screen->client
+set-cursor
+set-label
+show
+from area<%>
+get-graphical-min-size
+get-parent
+get-top-level-window
+min-height
+min-width
+stretchable-height
+stretchable-width
+from subarea<%>
+horiz-margin
+vert-margin
+[...search manuals...]
+  top← prev  up  next → 
+
+text-field% : class?
+  superclass: object%
+
+  extends:  control<%>
+A text-field% object is an editable text field with an optional label displayed
+in front of it. There are two text field styles:
+
+  • A single line of text is visible, and a special control event is generated
+    when the user presses Return or Enter (when the text field has the focus)
+    and the event is not handled by the text field’s frame or dialog (see
+    on-traverse-char in top-level-window<%> ).
+
+  • Multiple lines of text are visible, and Enter is not handled specially.
+
+Whenever the user changes the content of a text field, its callback procedure
+is invoked. A callback procedure is provided as an initialization argument when
+each text field is created.
+
+The text field is implemented using a text% editor (with an inaccessible
+display). Thus, whereas text-field% provides only get-value and set-value to
+manipulate the text in a text field, the get-editor returns the field’s editor,
+which provides a vast collection of methods for more sophisticated operations
+on the text.
+
+The keymap for the text field’s editor is initialized by calling the current
+keymap initializer procedure, which is determined by the
+current-text-keymap-initializer parameter.
+
+(new text-field%    [label label]                              
+                    [parent parent]                            
+                  [ [callback callback]                        
+                    [init-value init-value]                    
+                    [style style]                              
+                    [font font]                                
+                    [enabled enabled]                          
+                    [vert-margin vert-margin]                  
+                    [horiz-margin horiz-margin]                
+                    [min-width min-width]                      
+                    [min-height min-height]                    
+                    [stretchable-width stretchable-width]      
+                    [stretchable-height stretchable-height]])  
+ → (is-a?/c text-field%)
+  label : (or/c label-string? false/c)
+   parent   :   (or/c (is-a?/c frame%) (is-a?/c dialog%)
+                      (is-a?/c panel%) (is-a?/c pane%))
+   callback   :   ((is-a?/c text-field%) (is-a?/c control-event%)
+                   . -> . any)
+              =   (lambda (t e) (void))
+  init-value : string? = ""
+               (listof (one-of/c 'single 'multiple 'hscroll 'password
+   style   :                     'vertical-label 'horizontal-label
+                                 'deleted))
+           =   '(single)
+  font : (is-a?/c font%) = normal-control-font
+  enabled : any/c = #t
+  vert-margin : (integer-in 0 1000) = 2
+  horiz-margin : (integer-in 0 1000) = 2
+  min-width : (integer-in 0 10000) = graphical-minimum-width
+  min-height : (integer-in 0 10000) = graphical-minimum-height
+  stretchable-width : any/c = #t
+  stretchable-height : any/c = (memq 'multiple style)
+If label is not #f, it is used as the text field label. Otherwise, the text
+field does not display its label.
+
+If & occurs in label, it is specially parsed as for button%.
+
+The callback procedure is called when the user changes the text in the text
+field or presses the Enter key (and Enter is not handled by the text field’s
+frame or dialog; see on-traverse-char in top-level-window<%>). If the user
+presses Enter, the type of event passed to the callback is 'text-field-enter,
+otherwise it is 'text-field.
+
+If init-value is not "", the minimum width of the text item is made wide enough
+to show init-value. Otherwise, a built-in default width is selected. For a text
+field in single-line mode, the minimum height is set to show one line and only
+the control’s width is stretchable. For a multiple-line text field, the minimum
+height shows three lines of text and is stretchable in both directions.
+
+The style must contain exactly one of 'single or 'multiple; the former
+specifies a single-line field and the latter specifies a multiple-line field.
+The 'hscroll style applies only to multiple-line fields; when 'hscroll is
+specified, the field has a horizontal scrollbar and autowrapping is disabled;
+otherwise, the field has no horizontal scrollbar and autowrapping is enabled. A
+multiple-line text field always has a vertical scrollbar. The 'password style
+indicates that the field should draw each character of its content using a
+generic symbol instead of the actual character. If style includes
+'vertical-label, then the text field is created with a label above the control;
+if style does not include 'vertical-label (and optionally includes
+'horizontal-label), then the label is created to the left of the text field. If
+style includes 'deleted, then the text field is created as hidden, and it does
+not affect its parent’s geometry; the text field can be made active later by
+calling parent’s add-child method..
+
+The font argument determines the font for the control. For information about
+the enabled argument, see window<%>. For information about the horiz-margin and
+vert-margin arguments, see subarea<%>. For information about the min-width,
+min-height, stretchable-width, and stretchable-height arguments, see area<%>.
+
+(send a-text-field get-editor) → (is-a?/c text%)
+Returns the editor used to implement the text field.
+
+For a text field, the most useful methods of a text% object are the following:
+
+  • (send a-text get-text) returns the current text of the editor.
+
+  • (send a-text erase) deletes all text from the editor.
+
+  • (send a-text insert str) inserts str into the editor at the current caret
+    position.
+
+(send a-text-field get-field-background) → (is-a?/c color%)
+Gets the background color of the field’s editable area.
+
+(send a-text-field get-value) → string?
+Returns the text currently in the text field.
+
+(send a-text-field set-field-background color) → void?
+  color : (is-a?/c color%)
+Sets the background color of the field’s editable area.
+
+(send a-text-field set-value val) → void?
+  val : string?
+Sets the text currently in the text field. (The control’s callback procedure is
+not invoked.)
+
+A text field’s value can be changed by the user typing into the control, and
+such changes do not go through this method; use the control callback procedure
+(provided as an initialization argument) to monitor value changes.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

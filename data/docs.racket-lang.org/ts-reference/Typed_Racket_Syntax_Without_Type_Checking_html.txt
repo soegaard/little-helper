@@ -1,0 +1,34 @@
+▼  The Typed Racket Reference
+ 1  Type Reference
+ 2  Special Form Reference
+ 3  Libraries Provided With Typed Racket
+ 4  Utilities
+ 5  Typed Racket Syntax Without Type Checking
+ 6  Typed Regions
+ 7  Optimization in Typed Racket
+ 8  Legacy Forms
+ 9  Compatibility Languages
+10  Experimental Features
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+5 Typed Racket Syntax Without Type Checking
+
+ #lang typed/racket/no-check
+ #lang typed/racket/base/no-check
+
+On occasions where the Typed Racket syntax is useful, but actual typechecking
+is not desired, the typed/racket/no-check and typed/racket/base/no-check
+languages are useful. They provide the same bindings and syntax as typed/racket
+and typed/racket/base, but do no type checking.
+
+Examples:
+
+    #lang typed/racket/no-check
+    (: x Number)
+    (define x "not-a-number")
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

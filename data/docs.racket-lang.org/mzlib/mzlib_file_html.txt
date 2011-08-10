@@ -1,0 +1,125 @@
+▼  Mz Lib: Legacy Libraries
+ 1  mzlib/ a-signature
+ 2  mzlib/ a-unit
+ 3  mzlib/ async-channel
+ 4  mzlib/ awk
+ 5  mzlib/ class
+ 6  mzlib/ class100
+ 7  mzlib/ cm
+ 8  mzlib/ cm-accomplice
+ 9  mzlib/ cmdline
+10  mzlib/ cml
+11  mzlib/ compat
+12  mzlib/ compile
+13  mzlib/ contract
+14  mzlib/ control
+15  mzlib/ date
+16  mzlib/ deflate
+17  mzlib/ defmacro
+18  mzlib/ etc
+19  mzlib/ file
+20  mzlib/ for
+21  mzlib/ foreign
+22  mzlib/ include
+23  mzlib/ inflate
+24  mzlib/ integer-set
+25  mzlib/ kw
+26  mzlib/ list
+27  mzlib/ match
+28  mzlib/ math
+29  mzlib/ md5
+30  mzlib/ os
+31  mzlib/ pconvert
+32  mzlib/ pconvert-prop
+33  mzlib/ plt-match
+34  mzlib/ port
+35  mzlib/ pregexp
+36  mzlib/ pretty
+37  mzlib/ process
+38  mzlib/ restart
+39  mzlib/ runtime-path
+40  mzlib/ sandbox
+41  mzlib/ sendevent
+42  mzlib/ serialize
+43  mzlib/ shared
+44  mzlib/ string
+45  mzlib/ struct
+46  mzlib/ stxparam
+47  mzlib/ surrogate
+48  mzlib/ tar
+49  mzlib/ thread
+50  mzlib/ trace
+51  mzlib/ traceld
+52  mzlib/ trait
+53  mzlib/ transcr
+54  mzlib/ unit
+55  mzlib/ unit-exptime
+56  mzlib/ unit200
+57  mzlib/ unitsig200
+58  mzlib/ zip
+    Bibliography
+    Index
+On this page:
+call-with-input-file*
+call-with-output-file*
+build-relative-path
+build-absolute-path
+[...search manuals...]
+  top← prev  up  next → 
+
+ (require mzlib/file)
+
+The mzlib/file library mostly re-exports from scheme/file:
+
+    find-relative-path
+    explode-path
+    normalize-path
+    filename-extension
+    file-name-from-path
+    path-only
+    delete-directory/files
+    copy-directory/files
+    make-directory*
+    make-temporary-file
+    get-preference
+    put-preferences
+    fold-files
+    find-files
+    pathlist-closure
+
+(call-with-input-file* file proc [mode]) → any
+  file : path-string?
+  proc : (input-port? -> any)
+  mode : (one-of/c 'text 'binary) = 'binary
+(call-with-output-file*    file            
+                           proc            
+                         [ mode            
+                           exists])   →   any
+  file : path-string?
+  proc : (output-port? -> any)
+  mode : (one-of/c 'text 'binary) = 'binary
+   exists   :   (one-of/c 'error 'append 'update
+                          'replace 'truncate 'truncate/replace)
+            =   'error
+Like call-with-input-fileand call-with-output-file, except that the opened port
+is closed if control escapes from the body of proc.
+
+(build-relative-path base sub ...) → (and/c path? relative-path?)
+   base   :   (or/c path-string?
+                    (one-of/c 'up 'same))
+             (or/c (and/c path-string?
+   sub   :                relative-path?)
+                   (one-of/c 'up 'same))
+(build-absolute-path base sub ...) → (and/c path? absolute-path?)
+              (or/c (and/c path-string?
+   base   :                (not/c relative-path?))
+                    (one-of/c 'up 'same))
+             (or/c (and/c path-string?
+   sub   :                (not/c complete-path?))
+                   (one-of/c 'up 'same))
+Like build-path, but with extra constraints to ensure a relative or absolute
+result.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

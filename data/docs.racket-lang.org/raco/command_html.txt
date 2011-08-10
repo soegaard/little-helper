@@ -1,0 +1,120 @@
+▼  raco: Racket Command-Line Tools
+ 1  raco make: Compiling Source to Bytecode
+ 2  raco exe: Creating Stand-Alone Executables
+ 3  raco distribute: Sharing Stand-Alone Executables
+ 4  raco pack: Packaging Library Collections
+ 5  raco planet: Automatic Package Distribution
+ 6  raco setup: Installation Management
+ 7  raco decompile: Decompiling Bytecode
+ 8  raco demod: Demodularizing Programs
+ 9  raco ctool: Working with C Code
+10  Adding a raco Command
+► 10  Adding a raco Command
+10.1  Command Argument Parsing
+On this page:
+10.1 Command Argument Parsing
+current-command-name
+short-program+ command-name
+program+ command-name
+[...search manuals...]
+  top← prev  up  next → 
+
+10 Adding a raco Command
+
+The set of commands supported by raco can be extended by installed collections
+and PLaneT packages. A command is added by defining raco-commands in the
+"info.rkt" library of a collection or package (see "info.rkt" File Format).
+
+The value bound to raco-commands must be a list of command specifications,
+where each specification is a list of four values:
+
+    (list command-string
+          implementationmodule-path
+          description-string
+          prominence)
+
+The command-string is the command name. Any unambiguous prefix of a command
+name can be supplied to raco to invoke the command.
+
+The module-path names the implementation though a module path (in the sense of
+module-path?). The module is loaded and invoked through dynamic-require to run
+the command. The module can access command-line arguments through the
+current-command-line-arguments parameter, which is adjusted before loading the
+command module to include only the arguments to the command. The
+current-command-name parameter is also set to the command name used to load the
+command. When raco help is used on a command, the command is launched with an
+initial --help argument in current-command-line-arguments.
+
+The description string is a short string used to describe the command in
+response to raco help. The description should not be capitalized or end with a
+period.
+
+The prominence value should be a read number or #f. A #f value means that the
+command should not be included in the short list of “frequently used commands.”
+A number indicates the relative prominence of the command; the help command has
+a value of 110, and probably no command should be more prominent. The pack
+tool, which is currently ranked as the least-prominent of the frequently used
+commands, has a value of 10.
+
+As an example, the "info.rkt" of the "compiler" collection might contain the
+
+    (define raco-commands
+      '(("make" compiler/commands/make "compile source to bytecode" 100)
+        ("decompile" compiler/commands/decompile "decompile bytecode" #f)))
+
+so that make is treated as a frequently used command, while decompile is
+available as an infrequently used command.
+
+10.1 Command Argument Parsing
+
+ (require raco/command-name)
+The raco/command-name library provides functions to help a raco command
+identify itself to users.
+
+(current-command-name) → (or/c string? #f)
+(current-command-name name) → void?
+  name : (or/c string? #f)
+The name of the command currently being loaded via dynamic-require, or #f if
+raco is not loading any command.
+
+A command implementation can use this parameter to determine whether it was
+invoked via raco or through some other means.
+
+(short-program+command-name) → string?
+Returns a string that identifies the current command. When current-command-name
+is a string, then the result is the short name of the raco executable followed
+by a space and the command name. Otherwise, it is the short name of the current
+executable, as determined by stripping the path from the result of (
+find-system-path 'run-file).
+
+The result of this function is suitable for use with command-line. For example,
+the decompile tool parses command-line arguments with
+
+    (define source-files
+      (command-line
+       #:program (short-program+command-name)
+       #:args source-or-bytecode-file
+       source-or-bytecode-file))
+
+so that raco decompile --help prints
+
+  raco decompile [ <option> ... ] [<source-or-bytecode-file>] ...
+
+  where <option> is one of
+
+   --help, -h : Show this help
+
+   -- : Do not treat any remaining argument as a switch (at this level)
+
+  Multiple single-letter switches can be combined after one `-'; for
+
+   example: `-h-' is the same as `-h --'
+
+
+(program+command-name) → string?
+Like short-program+command-name, but the path (if any) is not stripped from the
+current executable’s name.
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

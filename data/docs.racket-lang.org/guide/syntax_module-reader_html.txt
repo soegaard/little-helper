@@ -1,0 +1,111 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+► 17  Creating Languages
+17.1  Module Languages
+17.2  Reader Extensions
+17.3  Defining new #lang Languages
+▼ 17.3  Defining new #lang Languages
+17.3.1  Designating a #lang Language
+17.3.2  Using #lang reader
+17.3.3  Using #lang s-exp syntax/ module-reader
+17.3.4  Installing a Language
+17.3.5  Source-Handling Configuration
+17.3.6  Module-Handling Configuration
+[...search manuals...]
+  top← prev  up  next → 
+
+17.3.3 Using #lang s-exp syntax/module-reader
+
+Parsing a module body is usually not as trivial as in "literal.rkt". A more
+typical module parser must iterate to parse multiple forms for a module body. A
+language is also more likely to extend Racket syntax—perhaps through a
+readtable—instead of replacing Racket syntax completely.
+
+The syntax/module-reader module language abstracts over common parts of a
+language implementation to simplify the creation of new languages. In its most
+basic form, a language implemented with syntax/module-reader simply specifies
+the module language to be used for the language, in which case the reader layer
+of the language is the same as Racket. For example, with
+
+        "raquet-mlang.rkt"
+
+            #lang racket
+            (provide (except-out (all-from-out racket) lambda)
+                     (rename-out [lambda function]))
+
+and
+
+        "raquet.rkt"
+
+            #lang s-exp syntax/module-reader
+            "raquet-mlang.rkt"
+
+then
+
+    #lang reader "raquet.rkt"
+    (define identity (function (x) x))
+    (provide identity)
+
+implements and exports the identity function, since "raquet-mlang.rkt" exports
+lambda as function.
+
+The syntax/module-reader language accepts many optional specifications to
+adjust other features of the language. For example, an alternate read and
+read-syntax for parsing the language can be specified with #:read and
+#:read-syntax, respectively. The following "dollar-racket.rkt" language uses
+"dollar.rkt" (see Readtables) to build a language that is like racket but with
+a $ escape to simple infix arithmetic:
+
+        "dollar-racket.rkt"
+
+            #lang s-exp syntax/module-reader
+            racket
+            #:read $-read
+            #:read-syntax $-read-syntax
+             
+            (require (prefix-in $- "dollar.rkt"))
+
+The require form appears at the end of the module, because all of the
+keyword-tagged optional specifications for syntax/module-reader must appear
+before any helper imports or definitions.
+
+The following module uses "dollar-racket.rkt" to implement a cost function
+using a $ escape:
+
+        "store.rkt"
+
+            #lang reader "dollar-racket.rkt"
+             
+            (provide cost)
+             
+            ; Cost of `n' $1 rackets with 7% sales
+            ; tax and shipping-and-handling fee `h':
+            (define (cost n h)
+              $n*107/100+h$)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

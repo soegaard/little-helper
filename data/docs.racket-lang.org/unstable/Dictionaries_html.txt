@@ -1,0 +1,130 @@
+▼  Unstable: May Change Without Warning
+ 1  Guidelines for developing unstable libraries
+ 2  Automata: Compiling State Machines
+ 3  Bytes
+ 4  Contracts
+ 5  Contracts for macro subexpressions
+ 6  Contracts for struct type properties
+ 7  Debugging
+ 8  Definitions
+ 9  Dictionaries
+10  Exceptions
+11  Filesystem
+12  Find
+13  Finding Mutated Variables
+14  Functions
+15  Generics
+16  Hash Tables
+17  Interface-Oriented Programming for Classes
+18  Lists
+19  Logging
+20  Mark Parameters
+21  Match
+22  Net
+23  Path
+24  Ports
+25  Pretty-Printing
+26  Requiring Modules
+27  Sequences
+28  Strings
+29  Structs
+30  Syntax
+31  Temporal Contracts: Explicit Contract Monitors
+32  GUI libraries
+On this page:
+dict-empty?
+dict-union
+dict-union!
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+9 Dictionaries
+
+Carl Eastlund <cce@racket-lang.org>
+
+ (require unstable/dict)
+
+This library is unstable; compatibility will not be maintained. See Unstable:
+May Change Without Warning for more information.
+
+This module provides tools for manipulating dictionary values.
+
+(dict-empty? d) → boolean?
+  d : dict?
+Reports whether d is empty (has no keys).
+
+Examples:
+
+    > (dict-empty? '())
+    #t
+
+    > (dict-empty? '([1 . one] [2 . two]))
+    #f
+
+
+
+(dict-union    d0                           
+               d ...                        
+             [ #:combine combine            
+               #:combine/key combine/key])  
+ → (and/c dict? dict-can-functional-set?)
+  d0 : (and/c dict? dict-can-functional-set?)
+  d : dict?
+   combine   :   (-> any/c any/c any/c)
+             =   (lambda _ (error 'dict-union ...))
+   combine/key   :   (-> any/c any/c any/c any/c)
+                 =   (lambda (k a b) (combine a b))
+Computes the union of d0 with each dictionary d by functional update, adding
+each element of each d to d0 in turn. For each key k and value v, if a mapping
+from k to some value v0 already exists, it is replaced with a mapping from k to
+(combine/key k v0 v).
+
+Examples:
+
+    > (dict-union '([1 . one]) '([2 . two]) '([3 . three]))
+    '((1 . one) (2 . two) (3 . three))
+
+    > (dict-union '([1    one uno]  [2    two dos])
+                  '([1    ein une]  [2    zwei deux])
+                  #:combine/key (lambda (k v1 v2) (append v1 v2)))
+    '((1 one uno ein une) (2 two dos zwei deux))
+
+
+
+(dict-union!    d0                                 
+                d ...                              
+              [ #:combine combine                  
+                #:combine/key combine/key])   →   void?
+  d0 : (and/c dict? dict-mutable?)
+  d : dict?
+   combine   :   (-> any/c any/c any/c)
+             =   (lambda _ (error 'dict-union! ...))
+   combine/key   :   (-> any/c any/c any/c any/c)
+                 =   (lambda (k a b) (combine a b))
+Computes the union of d0 with each dictionary d by mutable update, adding each
+element of each d to d0 in turn. For each key k and value v, if a mapping from
+k to some value v0 already exists, it is replaced with a mapping from k to
+(combine/key k v0 v).
+
+Examples:
+
+    (define d (make-hash))
+    > d
+    '#hash()
+
+    > (dict-union! d '([1    one uno]  [2    two dos]))
+    > d
+    '#hash((1 . (one uno)) (2 . (two dos)))
+
+    > (dict-union! d
+                   '([1    ein une]  [2    zwei deux])
+                   #:combine/key (lambda (k v1 v2) (append v1 v2)))
+    > d
+    '#hash((1 . (one uno ein une)) (2 . (two dos zwei deux)))
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

@@ -1,0 +1,758 @@
+[Go to first, previous, next page;   contents;   index]
+
+Chapter 4
+
+Expressions
+
+Expression types are categorized as primitive or derived. Primitive expression
+types include variables and procedure calls. Derived expression types are not
+semantically primitive, but can instead be defined as macros. With the
+exception of quasiquote, whose macro definition is complex, the derived
+expressions are classified as library features. Suitable definitions are given
+in section 7.3.
+
+4.1  Primitive expression types
+
+4.1.1  Variable references
+
+syntax:  <variable> 
+
+An expression consisting of a variable (section 3.1) is a variable reference.
+The value of the variable reference is the value stored in the location to
+which the variable is bound. It is an error to reference an unbound variable.
+
+(define x 28)
+x           ===>  28
+
+4.1.2  Literal expressions
+
+syntax:  (quote <datum>) 
+syntax:  '<datum> 
+syntax:  <constant> 
+
+(quote <datum>) evaluates to <datum>. <Datum> may be any external
+representation of a Scheme object (see section 3.3). This notation is used to
+include literal constants in Scheme code.
+
+(quote a)                             ===>  a
+(quote #(a b c))             ===>  #(a b c)
+(quote (+ 1 2))                       ===>  (+ 1 2)
+
+(quote <datum>) may be abbreviated as '<datum>. The two notations are
+equivalent in all respects.
+
+'a                           ===>  a
+'#(a b c)                   ===>  #(a b c)
+'()                          ===>  ()
+'(+ 1 2)                     ===>  (+ 1 2)
+'(quote a)                   ===>  (quote a)
+''a                          ===>  (quote a)
+
+Numerical constants, string constants, character constants, and boolean
+constants evaluate ``to themselves''; they need not be quoted.
+
+'"abc"             ===>  "abc"
+"abc"              ===>  "abc"
+'145932            ===>  145932
+145932             ===>  145932
+'#t          ===>  #t
+#t           ===>  #t
+
+As noted in section 3.4, it is an error to alter a constant (i.e. the value of
+a literal expression) using a mutation procedure like set-car! or string-set!.
+
+4.1.3  Procedure calls
+
+syntax:  (<operator> <operand[1]> ...) 
+
+A procedure call is written by simply enclosing in parentheses expressions for
+the procedure to be called and the arguments to be passed to it. The operator
+and operand expressions are evaluated (in an unspecified order) and the
+resulting procedure is passed the resulting arguments. (+ 3 4)
+                                  ===>  7
+((if #f + *) 3 4)                 ===>  12
+
+A number of procedures are available as the values of variables in the initial
+environment; for example, the addition and multiplication procedures in the
+above examples are the values of the variables + and *. New procedures are
+created by evaluating lambda expressions (see section 4.1.4). Procedure calls
+may return any number of values (see values in section 6.4). With the exception
+of values the procedures available in the initial environment return one value
+or, for procedures such as apply, pass on the values returned by a call to one
+of their arguments.
+
+Procedure calls are also called combinations.
+
+    Note:   In contrast to other dialects of Lisp, the order of evaluation is
+    unspecified, and the operator expression and the operand expressions are
+    always evaluated with the same evaluation rules.
+
+    Note:   Although the order of evaluation is otherwise unspecified, the
+    effect of any concurrent evaluation of the operator and operand expressions
+    is constrained to be consistent with some sequential order of evaluation.
+    The order of evaluation may be chosen differently for each procedure call.
+
+    Note:   In many dialects of Lisp, the empty combination, (), is a
+    legitimate expression. In Scheme, combinations must have at least one
+    subexpression, so () is not a syntactically valid expression.
+
+4.1.4  Procedures
+
+syntax:  (lambda <formals> <body>) 
+
+Syntax: <Formals> should be a formal arguments list as described below, and
+<body> should be a sequence of one or more expressions.
+
+Semantics: A lambda expression evaluates to a procedure. The environment in
+effect when the lambda expression was evaluated is remembered as part of the
+procedure. When the procedure is later called with some actual arguments, the
+environment in which the lambda expression was evaluated will be extended by
+binding the variables in the formal argument list to fresh locations, the
+corresponding actual argument values will be stored in those locations, and the
+expressions in the body of the lambda expression will be evaluated sequentially
+in the extended environment. The result(s) of the last expression in the body
+will be returned as the result(s) of the procedure call.
+
+(lambda (x) (+ x x))              ===>  a procedure
+((lambda (x) (+ x x)) 4)          ===>  8
+
+(define reverse-subtract
+  (lambda (x y) (- y x)))
+(reverse-subtract 7 10)                 ===>  3
+
+(define add4
+  (let ((x 4))
+    (lambda (y) (+ x y))))
+(add4 6)                                ===>  10
+
+<Formals> should have one of the following forms:
+
+  • (<variable[1]> ...): The procedure takes a fixed number of arguments; when
+    the procedure is called, the arguments will be stored in the bindings of
+    the corresponding variables.
+
+  • <variable>: The procedure takes any number of arguments; when the procedure
+    is called, the sequence of actual arguments is converted into a newly
+    allocated list, and the list is stored in the binding of the <variable>.
+
+  • (<variable[1]> ... <variable[n]> . <variable[n+1]>): If a space-delimited
+    period precedes the last variable, then the procedure takes n or more
+    arguments, where n is the number of formal arguments before the period
+    (there must be at least one). The value stored in the binding of the last
+    variable will be a newly allocated list of the actual arguments left over
+    after all the other actual arguments have been matched up against the other
+    formal arguments.
+
+It is an error for a <variable> to appear more than once in <formals>.
+
+((lambda x x) 3 4 5 6)                  ===>  (3 4 5 6)
+((lambda (x y . z) z)
+ 3 4 5 6)                               ===>  (5 6)
+
+Each procedure created as the result of evaluating a lambda expression is
+(conceptually) tagged with a storage location, in order to make eqv? and eq?
+work on procedures (see section 6.1).
+
+4.1.5  Conditionals
+
+syntax:  (if <test> <consequent> <alternate>) 
+syntax:  (if <test> <consequent>) 
+Syntax: <Test>, <consequent>, and <alternate> may be arbitrary expressions.
+
+Semantics: An if expression is evaluated as follows: first, <test> is
+evaluated. If it yields a true value (see section 6.3.1), then <consequent> is
+evaluated and its value(s) is(are) returned. Otherwise <alternate> is evaluated
+and its value(s) is(are) returned. If <test> yields a false value and no
+<alternate> is specified, then the result of the expression is unspecified.
+
+(if (> 3 2) 'yes 'no)                   ===>  yes
+(if (> 2 3) 'yes 'no)                   ===>  no
+(if (> 3 2)
+    (- 3 2)
+    (+ 3 2))                            ===>  1
+
+4.1.6  Assignments
+
+syntax:  (set! <variable> <expression>) 
+
+<Expression> is evaluated, and the resulting value is stored in the location to
+which <variable> is bound. <Variable> must be bound either in some region
+enclosing the set! expression or at top level. The result of the set!
+expression is unspecified.
+
+(define x 2)
+(+ x 1)                         ===>  3
+(set! x 4)                      ===>  unspecified
+(+ x 1)                         ===>  5
+
+4.2  Derived expression types
+
+The constructs in this section are hygienic, as discussed in section 4.3. For
+reference purposes, section 7.3 gives macro definitions that will convert most
+of the constructs described in this section into the primitive constructs
+described in the previous section.
+
+4.2.1  Conditionals
+
+library syntax:  (cond <clause[1]> <clause[2]> ...) 
+
+Syntax: Each <clause> should be of the form (<test> <expression[1]> ...)
+
+where <test> is any expression. Alternatively, a <clause> may be of the form
+(<test> => <expression>) The last <clause> may be an ``else clause,'' which has
+the form (else <expression[1]> <expression[2]> ...).
+
+Semantics: A cond expression is evaluated by evaluating the <test> expressions
+of successive <clause>s in order until one of them evaluates to a true value
+(see section 6.3.1). When a <test> evaluates to a true value, then the
+remaining <expression>s in its <clause> are evaluated in order, and the result
+(s) of the last <expression> in the <clause> is(are) returned as the result(s)
+of the entire cond expression. If the selected <clause> contains only the
+<test> and no <expression>s, then the value of the <test> is returned as the
+result. If the selected <clause> uses the => alternate form, then the
+<expression> is evaluated. Its value must be a procedure that accepts one
+argument; this procedure is then called on the value of the <test> and the
+value(s) returned by this procedure is(are) returned by the cond expression. If
+all <test>s evaluate to false values, and there is no else clause, then the
+result of the conditional expression is unspecified; if there is an else
+clause, then its <expression>s are evaluated, and the value(s) of the last one
+is(are) returned.
+
+(cond ((> 3 2) 'greater)
+      ((< 3 2) 'less))                 ===>  greater
+(cond ((> 3 3) 'greater)
+      ((< 3 3) 'less)
+      (else 'equal))                    ===>  equal
+(cond ((assv 'b '((a 1) (b 2))) => cadr)
+      (else #f))                 ===>  2
+
+library syntax:  (case <key> <clause[1]> <clause[2]> ...) 
+
+Syntax: <Key> may be any expression. Each <clause> should have the form
+((<datum[1]> ...) <expression[1]> <expression[2]> ...),
+
+where each <datum> is an external representation of some object. All the
+<datum>s must be distinct. The last <clause> may be an ``else clause,'' which
+has the form (else <expression[1]> <expression[2]> ...).
+
+Semantics: A case expression is evaluated as follows. <Key> is evaluated and
+its result is compared against each <datum>. If the result of evaluating <key>
+is equivalent (in the sense of eqv?; see section 6.1) to a <datum>, then the
+expressions in the corresponding <clause> are evaluated from left to right and
+the result(s) of the last expression in the <clause> is(are) returned as the
+result(s) of the case expression. If the result of evaluating <key> is
+different from every <datum>, then if there is an else clause its expressions
+are evaluated and the result(s) of the last is(are) the result(s) of the case
+expression; otherwise the result of the case expression is unspecified.
+
+(case (* 2 3)
+  ((2 3 5 7) 'prime)
+  ((1 4 6 8 9) 'composite))             ===>  composite
+(case (car '(c d))
+  ((a) 'a)
+  ((b) 'b))                             ===>  unspecified
+(case (car '(c d))
+  ((a e i o u) 'vowel)
+  ((w y) 'semivowel)
+  (else 'consonant))                    ===>  consonant
+
+library syntax:  (and <test[1]> ...) 
+
+The <test> expressions are evaluated from left to right, and the value of the
+first expression that evaluates to a false value (see section 6.3.1) is
+returned. Any remaining expressions are not evaluated. If all the expressions
+evaluate to true values, the value of the last expression is returned. If there
+are no expressions then #t is returned.
+
+(and (= 2 2) (> 2 1))                   ===>  #t
+(and (= 2 2) (< 2 1))                   ===>  #f
+(and 1 2 'c '(f g))                     ===>  (f g)
+(and)                                   ===>  #t
+
+library syntax:  (or <test[1]> ...) 
+
+The <test> expressions are evaluated from left to right, and the value of the
+first expression that evaluates to a true value (see section 6.3.1) is
+returned. Any remaining expressions are not evaluated. If all expressions
+evaluate to false values, the value of the last expression is returned. If
+there are no expressions then #f is returned.
+
+(or (= 2 2) (> 2 1))                    ===>  #t
+(or (= 2 2) (< 2 1))                    ===>  #t
+(or #f #f #f)         ===>  #f
+(or (memq 'b '(a b c)) 
+    (/ 3 0))                            ===>  (b c)
+
+4.2.2  Binding constructs
+
+The three binding constructs let, let*, and letrec give Scheme a block
+structure, like Algol 60. The syntax of the three constructs is identical, but
+they differ in the regions they establish for their variable bindings. In a let
+expression, the initial values are computed before any of the variables become
+bound; in a let* expression, the bindings and evaluations are performed
+sequentially; while in a letrec expression, all the bindings are in effect
+while their initial values are being computed, thus allowing mutually recursive
+definitions.
+
+library syntax:  (let <bindings> <body>) 
+
+Syntax: <Bindings> should have the form ((<variable[1]> <init[1]>) ...),
+
+where each <init> is an expression, and <body> should be a sequence of one or
+more expressions. It is an error for a <variable> to appear more than once in
+the list of variables being bound.
+
+Semantics: The <init>s are evaluated in the current environment (in some
+unspecified order), the <variable>s are bound to fresh locations holding the
+results, the <body> is evaluated in the extended environment, and the value(s)
+of the last expression of <body> is(are) returned. Each binding of a <variable>
+has <body> as its region.
+
+(let ((x 2) (y 3))
+  (* x y))                              ===>  6
+
+(let ((x 2) (y 3))
+  (let ((x 7)
+        (z (+ x y)))
+    (* z x)))                           ===>  35
+
+See also named let, section 4.2.4.
+
+library syntax:  (let* <bindings> <body>) 
+
+Syntax: <Bindings> should have the form ((<variable[1]> <init[1]>) ...),
+
+and <body> should be a sequence of one or more expressions.
+
+Semantics: Let* is similar to let, but the bindings are performed sequentially
+from left to right, and the region of a binding indicated by (<variable>
+<init>) is that part of the let* expression to the right of the binding. Thus
+the second binding is done in an environment in which the first binding is
+visible, and so on.
+
+(let ((x 2) (y 3))
+  (let* ((x 7)
+         (z (+ x y)))
+    (* z x)))                     ===>  70
+
+library syntax:  (letrec <bindings> <body>) 
+
+Syntax: <Bindings> should have the form ((<variable[1]> <init[1]>) ...),
+
+and <body> should be a sequence of one or more expressions. It is an error for
+a <variable> to appear more than once in the list of variables being bound.
+
+Semantics: The <variable>s are bound to fresh locations holding undefined
+values, the <init>s are evaluated in the resulting environment (in some
+unspecified order), each <variable> is assigned to the result of the
+corresponding <init>, the <body> is evaluated in the resulting environment, and
+the value(s) of the last expression in <body> is(are) returned. Each binding of
+a <variable> has the entire letrec expression as its region, making it possible
+to define mutually recursive procedures.
+
+(letrec ((even?
+          (lambda (n)
+            (if (zero? n)
+                #t
+                (odd? (- n 1)))))
+         (odd?
+          (lambda (n)
+            (if (zero? n)
+                #f
+                (even? (- n 1))))))
+  (even? 88))   
+                        ===>  #t
+
+One restriction on letrec is very important: it must be possible to evaluate
+each <init> without assigning or referring to the value of any <variable>. If
+this restriction is violated, then it is an error. The restriction is necessary
+because Scheme passes arguments by value rather than by name. In the most
+common uses of letrec, all the <init>s are lambda expressions and the
+restriction is satisfied automatically.
+
+4.2.3  Sequencing
+
+library syntax:  (begin <expression[1]> <expression[2]> ...) 
+
+The <expression>s are evaluated sequentially from left to right, and the value
+(s) of the last <expression> is(are) returned. This expression type is used to
+sequence side effects such as input and output.
+
+(define x 0)
+
+(begin (set! x 5)
+       (+ x 1))                          ===>  6
+
+(begin (display "4 plus 1 equals ")
+       (display (+ 4 1)))              ===>  unspecified
+  and prints  4 plus 1 equals 5
+
+4.2.4  Iteration
+
+library syntax:  (do ((<variable[1]> <init[1]> <step[1]>) 
+     ...)
+   (<test> <expression> ...)
+ <command> ...)
+
+Do is an iteration construct. It specifies a set of variables to be bound, how
+they are to be initialized at the start, and how they are to be updated on each
+iteration. When a termination condition is met, the loop exits after evaluating
+the <expression>s.
+
+Do expressions are evaluated as follows: The <init> expressions are evaluated
+(in some unspecified order), the <variable>s are bound to fresh locations, the
+results of the <init> expressions are stored in the bindings of the <variable>
+s, and then the iteration phase begins.
+
+Each iteration begins by evaluating <test>; if the result is false (see
+section 6.3.1), then the <command> expressions are evaluated in order for
+effect, the <step> expressions are evaluated in some unspecified order, the
+<variable>s are bound to fresh locations, the results of the <step>s are stored
+in the bindings of the <variable>s, and the next iteration begins.
+
+If <test> evaluates to a true value, then the <expression>s are evaluated from
+left to right and the value(s) of the last <expression> is(are) returned. If no
+<expression>s are present, then the value of the do expression is unspecified.
+
+The region of the binding of a <variable> consists of the entire do expression
+except for the <init>s. It is an error for a <variable> to appear more than
+once in the list of do variables.
+
+A <step> may be omitted, in which case the effect is the same as if (<variable>
+<init> <variable>) had been written instead of (<variable> <init>).
+
+(do ((vec (make-vector 5))
+     (i 0 (+ i 1)))
+    ((= i 5) vec)
+  (vector-set! vec i i))                  ===>  #(0 1 2 3 4)
+
+(let ((x '(1 3 5 7 9)))
+  (do ((x x (cdr x))
+       (sum 0 (+ sum (car x))))
+      ((null? x) sum)))                     ===>  25
+
+library syntax:  (let <variable> <bindings> <body>) 
+
+``Named let'' is a variant on the syntax of let which provides a more general
+looping construct than do and may also be used to express recursions. It has
+the same syntax and semantics as ordinary let except that <variable> is bound
+within <body> to a procedure whose formal arguments are the bound variables and
+whose body is <body>. Thus the execution of <body> may be repeated by invoking
+the procedure named by <variable>.
+
+(let loop ((numbers '(3 -2 1 6 -5))
+           (nonneg '())
+           (neg '()))
+  (cond ((null? numbers) (list nonneg neg))
+        ((>= (car numbers) 0)
+         (loop (cdr numbers)
+               (cons (car numbers) nonneg)
+               neg))
+        ((< (car numbers) 0)
+         (loop (cdr numbers)
+               nonneg
+               (cons (car numbers) neg)))))   
+                ===>  ((6 1 3) (-5 -2))
+
+4.2.5  Delayed evaluation
+
+library syntax:  (delay <expression>) 
+
+The delay construct is used together with the procedure force to implement lazy
+evaluation or call by need. (delay <expression>) returns an object called a 
+promise which at some point in the future may be asked (by the force procedure)
+to evaluate <expression>, and deliver the resulting value. The effect of
+<expression> returning multiple values is unspecified.
+
+See the description of force (section 6.4) for a more complete description of
+delay.
+
+4.2.6  Quasiquotation
+
+syntax:  (quasiquote <qq template>) 
+syntax:  `<qq template> 
+
+``Backquote'' or ``quasiquote'' expressions are useful for constructing a list
+or vector structure when most but not all of the desired structure is known in
+advance. If no commas appear within the <qq template>, the result of evaluating
+`<qq template> is equivalent to the result of evaluating '<qq template>. If a
+comma appears within the <qq template>, however, the expression following the
+comma is evaluated (``unquoted'') and its result is inserted into the structure
+instead of the comma and the expression. If a comma appears followed
+immediately by an at-sign (@), then the following expression must evaluate to a
+list; the opening and closing parentheses of the list are then ``stripped
+away'' and the elements of the list are inserted in place of the comma at-sign
+expression sequence. A comma at-sign should only appear within a list or vector
+<qq template>.
+
+`(list ,(+ 1 2) 4)          ===>  (list 3 4)
+(let ((name 'a)) `(list ,name ',name))           
+                ===>  (list a (quote a))
+`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)           
+                ===>  (a 3 4 5 6 b)
+`(( foo ,(- 10 3)) ,@(cdr '(c)) . ,(car '(cons)))           
+                ===>  ((foo 7) . cons)
+`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)           
+                ===>  #(10 5 2 4 3 8)
+
+Quasiquote forms may be nested. Substitutions are made only for unquoted
+components appearing at the same nesting level as the outermost backquote. The
+nesting level increases by one inside each successive quasiquotation, and
+decreases by one inside each unquotation.
+
+`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)           
+                ===>  (a `(b ,(+ 1 2) ,(foo 4 d) e) f)
+(let ((name1 'x)
+      (name2 'y))
+  `(a `(b ,,name1 ,',name2 d) e))           
+                ===>  (a `(b ,x ,'y d) e)
+
+The two notations `<qq template> and (quasiquote <qq template>) are identical
+in all respects. ,<expression> is identical to (unquote <expression>), and ,@
+<expression> is identical to (unquote-splicing <expression>). The external
+syntax generated by write for two-element lists whose car is one of these
+symbols may vary between implementations.
+
+(quasiquote (list (unquote (+ 1 2)) 4))           
+                ===>  (list 3 4)
+'(quasiquote (list (unquote (+ 1 2)) 4))           
+                ===>  `(list ,(+ 1 2) 4)
+     i.e., (quasiquote (list (unquote (+ 1 2)) 4))
+
+Unpredictable behavior can result if any of the symbols quasiquote, unquote, or
+unquote-splicing appear in positions within a <qq template> otherwise than as
+described above.
+
+4.3  Macros
+
+Scheme programs can define and use new derived expression types, called macros.
+Program-defined expression types have the syntax (<keyword> <datum> ...)
+
+where <keyword> is an identifier that uniquely determines the expression type.
+This identifier is called the syntactic keyword, or simply keyword, of the
+macro. The number of the <datum>s, and their syntax, depends on the expression
+type.
+
+Each instance of a macro is called a use of the macro. The set of rules that
+specifies how a use of a macro is transcribed into a more primitive expression
+is called the transformer of the macro.
+
+The macro definition facility consists of two parts:
+
+  • A set of expressions used to establish that certain identifiers are macro
+    keywords, associate them with macro transformers, and control the scope
+    within which a macro is defined, and
+
+  • a pattern language for specifying macro transformers.
+
+The syntactic keyword of a macro may shadow variable bindings, and local
+variable bindings may shadow keyword bindings. All macros defined using the
+pattern language are ``hygienic'' and ``referentially transparent'' and thus
+preserve Scheme's lexical scoping [14, 15, 2, 7, 9]:
+
+  • If a macro transformer inserts a binding for an identifier (variable or
+    keyword), the identifier will in effect be renamed throughout its scope to
+    avoid conflicts with other identifiers. Note that a define at top level may
+    or may not introduce a binding; see section 5.2.
+
+  • If a macro transformer inserts a free reference to an identifier, the
+    reference refers to the binding that was visible where the transformer was
+    specified, regardless of any local bindings that may surround the use of
+    the macro.
+
+4.3.1  Binding constructs for syntactic keywords
+
+Let-syntax and letrec-syntax are analogous to let and letrec, but they bind
+syntactic keywords to macro transformers instead of binding variables to
+locations that contain values. Syntactic keywords may also be bound at top
+level; see section 5.3.
+
+syntax:  (let-syntax <bindings> <body>) 
+
+Syntax: <Bindings> should have the form ((<keyword> <transformer spec>) ...)
+
+Each <keyword> is an identifier, each <transformer spec> is an instance of
+syntax-rules, and <body> should be a sequence of one or more expressions. It is
+an error for a <keyword> to appear more than once in the list of keywords being
+bound.
+
+Semantics: The <body> is expanded in the syntactic environment obtained by
+extending the syntactic environment of the let-syntax expression with macros
+whose keywords are the <keyword>s, bound to the specified transformers. Each
+binding of a <keyword> has <body> as its region.
+
+(let-syntax ((when (syntax-rules ()
+                     ((when test stmt1 stmt2 ...)
+                      (if test
+                          (begin stmt1
+                                 stmt2 ...))))))
+  (let ((if #t))
+    (when if (set! if 'now))
+    if))                                   ===>  now
+
+(let ((x 'outer))
+  (let-syntax ((m (syntax-rules () ((m) x))))
+    (let ((x 'inner))
+      (m))))                               ===>  outer
+
+syntax:  (letrec-syntax <bindings> <body>) 
+
+Syntax: Same as for let-syntax.
+
+Semantics: The <body> is expanded in the syntactic environment obtained by
+extending the syntactic environment of the letrec-syntax expression with macros
+whose keywords are the <keyword>s, bound to the specified transformers. Each
+binding of a <keyword> has the <bindings> as well as the <body> within its
+region, so the transformers can transcribe expressions into uses of the macros
+introduced by the letrec-syntax expression.
+
+(letrec-syntax
+  ((my-or (syntax-rules ()
+            ((my-or) #f)
+            ((my-or e) e)
+            ((my-or e1 e2 ...)
+             (let ((temp e1))
+               (if temp
+                   temp
+                   (my-or e2 ...)))))))
+  (let ((x #f)
+        (y 7)
+        (temp 8)
+        (let odd?)
+        (if even?))
+    (my-or x
+           (let temp)
+           (if y)
+           y)))                ===>  7
+
+4.3.2  Pattern language
+
+A <transformer spec> has the following form:
+
+:  (syntax-rules <literals> <syntax rule> ...) 
+
+Syntax: <Literals> is a list of identifiers and each <syntax rule> should be of
+the form (<pattern> <template>)
+
+The <pattern> in a <syntax rule> is a list <pattern> that begins with the
+keyword for the macro.
+
+A <pattern> is either an identifier, a constant, or one of the following
+(<pattern> ...)
+(<pattern> <pattern> ... . <pattern>)
+(<pattern> ... <pattern> <ellipsis>)
+#(<pattern> ...)
+#(<pattern> ... <pattern> <ellipsis>)
+
+and a template is either an identifier, a constant, or one of the following
+(<element> ...)
+(<element> <element> ... . <template>)
+#(<element> ...) where an <element> is a <template> optionally followed by an
+<ellipsis> and an <ellipsis> is the identifier ``...'' (which cannot be used as
+an identifier in either a template or a pattern).
+
+Semantics: An instance of syntax-rules produces a new macro transformer by
+specifying a sequence of hygienic rewrite rules. A use of a macro whose keyword
+is associated with a transformer specified by syntax-rules is matched against
+the patterns contained in the <syntax rule>s, beginning with the leftmost
+<syntax rule>. When a match is found, the macro use is transcribed hygienically
+according to the template.
+
+An identifier that appears in the pattern of a <syntax rule> is a pattern
+variable, unless it is the keyword that begins the pattern, is listed in
+<literals>, or is the identifier ``...''. Pattern variables match arbitrary
+input elements and are used to refer to elements of the input in the template.
+It is an error for the same pattern variable to appear more than once in a
+<pattern>.
+
+The keyword at the beginning of the pattern in a <syntax rule> is not involved
+in the matching and is not considered a pattern variable or literal identifier.
+
+    Rationale:   The scope of the keyword is determined by the expression or
+    syntax definition that binds it to the associated macro transformer. If the
+    keyword were a pattern variable or literal identifier, then the template
+    that follows the pattern would be within its scope regardless of whether
+    the keyword were bound by let-syntax or by letrec-syntax.
+
+Identifiers that appear in <literals> are interpreted as literal identifiers to
+be matched against corresponding subforms of the input. A subform in the input
+matches a literal identifier if and only if it is an identifier and either both
+its occurrence in the macro expression and its occurrence in the macro
+definition have the same lexical binding, or the two identifiers are equal and
+both have no lexical binding.
+
+A subpattern followed by ... can match zero or more elements of the input. It
+is an error for ... to appear in <literals>. Within a pattern the identifier
+... must follow the last element of a nonempty sequence of subpatterns.
+
+More formally, an input form F matches a pattern P if and only if:
+
+  • P is a non-literal identifier; or
+
+  • P is a literal identifier and F is an identifier with the same binding; or
+
+  • P is a list (P[1] ... P[n]) and F is a list of n forms that match P[1]
+    through P[n], respectively; or
+
+  • P is an improper list (P[1] P[2] ... P[n] . P[n+1]) and F is a list or
+    improper list of n or more forms that match P[1] through P[n],
+    respectively, and whose nth ``cdr'' matches P[n+1]; or
+
+  • P is of the form (P[1] ... P[n] P[n+1] <ellipsis>) where <ellipsis> is the
+    identifier ... and F is a proper list of at least n forms, the first n of
+    which match P[1] through P[n], respectively, and each remaining element of
+    F matches P[n+1]; or
+
+  • P is a vector of the form #(P[1] ... P[n]) and F is a vector of n forms
+    that match P[1] through P[n]; or
+
+  • P is of the form #(P[1] ... P[n] P[n+1] <ellipsis>) where <ellipsis> is the
+    identifier ... and F is a vector of n or more forms the first n of which
+    match P[1] through P[n], respectively, and each remaining element of F
+    matches P[n+1]; or
+
+  • P is a datum and F is equal to P in the sense of the equal? procedure.
+
+It is an error to use a macro keyword, within the scope of its binding, in an
+expression that does not match any of the patterns.
+
+When a macro use is transcribed according to the template of the matching
+<syntax rule>, pattern variables that occur in the template are replaced by the
+subforms they match in the input. Pattern variables that occur in subpatterns
+followed by one or more instances of the identifier ... are allowed only in
+subtemplates that are followed by as many instances of .... They are replaced
+in the output by all of the subforms they match in the input, distributed as
+indicated. It is an error if the output cannot be built up as specified.
+
+Identifiers that appear in the template but are not pattern variables or the
+identifier ... are inserted into the output as literal identifiers. If a
+literal identifier is inserted as a free identifier then it refers to the
+binding of that identifier within whose scope the instance of syntax-rules
+appears. If a literal identifier is inserted as a bound identifier then it is
+in effect renamed to prevent inadvertent captures of free identifiers.
+
+As an example, if let and cond are defined as in section 7.3 then they are
+hygienic (as required) and the following is not an error.
+
+(let ((=> #f))
+  (cond (#t => 'ok)))                   ===> ok
+
+The macro transformer for cond recognizes => as a local variable, and hence an
+expression, and not as the top-level identifier =>, which the macro transformer
+treats as a syntactic keyword. Thus the example expands into
+
+(let ((=> #f))
+  (if #t (begin => 'ok)))
+
+instead of
+
+(let ((=> #f))
+  (let ((temp #t))
+    (if temp ('ok temp))))
+
+which would result in an invalid procedure call.
+
+        
+
+[Go to first, previous, next page;   contents;   index]
+

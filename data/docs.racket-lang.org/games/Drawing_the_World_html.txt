@@ -1,0 +1,293 @@
+►  Games: Fun Examples
+1  Bundled Games
+2  Implementing New Games
+3  Showing Scribbled Help
+4  Showing Text Help
+► 1  Bundled Games
+ 1.1  [aces] Aces — Solitaire Card Game
+ 1.2  [gofish] Go Fish — Kid’s Card Game
+ 1.3  [crazy8s] Crazy 8s — Card Game
+ 1.4  [blackjack] Blackjack — 21 Card Game
+ 1.5  [ginrummy] Rummy — Card Game
+ 1.6  [spider] Spider — Solitaire Card Game
+ 1.7  [memory] Memory — Kid’s Game
+ 1.8  [slidey] Slidey — Picture Puzzle
+ 1.9  [same] Same — Dot-Removing Game
+1.10  [mines] Minesweeper — Logic Game
+1.11  [paint-by-n] Paint By Numbers — Logic Game
+1.12  [lights-out] Lights Out — Logic Game
+1.13  [pousse] Pousse — Tic-Tac-Toe-like Game
+1.14  [gobblet] Gobblet — Strategy Game
+1.15  [jewel] Jewel — 3-D Skill Game
+1.16  [parcheesi] Parcheesi — Board Game
+1.17  [checkers] Checkers — Board Game
+1.18  [chat-noir] Chat Noir — Puzzle Game
+1.19  [gcalc] GCalc — Visual λ-Calculus
+▼ 1.18  [chat-noir] Chat Noir — Puzzle Game
+ 1.18.1  Overview
+ 1.18.2  The World
+ 1.18.3  Breadth-first Search
+ 1.18.4  Board to Graph
+ 1.18.5  The Cat’s Path
+ 1.18.6  Drawing the Cat
+ 1.18.7  Drawing the World
+ 1.18.8  Handling Input
+ 1.18.9  Tests
+1.18.10  Run, program, run
+On this page:
+<drawing>
+<drawing-tests>
+<constants>
+<constants>2
+<render-world>
+<chop-whiskers-tests>
+<chop-whiskers>
+<render-board>
+<render-cell>
+<world-width>
+<world-height>
+<cell-center-x-tests>
+<cell-center-x-tests>2
+<cell-center-x>
+<cell-center-y-tests>
+<cell-center-y>
+[...search manuals...]
+  top← prev  up  next → 
+
+1.18.7 Drawing the World
+
+<drawing> ::=
+
+    <constants>
+    <render-world>
+    <chop-whiskers>
+    <render-board>
+    <render-cell>
+    <world-width>
+    <world-height>
+    <cell-center-x>
+    <cell-center-y>
+
+<drawing-tests> ::=
+
+    <cell-center-x-tests>
+    <cell-center-y-tests>
+    <world-size-tests>
+    <render-cell-tests>
+    <render-board-tests>
+    <chop-whiskers-tests>
+    <render-world-tests>
+
+There are a number of constants that are given names to make the code more
+readable.
+
+These first two constants give the radius of the circles that are drawn on the
+board, plus the radius of an invisible circle that, if they were drawn on top
+of the circles, would touch each other. Accordingly, circle-spacing is used
+when computing the positions of the circles, but the circles are drawn using
+circle-radius.
+
+<constants> ::=
+
+    (define circle-radius 20)
+    (define circle-spacing 22)
+
+The other four constants specify the colors of the circles.
+
+<constants> ::=
+
+    (define normal-color 'lightskyblue)
+    (define on-shortest-path-color 'white)
+    (define blocked-color 'black)
+    (define under-mouse-color 'black)
+
+The main function for drawing a world is render-world. It is a fairly
+straightforward composition of helper functions. First, it builds the image of
+a board, and then puts the cat on it. Lastly, since the whiskers of the cat
+might now hang off of the edge of the board (if the cat is on a leftmost or
+rightmost cell), it trims them. This ensures that the image is always the same
+size and that the pinhole is always in the upper-left corner of the window.
+
+<render-world> ::=
+
+    (define/contract (render-world w)
+      (-> world? image?)
+      (chop-whiskers
+       (overlay/xy (render-board (world-board w)
+                                 (world-size w)
+                                 (on-cats-path? w)
+                                 (world-mouse-posn w))
+                   (cell-center-x (world-cat w))
+                   (cell-center-y (world-cat w))
+                   (cond
+                     [(equal? (world-state w) 'cat-won) happy-cat]
+                     [(equal? (world-state w) 'cat-lost) mad-cat]
+                     [else thinking-cat]))))
+
+Trimming the cat’s whiskers amounts to removing any extra space in the image
+that appears to the left or above the pinhole. For example, the rectangle
+function returns an image with a pinhole in the middle. So trimming 5x5
+rectangle results in a 3x3 rectangle with the pinhole at (0,0).
+
+<chop-whiskers-tests> ::=
+
+    (test (chop-whiskers (rectangle 5 5 'solid 'black))
+          (put-pinhole (rectangle 3 3 'solid 'black) 0 0))
+
+The function uses shrink to remove all of the material above and to the left of
+the pinhole.
+
+<chop-whiskers> ::=
+
+    (define/contract (chop-whiskers img)
+      (-> image? image?)
+      (shrink img
+              0
+              0
+              (- (image-width img) (pinhole-x img) 1)
+              (- (image-height img) (pinhole-y img) 1)))
+
+The render-board function uses for/fold to iterate over all of the cells in cs.
+It starts with an empty rectangle and, one by one, puts the cells on image.
+
+<render-board> ::=
+
+    (define/contract (render-board cs world-size on-cat-path? mouse)
+      (-> (listof cell?)
+          natural-number/c
+          (-> posn? boolean?)
+          (or/c #f posn?)
+          image?)
+      (for/fold ([image (nw:rectangle (world-width world-size)
+                                      (world-height world-size)
+                                      'solid
+                                      'white)])
+                ([c cs])
+        (overlay image
+                 (render-cell c
+                              (on-cat-path? (cell-p c))
+                              (and (posn? mouse)
+                                   (equal? mouse (cell-p c)))))))
+
+The render-cell function accepts a cell, a boolean indicating if the cell is on
+the shortest path between the cat and the boundary, and a second boolean
+indicating if the cell is underneath the mouse. It returns an image of the
+cell, with the pinhole placed in such a way that overlaying the image on an
+empty image with pinhole in the upper-left corner results in the cell being
+placed in the right place.
+
+<render-cell> ::=
+
+    (define/contract (render-cell c on-short-path? under-mouse?)
+      (-> cell? boolean? boolean? image?)
+      (let ([x (cell-center-x (cell-p c))]
+            [y (cell-center-y (cell-p c))]
+            [main-circle
+             (cond
+               [(cell-blocked? c)
+                (circle circle-radius 'solid blocked-color)]
+               [else
+                (circle circle-radius 'solid normal-color)])])
+        (move-pinhole
+         (cond
+           [under-mouse?
+            (overlay main-circle
+                     (circle (quotient circle-radius 2)
+     'solid under-mouse-color))]
+           [on-short-path?
+            (overlay main-circle
+                     (circle (quotient circle-radius 2) 'solid
+                             on-shortest-path-color))]
+           [else
+            main-circle])
+         (- x)
+         (- y))))
+
+The world-width function computes the width of the rendered world, given the
+world’s size by finding the center of the rightmost posn, and then adding an
+additional radius.
+
+<world-width> ::=
+
+    (define/contract (world-width board-size)
+      (-> natural-number/c number?)
+      (let ([rightmost-posn
+             (make-posn (- board-size 1) (- board-size 2))])
+        (+ (cell-center-x rightmost-posn) circle-radius)))
+
+Similarly, the world-height function computest the height of the rendered
+world, given the world’s size.
+
+<world-height> ::=
+
+    (define/contract (world-height board-size)
+      (-> natural-number/c number?)
+      (let ([bottommost-posn
+             (make-posn (- board-size 1) (- board-size 1))])
+        (ceiling (+ (cell-center-y bottommost-posn)
+                    circle-radius))))
+
+The cell-center-x function returns the x coordinate of the center of the cell
+specified by p.
+
+For example, the first cell in the third row (counting from 0) is flush with
+the edge of the screen, so its center is just the radius of the circle that is
+drawn.
+
+<cell-center-x-tests> ::=
+
+    (test (cell-center-x (make-posn 0 2))
+          circle-radius)
+
+The first cell in the second row, in contrast is offset from the third row by
+circle-spacing.
+
+<cell-center-x-tests> ::=
+
+    (test (cell-center-x (make-posn 0 1))
+          (+ circle-spacing circle-radius))
+
+The definition of cell-center-x multiplies the x coordinate of p by twice
+circle-spacing and then adds circle-radius to move over for the first circle.
+In addition if the y coordinate is odd, then it adds circle-spacing, shifting
+the entire line over.
+
+<cell-center-x> ::=
+
+    (define/contract (cell-center-x p)
+      (-> posn? number?)
+      (let ([x (posn-x p)]
+            [y (posn-y p)])
+        (+ circle-radius
+           (* x circle-spacing 2)
+           (if (odd? y)
+               circle-spacing
+               0))))
+
+The cell-center-y function computes the y coordinate of a cell’s location on
+the screen. For example, the y coordinate of the first row is the radius of a
+circle, ensuring that the first row is flush against the top of the screen.
+
+<cell-center-y-tests> ::=
+
+    (test (cell-center-y (make-posn 1 0))
+          circle-radius)
+
+Because the grid is hexagonal, the y coordinates of the rows do not have the
+same spacing as the x coordinates. In particular, they are off by sin(pi/3). We
+approximate that by 433/500 in order to keep the computations and test cases
+simple and using exact numbers. A more precise approximation would be
+0.8660254037844386, but it is not necessary at the screen resolution.
+
+<cell-center-y> ::=
+
+    (define/contract (cell-center-y p)
+      (-> posn? number?)
+      (+ circle-radius
+         (* (posn-y p)
+            circle-spacing 2
+            433/500)))
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

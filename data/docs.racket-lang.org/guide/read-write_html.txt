@@ -1,0 +1,128 @@
+►  The Racket Guide
+ 1  Welcome to Racket
+ 2  Racket Essentials
+ 3  Built-In Datatypes
+ 4  Expressions and Definitions
+ 5  Programmer-Defined Datatypes
+ 6  Modules
+ 7  Contracts
+ 8  Input and Output
+ 9  Regular Expressions
+10  Exceptions and Control
+11  Iterations and Comprehensions
+12  Pattern Matching
+13  Classes and Objects
+14  Units (Components)
+15  Reflection and Dynamic Evaluation
+16  Macros
+17  Creating Languages
+18  Performance
+19  Running and Creating Executables
+20  Compilation and Configuration
+21  More Libraries
+22  Dialects of Racket and Scheme
+    Bibliography
+    Index
+▼ 8  Input and Output
+8.1  Varieties of Ports
+8.2  Default Ports
+8.3  Reading and Writing Racket Data
+8.4  Datatypes and Serialization
+8.5  Bytes, Characters, and Encodings
+8.6  I/ O Patterns
+[...search manuals...]
+  top← prev  up  next → 
+
+8.3 Reading and Writing Racket Data
+
+As noted throughout Built-In Datatypes, Racket provides three ways to print an
+instance of a built-in value:
+
+  • print, which prints a value in the same way that is it printed for a REPL
+    result; and
+
+  • write, which prints a value in such a way that read on the output produces
+    the value back; and
+
+  • display, which tends to reduce a value to just its character or byte
+    content—at least for those datatypes that are primarily about characters or
+    bytes, otherwise it falls back to the same output as write.
+
+Here are some examples using each:
+
+                                                          > (display 1/2)
+    > (print 1/2)              > (write 1/2)              1/2
+    1/2                        1/2
+                                                          > (display #\x)
+    > (print #\x)              > (write #\x)              x
+    #\x                        #\x
+                                                          > (display "hello")
+    > (print "hello")          > (write "hello")          hello
+    "hello"                    "hello"
+                                                          > (display #
+    > (print #"goodbye")       > (write #"goodbye")       "goodbye")
+    #"goodbye"                 #"goodbye"                 goodbye
+
+    > (print '|pea pod|)       > (write '|pea pod|)       > (display '|pea pod
+    '|pea pod|                 |pea pod|                  |)
+                                                          pea pod
+    > (print '("i" pod))       > (write '("i" pod))
+    '("i" pod)                 ("i" pod)                  > (display '
+                                                          ("i" pod))
+    > (print write)            > (write write)            (i pod)
+    #<procedure:write>         #<procedure:write>
+                                                          > (display write)
+                                                          #<procedure:write>
+
+
+
+Overall, print corresponds to the expression layer of Racket syntax, write
+corresponds to the reader layer, and display roughly corresponds to the
+character layer.
+
+The printf function supports simple formatting of data and text. In the format
+string supplied to printf, ~a displays the next argument, ~s writes the next
+argument, and ~v prints the next argument.
+
+Examples:
+
+    (define (deliver who when what)
+      (printf "Items ~a for shopper ~s: ~v" who when what))
+    > (deliver '("list") '("John") '("milk"))
+    Items (list) for shopper ("John"): '("milk")
+
+
+
+After using write, as opposed to display or print, many forms of data can be
+read back in using read. The same values printed can also be parsed by read,
+but the result may have extra quote forms, since a printed form is meant to be
+read like an expression.
+
+Examples:
+
+    > (define-values (in out) (make-pipe))
+    > (write "hello" out)
+    > (read in)
+    "hello"
+
+    > (write '("alphabet" soup) out)
+    > (read in)
+    '("alphabet" soup)
+
+    > (write #hash((a . "apple") (b . "banana")) out)
+    > (read in)
+    '#hash((b . "banana") (a . "apple"))
+
+    > (print '("alphabet" soup) out)
+    > (read in)
+    ''("alphabet" soup)
+
+    > (display '("alphabet" soup) out)
+    > (read in)
+    '(alphabet soup)
+
+
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

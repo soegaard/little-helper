@@ -1,0 +1,776 @@
+▼  The Racket Reference
+ 1  Language Model
+ 2  Syntactic Forms
+ 3  Datatypes
+ 4  Structures
+ 5  Classes and Objects
+ 6  Units
+ 7  Contracts
+ 8  Pattern Matching
+ 9  Control Flow
+10  Concurrency and Parallelism
+11  Macros
+12  Input and Output
+13  Reflection and Security
+14  Operating System
+15  Memory Management
+16  Unsafe Operations
+17  Running Racket
+    Bibliography
+    Index
+Version: 5.1.2
+[...search manuals...]
+  top← prev  up  next → 
+
+The Racket Reference
+
+Matthew Flatt
+and PLT
+
+This manual defines the core Racket language and describes its most prominent
+libraries. The companion manual The Racket Guide provides a friendlier (though
+less precise and less complete) overview of the language.
+
+ #lang racket/base
+ #lang racket
+Unless otherwise noted, the bindings defined in this manual are exported by the
+racket/base and racket languages.
+
+            The racket/base library is much smaller than the racket library and
+            will typically load faster.
+
+            The racket library combines racket/base, racket/bool, racket/bytes,
+            racket/class, racket/cmdline, racket/contract, racket/dict, racket/
+            file, racket/function, racket/future, racket/include, racket/list,
+            racket/local, racket/match, racket/math, racket/path, racket/place,
+            racket/port, racket/pretty, racket/promise, racket/sequence, racket
+            /set, racket/shared, racket/stream, racket/string, racket/system,
+            racket/tcp, racket/udp, racket/unit, and racket/vector.
+
+    1 Language Model
+
+      1.1 Evaluation Model
+
+        1.1.1 Sub-expression Evaluation and Continuations
+
+        1.1.2 Tail Position
+
+        1.1.3 Multiple Return Values
+
+        1.1.4 Top-Level Variables
+
+        1.1.5 Objects and Imperative Update
+
+        1.1.6 Object Identity and Comparisons
+
+        1.1.7 Garbage Collection
+
+        1.1.8 Procedure Applications and Local Variables
+
+        1.1.9 Variables and Locations
+
+        1.1.10 Modules and Module-Level Variables
+
+          1.1.10.1 Phases
+
+          1.1.10.2 Module Re-declarations
+
+        1.1.11 Continuation Frames and Marks
+
+        1.1.12 Prompts, Delimited Continuations, and Barriers
+
+        1.1.13 Threads
+
+        1.1.14 Parameters
+
+        1.1.15 Exceptions
+
+        1.1.16 Custodians
+
+      1.2 Syntax Model
+
+        1.2.1 Identifiers and Binding
+
+        1.2.2 Syntax Objects
+
+        1.2.3 Expansion (Parsing)
+
+          1.2.3.1 Fully Expanded Programs
+
+          1.2.3.2 Expansion Steps
+
+          1.2.3.3 Expansion Context
+
+          1.2.3.4 Introducing Bindings
+
+          1.2.3.5 Transformer Bindings
+
+          1.2.3.6 Partial Expansion
+
+          1.2.3.7 Internal Definitions
+
+          1.2.3.8 Module Phases and Visits
+
+          1.2.3.9 Macro-Introduced Bindings
+
+        1.2.4 Compilation
+
+        1.2.5 Namespaces
+
+        1.2.6 Inferred Value Names
+
+    2 Syntactic Forms
+
+      2.1 Modules: module, ...
+
+      2.2 Importing and Exporting: require and provide
+
+        2.2.1 Additional require Forms
+
+        2.2.2 Additional provide Forms
+
+      2.3 Literals: quote and #%datum
+
+      2.4 Expression Wrapper: #%expression
+
+      2.5 Variable References and #%top
+
+      2.6 Locations: #%variable-reference
+
+      2.7 Procedure Applications and #%app
+
+      2.8 Procedure Expressions: lambda and case-lambda
+
+      2.9 Local Binding: let, let*, letrec, ...
+
+      2.10 Local Definitions: local
+
+      2.11 Constructing Graphs: shared
+
+      2.12 Conditionals: if, cond, and, and or
+
+      2.13 Dispatch: case
+
+      2.14 Definitions: define, define-syntax, ...
+
+        2.14.1 require Macros
+
+        2.14.2 provide Macros
+
+      2.15 Sequencing: begin, begin0, and begin-for-syntax
+
+      2.16 Guarded Evaluation: when and unless
+
+      2.17 Assignment: set! and set!-values
+
+      2.18 Iterations and Comprehensions: for, for/list, ...
+
+        2.18.1 Iteration and Comprehension Forms
+
+        2.18.2 Deriving New Iteration Forms
+
+        2.18.3 Do Loops
+
+      2.19 Continuation Marks: with-continuation-mark
+
+      2.20 Quasiquoting: quasiquote, unquote, and unquote-splicing
+
+      2.21 Syntax Quoting: quote-syntax
+
+      2.22 Interaction Wrapper: #%top-interaction
+
+      2.23 Limiting Scope: define-package, open-package, ...
+
+      2.24 Blocks: block
+
+      2.25 Internal-Definition Limiting: #%stratified-body
+
+    3 Datatypes
+
+      3.1 Booleans and Equality
+
+        3.1.1 Boolean Aliases
+
+      3.2 Numbers
+
+        3.2.1 Number Types
+
+        3.2.2 Generic Numerics
+
+          3.2.2.1 Arithmetic
+
+          3.2.2.2 Number Comparison
+
+          3.2.2.3 Powers and Roots
+
+          3.2.2.4 Trignometric Functions
+
+          3.2.2.5 Complex Numbers
+
+          3.2.2.6 Bitwise Operations
+
+          3.2.2.7 Random Numbers
+
+          3.2.2.8 Number–String Conversions
+
+          3.2.2.9 Extra Constants and Functions
+
+        3.2.3 Flonums
+
+          3.2.3.1 Flonum Arithmetic
+
+          3.2.3.2 Flonum Vectors
+
+        3.2.4 Fixnums
+
+          3.2.4.1 Fixnum Arithmetic
+
+          3.2.4.2 Fixnum Vectors
+
+      3.3 Strings
+
+        3.3.1 String Constructors, Selectors, and Mutators
+
+        3.3.2 String Comparisons
+
+        3.3.3 String Conversions
+
+        3.3.4 Locale-Specific String Operations
+
+        3.3.5 Additional String Functions
+
+      3.4 Byte Strings
+
+        3.4.1 Byte String Constructors, Selectors, and Mutators
+
+        3.4.2 Byte String Comparisons
+
+        3.4.3 Bytes to/from Characters, Decoding and Encoding
+
+        3.4.4 Bytes to Bytes Encoding Conversion
+
+        3.4.5 Additional Byte String Functions
+
+      3.5 Characters
+
+        3.5.1 Characters and Scalar Values
+
+        3.5.2 Character Comparisons
+
+        3.5.3 Classifications
+
+        3.5.4 Character Conversions
+
+      3.6 Symbols
+
+      3.7 Regular Expressions
+
+        3.7.1 Regexp Syntax
+
+        3.7.2 Additional Syntactic Constraints
+
+        3.7.3 Regexp Constructors
+
+        3.7.4 Regexp Matching
+
+        3.7.5 Regexp Splitting
+
+        3.7.6 Regexp Substitution
+
+      3.8 Keywords
+
+      3.9 Pairs and Lists
+
+        3.9.1 Pair Constructors and Selectors
+
+        3.9.2 List Operations
+
+        3.9.3 List Iteration
+
+        3.9.4 List Filtering
+
+        3.9.5 List Searching
+
+        3.9.6 Pair Accessor Shorthands
+
+        3.9.7 Additional List Functions and Synonyms
+
+        3.9.8 Immutable Cyclic Data
+
+      3.10 Mutable Pairs and Lists
+
+        3.10.1 Mutable Pair Constructors and Selectors
+
+        3.10.2 Mutable List Functions
+
+      3.11 Vectors
+
+        3.11.1 Additional Vector Functions
+
+      3.12 Boxes
+
+      3.13 Hash Tables
+
+      3.14 Sequences and Streams
+
+        3.14.1 Sequences
+
+          3.14.1.1 Sequence Predicate and Constructors
+
+          3.14.1.2 Sequence Conversion
+
+          3.14.1.3 Sequence Combinations
+
+        3.14.2 Streams
+
+        3.14.3 Generators
+
+      3.15 Dictionaries
+
+      3.16 Sets
+
+      3.17 Procedures
+
+        3.17.1 Keywords and Arity
+
+        3.17.2 Reflecting on Primitives
+
+        3.17.3 Additional Higher-Order Functions
+
+      3.18 Void and Undefined
+
+    4 Structures
+
+      4.1 Defining Structure Types: struct
+
+      4.2 Creating Structure Types
+
+      4.3 Structure Type Properties
+
+      4.4 Copying and Updating Structures
+
+      4.5 Structure Utilities
+
+      4.6 Structure Type Transformer Binding
+
+    5 Classes and Objects
+
+      5.1 Creating Interfaces
+
+      5.2 Creating Classes
+
+        5.2.1 Initialization Variables
+
+        5.2.2 Fields
+
+        5.2.3 Methods
+
+          5.2.3.1 Method Definitions
+
+          5.2.3.2 Inherited and Superclass Methods
+
+          5.2.3.3 Internal and External Names
+
+      5.3 Creating Objects
+
+      5.4 Field and Method Access
+
+        5.4.1 Methods
+
+        5.4.2 Fields
+
+        5.4.3 Generics
+
+      5.5 Mixins
+
+      5.6 Traits
+
+      5.7 Object and Class Contracts
+
+      5.8 Object Equality and Hashing
+
+      5.9 Object Serialization
+
+      5.10 Object Printing
+
+      5.11 Object, Class, and Interface Utilities
+
+      5.12 Surrogates
+
+    6 Units
+
+      6.1 Creating Units
+
+      6.2 Invoking Units
+
+      6.3 Linking Units and Creating Compound Units
+
+      6.4 Inferred Linking
+
+      6.5 Generating A Unit from Context
+
+      6.6 Structural Matching
+
+      6.7 Extending the Syntax of Signatures
+
+      6.8 Unit Utilities
+
+      6.9 Unit Contracts
+
+      6.10 Single-Unit Modules
+
+      6.11 Single-Signature Modules
+
+      6.12 Transformer Helpers
+
+    7 Contracts
+
+      7.1 Data-structure Contracts
+
+      7.2 Function Contracts
+
+      7.3 Parametric Contracts
+
+      7.4 Lazy Data-structure Contracts
+
+      7.5 Attaching Contracts to Values
+
+        7.5.1 Nested Contract Boundaries
+
+        7.5.2 Low-level Contract Boundaries
+
+      7.6 Building New Contract Combinators
+
+        7.6.1 Blame Objects
+
+        7.6.2 Contracts as structs
+
+        7.6.3 Obligation Information in Check Syntax
+
+        7.6.4 Utilities for Building New Combinators
+
+      7.7 Contract Utilities
+
+      7.8 Legacy Contracts
+
+    8 Pattern Matching
+
+      8.1 Additional Matching Forms
+
+      8.2 Extending match
+
+      8.3 Library Extensions
+
+    9 Control Flow
+
+      9.1 Multiple Values
+
+      9.2 Exceptions
+
+        9.2.1 Raising Exceptions
+
+        9.2.2 Handling Exceptions
+
+        9.2.3 Configuring Default Handling
+
+        9.2.4 Built-in Exception Types
+
+      9.3 Delayed Evaluation
+
+        9.3.1 Additional Promise Kinds
+
+      9.4 Continuations
+
+        9.4.1 Classical Control Operators
+
+      9.5 Continuation Marks
+
+      9.6 Breaks
+
+      9.7 Exiting
+
+    10 Concurrency and Parallelism
+
+      10.1 Threads
+
+        10.1.1 Creating Threads
+
+        10.1.2 Suspending, Resuming, and Killing Threads
+
+        10.1.3 Synchronizing Thread State
+
+        10.1.4 Thread Mailboxes
+
+      10.2 Synchronization
+
+        10.2.1 Events
+
+        10.2.2 Channels
+
+        10.2.3 Semaphores
+
+        10.2.4 Buffered Asynchronous Channels
+
+      10.3 Thread-Local Storage
+
+        10.3.1 Thread Cells
+
+        10.3.2 Parameters
+
+      10.4 Futures
+
+        10.4.1 Future Performance Logging
+
+      10.5 Places
+
+    11 Macros
+
+      11.1 Pattern-Based Syntax Matching
+
+      11.2 Syntax Object Content
+
+      11.3 Syntax Object Bindings
+
+      11.4 Syntax Transformers
+
+        11.4.1 require Transformers
+
+        11.4.2 provide Transformers
+
+      11.5 Syntax Parameters
+
+        11.5.1 Syntax Parameter Inspection
+
+      11.6 Local Binding with Splicing Body
+
+      11.7 Syntax Object Properties
+
+      11.8 Syntax Taints
+
+      11.9 Expanding Top-Level Forms
+
+        11.9.1 Information on Expanded Modules
+
+      11.10 File Inclusion
+
+      11.11 Syntax Utilities
+
+        11.11.1 Creating formatted identifiers
+
+        11.11.2 Pattern variables
+
+        11.11.3 Error reporting
+
+        11.11.4 Recording disappeared uses
+
+        11.11.5 Miscellaneous utilities
+
+    12 Input and Output
+
+      12.1 Ports
+
+        12.1.1 Encodings and Locales
+
+        12.1.2 Managing Ports
+
+        12.1.3 Port Buffers and Positions
+
+        12.1.4 Counting Positions, Lines, and Columns
+
+        12.1.5 File Ports
+
+        12.1.6 String Ports
+
+        12.1.7 Pipes
+
+        12.1.8 Structures as Ports
+
+        12.1.9 Custom Ports
+
+        12.1.10 More Port Constructors, Procedures, and Events
+
+          12.1.10.1 Port String and List Conversions
+
+          12.1.10.2 Creating Ports
+
+          12.1.10.3 Port Events
+
+          12.1.10.4 Copying Streams
+
+      12.2 Byte and String Input
+
+      12.3 Byte and String Output
+
+      12.4 Reading
+
+      12.5 Writing
+
+      12.6 The Reader
+
+      12.7 The Printer
+
+      12.8 Pretty Printing
+
+        12.8.1 Basic Pretty-Print Options
+
+        12.8.2 Per-Symbol Special Printing
+
+        12.8.3 Line-Output Hook
+
+        12.8.4 Value Output Hook
+
+        12.8.5 Additional Custom-Output Support
+
+      12.9 Reader Extension
+
+        12.9.1 Readtables
+
+        12.9.2 Reader-Extension Procedures
+
+        12.9.3 Special Comments
+
+      12.10 Printer Extension
+
+      12.11 Serialization
+
+      12.12 Fast-Load Serialization
+
+    13 Reflection and Security
+
+      13.1 Namespaces
+
+      13.2 Evaluation and Compilation
+
+      13.3 The racket/load Language
+
+      13.4 Module Names and Loading
+
+        13.4.1 Resolving Module Names
+
+        13.4.2 Compiled Modules and References
+
+        13.4.3 Dynamic Module Access
+
+      13.5 Impersonators and Chaperones
+
+        13.5.1 Impersonator Constructors
+
+        13.5.2 Chaperone Constructors
+
+        13.5.3 Impersonator Properties
+
+      13.6 Security Guards
+
+      13.7 Custodians
+
+      13.8 Thread Groups
+
+      13.9 Structure Inspectors
+
+      13.10 Code Inspectors
+
+      13.11 Sandboxed Evaluation
+
+        13.11.1 Customizing Evaluators
+
+        13.11.2 Interacting with Evaluators
+
+        13.11.3 Miscellaneous
+
+    14 Operating System
+
+      14.1 Paths
+
+        14.1.1 Manipulating Paths
+
+        14.1.2 More Path Utilities
+
+        14.1.3 Unix and Mac OS X Paths
+
+        14.1.4 Windows Path Conventions
+
+      14.2 Filesystem
+
+        14.2.1 Locating Paths
+
+        14.2.2 Files
+
+        14.2.3 Directories
+
+        14.2.4 Declaring Paths Needed at Run Time
+
+        14.2.5 More File and Directory Utilities
+
+      14.3 Networking
+
+        14.3.1 TCP
+
+        14.3.2 UDP
+
+      14.4 Processes
+
+        14.4.1 Simple Subprocesses
+
+      14.5 Logging
+
+        14.5.1 Creating Loggers
+
+        14.5.2 Logging Events
+
+        14.5.3 Receiving Logged Events
+
+      14.6 Time
+
+        14.6.1 Date Utilities
+
+      14.7 Environment and Runtime Information
+
+      14.8 Command-Line Parsing
+
+    15 Memory Management
+
+      15.1 Weak Boxes
+
+      15.2 Ephemerons
+
+      15.3 Wills and Executors
+
+      15.4 Garbage Collection
+
+    16 Unsafe Operations
+
+      16.1 Unsafe Numeric Operations
+
+      16.2 Unsafe Data Extraction
+
+    17 Running Racket
+
+      17.1 Running Racket or GRacket
+
+        17.1.1 Initialization
+
+        17.1.2 Exit Status
+
+        17.1.3 Init Libraries
+
+        17.1.4 Command Line
+
+        17.1.5 Language Run-Time Configuration
+
+      17.2 Libraries and Collections
+
+      17.3 Interactive Help
+
+      17.4 Interactive Module Loading
+
+      17.5 Debugging
+
+        17.5.1 Tracing
+
+    Bibliography
+
+    Index
+
+[...search manuals...]
+  top← prev  up  next → 
+ 

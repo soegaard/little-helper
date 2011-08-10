@@ -1,0 +1,412 @@
+▼  Syntax: Meta-Programming Helpers
+1  Syntax Object Helpers
+2  Module-Processing Helpers
+3  Macro Transformer Helpers
+4  Reader Helpers
+5  Non-Module Compilation And Expansion
+6  Trusting Standard Recertifying Transformers
+7  Attaching Documentation to Exports
+8  Parsing and specifying syntax
+9  Source Locations
+   Index
+► 4  Reader Helpers
+4.1  Raising exn: fail: read
+4.2  Module Reader
+On this page:
+4.1 Raising exn: fail: read
+raise-read-error
+raise-read-eof-error
+4.2 Module Reader
+#%module-begin
+make-meta-reader
+wrap-read-all
+[...search manuals...]
+  top← prev  up  next → 
+
+4 Reader Helpers
+
+4.1 Raising exn:fail:read
+
+ (require syntax/readerr)
+
+(raise-read-error   msg-string        
+                    source            
+                    line              
+                    col               
+                    pos               
+                    span)        →   any
+  msg-string : string?
+  source : any/c
+  line : (or/c number? false/c)
+  col : (or/c number? false/c)
+  pos : (or/c number? false/c)
+  span : (or/c number? false/c)
+Creates and raises an exn:fail:read exception, using msg-string as the base
+error message.
+
+Source-location information is added to the error message using the last five
+arguments (if the error-print-source-location parameter is set to #t). The
+source argument is an arbitrary value naming the source location—usually a file
+path string. Each of the line, pos arguments is #f or a positive exact integer
+representing the location within source-name (as much as known), col is a
+non-negative exact integer for the source column (if known), and span is #f or
+a non-negative exact integer for an item range starting from the indicated
+position.
+
+The usual location values should point at the beginning of whatever it is you
+were reading, and the span usually goes to the point the error was discovered.
+
+(raise-read-eof-error   msg-string        
+                        source            
+                        line              
+                        col               
+                        pos               
+                        span)        →   any
+  msg-string : string?
+  source : any/c
+  line : (or/c number? false/c)
+  col : (or/c number? false/c)
+  pos : (or/c number? false/c)
+  span : (or/c number? false/c)
+Like raise-read-error, but raises exn:fail:read:eof instead of exn:fail:read.
+
+4.2 Module Reader
+
+            See also Defining new #lang Languages in The Racket Guide.
+
+ (require syntax/module-reader)
+
+The syntax/module-reader library provides support for defining #lang readers.
+It is normally used as a module language, though it may also be required to get
+make-meta-reader. It provides all of the bindings of scheme/base other than #
+%module-begin.
+
+(#%module-begin module-path)
+(#%module-begin module-path reader-option ... form ....)
+(#%module-begin             reader-option ... form ....)
+ 
+reader-option   =   #:read        read-expr
+                |   #:read-syntax read-syntax-expr
+                |   #:whole-body-readers? whole?-expr
+                |   #:wrapper1    wrapper1-expr
+                |   #:wrapper2    wrapper2-expr
+                |   #:language    lang-expr
+                |   #:info        info-expr
+                |   #:language-info language-info-expr
+ 
+       read-expr   :   (input-port? . -> . any/c)
+       read-syntax-expr   :   (any/c input-port? . -> . any/c)
+       whole-expr    :   any/c
+       wrapper1-expr   :   (or/c ((-> any/c) . -> . any/c)
+                                 ((-> any/c) boolean? . -> . any/c))
+                           (or/c (input-port? (input-port? . -> . any/c)
+       wrapper2-expr   :          . -> . any/c)
+                                 (input-port? (input-port? . -> . any/c)
+                                  boolean? . -> . any/c))
+       info-expr   :   (symbol? any/c (symbol? any/c . -> . any/c) . -> . any/c
+                       )
+       module-info-expr   :   (or/c (vector/c module-path? symbol? any/c) #f)
+                       (or/c module-path?
+       lang-expr   :         (and/c syntax? (compose module-path? syntax->datum
+                       ))
+                             procedure?)
+
+In its simplest form, the body of a module written with syntax/module-reader
+contains just a module path, which is used in the language position of read
+modules. For example, a module something/lang/reader implemented as
+
+    (module reader syntax/module-reader
+      module-path)
+
+creates a reader such that a module source
+
+    #lang something
+    ....
+
+is read as
+
+    (module name-id module-path
+      (#%module-begin ....))
+
+Keyword-based reader-options allow further customization, as listed below.
+Additional forms are as in the body of scheme/base module; they can import
+bindings and define identifiers used by the reader-options.
+
+  • #:read and #:read-syntax (both or neither must be supplied) specify
+    alternate readers for parsing the module body—replacements read and
+    read-syntax, respectively. Normally, the replacements for read and
+    read-syntax are applied repeatedly to the module source until eof is
+    produced, but see also #:whole-body-readers?.
+
+    For example, a language built on the Honu reader could be implemented with:
+
+        (module reader syntax/module-reader
+          module-path
+          #:read read-honu
+          #:read-syntax read-honu-syntax)
+
+    See also #:wrapper1 and #:wrapper2, which support simple parameterization
+    of readers rather than wholesale replacement.
+
+  • #:whole-body-readers? specified as true indicates that the #:read and
+    #:read-syntax functions each produce a list of S-expressions or syntax
+    objects for the module content, so that each is applied just once to the
+    input stream.
+
+    If the resulting list contains a single form that starts with the symbol '#
+    %module-begin (or a syntax object whose datum is that symbol), then the
+    first item is used as the module body; otherwise, a '#%module-begin (symbol
+    or identifier) is added to the beginning of the list to form the module
+    body.
+
+  • #:wrapper1 specifies a function that controls the dynamic context in which
+    the read and read-syntax functions are called. A #:wrapper1-specified
+    function must accept a thunk, and it normally calls the thunk to produce a
+    result while parameterizing the call. Optionally, a #:wrapper1-specified
+    function can accept a boolean that indicates whether it is used in read (#
+    f) or read-syntax (#t) mode.
+
+    For example, a language like scheme/base but with case-insensitive reading
+    of symbols and identifiers can be implemented as
+
+        (module reader syntax/module-reader
+          scheme/base
+          #:wrapper1 (lambda (t)
+                       (parameterize ([read-case-sensitive #f])
+                         (t))))
+
+    Using a readtable, you can implement languages that are extensions of plain
+    S-expressions.
+
+  • #:wrapper2 is like #:wrapper1, but a #:wrapper2-specified function receives
+    the input port to be read, and the function that it receives accepts an
+    input port (usually, but not necessarily the same input port). A
+    #:wrapper2-specified function can optionally accept an boolean that
+    indicates whether it is used in read (#f) or read-syntax (#t) mode.
+
+  • #:info specifies an implementation of reflective information that is used
+    by external tools to manipulate the source of modules in the language
+    something. For example, DrRacket uses information from #:info to determine
+    the style of syntax coloring that it should use for editing a module’s
+    source.
+
+    The #:info specification should be a function of three arguments: a symbol
+    indicating the kind of information requested (as defined by external
+    tools), a default value that normally should be returned if the symbol is
+    not recognized, and a default-filtering function that takes the first two
+    arguments and returns a result.
+
+    The expression after #:info is placed into a context where language-module
+    and language-data are bound. The language-module identifier is bound to the
+    module-path that is used for the read module’s language as written directly
+    or as determined through #:language. The language-data identifier is bound
+    to the second result from #:language, or #f by default.
+
+    The default-filtering function passed to the #:info function is intended to
+    provide support for information that syntax/module-reader can provide
+    automatically. Currently, it recognizes only the 'module-language key, for
+    which it returns language-module; it returns the given default value for
+    any other key.
+
+    In the case of the DrRacket syntax-coloring example, DrRacket supplies
+    'color-lexer as the symbol argument, and it supplies #f as the default. The
+    default-filtering argument (i.e., the third argument to the #:info
+    function) currently just returns the default for 'color-lexer.
+
+  • #:language-info specifies an implementation of reflective information that
+    is used by external tools to manipulate the module in the language
+    something in its expanded, compiled, or declared form (as opposed to
+    source). For example, when Racket starts a program, it uses information
+    attached to the main module to initialize the run-time environment.
+
+    Since the expanded/compiled/declared form exists at a different time than
+    when the source is read, a #:language-info specification is a vector that
+    indicates an implementation of the reflective information, instead of a
+    direct implementation as a function like #:info. The first element of the
+    vector is a module path, the second is a symbol corresponding to a function
+    exported from the module, and the last element is a value to be passed to
+    the function. The last value in the vector must be one that can be written
+    with write and read back with read. When the exported function indicated by
+    the first two vector elements is called with the value from the last vector
+    element, the result should be a function or two arguments: a symbol and a
+    default value. The symbol and default value are used as for the #:info
+    function (but without an extra default-filtering function).
+
+    The value specified by #:language-info is attached to the module form that
+    is parsed from source through the 'module-language syntax property. See
+    module for more information.
+
+    The expression after #:language-info is placed into a context where
+    language-module are language-data are bound, the same as for #:info.
+
+    In the case of the Racket run-time configuration example, Racket uses the
+    #:language-info vector to obtain a function, and then it passes
+    'configure-runtime to the function to obtain information about configuring
+    the runtime environment. See also Language Run-Time Configuration.
+
+  • #:language allows the language of the read module to be computed
+    dynamically and based on the program source, instead of using a constant
+    module-path. (Either #:language or module-path must be provided, but not
+    both.)
+
+    This value of the #:language option can be either a module path (possibly
+    as a syntax object) that is used as a module language, or it can be a
+    procedure. If it is a procedure it can accept either
+
+      □ 0 arguments;
+
+      □ 1 argument: an input port; or
+
+      □ 5 arguments: an input port, a syntax object whose datum is a module
+        path for the enclosing module as it was referenced through #lang or #
+        reader, a starting line number (positive exact integer) or #f, a column
+        number (non-negative exact integer) or #f, and a position number
+        (positive exact integer) or #f.
+
+    The result can be either
+
+      □ a single value, which is a module path or a syntax object whose datum
+        is a module path, to be used like module-path; or
+
+      □ two values, where the first is like a single-value result and the
+        second can be any value.
+
+    The second result, which defaults to #f if only a single result is
+    produced, is made available to the #:info and #:module-info functions
+    through the language-data binding. For example, it can be a specification
+    derived from the input stream that changes the module’s reflective
+    information (such as the syntax-coloring mode or the output-printing
+    styles).
+
+As another example, the following reader defines a “language” that ignores the
+contents of the file, and simply reads files as if they were empty:
+
+    (module ignored syntax/module-reader
+      scheme/base
+      #:wrapper1 (lambda (t) (t) '()))
+
+Note that the wrapper still performs the read, otherwise the module loader
+would complain about extra expressions.
+
+As a more useful example, the following module language is similar to at-exp,
+where the first datum in the file determines the actual language (which means
+that the library specification is effectively ignored):
+
+    (module reader syntax/module-reader
+      -ignored-
+      #:wrapper2
+      (lambda (in rd stx?)
+        (let* ([lang (read in)]
+               [mod  (parameterize ([current-readtable
+                                     (make-at-readtable)])
+                       (rd in))]
+               [mod  (if stx? mod (datum->syntax #f mod))]
+               [r (syntax-case mod ()
+                    [(module name lang* . body)
+                     (with-syntax ([lang (datum->syntax
+                                          #'lang* lang #'lang*)])
+                       (syntax/loc mod (module name lang . body)))])])
+          (if stx? r (syntax->datum r))))
+      (require scribble/reader))
+
+The ability to change the language position in the resulting module expression
+can be useful in cases such as the above, where the base language module is
+chosen based on the input. To make this more convenient, you can omit the
+module-path and instead specify it via a #:language expression. This expression
+can evaluate to a datum or syntax object that is used as a language, or it can
+evaluate to a thunk. In the latter case, the thunk is invoked to obtain such a
+datum before reading the module body begins, in a dynamic extent where
+current-input-port is the source input. A syntax object is converted using
+syntax->datum when a datum is needed (for read instead of read-syntax). Using
+#:language, the last example above can be written more concisely:
+
+    (module reader syntax/module-reader
+      #:language read
+      #:wrapper2 (lambda (in rd stx?)
+                   (parameterize ([current-readtable
+                                   (make-at-readtable)])
+                     (rd in)))
+      (require scribble/reader))
+
+For such cases, however, the alternative reader constructor make-meta-reader
+implements a might tightly controlled reading of the module language.
+
+(make-meta-reader    self-sym                
+                     path-desc-str           
+                   [ #:read-spec read-spec]  
+                     module-path-parser      
+                     convert-read            
+                     convert-read-syntax     
+                     convert-get-info)       
+  →   procedure?   procedure?   procedure?
+  self-sym : symbol?
+  path-desc-str : string?
+  read-spec : (input-port? . -> . any/c) = (lambda (in) ....)
+  module-path-parser : (any/c . -> . (or/c module-path? #f))
+  convert-read : (procedure? . -> . procedure?)
+  convert-read-syntax : (procedure? . -> . procedure?)
+  convert-get-info : (procedure? . -> . procedure?)
+Generates procedures suitable for export as read (see read and #lang),
+read-syntax (see read-syntax and #lang), and get-info (see read-language and #
+lang), respectively, where the procedures chains to another language that is
+specified in an input stream.
+
+            The at-exp, reader, and planet languages are implemented using this
+            function.
+
+The generated functions expect a target language description in the input
+stream that is provided to read-spec. The default read-spec extracts a
+non-empty sequence of bytes after one or more space and tab bytes, stopping at
+the first whitespace byte or end-of-file (whichever is first), and it produces
+either such a byte string or #f. If read-spec produces #f, a reader exception
+is raised, and path-desc-str is used as a description of the expected language
+form in the error message.
+
+            The reader language supplies read for read-spec. The at-exp and
+            planet languages use the default read-spec.
+
+The result of read-spec is converted to a module path using module-path-parser.
+If module-path-parser produces #f, a reader exception is raised in the same way
+as when read-spec produces a #f. The planet languages supply a
+module-path-parser that converts a byte string to a module path.
+
+If loading the module produced by module-path-parser succeeds, then the loaded
+module’s read, read-syntax, or get-info export is passed to convert-read,
+convert-read-syntax, or convert-get-info, respectively.
+
+            The at-exp language supplies convert-read and convert-read-syntax
+            to add @-expression support to the current readtable before
+            chaining to the given procedures.
+
+The procedures generated by make-meta-reader are not meant for use with the
+syntax/module-reader language; they are meant to be exported directly.
+
+(wrap-read-all   mod-path            
+                 in                  
+                 read                
+                 mod-path-stx        
+                 src                 
+                 line                
+                 col                 
+                 pos)           →   any/c
+  mod-path : module-path?
+  in : input-port?
+  read : (input-port . -> . any/c)
+  mod-path-stx : syntax?
+  src : (or/c syntax? #f)
+  line : number?
+  col : number?
+  pos : number?
+This function is deprecated; the syntax/module-reader language can be adapted
+using the various keywords to arbitrary readers; please use it instead.
+
+Repeatedly calls read on in until an end of file, collecting the results in
+order into lst, and derives a name-id from (object-name in). The last five
+arguments are used to construct the syntax object for the language position of
+the module. The result is roughly
+
+    `(module ,name-id ,mod-path ,@lst)
+
+[...search manuals...]
+  top← prev  up  next → 
+ 
