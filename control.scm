@@ -117,7 +117,7 @@
       ; 4. Delete the during-construction lexicon from index, and save it
       (set-index-lexicon! the-index "")
       (set-index-positions! the-index "")
-      (save-index index-path the-index 'replace))))
+      (save-index index-path the-index))))
 
 (define (generate-scribblings-doc-data)
   (generate-index the-repository-path "sensitive" #t)
