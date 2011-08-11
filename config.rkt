@@ -23,8 +23,8 @@
   ; (find-doc-dir)  ; local machine
   ; fetch new copy with wget, then delete .gif and png. (and html after conversion)
   ; wget -r -D docs.racket-lang.org http://docs.racket-lang.org 
-  ; (build-path "/tmp/docs.racket-lang.org")  
-  (build-path (current-data-directory) "docs.racket-lang.org")
+  (build-path "/tmp/docs.racket-lang.org")  
+  ; (build-path (current-data-directory) "docs.racket-lang.org")
   )
 (define the-repository-txt-path     
   ; (find-doc-dir)  ; local machine

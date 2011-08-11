@@ -45,10 +45,11 @@
 ; 4.  The inverted file is output.
 
 (require 
+ racket/serialize
+ racket/path
  (lib "match.ss")
  (lib "file.ss")
  (lib "list.ss")
- racket/serialize
  (except-in (file "planet/srfi.plt/1/2/42.ss") index)
  (rename-in (file "planet/srfi.plt/1/2/42.ss") [index Index])
  "planet/bit-io.scm"   
@@ -69,7 +70,6 @@
 ; and    lexicon    is lexicon structure (the in-memory kind while constructing kind, see below), 
 ; and    positions  is a vector, which associates a term-number with its bit-position 
 ;                   in the inverted file.
-; NOTE: 
 
 (define (save-index path i)
   (with-output-to-file path
@@ -81,7 +81,7 @@
     (delete-file path)))
 
 (define (load-index path)
-  (cond [(file-exists? path)  ; TODO for debug
+  (cond [(file-exists? path)
          (with-input-from-file path
            (λ () (deserialize (read))))]
         [else
@@ -111,7 +111,7 @@
 (define (lookup-document-path index d)
   (let ([doc (hash-ref (index-documents index) d)])
     (if doc
-        (document-path doc)
+        (build-path the-repository-path (document-path doc))
         #f)))
 
 ;;;
@@ -318,7 +318,7 @@
                    (sum-ec (:parallel 
                             ;(:repeat 10)  ; early stopping for test runs
                             (: file-path (Index doc-number) files-to-index))
-                           (begin (hash-set! documents doc-number (make-document file-path 0)))
+                           (begin (hash-set! documents doc-number (make-document (find-relative-path the-repository-path file-path) 0)))
                            ; (if (indexable-file? file-path))
                            ;(begin (hash-table-put! documents doc-number (make-document file-path 0)))
                            (: f (calculate-term-frequencies lexicon file-path lexer))

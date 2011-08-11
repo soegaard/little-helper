@@ -53,7 +53,7 @@
       n
       (map (λ (df)
              (match df
-               [(d f) (list (document-path (hash-ref (index-documents index) d))
+               [(d f) (list (lookup-document-path index d)
                             f)]))
            dfs))]))
 
