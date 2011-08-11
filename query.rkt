@@ -198,9 +198,9 @@
 ; search-regular : (list terms) -> (list document-number)
 ;   find documents that contain at least one given term, that
 ;   match the regular expression
-(define (search-regular-expression index a-regexp)
+(define (search-regular-expression index a-regexp sensitive?)
   (let (; 1. Compile the regular expression
-        [re (regexp a-regexp)]
+        [re (regexp (if sensitive? a-regexp (string-append "(?i:" a-regexp ")")))]
         ; 2. Find all terms that match the pattern
         [ts '()])
     (display "pattern match: " (current-error-port))
@@ -228,8 +228,8 @@
            (λ (p1 p2) (> (cdr p1) (cdr p2)))))
     ))
 
-(define (query-regular-expression index a-regexp)
-  (search-regular-expression index a-regexp))
+(define (query-regular-expression index a-regexp sensitive?)
+  (search-regular-expression index a-regexp sensitive?))
 
 (define (query index query-string sensitive? contain-all-terms type-normal)
   (parameterize ([current-index-name (index-name index)])
@@ -243,5 +243,5 @@
                 [type-normal
                  (query-normal index query-string sensitive? contain-all-terms)]
                 [else
-                 (query-regular-expression index query-string)])
+                 (query-regular-expression index query-string sensitive?)])
               terms))))
