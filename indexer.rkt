@@ -97,7 +97,7 @@
 ; A DOCUMENT is a 
 (define-struct document (path weight) #:prefab #:mutable)
 ; where 
-;   path   is the file path 
+;   path   is the file path RELATIVE to the-repository-path
 ;                        n   2
 ;   weight is W = sqrt( sum w   ) , where w  = 1 + ln( f  )
 ;              d        t=1  d,t           d,t          d,t
@@ -111,7 +111,7 @@
 (define (lookup-document-path index d)
   (let ([doc (hash-ref (index-documents index) d)])
     (if doc
-        (build-path the-repository-path (document-path doc))
+        (document-path doc)
         #f)))
 
 ;;;

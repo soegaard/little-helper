@@ -18,14 +18,14 @@
 (define the-index-dir           (string->path "/tmp/little-helper/doc"))
 (define the-index-path          (build-path the-index-dir "doc.index"))
 (define the-index-inverted-path (build-path the-index-dir "doc.inverted"))
-(define the-original-repository-path  (build-path "/tmp/docs.racket-lang.org"))
-(define the-repository-path     
+(define the-repository-path  (build-path "/tmp/docs.racket-lang.org"))
+(define the-snippet-repository-path     
   ; (find-doc-dir)  ; local machine
   ; fetch new copy with wget, then delete .gif and png. (and html after conversion)
   ; wget -r -D docs.racket-lang.org http://docs.racket-lang.org 
-  (build-path "/tmp/docs.racket-lang.org")  
-  ; (build-path (current-data-directory) "docs.racket-lang.org")
-  )
+  ; (build-path "/tmp/docs.racket-lang.org")  
+  (build-path (current-data-directory) "docs.racket-lang.org"))
+
 (define the-repository-txt-path     
   ; (find-doc-dir)  ; local machine
   ; fetch new copy with wget, then delete .gif and png. (and html after conversion)

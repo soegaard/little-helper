@@ -132,19 +132,21 @@
   (let* ([d       (hit-document h)]
          [score   (hit-score h)]
          [snippet (document->snippet 
-                   (document-number->source-path index d) terms sensitive?)])
+                   (build-path the-snippet-repository-path (document-number->source-path index d))
+                   terms sensitive?)])
     (xml:empty-tag-shorthand 'never) ; due to jQuery
     (let ([url (document-number->url index d)])
       `(div ([class "hit"])
             (p ,(xml:string->xexpr bar) " "
                (a ([href ,url]) 
-                  ,(path->link-text
+                  ,(relative-path->link-text
                     (document-number->source-path index d))))
             ,@(if (not snippet)
                   '()
                   (list `(tt ,@(intersperse '(br) snippet))))))))
 
 (define (document->snippet file terms sensitive?)
+  ; file is given with absolute path
   ; Find snippet with the first term occuring in the document.
   ; TODO: An improvement would be to find a snippet containing
   ;       multiple terms, rather than just the first.
@@ -167,26 +169,27 @@
 (define (document-number->url index d)
   (cond
     [(document-number->source-path index d)
-     => (λ (full-path)
+     => (λ (relative-path)
           (apply string-append
                  "http://docs.racket-lang.org/"
                  (intersperse 
                   "/"
                   (map path->string
-                       (explode-path 
-                        (find-relative-path 
-                         the-original-repository-path full-path))))))]
+                       (explode-path relative-path)))))]
     [else
      #f]))
 
-(define (path->link-text full-path)
+(define (relative-path->link-text relative-path)
   (apply string-append
          (intersperse 
           "/ "
           (map path->string
                (explode-path 
-                (find-relative-path 
-                 the-original-repository-path full-path))))))
+                relative-path)))))
+
+(define (absolute-path->link-text full-path)
+  (relative-path->link-text
+   (find-relative-path the-repository-path full-path)))
 
 (define-runtime-path css-path "css")
 (define-runtime-path root-path "web-root")
