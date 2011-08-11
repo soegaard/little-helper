@@ -4,7 +4,7 @@
          occurs-at-lines
          occurs-at-positions)
 
-(require "config.scm")
+(require "config.rkt")
 
 (define (snippet-at-position file pos size)
   (with-input-from-file file

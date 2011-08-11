@@ -16,7 +16,7 @@
          "planet/file.scm"
          "planet/htmlprag.ss" ; version 1.3
          "planet/intersperse.scm"
-         (prefix-in txt: "lexer.scm"))
+         (prefix-in txt: "lexer.rkt"))
 
 (define (html-file->txt-file src-file dest-file)
   (system (format "w3m -dump 'a' >'a'" src-file dest-file)))

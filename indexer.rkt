@@ -53,9 +53,9 @@
  (rename-in (file "planet/srfi.plt/1/2/42.ss") [index Index])
  "planet/bit-io.scm"   
  "planet/dotimes.scm"  
- "config.scm"
- "compression.scm"
- "lexer.scm")
+ "config.rkt"
+ "compression.rkt"
+ "lexer.rkt")
 
 ;;;
 ;;; INDEX

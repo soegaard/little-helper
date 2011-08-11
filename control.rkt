@@ -9,13 +9,12 @@
          scheme/path
          scheme/system
          "planet/basename.scm"
-         "config.scm"
-         "indexer.scm"
-         "lexer.scm"
-         "lexicon.scm"
-         ; "query.scm" ; for debug
-         (only-in "sort.scm" disk-sort) ; (planet "sort.scm" ("soegaard" "disk.plt"))
-         )
+         "config.rkt"
+         "indexer.rkt"
+         "lexer.rkt"
+         "lexicon.rkt"
+         ; "query.rkt" ; for debug
+         (only-in "sort.rkt" disk-sort))
 
 ;;;
 ;;; FILES
@@ -134,7 +133,7 @@
 #; (begin
      (print-struct #t)
      (define the-index (load-index (build-path (current-data-directory) (current-index-name) "index.txt")))
-     (require (all-except "query.scm" bytes->string))
+     (require (all-except "query.rkt" bytes->string))
      
      (search "list")
      (define (s term-bytestring)

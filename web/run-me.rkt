@@ -5,11 +5,11 @@
          web-server/templates
          racket/runtime-path
          (prefix-in xml: xml)
-         "../documentation-indices.scm"
-         "../query.scm"
-         "../snippet.scm"
-         "../indexer.scm"
-         "../config.scm")
+         "../documentation-indices.rkt"
+         "../query.rkt"
+         "../snippet.rkt"
+         "../indexer.rkt"
+         "../config.rkt")
 
 ;;; CONTROL
 

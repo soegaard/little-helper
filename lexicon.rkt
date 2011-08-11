@@ -285,7 +285,7 @@
 
 ;;; SPECIAL PURPOSE
 
-(require "config.scm")
+(require "config.rkt")
 
 (define (for-each-term-in-disk-lexicon index-name f)
   (call-with-input-file (lexicon-path index-name)

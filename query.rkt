@@ -3,10 +3,10 @@
 (require (lib "match.ss")
          racket/list
          (prefix-in is: racket/set)   ; is = integer set
-         (prefix-in disk: "lexicon.scm")
-         "indexer.scm"
-         "lexer.scm"
-         "config.scm"
+         (prefix-in disk: "lexicon.rkt")
+         "indexer.rkt"
+         "lexer.rkt"
+         "config.rkt"
          "planet/bit-io.scm")
 
 (provide (all-defined-out))
